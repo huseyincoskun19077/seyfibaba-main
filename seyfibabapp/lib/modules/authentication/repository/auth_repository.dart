@@ -33,6 +33,8 @@ abstract class AuthRepository {
 
   Future<Either<Failure, String>> logOut(String token);
 
+  Future<Either<Failure, String>> refreshAccessToken(String token);
+
   Future<Either<Failure, String>> createDeliveryMan(DeliveryManStateModel body);
 
   Future<Either<Failure, dynamic>> updateUserForPushNotification(Uri uri);
@@ -70,6 +72,33 @@ class AuthRepositoryImp extends AuthRepository {
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, e.statusCode));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> refreshAccessToken(String token) async {
+    try {
+      final result = await remoteDataSource.refreshAccessToken(token);
+      final newToken = '${result['access_token'] ?? ''}'.trim();
+      if (newToken.isEmpty) {
+        return const Left(ServerFailure('Token refresh failed', 401));
+      }
+      final cached = localDataSource.getUserResponseModel();
+      final expiresIn =
+          int.tryParse('${result['expires_in'] ?? cached.expiresIn}') ??
+              cached.expiresIn;
+      await localDataSource.cacheUserResponse(
+        cached.copyWith(
+          accessToken: newToken,
+          expiresIn: expiresIn,
+          tokenType: '${result['token_type'] ?? cached.tokenType}',
+        ),
+      );
+      return Right(newToken);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } on DatabaseException catch (e) {
+      return Left(DatabaseFailure(e.message));
     }
   }
 

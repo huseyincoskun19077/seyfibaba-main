@@ -338,6 +338,20 @@ class LoginBloc extends Bloc<LoginEvent, LoginModelState> {
     );
   }
 
+  Future<String?> refreshAccessToken() async {
+    final current = userInfo?.accessToken ?? '';
+    if (current.isEmpty) return null;
+
+    final result = await _authRepository.refreshAccessToken(current);
+    return result.fold(
+      (_) => null,
+      (newToken) {
+        _user = _user!.copyWith(accessToken: newToken);
+        return newToken;
+      },
+    );
+  }
+
   Future<void> _logOut(
     LoginEventLogout event,
     Emitter<LoginModelState> emit,

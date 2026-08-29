@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../../core/data/datasources/network_parser.dart';
+import '../../../core/error/exception.dart';
 import '../../../core/remote_urls.dart';
 import '../models/seller_admin_message_model.dart';
 import '../models/seller_bulk_import_model.dart';
@@ -423,16 +424,67 @@ class SellerApiService {
     return SellerOrderDetail.fromMap(Map<String, dynamic>.from(response));
   }
 
+  Future<void> manualShipOrder(
+    String token,
+    int orderId, {
+    required String carrierName,
+    required String trackingNumber,
+    String? trackingUrl,
+  }) async {
+    final cargoBody = <String, dynamic>{
+      'carrier_name': carrierName.trim(),
+      'tracking_number': trackingNumber.trim(),
+      if (trackingUrl != null && trackingUrl.trim().isNotEmpty)
+        'tracking_url': trackingUrl.trim(),
+    };
+
+    try {
+      await NetworkParser.callClientWithCatchException(
+        () => _client.post(
+          Uri.parse(RemoteUrls.sellerManualShip(orderId)),
+          headers: _jsonHeaders(token),
+          body: jsonEncode(cargoBody),
+        ),
+      );
+      return;
+    } on UnauthorisedException catch (e) {
+      if (e.statusCode != 404) rethrow;
+    }
+
+    await NetworkParser.callClientWithCatchException(
+      () => _client.post(
+        Uri.parse(RemoteUrls.sellerUpdateOrderStatus(orderId)),
+        headers: _jsonHeaders(token),
+        body: jsonEncode({
+          'order_status': 2,
+          ...cargoBody,
+        }),
+      ),
+    );
+  }
+
   Future<void> updateOrderStatus(
     String token,
     int orderId, {
     required int orderStatus,
+    String? carrierName,
+    String? trackingNumber,
+    String? trackingUrl,
   }) async {
+    final body = <String, dynamic>{
+      'order_status': orderStatus,
+      if (carrierName != null && carrierName.trim().isNotEmpty)
+        'carrier_name': carrierName.trim(),
+      if (trackingNumber != null && trackingNumber.trim().isNotEmpty)
+        'tracking_number': trackingNumber.trim(),
+      if (trackingUrl != null && trackingUrl.trim().isNotEmpty)
+        'tracking_url': trackingUrl.trim(),
+    };
     await NetworkParser.callClientWithCatchException(
       () => _client.put(
         Uri.parse(RemoteUrls.sellerUpdateOrderStatus(orderId)),
         headers: _jsonHeaders(token),
-        body: jsonEncode({'order_status': orderStatus}),
+        body: jsonEncode(body),
       ),
     );
   }

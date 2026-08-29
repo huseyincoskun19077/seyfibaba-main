@@ -40,6 +40,8 @@ abstract class RemoteDataSource {
 
   Future<String> logOut(String tokne);
 
+  Future<Map<String, dynamic>> refreshAccessToken(String token);
+
   Future<HomeModel> getHomeData();
 
   Future<String> updateProfileInformation(
@@ -504,6 +506,24 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       myMap[newKey] = value;
     });
     return WebsiteSetupModel.fromMap(responseJsonBody);
+  }
+
+  @override
+  Future<Map<String, dynamic>> refreshAccessToken(String token) async {
+    final uri = Uri.parse(RemoteUrls.tokenRefresh);
+    final clientMethod = client.post(
+      uri,
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    final responseJsonBody =
+        await NetworkParser.callClientWithCatchException(() => clientMethod);
+    if (responseJsonBody is Map<String, dynamic>) {
+      return responseJsonBody;
+    }
+    return Map<String, dynamic>.from(responseJsonBody as Map);
   }
 
   @override

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/error/exception.dart';
+import '../../../core/router_name.dart';
 import '../../../modules/home/widgets/home_theme.dart';
 import '../../../utils/utils.dart';
 import '../models/seller_dashboard_model.dart';
 import '../services/seller_api_service.dart';
+import '../services/seller_auth_helper.dart';
 
 class SellerDashboardTab extends StatefulWidget {
   const SellerDashboardTab({super.key, required this.token});
@@ -21,12 +24,19 @@ class _SellerDashboardTabState extends State<SellerDashboardTab> {
   @override
   void initState() {
     super.initState();
-    _future = _service.fetchDashboard(widget.token);
+    _future = _loadDashboard();
+  }
+
+  Future<SellerDashboardModel> _loadDashboard() {
+    return SellerAuthHelper.withAuthRetry(
+      context,
+      (token) => _service.fetchDashboard(token),
+    );
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _future = _service.fetchDashboard(widget.token);
+      _future = _loadDashboard();
     });
     await _future;
   }
@@ -41,8 +51,11 @@ class _SellerDashboardTabState extends State<SellerDashboardTab> {
         }
         if (snapshot.hasError) {
           return _ErrorState(
-            message: '${snapshot.error}',
+            error: snapshot.error,
             onRetry: _refresh,
+            onLogin: () {
+              Navigator.pushNamed(context, RouteNames.authenticationScreen);
+            },
           );
         }
         final data = snapshot.data!;
@@ -160,16 +173,25 @@ class _StatGrid extends StatelessWidget {
 }
 
 class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
+  const _ErrorState({
+    required this.error,
+    required this.onRetry,
+    required this.onLogin,
+  });
 
-  final String message;
+  final Object? error;
   final VoidCallback onRetry;
+  final VoidCallback onLogin;
 
   @override
   Widget build(BuildContext context) {
-    final isForbidden = message.contains('403') ||
-        message.toLowerCase().contains('seller') ||
-        message.toLowerCase().contains('inactive');
+    final message = '$error';
+    final isUnauthorized = error is UnauthorisedException &&
+        (error as UnauthorisedException).statusCode == 401;
+    final isForbidden = !isUnauthorized &&
+        (message.contains('403') ||
+            message.toLowerCase().contains('seller') ||
+            message.toLowerCase().contains('inactive'));
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -177,32 +199,46 @@ class _ErrorState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              isForbidden
-                  ? 'Satıcı hesabınız aktif değil veya erişim yok.'
-                  : 'Özet yüklenemedi.',
+              isUnauthorized
+                  ? 'Oturumunuz sona erdi. Lütfen tekrar giriş yapın.'
+                  : isForbidden
+                      ? 'Satıcı hesabınız aktif değil veya erişim yok.'
+                      : 'Özet yüklenemedi.',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: HomeTheme.textDark,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: HomeTheme.textMuted, fontSize: 12),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: onRetry,
-              style: FilledButton.styleFrom(
-                backgroundColor: HomeTheme.brandYellow,
-                foregroundColor: HomeTheme.textDark,
+            if (!isUnauthorized) ...[
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: HomeTheme.textMuted, fontSize: 12),
               ),
-              child: const Text('Tekrar Dene'),
-            ),
+            ],
+            const SizedBox(height: 16),
+            if (isUnauthorized)
+              FilledButton(
+                onPressed: onLogin,
+                style: FilledButton.styleFrom(
+                  backgroundColor: HomeTheme.brandYellow,
+                  foregroundColor: HomeTheme.textDark,
+                ),
+                child: const Text('Giriş Yap'),
+              )
+            else
+              FilledButton(
+                onPressed: onRetry,
+                style: FilledButton.styleFrom(
+                  backgroundColor: HomeTheme.brandYellow,
+                  foregroundColor: HomeTheme.textDark,
+                ),
+                child: const Text('Tekrar Dene'),
+              ),
           ],
         ),
       ),

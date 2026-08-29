@@ -37,13 +37,21 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
     await _future;
   }
 
-  Future<void> _updateStatus(int nextStatus) async {
+  Future<void> _updateStatus(
+    int nextStatus, {
+    String? carrierName,
+    String? trackingNumber,
+    String? trackingUrl,
+  }) async {
     try {
       Utils.loadingDialog(context);
       await _service.updateOrderStatus(
         widget.token,
         widget.orderId,
         orderStatus: nextStatus,
+        carrierName: carrierName,
+        trackingNumber: trackingNumber,
+        trackingUrl: trackingUrl,
       );
       if (!mounted) return;
       Utils.closeDialog(context);
@@ -53,6 +61,53 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
       if (!mounted) return;
       Utils.closeDialog(context);
       Utils.errorSnackBar(context, '$e');
+    }
+  }
+
+  Future<void> _shipOrder() async {
+    final payload = await showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => const _ManualShipFormSheet(),
+    );
+
+    if (payload == null || !mounted) return;
+
+    final carrier = payload['carrier'] ?? '';
+    final tracking = payload['tracking'] ?? '';
+    final trackingUrl = payload['tracking_url'] ?? '';
+
+    if (carrier.isEmpty || tracking.isEmpty) return;
+
+    try {
+      Utils.loadingDialog(context);
+      await _service.manualShipOrder(
+        widget.token,
+        widget.orderId,
+        carrierName: carrier,
+        trackingNumber: tracking,
+        trackingUrl: trackingUrl.isEmpty ? null : trackingUrl,
+      );
+      if (!mounted) return;
+      Utils.closeDialog(context);
+      Utils.showSnackBar(context, 'Sipariş kargoya verildi');
+      await _refresh();
+    } catch (e) {
+      if (!mounted) return;
+      Utils.closeDialog(context);
+      final message = '$e';
+      if (message.contains('404') || message.contains('could not be found')) {
+        Utils.errorSnackBar(
+          context,
+          'Sunucu henüz güncellenmemiş. Lütfen backend deploy edin.',
+        );
+        return;
+      }
+      Utils.errorSnackBar(context, message);
     }
   }
 
@@ -163,7 +218,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                       if (sellerStatus == 1)
                         Expanded(
                           child: FilledButton(
-                            onPressed: () => _updateStatus(2),
+                            onPressed: _shipOrder,
                             style: FilledButton.styleFrom(
                               backgroundColor: HomeTheme.brandYellow,
                               foregroundColor: HomeTheme.textDark,
@@ -209,6 +264,118 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ManualShipFormSheet extends StatefulWidget {
+  const _ManualShipFormSheet();
+
+  @override
+  State<_ManualShipFormSheet> createState() => _ManualShipFormSheetState();
+}
+
+class _ManualShipFormSheetState extends State<_ManualShipFormSheet> {
+  final _carrierController = TextEditingController();
+  final _trackingController = TextEditingController();
+  final _trackingUrlController = TextEditingController();
+
+  @override
+  void dispose() {
+    _carrierController.dispose();
+    _trackingController.dispose();
+    _trackingUrlController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final carrier = _carrierController.text.trim();
+    final tracking = _trackingController.text.trim();
+    if (carrier.isEmpty || tracking.isEmpty) {
+      Utils.errorSnackBar(
+        context,
+        'Kargo firması ve takip numarası zorunludur.',
+      );
+      return;
+    }
+
+    Navigator.pop(context, {
+      'carrier': carrier,
+      'tracking': tracking,
+      'tracking_url': _trackingUrlController.text.trim(),
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Manuel Kargo Bilgisi',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: HomeTheme.textDark,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Kargo firması ve takip numarasını girin. Takip numarası için özel bir format yok; kargo firmasından aldığınız numarayı olduğu gibi yazın.',
+              style: TextStyle(color: HomeTheme.textMuted, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _carrierController,
+              textInputAction: TextInputAction.next,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Kargo firması *',
+                hintText: 'Örn: Yurtiçi, Aras, MNG',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _trackingController,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: 'Takip numarası *',
+                hintText: 'Örn: 1234567890',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _trackingUrlController,
+              keyboardType: TextInputType.url,
+              decoration: const InputDecoration(
+                labelText: 'Takip linki (isteğe bağlı)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _submit,
+              style: FilledButton.styleFrom(
+                backgroundColor: HomeTheme.brandYellow,
+                foregroundColor: HomeTheme.textDark,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('Kargoya Ver'),
+            ),
+          ],
+        ),
       ),
     );
   }

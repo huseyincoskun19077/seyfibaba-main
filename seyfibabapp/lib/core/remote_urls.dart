@@ -42,6 +42,8 @@ class RemoteUrls {
   static String userVerification(String code) =>
       '${baseUrl}user-verification/$code';
 
+  static const String tokenRefresh = '${baseUrl}user/token/refresh';
+
   static String userProfile(String token) =>
       '${baseUrl}user/my-profile?token=$token';
 
@@ -95,6 +97,7 @@ class RemoteUrls {
   static String sellerOrderShow(int id) => '${baseUrl}seller/order-show/$id';
   static String sellerUpdateOrderStatus(int id) =>
       '${baseUrl}seller/update-order-status/$id';
+  static String sellerManualShip(int id) => '${baseUrl}seller/manual-ship/$id';
   static const String sellerEarnings = '${baseUrl}seller/earnings';
   static const String sellerEarningsOrders = '${baseUrl}seller/earnings/orders';
   static const String sellerWithdraws = '${baseUrl}seller/my-withdraw';

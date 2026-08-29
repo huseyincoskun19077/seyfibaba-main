@@ -7,6 +7,7 @@ import '../../../modules/home/widgets/home_theme.dart';
 import '../../../utils/language_string.dart';
 import '../../../utils/utils.dart';
 import 'services/seller_api_service.dart';
+import 'services/seller_auth_helper.dart';
 import 'tabs/seller_dashboard_tab.dart';
 import 'tabs/seller_more_tab.dart';
 import 'tabs/seller_orders_tab.dart';
@@ -25,20 +26,46 @@ class _SellerPanelScreenState extends State<SellerPanelScreen> {
   final _service = SellerApiService();
   int _index = 0;
   String _kycStatus = 'approved';
+  bool _sessionReady = false;
+  String _token = '';
 
   static const _titles = ['Özet', 'Ürünler', 'Siparişler', 'Daha fazla'];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadKyc());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _prepareSession());
   }
 
-  Future<void> _loadKyc() async {
-    if (!Utils.isLoggedIn(context) || !Utils.isSeller(context)) return;
+  Future<void> _prepareSession() async {
+    if (!mounted) return;
+    if (!Utils.isLoggedIn(context) || !Utils.isSeller(context)) {
+      setState(() => _sessionReady = true);
+      return;
+    }
+
+    final loginBloc = context.read<LoginBloc>();
+    var token = loginBloc.userInfo?.accessToken ?? '';
+    final refreshed = await loginBloc.refreshAccessToken();
+    if (refreshed != null && refreshed.isNotEmpty) {
+      token = refreshed;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _token = token;
+      _sessionReady = true;
+    });
+    _loadKyc(token);
+  }
+
+  Future<void> _loadKyc(String token) async {
+    if (token.isEmpty) return;
     try {
-      final token = context.read<LoginBloc>().userInfo!.accessToken;
-      final status = await _service.fetchKycStatus(token);
+      final status = await SellerAuthHelper.withAuthRetry(
+        context,
+        (authToken) => _service.fetchKycStatus(authToken),
+      );
       if (!mounted) return;
       setState(() => _kycStatus = status);
     } catch (_) {}
@@ -68,7 +95,22 @@ class _SellerPanelScreenState extends State<SellerPanelScreen> {
       );
     }
 
-    final token = context.read<LoginBloc>().userInfo!.accessToken;
+    if (!_sessionReady) {
+      return Scaffold(
+        backgroundColor: HomeTheme.bg,
+        appBar: AppBar(
+          title: Text(Language.sellerPanel),
+          backgroundColor: HomeTheme.header,
+          foregroundColor: HomeTheme.textDark,
+          elevation: 0,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final token = _token.isNotEmpty
+        ? _token
+        : (context.read<LoginBloc>().userInfo?.accessToken ?? '');
     final pages = [
       SellerDashboardTab(token: token),
       SellerProductsTab(token: token, kycStatus: _kycStatus),

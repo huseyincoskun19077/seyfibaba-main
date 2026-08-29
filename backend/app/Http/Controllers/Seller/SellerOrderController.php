@@ -121,10 +121,59 @@ class SellerOrderController extends Controller
      *   0 (beklemede) → 1 (satıcı onayladı / hazırlanıyor)
      *   1 (hazırlanıyor) → 2 (kargoya verildi)
      */
+    /**
+     * Manuel kargo: mobil ve API istemcileri için (Geliver gerekmez).
+     */
+    public function manualShip(Request $request, $id)
+    {
+        $this->mergeJsonBody($request);
+
+        $validated = $request->validate([
+            'carrier_name' => ['required', 'string', 'max:255'],
+            'tracking_number' => ['required', 'string', 'max:255'],
+            'tracking_url' => ['nullable', 'url', 'max:2000'],
+        ]);
+
+        $seller = Auth::guard('api')->user()->seller;
+
+        $orderProduct = OrderProduct::query()
+            ->where('order_id', $id)
+            ->where('seller_id', $seller->id)
+            ->first();
+
+        if (! $orderProduct) {
+            return response()->json(['message' => 'Sipariş bulunamadı veya bu siparişe erişim yetkiniz yok.'], 404);
+        }
+
+        if ((int) $orderProduct->seller_status !== 1) {
+            return response()->json([
+                'message' => 'Kargoya vermek için sipariş önce onaylanmış olmalıdır.',
+            ], 422);
+        }
+
+        $this->saveManualCargoAndMarkShipped(
+            (int) $id,
+            (int) $seller->id,
+            $orderProduct,
+            trim($validated['carrier_name']),
+            trim($validated['tracking_number']),
+            isset($validated['tracking_url']) ? trim((string) $validated['tracking_url']) : null
+        );
+
+        return response()->json([
+            'notification' => 'Manuel kargo kaydedildi ve sipariş kargoya verildi.',
+        ], 200);
+    }
+
     public function updateOrderStatus(Request $request, $id)
     {
+        $this->mergeJsonBody($request);
+
         $request->validate([
             'order_status' => 'required|integer|in:1,2',
+            'carrier_name' => 'nullable|string|max:255',
+            'tracking_number' => 'nullable|string|max:255',
+            'tracking_url' => 'nullable|url|max:2000',
         ]);
 
         $seller = Auth::guard('api')->user()->seller;
@@ -157,6 +206,12 @@ class SellerOrderController extends Controller
         if ($newStatus === 1) {
             $orderProduct->seller_status = 1;
         } elseif ($newStatus === 2) {
+            $trackingNumber = trim((string) $request->input('tracking_number', ''));
+            $carrierName = trim((string) $request->input('carrier_name', ''));
+            $trackingUrl = $request->filled('tracking_url')
+                ? trim((string) $request->input('tracking_url'))
+                : null;
+
             $latestCargo = CargoShipment::query()
                 ->where('order_id', (int) $id)
                 ->where('seller_id', (int) $seller->id)
@@ -164,14 +219,30 @@ class SellerOrderController extends Controller
                 ->latest()
                 ->first();
 
-            if (! $latestCargo || empty($latestCargo->tracking_number)) {
+            if ($trackingNumber === '' && $latestCargo) {
+                $trackingNumber = trim((string) ($latestCargo->tracking_number ?? ''));
+            }
+
+            if ($trackingNumber === '') {
                 return response()->json([
-                    'message' => 'Kargoya verildi olarak işaretlemek için takip numarası gereklidir. Lütfen Geliver ile kargo oluşturun veya manuel kargo bilgisi girin.',
+                    'message' => 'Kargoya verildi olarak işaretlemek için kargo firması ve takip numarası girin.',
                 ], 422);
             }
 
-            $orderProduct->seller_status = 2;
-            $orderProduct->shipped_at = $orderProduct->shipped_at ?: now();
+            if ((! $latestCargo || empty($latestCargo->tracking_number)) && $carrierName === '') {
+                return response()->json([
+                    'message' => 'Kargo firması adı gereklidir.',
+                ], 422);
+            }
+
+            $this->saveManualCargoAndMarkShipped(
+                (int) $id,
+                (int) $seller->id,
+                $orderProduct,
+                $carrierName !== '' ? $carrierName : (string) ($latestCargo->carrier_name ?? 'Kargo'),
+                $trackingNumber,
+                $trackingUrl
+            );
         }
 
         $orderProduct->save();
@@ -180,5 +251,66 @@ class SellerOrderController extends Controller
         return response()->json([
             'notification' => 'Sipariş durumu güncellendi: ' . $statusLabels[$newStatus],
         ], 200);
+    }
+
+    private function mergeJsonBody(Request $request): void
+    {
+        if ($request->request->count() > 0 || $request->query->count() > 0) {
+            return;
+        }
+
+        $raw = $request->getContent();
+        if (! is_string($raw) || trim($raw) === '') {
+            return;
+        }
+
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) {
+            $request->merge($decoded);
+        }
+    }
+
+    private function saveManualCargoAndMarkShipped(
+        int $orderId,
+        int $sellerId,
+        OrderProduct $orderProduct,
+        string $carrierName,
+        string $trackingNumber,
+        ?string $trackingUrl = null
+    ): void {
+        $latestCargo = CargoShipment::query()
+            ->where('order_id', $orderId)
+            ->where('seller_id', $sellerId)
+            ->whereNotIn('status', ['cancelled'])
+            ->latest()
+            ->first();
+
+        if (! $latestCargo || empty($latestCargo->tracking_number)) {
+            CargoShipment::create([
+                'order_id' => $orderId,
+                'seller_id' => $sellerId,
+                'carrier_name' => $carrierName,
+                'tracking_number' => $trackingNumber,
+                'tracking_url' => $trackingUrl,
+                'status' => 'shipped',
+                'created_by_type' => 'seller',
+                'created_by_id' => $sellerId,
+                'raw_response' => [
+                    'manual' => true,
+                    'created_at' => now()->toIso8601String(),
+                ],
+            ]);
+        } else {
+            $latestCargo->update([
+                'carrier_name' => $carrierName !== '' ? $carrierName : $latestCargo->carrier_name,
+                'tracking_number' => $trackingNumber,
+                'tracking_url' => $trackingUrl ?? $latestCargo->tracking_url,
+                'status' => $latestCargo->status === 'delivered' ? 'delivered' : 'shipped',
+            ]);
+        }
+
+        $orderProduct->seller_status = 2;
+        $orderProduct->shipped_at = $orderProduct->shipped_at ?: now();
+        $orderProduct->save();
     }
 }

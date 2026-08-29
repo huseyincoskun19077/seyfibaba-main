@@ -512,6 +512,8 @@ Route::group([], function () {
         Route::get('cash-on-delivery', [SellerOrderController::class, 'cashOnDelivery'])->name('cash-on-delivery');
         Route::get('order-show/{id}', [SellerOrderController::class, 'show'])->name('order-show');
         Route::put('update-order-status/{id}', [SellerOrderController::class, 'updateOrderStatus'])->name('seller-update-order-status');
+        Route::post('update-order-status/{id}', [SellerOrderController::class, 'updateOrderStatus']);
+        Route::post('manual-ship/{id}', [SellerOrderController::class, 'manualShip'])->name('seller-manual-ship');
 
         Route::get('message', [SellerMessageContoller::class, 'index'])->name('message');
         Route::get('load-chat-box/{id}', [SellerMessageContoller::class, 'loadChatBox'])->name('load-chat-box');
