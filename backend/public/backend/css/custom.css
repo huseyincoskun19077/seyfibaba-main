@@ -1,0 +1,18 @@
+/**
+ *
+ * You can write your CSS code here, DO NOT touch the default JavaScript file
+ * because it will make it harder for you to update.
+ *
+ */
+
+/* Admin sidebar logo fix */
+.main-sidebar .sidebar-brand img.logo {
+    max-height: 50px;
+    max-width: 180px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+/*# sourceMappingURL=custom.css.map */

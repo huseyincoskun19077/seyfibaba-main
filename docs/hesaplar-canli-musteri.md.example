@@ -1,0 +1,46 @@
+# Seyfibaba — Canlı ortam giriş bilgileri
+
+Bu dosya **yalnızca canlı (production)** adresleri ve şu an sistemde tanımlı hesapları içerir. Site sahibi / işletme için paylaşım amaçlıdır.
+
+**Önemli:** İlk fırsatta tüm şifreleri kendi belirleyeceğiniz güçlü parolalarla değiştirmenizi öneririz.
+
+Düz metin sürümü: [`hesaplar-canli-musteri.txt.example`](hesaplar-canli-musteri.txt.example)
+
+---
+
+## 1. Yönetici paneli
+
+| | |
+| --- | --- |
+| **Adres** | https://admin.seyfibaba.com/admin/login |
+| **E-posta** | admin@seyfibaba.com |
+| **Şifre** | admin123 |
+
+---
+
+## 2. Satıcı paneli (mağaza)
+
+| | |
+| --- | --- |
+| **Adres** | https://admin.seyfibaba.com/seller/login |
+| **E-posta** | orhanguzell@gmail.com |
+| **Şifre** | admin123 |
+
+*Satıcı paneli ile müşteri girişi farklı hesaplardır; aynı e-posta ile her iki panele birden girilemez.*
+
+---
+
+## 3. Müşteri hesapları (ön yüz — alışveriş)
+
+| | |
+| --- | --- |
+| **Site adresi** | https://seyfibaba.com |
+
+| İsim (kayıt adı) | E-posta | Şifre |
+| --- | --- | --- |
+| — | devhcsoftware@gmail.com | admin123 |
+| — | metinogulcank06@gmail.com | admin123 |
+
+---
+
+*Geliştirici notları ve localhost bilgileri için repodaki `hesaplar.local.md.example` dosyasına bakın.*

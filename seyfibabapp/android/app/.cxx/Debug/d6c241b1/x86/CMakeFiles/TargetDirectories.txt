@@ -1,0 +1,2 @@
+C:/Users/User/Desktop/Flutter Project/shopo-flutter/android/app/.cxx/Debug/d6c241b1/x86/CMakeFiles/edit_cache.dir
+C:/Users/User/Desktop/Flutter Project/shopo-flutter/android/app/.cxx/Debug/d6c241b1/x86/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "967339992980",
+    "project_id": "seyfibabapp",
+    "storage_bucket": "seyfibabapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:967339992980:android:0ca347d85b18e54a395181",
+        "android_client_info": {
+          "package_name": "com.seyfibaba.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "967339992980-au69v8t984dgdhvvhtkd57mobcpsuje6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.seyfibaba.app",
+            "certificate_hash": "ea64986df544f794e26c534c55a55837d0d63cf2"
+          }
+        },
+        {
+          "client_id": "967339992980-cbqi3uqcdcsi6hh9qkfrth79eqkee2qn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.seyfibaba.app",
+            "certificate_hash": "90aeed7f9cd88e7e44e92b88ae3a4c521a35dfb4"
+          }
+        },
+        {
+          "client_id": "967339992980-moljr9rvqo8ojelsfcgoh8rl8v225fk0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl3ShHSc-MEqu5T3prIP-ZzBu2juWCfdM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "967339992980-moljr9rvqo8ojelsfcgoh8rl8v225fk0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "967339992980-08d1kr0bdq9oo6sm210eu1ap43q5j106.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.seyfibaba.com"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

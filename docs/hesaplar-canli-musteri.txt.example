@@ -1,0 +1,35 @@
+Seyfibaba — Canlı ortam giriş bilgileri
+========================================
+
+Bu liste yalnızca CANLI (production) adresleri ve şu an tanımlı hesapları içerir.
+Site sahibi / işletme için paylaşım amaçlıdır.
+
+Önemli: İlk fırsatta tüm şifreleri kendi belirleyeceğiniz güçlü parolalarla değiştirmenizi öneririz.
+
+------------------------------------------
+1) YÖNETİCİ PANELİ
+------------------------------------------
+Adres:    https://admin.seyfibaba.com/admin/login
+E-posta:  admin@seyfibaba.com
+Şifre:    admin123
+
+------------------------------------------
+2) SATICI PANELİ (mağaza)
+------------------------------------------
+Adres:    https://admin.seyfibaba.com/seller/login
+E-posta:  orhanguzell@gmail.com
+Şifre:    admin123
+
+Not: Satıcı paneli ile müşteri girişi farklı hesaplardır.
+     Aynı e-posta ile her iki panele birden girilemez.
+
+------------------------------------------
+3) MÜŞTERİ (ön yüz — alışveriş)
+------------------------------------------
+Site:     https://seyfibaba.com
+
+  devhcsoftware@gmail.com       admin123
+  metinogulcank06@gmail.com     admin123
+
+------------------------------------------
+(Geliştirici / localhost için: hesaplar.local.md.example)

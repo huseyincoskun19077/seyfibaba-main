@@ -1,0 +1,43 @@
+Seyfibaba — test / operasyon hesapları
+========================================
+
+Canlı hesaplar (müşteri / site sahibi): hesaplar-canli-musteri.md.example veya .txt.example
+
+Site şu an faal değil (veya sınırlı). Tüm panel ve kullanıcı giriş şifreleri: admin123
+Kolay tutmak için bilinçli seçim; canlıya açınca mutlaka değiştirin.
+
+--- Yönetici (admin panel) ---
+URL:      https://admin.seyfibaba.com/admin/login
+E-posta:  admin@seyfibaba.com
+Şifre:    admin123
+
+Not: Eski notlarda admin@gmail.com / 1234 geçebilir; canlı kayıt yukarıdaki e-postadır.
+
+--- Satıcı (seller panel) ---
+URL:      https://admin.seyfibaba.com/seller/login
+E-posta:  orhanguzell@gmail.com
+Şifre:    admin123
+
+Not: kullanici.md içindeki devhcsoftware1@ / metinogulcank satıcı satırları dokümantasyon;
+canlı users tablosunda satıcı olarak kayıtlı örnek şu an yukarıdaki hesap (is_vendor=1).
+metinogulcank06@gmail.com aynı zamanda müşteri hesabı; satıcı girişi için ayrı satıcı kullanıcısı gerekir.
+
+--- Müşteri (frontend) ---
+URL:      https://seyfibaba.com (giriş / kayıt)
+Ortak şifre: admin123
+
+  Hüseyin Coşkun       devhcsoftware@gmail.com           admin123
+  Metin Oğulcan Koca   metinogulcank06@gmail.com         admin123
+  Oğuzhan Sarıoğlugil  oguzhansarioglugil@hotmail.com    (canlıda yok — kayıt veya manuel eklenmeli)
+
+--- Lokal geliştirme (localhost) ---
+Admin panel:
+  URL:     http://localhost:8000/admin
+  E-posta: admin@gmail.com
+  Şifre:   1234 (seed/eski) veya DB'de admin123 yaptıysanız admin123
+
+--- Veritabanı ---
+Parolalar burada tutulmaz; backend/.env veya kasa. Ayrıntı: docs/kullanici.md veya sunucu .env
+
+---
+Son şifre senkronu (tüm admin + user kayıtları admin123): canlı sunucuda güncellendi.

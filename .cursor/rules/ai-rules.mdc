@@ -1,0 +1,862 @@
+---
+description: Seyfibaba global AI rules + project context (seyfibaba.com)
+alwaysApply: true
+---
+
+# SEYFIBABA PROJECT CONTEXT
+
+**Site:** https://seyfibaba.com  
+**Ürün:** CodeCanyon Shopo tabanlı Türkiye pazaryeri (çok satıcılı e-ticaret)
+
+## Stack ve dizinler
+
+| Katman | Teknoloji | Konum |
+|--------|-----------|--------|
+| Backend | Laravel 10, PHP 8.x, MySQL | `backend/` |
+| Frontend | Next.js 15, React, Redux, Tailwind | `frontend/` |
+| Mobil | Flutter | `seyfibabapp/` |
+| Ödeme | Iyzico (pazaryeri / sub-merchant) | `backend/app/Services/IyzicoService.php` |
+| Taksit kuralları | Kategori bazlı | `backend/app/Services/CategoryInstallmentService.php` |
+| Auth | JWT | `backend/config/jwt.php` |
+
+Kalıcı proje bilgisi için önce şunlara bak: `AGENTS.md`, `CLAUDE.md`, `DEPLOYMENT-REHBERI.md`.
+
+## Yerel geliştirme
+
+```bash
+# Backend
+cd backend && composer install && php artisan serve
+
+# Frontend
+cd frontend && bun install && bun run dev
+```
+
+- Frontend: `localhost:3000` (veya `127.0.0.1:3000` — CORS uyumu için)
+- Backend: `localhost:8000` (local ortamda farklı port olabilir)
+- Admin: `backend` üzerinden `/admin`
+- Veritabanı adı ortama göre değişir → **`.env` içindeki `DB_DATABASE` kaynak kabul edilir**, tahmin etme
+
+## Sunucu (production)
+
+- Proje kökü: `/opt/seyfibaba-main/`
+- Uploads: `/opt/seyfibaba-main/backend/public/uploads/`
+- Deployment adımları: `DEPLOYMENT-REHBERI.md`
+- **Production'a deploy, restart, migration, seed** → kullanıcı açıkça istemeden yapma
+- Sunucuda büyük dosya transferi: SFTP ile binlerce küçük dosya yerine sunucuda `tar`/`zip` ile tek arşiv oluştur
+
+## Kritik iş kuralları (değiştirme / sessizce bozma)
+
+1. **Iyzico pazaryeri modu** zorunlu; sub-merchant desteği korunmalı
+2. **Taksit:** `CategoryInstallmentService` — sepette en kısıtlayıcı kategori geçerli; Iyzico basket `category1`/`category2` isim sınıflandırmasıyla eşlenir
+3. **SMS:** yalnızca kayıt OTP; sipariş bildirimi SMS'i ekleme
+4. **Ödeme akışı:** Checkout Form (hosted); taksit testinde doğru sandbox kartı gerekir
+5. **`.env`**, SQL dump'lar, API anahtarları, ödeme sırları → commit etme, loglara yazma, yanıtta gösterme
+6. Mevcut Stripe/PayPal/Razorpay entegrasyonlarını kaldırma (kullanıcı istemedikçe)
+
+## Kodda nereye bakılır
+
+| Görev | Dosya |
+|-------|--------|
+| API rotaları | `backend/routes/api.php` |
+| Controller'lar | `backend/app/Http/Controllers/` |
+| Modeller | `backend/app/Models/` |
+| Frontend sayfalar | `frontend/src/app/` |
+| Redux | `frontend/src/redux/` |
+
+## İletişim
+
+- Kullanıcıyla **Türkçe** konuş
+- Kod, değişken ve commit mesajları mevcut proje stiline uygun kalsın (çoğunlukla İngilizce identifier)
+
+---
+
+# GLOBAL AI DEVELOPMENT RULES
+
+These rules apply to the entire project.
+
+The primary goal is:
+
+**Understand the existing project → make the smallest correct change → preserve everything else → use minimum context and AI resources.**
+
+---
+
+# 1. UNDERSTAND THE PROJECT FIRST
+
+Before making changes, understand the existing project structure and conventions.
+
+Respect:
+
+* existing architecture
+* existing folder structure
+* existing coding style
+* existing naming conventions
+* existing libraries
+* existing database structure
+* existing API structure
+* existing business logic
+* existing state management
+* existing authentication
+* existing payment systems
+* existing integrations
+
+Do not replace an existing architecture just because another architecture may be better.
+
+Prefer the existing project approach unless the user explicitly asks for a change.
+
+---
+
+# 2. PROJECT CONTEXT
+
+Treat the following as permanent project knowledge:
+
+* project purpose
+* application architecture
+* technology stack
+* important business rules
+* database structure
+* API conventions
+* authentication rules
+* authorization rules
+* payment rules
+* important integrations
+* important files
+* important directories
+* deployment structure
+* existing coding conventions
+
+If the project contains documentation describing these things, use it as the source of truth.
+
+Do not repeatedly rediscover information that is already available in project documentation.
+
+If the user explains an important project rule during development, follow it for the rest of the work.
+
+---
+
+# 3. DO NOT FORGET PROJECT CONTEXT
+
+Before implementing a feature, check whether the project already has an established way of doing the same thing.
+
+Reuse existing:
+
+* services
+* repositories
+* controllers
+* models
+* components
+* widgets
+* utilities
+* helpers
+* API clients
+* state management
+* validation
+* authentication
+* error handling
+
+Do not create duplicate implementations.
+
+---
+
+# 4. MINIMUM CONTEXT
+
+Use the smallest amount of project context necessary.
+
+When the user provides a file:
+
+1. Start with that file.
+2. Understand it.
+3. Check direct dependencies only when necessary.
+4. Check related files only when necessary.
+5. Search the wider project only when necessary.
+
+If the task can be completed using the provided file:
+
+STOP.
+
+Do not scan the entire project unnecessarily.
+
+---
+
+# 5. MINIMUM TOKEN USAGE
+
+The user uses Cursor AUTO mode.
+
+Optimize all tasks for minimum unnecessary AI usage.
+
+Avoid:
+
+* unnecessary reasoning
+* unnecessary file reads
+* repeated file reads
+* broad searches
+* repeated searches
+* unnecessary terminal commands
+* unnecessary iterations
+* unnecessary explanations
+* unnecessary code generation
+* unnecessary context
+
+Use the smallest amount of AI work that can produce a correct result.
+
+---
+
+# 6. SMALL TASKS
+
+For small tasks:
+
+Examples:
+
+* one-file bug fix
+* UI change
+* CSS change
+* small Flutter widget change
+* simple validation
+* simple API change
+* small function modification
+* small CRUD change
+* import fix
+* type fix
+* null safety fix
+
+Use:
+
+**Read → Understand → Edit → Verify → Finish**
+
+Do not perform project-wide analysis.
+
+Do not use unnecessary multi-step Agent behavior.
+
+---
+
+# 7. MEDIUM TASKS
+
+For medium tasks:
+
+Examples:
+
+* several related files
+* CRUD feature
+* Flutter screen + API
+* backend + frontend integration
+* controller + service + model changes
+
+Use:
+
+**Read → Plan → Edit → Verify**
+
+Only inspect files related to the task.
+
+---
+
+# 8. LARGE TASKS
+
+For large tasks:
+
+Examples:
+
+* payment systems
+* authentication systems
+* marketplace systems
+* major integrations
+* database architecture
+* large refactoring
+* security architecture
+* major features
+
+Use:
+
+**Analyze → Plan → Implement in stages → Verify**
+
+Do not modify the entire project unnecessarily.
+
+Do not perform large changes without understanding their impact.
+
+---
+
+# 9. NEVER DELETE CODE WITHOUT PERMISSION
+
+NEVER delete existing code without explicit user permission.
+
+This includes:
+
+* functions
+* classes
+* components
+* widgets
+* services
+* controllers
+* models
+* routes
+* API endpoints
+* database fields
+* business logic
+* existing features
+* configuration
+
+If existing code appears unnecessary:
+
+STOP.
+
+Tell the user what you believe can be removed and ask for permission.
+
+---
+
+# 10. NEVER DELETE FILES WITHOUT PERMISSION
+
+Never delete an existing file without explicit user approval.
+
+Even if it appears unused.
+
+Even if it appears obsolete.
+
+Even if you believe it is safe.
+
+Ask first.
+
+---
+
+# 11. NEVER REMOVE FEATURES
+
+Do not remove or disable existing functionality unless explicitly requested.
+
+Do not silently change business behavior.
+
+Do not silently change:
+
+* authentication
+* authorization
+* payments
+* orders
+* pricing
+* commissions
+* calculations
+* notifications
+* API behavior
+* database behavior
+
+---
+
+# 12. NEVER UPDATE DEPENDENCIES WITHOUT PERMISSION
+
+Do not automatically update:
+
+* packages
+* libraries
+* frameworks
+* Flutter
+* Dart
+* Node.js packages
+* npm packages
+* Composer packages
+* Laravel
+* React
+* Next.js
+* Gradle
+* Kotlin
+* Android dependencies
+* iOS dependencies
+* CocoaPods
+
+Do not run upgrade commands unless explicitly requested.
+
+Examples:
+
+```text
+flutter pub upgrade
+npm update
+composer update
+pod update
+```
+
+are forbidden unless the user specifically asks for them.
+
+---
+
+# 13. NEVER CHANGE VERSIONS WITHOUT PERMISSION
+
+Do not change:
+
+* package versions
+* framework versions
+* Flutter version
+* Dart version
+* Node version
+* PHP version
+* Laravel version
+* React version
+* Next.js version
+* Gradle version
+* Kotlin version
+* Android SDK
+* iOS deployment version
+
+If a version change is required:
+
+STOP.
+
+Explain why it is required and ask for permission.
+
+---
+
+# 14. NEVER ADD DEPENDENCIES UNNECESSARILY
+
+Before adding a dependency:
+
+Check whether the existing project can solve the problem.
+
+If the existing project can solve it:
+
+DO NOT add a dependency.
+
+Avoid dependency bloat.
+
+---
+
+# 15. NEVER CREATE UNNECESSARY FILES
+
+Before creating a new file:
+
+Ask internally:
+
+"Can this be completed using an existing file?"
+
+If YES:
+
+Do not create a new file.
+
+Only create a file when it is genuinely required.
+
+Do not create unnecessary:
+
+* helpers
+* utilities
+* services
+* repositories
+* interfaces
+* models
+* components
+* widgets
+* documentation
+* configuration files
+* test infrastructure
+
+---
+
+# 16. NEVER CREATE DUPLICATE CODE
+
+Before creating a new function, class, service, component, helper or utility:
+
+Check whether an existing implementation can be reused.
+
+Prefer:
+
+**Reuse existing code**
+
+over:
+
+**Create duplicate code**
+
+---
+
+# 17. DO NOT OVERENGINEER
+
+Always prefer the simplest correct solution.
+
+Prefer:
+
+* existing architecture
+* existing patterns
+* existing libraries
+* small changes
+* simple implementations
+
+Avoid unnecessary:
+
+* design patterns
+* abstractions
+* layers
+* wrappers
+* interfaces
+* factories
+* adapters
+* helper classes
+
+Do not create complexity for hypothetical future requirements.
+
+---
+
+# 18. DO NOT REWRITE ENTIRE FILES
+
+If one function needs changing:
+
+Change the function.
+
+If one component needs changing:
+
+Change the component.
+
+Do not rewrite an entire file unnecessarily.
+
+Keep changes focused and small.
+
+---
+
+# 19. DO NOT MODIFY UNRELATED CODE
+
+Only modify code directly related to the user's request.
+
+Do not:
+
+* refactor unrelated code
+* rename unrelated variables
+* reorganize unrelated folders
+* change unrelated UI
+* change unrelated business logic
+* format unrelated files
+* upgrade unrelated packages
+
+Working code should remain untouched.
+
+---
+
+# 20. NO UNNECESSARY COMMENTS
+
+Do not add comments that explain obvious code.
+
+Bad:
+
+```
+// Get user
+const user = getUser();
+```
+
+Do not write comments for normal code.
+
+Only add comments for:
+
+* complex algorithms
+* non-obvious business rules
+* important security decisions
+* unusual workarounds
+* important limitations
+
+Keep comments short.
+
+---
+
+# 21. NO UNUSED CODE
+
+Do not create:
+
+* unused functions
+* unused variables
+* unused classes
+* unused components
+* unused services
+* unused utilities
+* unused imports
+* TODO placeholders
+* speculative code
+
+Every piece of new code should have a purpose.
+
+---
+
+# 22. KEEP IMPORTS CLEAN
+
+Do not add unnecessary imports.
+
+Remove imports that became unused because of the requested change.
+
+Do not import large libraries unnecessarily.
+
+---
+
+# 23. NO UNNECESSARY DOCUMENTATION
+
+Do not automatically create:
+
+* README files
+* documentation
+* changelogs
+* architecture documents
+* API documentation
+* guides
+
+unless requested or genuinely required.
+
+---
+
+# 24. NO UNNECESSARY TEST INFRASTRUCTURE
+
+Do not create large test systems for small changes.
+
+Testing must be proportional to the task.
+
+Small change:
+
+Use a targeted verification.
+
+Large change:
+
+Use appropriate tests.
+
+Do not generate unnecessary mocks, fixtures or test helpers.
+
+---
+
+# 25. NO UNNECESSARY TERMINAL COMMANDS
+
+Run terminal commands only when necessary.
+
+Avoid unnecessary:
+
+* full builds
+* full test suites
+* full linting
+* full formatting
+* dependency installations
+* database resets
+* migrations
+* cleanup commands
+
+For small changes, use targeted verification.
+
+---
+
+# 26. NO DESTRUCTIVE DATABASE OPERATIONS
+
+Never perform destructive database operations without explicit permission.
+
+Never automatically run:
+
+* DROP
+* TRUNCATE
+* database reset
+* destructive DELETE
+* destructive migrations
+* database refresh
+
+Never delete production data.
+
+If a database operation can cause data loss:
+
+STOP and ask the user.
+
+---
+
+# 27. PROTECT CONFIGURATION
+
+Do not unnecessarily modify:
+
+* .env
+* .env.production
+* database configuration
+* payment configuration
+* API configuration
+* Firebase configuration
+* Android configuration
+* iOS configuration
+* deployment configuration
+* server configuration
+
+If a configuration change is required:
+
+Make the smallest possible change.
+
+Never overwrite the entire configuration.
+
+---
+
+# 28. PROTECT SECRETS
+
+Never expose or unnecessarily modify:
+
+* passwords
+* API keys
+* access tokens
+* private keys
+* certificates
+* credentials
+* payment secrets
+* database passwords
+
+Never print secrets in the final response.
+
+---
+
+# 29. NO AUTOMATIC GIT OPERATIONS
+
+Do not automatically:
+
+* git commit
+* git push
+* git reset
+* git checkout
+* git clean
+* force push
+* delete branches
+
+unless explicitly requested.
+
+Never overwrite the user's work.
+
+---
+
+# 30. NO AUTOMATIC DEPLOYMENT
+
+Never automatically:
+
+* deploy
+* publish
+* upload
+* restart production services
+* change production servers
+* modify production databases
+
+without explicit user permission.
+
+---
+
+# 31. COMPUTER ACCESS SAFETY
+
+Do not intentionally access unrelated parts of the user's computer.
+
+Work only within the current project when possible.
+
+Do not:
+
+* browse personal files
+* inspect unrelated directories
+* access personal documents
+* access browser data
+* access passwords
+* access private credentials
+* install software
+* modify system settings
+* modify unrelated applications
+
+If an operation outside the project is required:
+
+STOP and ask for permission.
+
+---
+
+# 32. TERMINAL SAFETY
+
+Do not execute commands that can:
+
+* delete data
+* delete files
+* modify the operating system
+* install software
+* change system settings
+* expose secrets
+* modify unrelated projects
+* change production systems
+
+without explicit permission.
+
+When a command is potentially destructive:
+
+STOP and ask first.
+
+---
+
+# 33. USER APPROVAL REQUIRED
+
+Always ask before:
+
+* deleting code
+* deleting files
+* deleting database data
+* updating dependencies
+* upgrading frameworks
+* changing versions
+* installing new software
+* installing unnecessary packages
+* changing production configuration
+* deploying
+* pushing to Git
+* making destructive database changes
+* making major architectural changes
+
+Do not assume permission.
+
+---
+
+# 34. EXISTING PROJECT STYLE
+
+Follow the existing project.
+
+Do not introduce a different:
+
+* architecture
+* state management system
+* API style
+* naming convention
+* folder structure
+* coding style
+* dependency
+
+unless required or explicitly requested.
+
+---
+
+# 35. KEEP CHANGES SMALL
+
+Always prefer the smallest change that solves the task.
+
+Do not make additional improvements unless requested.
+
+Do not "clean up" unrelated code.
+
+Do not "improve" unrelated architecture.
+
+Do not make speculative improvements.
+
+---
+
+# 36. FINAL VERIFICATION
+
+Before finishing a task, check:
+
+* Did I delete anything?
+* Did I modify unrelated code?
+* Did I create unnecessary files?
+* Did I add unnecessary dependencies?
+* Did I update any versions?
+* Did I add unnecessary comments?
+* Did I create duplicate code?
+* Did I change existing behavior unnecessarily?
+* Did I run unnecessary commands?
+* Did I access anything unrelated to the project?
+
+If yes, undo the unnecessary change when safe to do so.
+
+---
+
+# 37. FINAL RULE
+
+**DO NOT CHANGE WHAT THE USER DID NOT ASK TO CHANGE.**
+
+**DO NOT DELETE WHAT THE USER DID NOT ASK TO DELETE.**
+
+**DO NOT UPDATE WHAT THE USER DID NOT ASK TO UPDATE.**
+
+**DO NOT CREATE WHAT THE USER DID NOT ASK TO CREATE.**
+
+**DO NOT ACCESS WHAT THE USER DID NOT ASK TO ACCESS.**
+
+Understand the existing project.
+
+Preserve existing functionality.
+
+Use minimum context.
+
+Use minimum code.
+
+Use minimum AI resources.
+
+Make only the necessary changes.
+
+When an action is potentially destructive or outside the project, stop and ask for permission.

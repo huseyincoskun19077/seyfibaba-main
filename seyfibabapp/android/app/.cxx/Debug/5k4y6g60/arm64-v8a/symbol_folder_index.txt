@@ -1,0 +1,1 @@
+/Users/hossain/Projects/shopo-flutter/build/app/intermediates/cxx/Debug/5k4y6g60/obj/arm64-v8a

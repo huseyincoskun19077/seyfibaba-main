@@ -1,0 +1,55 @@
+# Seyfibaba — Berber ve Kuafor Malzemeleri Pazaryeri
+# https://seyfibaba.com
+
+> Seyfibaba, Turkiye merkezli profesyonel berber ve kuafor malzemeleri pazaryeridir. Berber koltugu, kuafor tezgahi, salon ekipmanlari, sac bakim urunleri ve profesyonel berber aletleri gibi genis urun yelpazesiyle sektordeki profesyonellere hizmet verir.
+
+## Hakkında
+
+Seyfibaba, berber ve kuafor salonlari icin ekipman, mobilya, sarf malzeme ve salon teknolojilerini tek noktada bir araya getiren bir pazaryeridir. Birden fazla saticinin urunlerini sergiledigi platformda, salon kurulumundan gunluk tedarike kadar temel ihtiyaclar karsilanir. Hedef kitle; profesyonel berberler, kuaforler, guzellik merkezleri ve yeni salon acan girisimcilerdir.
+
+## Ürün Kategorileri
+
+- Berber Koltugu: Hidrolik, doner, klasik ve modern berber koltuklari
+- Kuafor Tezgahi: Aynali tezgahlar, cekmeceli moduller, salon mobilyalari
+- Salon Ekipmanlari: Kurutma makineleri, sterilizatorler, boya arabalari
+- Berber Aletleri: Tiras makineleri, makas setleri, jilet tutucular
+- Sac Bakim Urunleri: Sampuanlar, sac boyalari, bakim kremleri
+- Kuafor Aksesuarlari: Pelerin, havlu, sac tokasi, firca setleri
+
+## Site Yapısı
+
+- Ana Sayfa: https://seyfibaba.com/
+- Tüm Ürünler: https://seyfibaba.com/products
+- Satıcılar: https://seyfibaba.com/sellers
+- Fırsat Ürünleri: https://seyfibaba.com/flash-sale
+- Blog: https://seyfibaba.com/blogs
+- Hakkimizda: https://seyfibaba.com/about
+- Iletisim: https://seyfibaba.com/contact
+- SSS: https://seyfibaba.com/faq
+- Gizlilik Politikasi: https://seyfibaba.com/privacy-policy
+- Kullanim Kosullari: https://seyfibaba.com/terms-condition
+
+## Teknik Bilgiler
+
+- Mimari: Next.js 15 (SSR) + Laravel 10 (API)
+- Odeme: Iyzico (pazaryeri modeli, alt satici destegi)
+- Dil: Turkce (tr_TR)
+- Para Birimi: TRY (Turk Lirasi)
+
+## Crawling Rehberi
+
+- Sitemap: https://seyfibaba.com/sitemap.xml
+- Robots: https://seyfibaba.com/robots.txt
+- llms.txt: https://seyfibaba.com/llms.txt
+- Urun sayfalari: /urun/{product-slug}
+- Eski urun URL'leri: /single-product?slug={product-slug} kalici yonlendirme ile desteklenir
+- Satici profilleri: /seller/{seller-slug}
+- Blog detay: /blogs/{blog-slug}
+- Kategori: /products?category={category-slug}
+
+## İletişim
+
+- Web: https://seyfibaba.com
+- Iletisim Formu: https://seyfibaba.com/contact
+- E-posta: info@seyfibaba.com
+- Telefon: +90 543 501 1995

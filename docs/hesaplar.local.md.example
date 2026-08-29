@@ -1,0 +1,55 @@
+# Seyfibaba — test / operasyon hesapları
+
+**Canlı hesaplar (müşteri / site sahibi teslimi):** [`hesaplar-canli-musteri.md.example`](hesaplar-canli-musteri.md.example) · [`hesaplar-canli-musteri.txt.example`](hesaplar-canli-musteri.txt.example)
+
+Aynı içerik düz metin: [`hesaplar.local.txt.example`](hesaplar.local.txt.example)
+
+> **Site şu an faal değil** (veya sınırlı). Tüm aşağıdaki **panel ve kullanıcı giriş şifreleri**: `admin123`  
+> Kolay tutmak için bilinçli seçim; canlıya açınca mutlaka değiştirin.
+
+## Yönetici (admin panel)
+
+| Alan   | Değer |
+| ------ | ----- |
+| URL    | https://admin.seyfibaba.com/admin/login |
+| E-posta | `admin@seyfibaba.com` |
+| Şifre  | `admin123` |
+
+> Eski notlarda geçen `admin@gmail.com` / `1234` canlı veritabanıyla uyuşmayabilir; güncel kayıt yukarıdaki adrestir.
+
+## Satıcı (seller panel)
+
+| Alan   | Değer |
+| ------ | ----- |
+| URL    | https://admin.seyfibaba.com/seller/login |
+| E-posta | `orhanguzell@gmail.com` |
+| Şifre  | `admin123` |
+
+> `kullanici.md` içindeki `devhcsoftware1@gmail.com` / `metinogulcank06@gmail.com` satıcı satırları dokümantasyon amaçlıdır; **canlı `users` tablosunda** şu an satıcı olarak kayıtlı tek örnek yukarıdaki hesaptır (`is_vendor = 1`).  
+> `metinogulcank06@gmail.com` aynı e-posta ile **müşteri** hesabı olarak da vardır (çakışma: satıcı girişi için ayrı satıcı kullanıcısı gerekir).
+
+## Müşteri (frontend)
+
+| URL | https://seyfibaba.com (giriş / kayıt) |
+| --- | ------------------------------------- |
+| Şifre (ortak) | `admin123` |
+
+| İsim (referans) | E-posta | Şifre |
+| --------------- | ------- | ----- |
+| Hüseyin Coşkun | `devhcsoftware@gmail.com` | `admin123` |
+| Metin Oğulcan Koca | `metinogulcank06@gmail.com` | `admin123` |
+| Oğuzhan Sarıoğlugil | `oguzhansarioglugil@hotmail.com` | *(canlıda kullanıcı yok — kayıt veya manuel eklenmeli)* |
+
+## Lokal geliştirme (localhost)
+
+| Panel | URL | E-posta | Şifre |
+| ----- | --- | ------- | ----- |
+| Admin | http://localhost:8000/admin | `admin@gmail.com` | `1234` *(seed / eski)* veya DB’de `admin123` yaptıysanız `admin123` |
+
+## Veritabanı
+
+Parolalar burada tutulmaz; `backend/.env` veya güvenli kasa. Bağlantı bilgisi için `docs/kullanici.md` veya sunucu `.env`.
+
+---
+
+*Son şifre senkronu (tüm admin + user kayıtları `admin123`): canlı sunucu üzerinde güncellendi.*

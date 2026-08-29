@@ -1,0 +1,79 @@
+# Dependencies
+node_modules/
+vendor/
+bun.lock
+
+# Environment files
+.env
+.env.local
+.env.backup
+
+# Next.js
+.next/
+out/
+
+# Build (yalnızca repo kökü; tüm `dist/` yazmak public/clockpicker/dist gibi varlıkları siler)
+build/
+/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Laravel
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*.log
+bootstrap/cache/*.php
+backend/public/uploads/custom-images/
+
+# Package locks (keep one per tool)
+package-lock.json
+
+# SQL dumps & backups
+*.sql
+database/yedek/
+
+# Lighthouse reports (may contain API keys)
+docs/lighthouse/*.json
+
+# Syncthing temp files
+*.syncthing.*.tmp
+.syncthing.*.tmp
+
+# Misc
+*.pem
+*.tmp
+localhost_*.json
+.mysql-root-password
+
+# Flutter Android release signing (never commit)
+seyfibabapp/android/key.properties
+seyfibabapp/android/app/*.jks
+seyfibabapp/android/app/*.jks.old
+
+# docs: çoğu not yerel; yalnızca hesap şablonu örneği repoda
+docs/*
+!docs/hesaplar.local.md.example
+!docs/hesaplar.local.txt.example
+!docs/hesaplar-canli-musteri.md.example
+!docs/hesaplar-canli-musteri.txt.example
+docs/hesaplar.local.md
+docs/hesaplar.local.txt
+docs/hesaplar-canli-musteri.md
+docs/hesaplar-canli-musteri.txt
+backend.rar
+.playwright-mcp/
+backend.rar
+.playwright-mcp/

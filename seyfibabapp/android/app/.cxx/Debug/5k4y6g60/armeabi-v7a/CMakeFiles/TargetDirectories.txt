@@ -1,0 +1,2 @@
+/Users/hossain/Projects/shopo-flutter/android/app/.cxx/Debug/5k4y6g60/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/hossain/Projects/shopo-flutter/android/app/.cxx/Debug/5k4y6g60/armeabi-v7a/CMakeFiles/rebuild_cache.dir
