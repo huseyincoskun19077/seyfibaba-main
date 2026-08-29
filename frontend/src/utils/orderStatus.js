@@ -1,3 +1,32 @@
+const STATUS_STEP_INDEX = {
+  Beklemede: 0,
+  Hazırlanıyor: 1,
+  "Kargoya Verildi": 2,
+  "Teslim Edildi": 3,
+  Tamamlandı: 4,
+  Reddedildi: -1,
+};
+
+export function getOrderStatusStepIndex(status) {
+  return STATUS_STEP_INDEX[status] ?? 0;
+}
+
+export function getOrderStatusBadgeClass(status) {
+  switch (status) {
+    case "Hazırlanıyor":
+      return "bg-blue-50 text-blue-700 ring-blue-200";
+    case "Kargoya Verildi":
+      return "bg-indigo-50 text-indigo-700 ring-indigo-200";
+    case "Teslim Edildi":
+    case "Tamamlandı":
+      return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    case "Reddedildi":
+      return "bg-red-50 text-red-700 ring-red-200";
+    default:
+      return "bg-amber-50 text-amber-800 ring-amber-200";
+  }
+}
+
 export function getOrderStatus(order) {
   const lines = order?.order_products || order?.orderProducts || [];
 

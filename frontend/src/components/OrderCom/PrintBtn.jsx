@@ -10,7 +10,7 @@ function PrintBtn() {
     <button
       onClick={print}
       type="button"
-      className="w-[161px] h-[52px] rounded flex space-x-2.5 rtl:space-x-reverse items-center justify-center primary-bg print:hidden mt-5 sm:mt-0"
+      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl primary-bg px-4 text-sm font-semibold text-qblack shadow-sm transition hover:opacity-90 print:hidden sm:w-auto sm:min-w-[10rem]"
     >
       <span>
         <svg

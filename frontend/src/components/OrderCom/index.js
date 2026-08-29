@@ -13,6 +13,9 @@ import ReviewModal from "./ReviewModal";
 import ReturnModal from "./ReturnModal";
 import TrackDeliveryMan from "./TrackDeliveryMan";
 import PrintBtn from "./PrintBtn";
+import OrderStatusStepper from "./OrderStatusStepper";
+import OrderProductList from "./OrderProductList";
+import { getOrderStatusBadgeClass } from "@/utils/orderStatus";
 import appConfig from "@/appConfig";
 
 function OrderComContent({ resData, orderStatus, orderId }) {
@@ -22,7 +25,6 @@ function OrderComContent({ resData, orderStatus, orderId }) {
   const [returnableItems, setReturnableItems] = useState({});
   const [confirmingDeliveryItemId, setConfirmingDeliveryItemId] = useState(null);
 
-  // review modal
   const [reviewModal, setReviewModal] = useState(false);
   const [productId, setProductId] = useState(null);
   const [reviewOrderProductId, setReviewOrderProductId] = useState(null);
@@ -32,7 +34,6 @@ function OrderComContent({ resData, orderStatus, orderId }) {
     setReviewOrderProductId(opId ? Number(opId) : null);
   };
 
-  // return modal
   const [returnModal, setReturnModal] = useState(false);
   const [orderProductId, setOrderProductId] = useState(null);
   const returnModalHandler = (id) => {
@@ -109,11 +110,14 @@ function OrderComContent({ resData, orderStatus, orderId }) {
   };
 
   const isPaymentSuccess = urlQuery.get("payment_status") === "success";
+  const address = resData?.order_address;
+  const shippingType =
+    address && parseInt(address.shipping_address_type, 10) === 1 ? "Ofis" : "Ev";
 
   return (
-    <div className="w-full pt-[30px] pb-[60px]">
+    <div className="w-full bg-slate-50/60 pb-16 pt-6 sm:pt-8">
       <div className="order-tracking-wrapper w-full">
-        <div className="container-x mx-auto">
+        <div className="container-x mx-auto px-3 sm:px-4">
           <BreadcrumbCom
             paths={[
               { name: ServeLangItem()?.home, path: "/" },
@@ -122,360 +126,173 @@ function OrderComContent({ resData, orderStatus, orderId }) {
           />
 
           {isPaymentSuccess && (
-            <div className="mb-6 rounded-2xl bg-green-50 border border-green-200 p-6 print:hidden">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:p-6 print:hidden">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                  <svg className="h-6 w-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-green-800">
+                  <h2 className="text-lg font-bold text-emerald-900 sm:text-xl">
                     {ServeLangItem()?.Payment_Successful || "Ödemeniz Başarıyla Alındı!"}
                   </h2>
-                  <p className="text-green-600 text-sm mt-1">
-                    {ServeLangItem()?.Payment_Success_Message || "Siparişiniz onaylandı. Aşağıda sipariş detaylarınızı görebilirsiniz."}
+                  <p className="mt-1 text-sm text-emerald-700">
+                    {ServeLangItem()?.Payment_Success_Message ||
+                      "Siparişiniz onaylandı. Aşağıda sipariş detaylarınızı görebilirsiniz."}
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="w-full h-[168px]  bg-[#CBECFF] rounded-2xl mb-10 relative print:hidden">
-            <div className="w-full px-10 flex justify-between pt-3 mb-7">
-              <div>
-                {resData?.order_delivered_date && (
-                  <p className="text-base font-400">
-                    {ServeLangItem()?.Delivered_on}{" "}
-                    {resData?.order_delivered_date}
-                  </p>
-                )}
-              </div>
-              <div>
-                {orderStatus === "Reddedildi" && (
-                  <p className="text-base font-bold text-qred mr-10">
-                    {ServeLangItem()?.Your_order_is_declined || "Siparişiniz reddedildi"}!
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex lg:space-x-[373px] space-x-[90px] rtl:space-x-reverse w-full h-full justify-center">
-              <div className="relative">
-                <div className="w-[30px] h-[30px] border-[8px] rounded-full border-qyellow bg-white relative z-20"></div>
-                <p className="absolute -left-4 top-10 sm:text-base text-sm font-400">
-                  {ServeLangItem()?.Pending}
+          <div className="mb-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${getOrderStatusBadgeClass(orderStatus)}`}
+                  >
+                    {orderStatus}
+                  </span>
+                  {resData?.order_delivered_date && (
+                    <span className="text-xs text-slate-500">
+                      {ServeLangItem()?.Delivered_on} {resData.order_delivered_date}
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-xl font-bold text-qblack sm:text-2xl">
+                  {address?.billing_name || "Sipariş Detayı"}
+                </h1>
+                <p className="mt-1 text-sm text-slate-600">
+                  {ServeLangItem()?.Order_ID}:{" "}
+                  <span className="font-semibold text-emerald-600 notranslate">#{resData?.order_id}</span>
                 </p>
               </div>
-              {/*orderStatus*/}
-              <div className="relative">
-                <div
-                  className={`w-[30px] h-[30px] border-[8px] rounded-full  bg-white relative z-20 ${
-                    orderStatus === "Hazırlanıyor" ||
-                    orderStatus === "Teslim Edildi" ||
-                    orderStatus === "Tamamlandı"
-                      ? "border-qyellow"
-                      : "border-qgray"
-                  }`}
-                ></div>
-                <div
-                  className={`lg:w-[400px] w-[100px] h-[8px] absolute ltr:lg:-left-[390px] ltr:-left-[92px] rtl:lg:-right-[390px] rtl:-right-[92px] top-[10px] z-10  ${
-                    orderStatus === "Hazırlanıyor" ||
-                    orderStatus === "Teslim Edildi" ||
-                    orderStatus === "Tamamlandı"
-                      ? "primary-bg"
-                      : "bg-white"
-                  }`}
-                ></div>
-                <p className="absolute -left-4 top-10 sm:text-base text-sm font-400">
-                  {ServeLangItem()?.Progress}
-                </p>
-              </div>
-              <div className="relative">
-                <div
-                  className={`w-[30px] h-[30px] border-[8px] rounded-full bg-white  relative z-20 ${
-                    orderStatus === "Teslim Edildi" || orderStatus === "Tamamlandı"
-                      ? "border-qyellow"
-                      : "border-qgray"
-                  }`}
-                ></div>
-                <div
-                  className={`lg:w-[400px] w-[100px] h-[8px] absolute ltr:lg:-left-[390px] ltr:-left-[92px] rtl:lg:-right-[390px] rtl:-right-[92px] top-[10px] z-10 ${
-                    orderStatus === "Teslim Edildi" || orderStatus === "Tamamlandı"
-                      ? "primary-bg"
-                      : "bg-white"
-                  }`}
-                ></div>
-                <p className="absolute -left-4 top-10 sm:text-base text-sm font-400">
-                  {ServeLangItem()?.Delivered}
-                </p>
+              <div className="flex shrink-0 flex-col gap-2 sm:items-end print:hidden">
+                <PrintBtn />
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={LEGAL_ROUTES.DISTANCE_SALES}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50 sm:text-xs"
+                  >
+                    Mesafeli Satış Sözleşmesi
+                  </Link>
+                  <Link
+                    href={LEGAL_ROUTES.PRE_INFORMATION}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50 sm:text-xs"
+                  >
+                    Ön Bilgilendirme
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-          <div className="bg-white lg:p-10 p-3 rounded-xl">
-            <div id="printSection">
-              <div className="sm:flex justify-between items-center mb-4">
-                <div>
-                  <h2 className="text-[26px] font-semibold text-qblack mb-2.5">
-                    {resData?.order_address?.billing_name}
-                  </h2>
-                  <ul className="flex flex-col space-y-0.5">
-                    <li className="text-[22px]n text-[#4F5562]">
-                      {ServeLangItem()?.Order_ID}:{" "}
-                      <span className="text-[#27AE60] notranslate">
-                        {resData?.order_id}
-                      </span>
-                    </li>
-                    <li className="text-[22px]n text-[#4F5562]">
-                      {ServeLangItem()?.Billing_Address}:{" "}
-                      <span className="text-[#27AE60] notranslate">{`${
-                        resData?.order_address?.billing_address
-                      },${
-                        resData?.order_address?.billing_city
-                      },${
-                        resData?.order_address?.billing_state
-                      }`}</span>
-                    </li>
-                    <li className="text-[22px]n text-[#4F5562]">
-                      {ServeLangItem()?.Shipping_Address}:{" "}
-                      <span className="text-[#27AE60] notranslate">{`${
-                        resData?.order_address?.shipping_address
-                      },${
-                        resData?.order_address?.shipping_city
-                      },${
-                        resData?.order_address?.shipping_state
-                      }`}</span>
-                    </li>
-                    <li className="text-[22px]n text-[#4F5562]">
-                      {ServeLangItem()?.Type}:{" "}
-                      <span className="text-[#27AE60] notranslate">
-                        {resData?.order_address &&
-                        parseInt(
-                          resData?.order_address?.shipping_address_type
-                        ) === 1
-                          ? "Ofis"
-                          : "Ev"}
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <PrintBtn />
-                  <div className="flex flex-wrap gap-2 print:hidden">
-                    <Link
-                      href={LEGAL_ROUTES.DISTANCE_SALES}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="h-10 inline-flex items-center rounded-md border border-gray-200 px-4 text-xs font-semibold text-qblack hover:bg-gray-50"
-                    >
-                      Mesafeli Satış Sözleşmesini Görüntüle
-                    </Link>
-                    <Link
-                      href={LEGAL_ROUTES.PRE_INFORMATION}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="h-10 inline-flex items-center rounded-md border border-gray-200 px-4 text-xs font-semibold text-qblack hover:bg-gray-50"
-                    >
-                      Ön Bilgilendirme Formunu Görüntüle
-                    </Link>
-                  </div>
-                </div>
-              </div>
-              <div className="relative w-full overflow-x-auto overflow-style-none border border-[#EDEDED] box-border mb-10">
-                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                  <tbody>
-                    {/* table heading */}
-                    <tr className="text-[13px] font-medium text-black bg-[#F6F6F6] whitespace-nowrap px-2 border-b default-border-bottom uppercase">
-                      <td className=" py-4 ltr:pl-10 rtl:pr-10 block whitespace-nowrap rtl:text-right  w-[380px]">
-                        {ServeLangItem()?.Product}
-                      </td>
-                      <td className="py-4 whitespace-nowrap  text-center">
-                        {ServeLangItem()?.quantity}
-                      </td>
-                      <td className="py-4 whitespace-nowrap text-center">
-                        {ServeLangItem()?.price}
-                      </td>
-                      <td className="py-4 whitespace-nowrap text-center capitalize">
-                        {ServeLangItem()?.SUBTOTAL}
-                      </td>
-                      <td className="py-4 whitespace-nowrap text-center print:hidden">
-                        {ServeLangItem()?.review}
-                      </td>
-                    </tr>
-                    {/* table heading end */}
-                    {resData?.order_products?.length > 0 &&
-                      resData?.order_products?.map((item, i) => (
-                        <tr
-                          key={i}
-                          className="bg-white border-b hover:bg-gray-50 last:border-none"
-                        >
-                          <td className="pl-10 w-[400px] py-4 ">
-                            <div className="flex space-x-6 items-center">
-                              <div className="flex-1 flex flex-col">
-                                <p className="font-medium text-[15px] text-qblack rtl:text-right rtl:pr-10 notranslate">
-                                  {item.product_name}
-                                </p>
-                                {item?.cargo?.tracking_number && (
-                                  <div className="mt-1 text-xs text-gray-600 space-y-0.5">
-                                    <div>
-                                      <span className="font-semibold">Kargo:</span>{" "}
-                                      {item?.cargo?.carrier_name || "-"}
-                                    </div>
-                                    <div>
-                                      <span className="font-semibold">Takip No:</span>{" "}
-                                      {item.cargo.tracking_number}
-                                    </div>
-                                    {item?.cargo?.tracking_url && (
-                                      <a
-                                        href={item.cargo.tracking_url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-block text-blue-600 hover:underline"
-                                      >
-                                        Takip Linki
-                                      </a>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className=" py-4">
-                            <div className="flex justify-center items-center">
-                              <div className="w-[54px] h-[40px] justify-center flex items-center border border-qgray-border">
-                                <span>{item.qty}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="text-center py-4 px-2">
-                            <div className="flex space-x-1 items-center justify-center">
-                              <span className="text-[15px] font-normal">
-                                <CurrencyConvert price={item.unit_price} />
-                              </span>
-                            </div>
-                          </td>
-                          <td className="text-center py-4 px-2">
-                            <div className="flex space-x-1 items-center justify-center">
-                              <span className="text-[15px] font-normal">
-                                <CurrencyConvert
-                                  price={item.unit_price * item.qty}
-                                />
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-4 whitespace-nowrap text-center print:hidden space-x-2">
-                        {auth() && 
-                          (item?.customer_confirmed_at || item?.auto_confirmed_at || item?.delivered_at) &&
-                          !item.user_has_reviewed && (
-                          <button
-                            onClick={() =>
-                              reviewModalHandler(item.product_id, item.id)
-                            }
-                            type="button"
-                            className="text-green-600 text-sm font-semibold border border-green-600 rounded px-3 py-1 hover:bg-green-600 hover:text-white transition-colors"
-                          >
-                            Yorum Yap
-                          </button>
-                        )}
-                        {auth() &&
-                          (item?.customer_confirmed_at || item?.auto_confirmed_at || item?.delivered_at) &&
-                          returnableItems[item.id]?.is_returnable && (
-                          <button
-                            onClick={() =>
-                              returnModalHandler(item.id)
-                            }
-                            type="button"
-                            className="text-qred text-sm font-semibold border border-qred rounded px-3 py-1 hover:bg-qred hover:text-white transition-colors"
-                          >
-                            İade Et
-                          </button>
-                        )}
-                        {auth() &&
-                          item?.delivered_at &&
-                          !item?.customer_confirmed_at &&
-                          !item?.auto_confirmed_at && (
-                            <button
-                              onClick={() => handleConfirmDeliveryItem(item.id)}
-                              disabled={confirmingDeliveryItemId === item.id}
-                              type="button"
-                              className="text-white text-sm font-semibold bg-green-500 rounded px-3 py-1 hover:bg-green-600 disabled:opacity-50 transition-colors"
-                            >
-                              {confirmingDeliveryItemId === item.id
-                                ? "Onaylanıyor..."
-                                : "Teslim Aldım"}
-                            </button>
-                          )}
-                      </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
 
-              <div className="flex sm:justify-end print:justify-end justify-center sm:mr-10">
-                <div>
-                  <div className="flex justify-between font-semibold w-[200px] mb-1">
-                    <p className="text-sm text-qblack capitalize">
-                      {ServeLangItem()?.SUBTOTAL}
-                    </p>
-                    <p className="text-sm text-qblack">
-                      <CurrencyConvert
-                        price={
-                          parseFloat(resData?.total_amount) -
-                          parseFloat(resData?.shipping_cost) +
-                          parseFloat(resData?.coupon_coast)
-                        }
-                      />
-                    </p>
-                  </div>
-                  <div className="flex justify-between font-semibold w-[200px]">
-                    <p className="text-sm text-qred">
-                      (-) {ServeLangItem()?.Discount_coupon}
-                    </p>
-                    <p className="text-sm text-qred">
-                      -
-                      <CurrencyConvert price={resData?.coupon_coast} />
-                    </p>
-                  </div>
-                  <div className="flex justify-between font-semibold w-[200px]">
-                    <p className="text-sm text-qblack">
-                      (+) {ServeLangItem()?.Shipping_Cost}
-                    </p>
-                    <p className="text-sm text-qblack">
-                      +<CurrencyConvert price={resData?.shipping_cost} />
-                    </p>
-                  </div>
-                  <div className="w-full h-[1px] bg-qgray-border mt-4"></div>
-                  <div className="flex justify-between font-semibold w-[200px] mt-4">
-                    <p className="text-lg text-qblack">
-                      {ServeLangItem()?.Total_Paid}
-                    </p>
-                    <p className="text-lg text-qblack">
+          <div className="mb-6">
+            <OrderStatusStepper orderStatus={orderStatus} />
+          </div>
+
+          <div id="printSection" className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">
+                  {ServeLangItem()?.Billing_Address}
+                </h2>
+                <p className="text-sm leading-relaxed text-slate-700 notranslate">
+                  {address?.billing_address}, {address?.billing_city}, {address?.billing_state}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">
+                  {ServeLangItem()?.Shipping_Address}
+                </h2>
+                <p className="text-sm leading-relaxed text-slate-700 notranslate">
+                  {address?.shipping_address}, {address?.shipping_city}, {address?.shipping_state}
+                </p>
+                <p className="mt-2 text-xs text-slate-500">
+                  {ServeLangItem()?.Type}: <span className="font-medium text-slate-700">{shippingType}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
+              <h2 className="mb-4 text-lg font-bold text-qblack">Sipariş Ürünleri</h2>
+              <OrderProductList
+                products={resData?.order_products}
+                returnableItems={returnableItems}
+                confirmingDeliveryItemId={confirmingDeliveryItemId}
+                onReview={reviewModalHandler}
+                onReturn={returnModalHandler}
+                onConfirmDelivery={handleConfirmDeliveryItem}
+              />
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:ml-auto sm:max-w-sm sm:p-6">
+              <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Özet</h2>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">{ServeLangItem()?.SUBTOTAL}</span>
+                  <span className="font-medium text-qblack">
+                    <CurrencyConvert
+                      price={
+                        parseFloat(resData?.total_amount) -
+                        parseFloat(resData?.shipping_cost) +
+                        parseFloat(resData?.coupon_coast)
+                      }
+                    />
+                  </span>
+                </div>
+                <div className="flex justify-between text-red-600">
+                  <span>(-) {ServeLangItem()?.Discount_coupon}</span>
+                  <span>
+                    -<CurrencyConvert price={resData?.coupon_coast} />
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">(+) {ServeLangItem()?.Shipping_Cost}</span>
+                  <span className="font-medium text-qblack">
+                    +<CurrencyConvert price={resData?.shipping_cost} />
+                  </span>
+                </div>
+                <div className="border-t border-slate-200 pt-3">
+                  <div className="flex justify-between text-base font-bold text-qblack">
+                    <span>{ServeLangItem()?.Total_Paid}</span>
+                    <span>
                       <CurrencyConvert price={resData?.total_amount} />
-                    </p>
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
           {resData?.deliveryman &&
             resData?.latitude &&
             resData?.longitude &&
             Number(webSettings?.map_status) === 1 &&
             Number(resData?.order_status) === 2 && (
-              <TrackDeliveryMan
-                location={{
-                  lat: Number(resData?.latitude),
-                  lng: Number(resData?.longitude),
-                }}
-                deliverymanLocationPoint={{
-                  lat: Number(resData?.deliveryman?.latitude),
-                  lng: Number(resData?.deliveryman?.longitude),
-                }}
-                orderId={orderId}
-              />
+              <div className="mt-6">
+                <TrackDeliveryMan
+                  location={{
+                    lat: Number(resData?.latitude),
+                    lng: Number(resData?.longitude),
+                  }}
+                  deliverymanLocationPoint={{
+                    lat: Number(resData?.deliveryman?.latitude),
+                    lng: Number(resData?.deliveryman?.longitude),
+                  }}
+                  orderId={orderId}
+                />
+              </div>
             )}
         </div>
       </div>
+
       {auth() && reviewModal && (
         <ReviewModal
           productId={productId}
@@ -485,13 +302,13 @@ function OrderComContent({ resData, orderStatus, orderId }) {
         />
       )}
       {auth() && returnModal && (
-        <ReturnModal 
-          orderId={resData?.id} 
-          orderProductId={orderProductId} 
+        <ReturnModal
+          orderId={resData?.id}
+          orderProductId={orderProductId}
           maxQty={returnableItems[orderProductId]?.max_returnable_qty}
           paidUnitPrice={returnableItems[orderProductId]?.paid_unit_price}
           unitPrice={returnableItems[orderProductId]?.unit_price}
-          setReturnModal={setReturnModal} 
+          setReturnModal={setReturnModal}
         />
       )}
     </div>
@@ -502,16 +319,12 @@ function OrderCom({ resData, orderStatus, orderId }) {
   return (
     <Suspense
       fallback={
-        <div className="w-full pt-[30px] pb-[60px] flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        <div className="flex min-h-[400px] w-full items-center justify-center py-16">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-gray-900" />
         </div>
       }
     >
-      <OrderComContent
-        resData={resData}
-        orderStatus={orderStatus}
-        orderId={orderId}
-      />
+      <OrderComContent resData={resData} orderStatus={orderStatus} orderId={orderId} />
     </Suspense>
   );
 }

@@ -38,16 +38,22 @@ function OrderPageContent({ orderId }) {
 
   if (!token) {
     return (
-      <div className="w-full pt-[30px] pb-[60px] flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900" />
+      <div className="flex min-h-[50vh] w-full items-center justify-center bg-slate-50/60 px-4 py-16">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-qblack" />
+          <p className="text-sm text-slate-500">Oturum kontrol ediliyor…</p>
+        </div>
       </div>
     );
   }
 
   if (isFetching) {
     return (
-      <div className="w-full pt-[30px] pb-[60px] flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900" />
+      <div className="flex min-h-[50vh] w-full items-center justify-center bg-slate-50/60 px-4 py-16">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-qblack" />
+          <p className="text-sm text-slate-500">Sipariş yükleniyor…</p>
+        </div>
       </div>
     );
   }
@@ -62,14 +68,17 @@ function OrderPageContent({ orderId }) {
           : `Sipariş detayları yüklenemedi${status ? ` (HTTP ${status})` : ""}.`;
 
     return (
-      <div className="w-full pt-[30px] pb-[60px]">
-        <div className="container-x mx-auto">
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700 space-y-4">
-            <p>{message}</p>
+      <div className="w-full bg-slate-50/60 px-4 py-12 sm:py-16">
+        <div className="container-x mx-auto max-w-lg">
+          <div className="rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+              !
+            </div>
+            <p className="text-sm font-medium text-red-700 sm:text-base">{message}</p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="inline-flex h-10 items-center rounded-md bg-qyellow px-4 text-sm font-semibold text-qblack"
+              className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-xl bg-qyellow px-5 text-sm font-semibold text-qblack sm:w-auto"
             >
               Tekrar Dene
             </button>
