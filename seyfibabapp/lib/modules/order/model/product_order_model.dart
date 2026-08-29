@@ -48,6 +48,8 @@ class OrderedProductModel extends Equatable {
   final int qty;
   final bool userHasReviewed;
   final String? deliveredAt;
+  final String? shippedAt;
+  final int sellerStatus;
   final String? customerConfirmedAt;
   final String? autoConfirmedAt;
   final OrderProductCargoModel? cargo;
@@ -66,6 +68,8 @@ class OrderedProductModel extends Equatable {
     required this.qty,
     this.userHasReviewed = false,
     this.deliveredAt,
+    this.shippedAt,
+    this.sellerStatus = 0,
     this.customerConfirmedAt,
     this.autoConfirmedAt,
     this.cargo,
@@ -80,10 +84,15 @@ class OrderedProductModel extends Equatable {
       (customerConfirmedAt != null && customerConfirmedAt!.isNotEmpty) ||
       (autoConfirmedAt != null && autoConfirmedAt!.isNotEmpty);
 
-  bool get canConfirmDelivery => isDelivered && !isCustomerConfirmed;
+  bool get isShippedOrDelivered =>
+      isDelivered ||
+      (shippedAt != null && shippedAt!.isNotEmpty) ||
+      sellerStatus >= 2;
+
+  bool get canConfirmDelivery => isShippedOrDelivered && !isCustomerConfirmed;
 
   bool get canWriteReview =>
-      (isDelivered || isCustomerConfirmed) && !userHasReviewed;
+      (isShippedOrDelivered || isCustomerConfirmed) && !userHasReviewed;
 
   static int parseQty(Map<String, dynamic> map) {
     final raw = map['qty'] ?? map['quantity'] ?? map['product_qty'];
@@ -102,6 +111,8 @@ class OrderedProductModel extends Equatable {
     int? qty,
     bool? userHasReviewed,
     String? deliveredAt,
+    String? shippedAt,
+    int? sellerStatus,
     String? customerConfirmedAt,
     String? autoConfirmedAt,
     OrderProductCargoModel? cargo,
@@ -120,6 +131,8 @@ class OrderedProductModel extends Equatable {
       qty: qty ?? this.qty,
       userHasReviewed: userHasReviewed ?? this.userHasReviewed,
       deliveredAt: deliveredAt ?? this.deliveredAt,
+      shippedAt: shippedAt ?? this.shippedAt,
+      sellerStatus: sellerStatus ?? this.sellerStatus,
       customerConfirmedAt: customerConfirmedAt ?? this.customerConfirmedAt,
       autoConfirmedAt: autoConfirmedAt ?? this.autoConfirmedAt,
       cargo: cargo ?? this.cargo,
@@ -142,6 +155,8 @@ class OrderedProductModel extends Equatable {
     result.addAll({'qty': qty});
     result.addAll({'user_has_reviewed': userHasReviewed});
     result.addAll({'delivered_at': deliveredAt});
+    result.addAll({'shipped_at': shippedAt});
+    result.addAll({'seller_status': sellerStatus});
     result.addAll({'customer_confirmed_at': customerConfirmedAt});
     result.addAll({'auto_confirmed_at': autoConfirmedAt});
     if (cargo != null) result.addAll({'cargo': cargo});
@@ -173,6 +188,8 @@ class OrderedProductModel extends Equatable {
           map['user_has_reviewed'] == 1 ||
           map['user_has_reviewed']?.toString() == '1',
       deliveredAt: map['delivered_at']?.toString(),
+      shippedAt: map['shipped_at']?.toString(),
+      sellerStatus: int.tryParse('${map['seller_status'] ?? 0}') ?? 0,
       customerConfirmedAt: map['customer_confirmed_at']?.toString(),
       autoConfirmedAt: map['auto_confirmed_at']?.toString(),
       cargo: cargoRaw is Map<String, dynamic>
@@ -206,6 +223,8 @@ class OrderedProductModel extends Equatable {
         qty,
         userHasReviewed,
         deliveredAt,
+        shippedAt,
+        sellerStatus,
         customerConfirmedAt,
         autoConfirmedAt,
         cargo,

@@ -681,13 +681,20 @@ class UserProfileController extends Controller
             return response()->json(['message' => 'Sipariş bulunamadı'], 404);
         }
 
-        // Teslim edilmeden onay verilemez (satır bazlı)
-        if (! $orderProduct->delivered_at) {
-            return response()->json(['message' => 'Bu ürün henüz teslim edilmemiş görünüyor'], 400);
+        // Kargoya verildikten sonra müşteri "teslim aldım" diyebilir.
+        if (! $this->canCustomerConfirmOrderProduct($orderProduct)) {
+            return response()->json(['message' => 'Bu ürün henüz kargoya verilmemiş görünüyor'], 400);
         }
 
         if ($orderProduct->customer_confirmed_at) {
             return response()->json(['message' => 'Bu ürün zaten onaylanmış'], 400);
+        }
+
+        if (! $orderProduct->delivered_at) {
+            $orderProduct->delivered_at = now();
+        }
+        if ((int) $orderProduct->seller_status < 3) {
+            $orderProduct->seller_status = 3;
         }
 
         $orderProduct->customer_confirmed_at = now();
@@ -927,6 +934,22 @@ return response()->json([
                 'status' => $shipment->status,
             ] : null;
         });
+    }
+
+    /**
+     * Müşteri "Teslim Aldım" onayı için satır kargoya verilmiş olmalı.
+     */
+    private function canCustomerConfirmOrderProduct(OrderProduct $orderProduct): bool
+    {
+        if (! empty($orderProduct->delivered_at)) {
+            return true;
+        }
+
+        if (! empty($orderProduct->shipped_at)) {
+            return true;
+        }
+
+        return (int) $orderProduct->seller_status >= 2;
     }
 
     /**

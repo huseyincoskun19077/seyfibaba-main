@@ -15,10 +15,15 @@ function ProductActions({
   onConfirmDelivery,
 }) {
   const isLoggedIn = !!auth();
-  const isDelivered = item?.customer_confirmed_at || item?.auto_confirmed_at || item?.delivered_at;
+  const isShippedOrDelivered =
+    item?.delivered_at ||
+    item?.shipped_at ||
+    (item?.seller_status != null && Number(item.seller_status) >= 2);
+  const isDelivered =
+    item?.customer_confirmed_at || item?.auto_confirmed_at || item?.delivered_at;
   const canConfirm =
     isLoggedIn &&
-    item?.delivered_at &&
+    isShippedOrDelivered &&
     !item?.customer_confirmed_at &&
     !item?.auto_confirmed_at;
 
