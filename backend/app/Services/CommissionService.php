@@ -9,6 +9,7 @@ use App\Models\SellerWithdraw;
 use App\Models\Vendor;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class CommissionService
 {
@@ -72,24 +73,101 @@ class CommissionService
     }
 
     /**
-     * Get the withdrawable balance for a seller.
-     * Balance = settled net − approved withdrawals − pending withdrawal requests (status 0).
+     * Satıcı bakiye dökümü: İyzico havuzu vs havale çekilebilir tutar.
      */
-    public function getSellerBalance(int $sellerId): float
+    public function getSellerBalanceBreakdown(int $sellerId): array
     {
-        $totalNet = CommissionLedger::where('seller_id', $sellerId)
-            ->where('status', 'settled')
-            ->sum('seller_net_amount');
+        $holdDays = app(PayoutSettingsService::class)->payoutHoldDays();
 
-        $totalApproved = SellerWithdraw::where('seller_id', $sellerId)
+        $lines = CommissionLedger::query()
+            ->from('commission_ledger as cl')
+            ->join('orders as o', 'o.id', '=', 'cl.order_id')
+            ->leftJoin('order_products as op', 'op.id', '=', 'cl.order_product_id')
+            ->where('cl.seller_id', $sellerId)
+            ->where('cl.status', 'settled')
+            ->where('cl.seller_net_amount', '>', 0)
+            ->select([
+                'cl.seller_net_amount',
+                'o.payment_method',
+                'o.order_status',
+                'o.payout_status',
+                'o.payout_blocked_at',
+                'o.payout_hold_until',
+                'op.iyzico_approved_at',
+            ])
+            ->get();
+
+        $iyzicoPool = 0.0;
+        $iyzicoTransferred = 0.0;
+        $bankPending = 0.0;
+        $bankGrossWithdrawable = 0.0;
+
+        foreach ($lines as $line) {
+            $net = (float) $line->seller_net_amount;
+            $method = strtolower((string) $line->payment_method);
+
+            if ($method === 'iyzico') {
+                if ($line->iyzico_approved_at) {
+                    $iyzicoTransferred += $net;
+                } elseif ((int) $line->order_status === 3) {
+                    $iyzicoPool += $net;
+                }
+                continue;
+            }
+
+            if ($method === 'bankpayment' && (int) $line->order_status === 3) {
+                if ($this->ledgerLineBankWithdrawable($line)) {
+                    $bankGrossWithdrawable += $net;
+                } else {
+                    $bankPending += $net;
+                }
+            }
+        }
+
+        $approvedWithdraw = (float) SellerWithdraw::where('seller_id', $sellerId)
             ->where('status', 1)
             ->sum('total_amount');
-
-        $totalPendingRequests = SellerWithdraw::where('seller_id', $sellerId)
+        $pendingWithdrawRequests = (float) SellerWithdraw::where('seller_id', $sellerId)
             ->where('status', 0)
             ->sum('total_amount');
 
-        return max(0, (float) $totalNet - (float) $totalApproved - (float) $totalPendingRequests);
+        $bankWithdrawable = max(0, $bankGrossWithdrawable - $approvedWithdraw - $pendingWithdrawRequests);
+
+        return [
+            'payout_hold_days' => $holdDays,
+            'iyzico_pool_balance' => round($iyzicoPool, 2),
+            'iyzico_transferred_balance' => round($iyzicoTransferred, 2),
+            'bank_pending_hold_balance' => round($bankPending, 2),
+            'bank_gross_withdrawable' => round($bankGrossWithdrawable, 2),
+            'bank_withdrawable_balance' => round($bankWithdrawable, 2),
+            'withdrawable_balance' => round($bankWithdrawable, 2),
+            'withdraw_request_allowed' => $bankWithdrawable > 0.009,
+            'total_in_platform' => round($iyzicoPool + $bankPending + $bankGrossWithdrawable, 2),
+            'approved_withdraw_total' => round($approvedWithdraw, 2),
+            'pending_withdraw_total' => round($pendingWithdrawRequests, 2),
+            'channel_note' => 'Kredi kartı (İyzico) ödemeleri çekim talebi ile alınamaz. Bekleme süresi dolduğunda İyzico üzerinden satıcı hesabınıza otomatik aktarılır. Havale siparişlerinde çekim talebi kullanılır.',
+        ];
+    }
+
+    protected function ledgerLineBankWithdrawable(object $line): bool
+    {
+        if ($line->payout_blocked_at) {
+            return false;
+        }
+
+        if ($line->payout_hold_until && now()->lt(Carbon::parse($line->payout_hold_until))) {
+            return false;
+        }
+
+        return ($line->payout_status ?? 'pending') === 'completed';
+    }
+
+    /**
+     * Get the withdrawable balance for a seller (yalnızca havale kanalı).
+     */
+    public function getSellerBalance(int $sellerId): float
+    {
+        return (float) $this->getSellerBalanceBreakdown($sellerId)['bank_withdrawable_balance'];
     }
 
     /**
@@ -102,20 +180,13 @@ class CommissionService
         }
 
         $sellerId = $withdraw->seller_id;
-        $settled = (float) CommissionLedger::where('seller_id', $sellerId)
-            ->where('status', 'settled')
-            ->sum('seller_net_amount');
-        $approved = (float) SellerWithdraw::where('seller_id', $sellerId)
-            ->where('status', 1)
-            ->sum('total_amount');
-        $pendingOther = (float) SellerWithdraw::where('seller_id', $sellerId)
-            ->where('status', 0)
-            ->where('id', '!=', $withdraw->id)
-            ->sum('total_amount');
+        $breakdown = $this->getSellerBalanceBreakdown($sellerId);
+        $available = (float) $breakdown['bank_withdrawable_balance'];
+        if ((int) $withdraw->status === 0) {
+            $available += (float) $withdraw->total_amount;
+        }
 
-        $ceiling = $settled - $approved - $pendingOther;
-
-        return round((float) $withdraw->total_amount, 2) <= round($ceiling, 2);
+        return round((float) $withdraw->total_amount, 2) <= round($available, 2);
     }
 
     /**
@@ -138,7 +209,9 @@ class CommissionService
         $approvedWithdraw = (float) SellerWithdraw::where('seller_id', $sellerId)->where('status', 1)->sum('total_amount');
         $pendingWithdrawRequests = (float) SellerWithdraw::where('seller_id', $sellerId)->where('status', 0)->sum('total_amount');
 
-        return [
+        $breakdown = $this->getSellerBalanceBreakdown($sellerId);
+
+        return array_merge([
             'pending_gross' => $pendingGross,
             'pending_commission' => $pendingCommission,
             'pending_net' => $pendingNet,
@@ -147,8 +220,7 @@ class CommissionService
             'settled_net' => $settledNet,
             'approved_withdraw_total' => $approvedWithdraw,
             'pending_withdraw_total' => $pendingWithdrawRequests,
-            'withdrawable_balance' => $this->getSellerBalance($sellerId),
-        ];
+        ], $breakdown);
     }
 
     /**

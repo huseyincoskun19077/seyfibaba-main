@@ -7,6 +7,13 @@ class SellerEarningsSummary {
     required this.withdrawableBalance,
     required this.totalWithdrawn,
     required this.pendingWithdrawals,
+    required this.totalInPlatform,
+    required this.iyzicoPoolBalance,
+    required this.iyzicoTransferredBalance,
+    required this.bankPendingHoldBalance,
+    required this.withdrawRequestAllowed,
+    required this.channelNote,
+    required this.payoutHoldDays,
   });
 
   final double totalGross;
@@ -16,17 +23,38 @@ class SellerEarningsSummary {
   final double withdrawableBalance;
   final double totalWithdrawn;
   final double pendingWithdrawals;
+  final double totalInPlatform;
+  final double iyzicoPoolBalance;
+  final double iyzicoTransferredBalance;
+  final double bankPendingHoldBalance;
+  final bool withdrawRequestAllowed;
+  final String channelNote;
+  final int payoutHoldDays;
 
   factory SellerEarningsSummary.fromMap(Map<String, dynamic> map) {
     double d(dynamic v) => double.tryParse('$v') ?? 0;
+    bool b(dynamic v) {
+      if (v is bool) return v;
+      if (v is num) return v != 0;
+      final s = '$v'.toLowerCase();
+      return s == '1' || s == 'true';
+    }
+
     return SellerEarningsSummary(
       totalGross: d(map['total_gross']),
       totalCommission: d(map['total_commission']),
       totalNet: d(map['total_net']),
       commissionRate: d(map['commission_rate']),
-      withdrawableBalance: d(map['withdrawable_balance']),
-      totalWithdrawn: d(map['total_withdrawn']),
-      pendingWithdrawals: d(map['pending_withdrawals']),
+      withdrawableBalance: d(map['bank_withdrawable_balance'] ?? map['withdrawable_balance']),
+      totalWithdrawn: d(map['total_withdrawn'] ?? map['approved_withdraw_total']),
+      pendingWithdrawals: d(map['pending_withdrawals'] ?? map['pending_withdraw_total']),
+      totalInPlatform: d(map['total_in_platform']),
+      iyzicoPoolBalance: d(map['iyzico_pool_balance']),
+      iyzicoTransferredBalance: d(map['iyzico_transferred_balance']),
+      bankPendingHoldBalance: d(map['bank_pending_hold_balance']),
+      withdrawRequestAllowed: b(map['withdraw_request_allowed']),
+      channelNote: '${map['channel_note'] ?? ''}',
+      payoutHoldDays: int.tryParse('${map['payout_hold_days'] ?? 0}') ?? 0,
     );
   }
 }
@@ -92,7 +120,7 @@ class SellerWithdrawBundle {
     double balance = 0;
     if (earnings is Map) {
       balance = double.tryParse(
-            '${earnings['withdrawable_balance'] ?? earnings['current_balance'] ?? earnings['balance'] ?? 0}',
+            '${earnings['bank_withdrawable_balance'] ?? earnings['withdrawable_balance'] ?? earnings['current_balance'] ?? earnings['balance'] ?? 0}',
           ) ??
           0;
     }

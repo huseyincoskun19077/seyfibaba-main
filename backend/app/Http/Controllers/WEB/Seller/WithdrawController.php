@@ -74,8 +74,15 @@ class WithdrawController extends Controller
 
         $user = Auth::guard('web')->user();
         $seller = $user->seller;
-        
-        $currentAmount = $this->commissionService->getSellerBalance($seller->id);
+
+        $breakdown = $this->commissionService->getSellerBalanceBreakdown($seller->id);
+        if (empty($breakdown['withdraw_request_allowed'])) {
+            $notification = 'Kredi kartı (İyzico) ödemeleri çekim talebi ile alınamaz. Havale siparişlerinde bekleme süresi dolduktan sonra çekim talebi oluşturabilirsiniz.';
+            $notification = ['messege' => $notification, 'alert-type' => 'error'];
+            return redirect()->back()->with($notification);
+        }
+
+        $currentAmount = (float) $breakdown['bank_withdrawable_balance'];
 
         if($request->withdraw_amount > $currentAmount){
             $notification = trans('admin_validation.Sorry! Your Payment request is more then your current balance');

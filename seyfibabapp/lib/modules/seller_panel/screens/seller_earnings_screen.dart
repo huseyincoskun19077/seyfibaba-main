@@ -94,7 +94,7 @@ class _SellerEarningsScreenState extends State<SellerEarningsScreen> {
         foregroundColor: HomeTheme.textDark,
         elevation: 0,
       ),
-      floatingActionButton: _summary == null
+      floatingActionButton: _summary == null || !_summary!.withdrawRequestAllowed
           ? null
           : FloatingActionButton.extended(
               onPressed: _openWithdrawSheet,
@@ -129,6 +129,26 @@ class _SellerEarningsScreenState extends State<SellerEarningsScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     children: [
                       _SummaryCards(summary: _summary!),
+                      if (!_summary!.withdrawRequestAllowed) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: HomeTheme.cardDecoration(
+                            color: HomeTheme.brandYellow.withValues(alpha: 0.2),
+                          ),
+                          child: Text(
+                            _summary!.channelNote.isNotEmpty
+                                ? _summary!.channelNote
+                                : 'Kredi kartı ödemeleri İyzico üzerinden otomatik aktarılır. Çekim talebi yalnızca havale siparişleri için kullanılır.',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.4,
+                              color: HomeTheme.textDark,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       const Text(
                         'Çekim Geçmişi',
@@ -268,7 +288,10 @@ class _SummaryCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      ('Çekilebilir', summary.withdrawableBalance),
+      ('Platformdaki toplam', summary.totalInPlatform),
+      ('İyzico havuzu', summary.iyzicoPoolBalance),
+      ('Çekilebilir (havale)', summary.withdrawableBalance),
+      ('Havale beklemede', summary.bankPendingHoldBalance),
       ('Net kazanç', summary.totalNet),
       ('Brüt', summary.totalGross),
       ('Komisyon', summary.totalCommission),
@@ -320,7 +343,8 @@ class _SummaryCards extends StatelessWidget {
                   color: HomeTheme.brandYellow.withValues(alpha: 0.25),
                 ),
                 child: Text(
-                  'Komisyon oranı: %${summary.commissionRate.toStringAsFixed(2)}',
+                  'Komisyon oranı: %${summary.commissionRate.toStringAsFixed(2)}'
+                  '${summary.payoutHoldDays > 0 ? ' · Havale bekleme: ${summary.payoutHoldDays} gün' : ''}',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),

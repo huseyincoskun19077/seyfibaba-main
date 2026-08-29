@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\CommissionLedger;
 use App\Models\OrderProduct;
 use App\Models\SellerWithdraw;
+use App\Services\CommissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class EarningsController extends Controller
 {
-    public function __construct()
+    public function __construct(private CommissionService $commissionService)
     {
         $this->middleware('auth:api');
         $this->middleware('checkseller');
@@ -29,25 +30,16 @@ class EarningsController extends Controller
             ->selectRaw('COALESCE(SUM(seller_net_amount), 0) as total_net')
             ->first();
 
-        $totalWithdrawn = SellerWithdraw::query()
-            ->where('seller_id', $seller->id)
-            ->where('status', 1)
-            ->sum('total_amount');
+        $breakdown = $this->commissionService->getSellerBalanceBreakdown($seller->id);
 
-        $pendingWithdrawn = SellerWithdraw::query()
-            ->where('seller_id', $seller->id)
-            ->where('status', 0)
-            ->sum('total_amount');
-
-        return response()->json([
+        return response()->json(array_merge([
             'total_gross' => (float) ($ledgerSummary->total_gross ?? 0),
             'total_commission' => (float) ($ledgerSummary->total_commission ?? 0),
             'total_net' => (float) ($ledgerSummary->total_net ?? 0),
             'commission_rate' => (float) $seller->getEffectiveCommissionRate(),
-            'withdrawable_balance' => max(0, (float) ($ledgerSummary->total_net ?? 0) - (float) $totalWithdrawn),
-            'total_withdrawn' => (float) $totalWithdrawn,
-            'pending_withdrawals' => (float) $pendingWithdrawn,
-        ]);
+            'total_withdrawn' => (float) $breakdown['approved_withdraw_total'],
+            'pending_withdrawals' => (float) $breakdown['pending_withdraw_total'],
+        ], $breakdown));
     }
 
     public function orders(Request $request)

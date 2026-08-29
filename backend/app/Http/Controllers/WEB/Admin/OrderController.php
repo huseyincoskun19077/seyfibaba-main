@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Models\OrderProductVariant;
 use App\Http\Controllers\Controller;
 use App\Services\CommissionService;
+use App\Services\SellerPayoutService;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Country;
@@ -19,10 +20,12 @@ use App\Models\Country;
 class OrderController extends Controller
 {
     protected $commissionService;
+    protected $payoutService;
 
-    public function __construct(CommissionService $commissionService)
+    public function __construct(CommissionService $commissionService, SellerPayoutService $payoutService)
     {
         $this->commissionService = $commissionService;
+        $this->payoutService = $payoutService;
         $this->middleware('auth:admin');
     }
 
@@ -204,6 +207,21 @@ class OrderController extends Controller
         return redirect()->back()->with([
             'messege' => 'Payout bekletme kaldırıldı',
             'alert-type' => 'success',
+        ]);
+    }
+
+    public function processPayout($id)
+    {
+        $order = Order::with('orderProducts.seller', 'orderProducts.product')->findOrFail($id);
+
+        $this->payoutService->syncPaymentTransactionIds($order);
+        $order->refresh()->load('orderProducts.seller', 'orderProducts.product');
+
+        $result = $this->payoutService->processOrderPayout($order, true);
+
+        return redirect()->back()->with([
+            'messege' => $result['message'],
+            'alert-type' => $result['success'] ? 'success' : 'error',
         ]);
     }
 

@@ -69,7 +69,14 @@ class WithdrawController extends Controller
             return response()->json(['notification' => 'Para çekme işlemi yapabilmek için önce mağaza profilinizden IBAN numaranızı girmelisiniz.'], 400);
         }
 
-        $currentAmount = $this->commissionService->getSellerBalance($seller->id);
+        $breakdown = $this->commissionService->getSellerBalanceBreakdown($seller->id);
+        if (empty($breakdown['withdraw_request_allowed'])) {
+            return response()->json([
+                'notification' => 'Kredi kartı (İyzico) ödemeleri çekim talebi ile alınamaz. Havale siparişlerinde bekleme süresi dolduktan sonra çekim talebi oluşturabilirsiniz.',
+            ], 400);
+        }
+
+        $currentAmount = (float) $breakdown['bank_withdrawable_balance'];
         if($request->withdraw_amount > $currentAmount){
             $notification = trans('Sorry! Your Payment request is more then your current balance');
             return response()->json(['notification' => $notification], 400);

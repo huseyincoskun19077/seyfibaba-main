@@ -1079,6 +1079,7 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::post('orders/{id}/payout/unblock', [OrderController::class, 'unblockPayout'])->name('orders.payout.unblock');
         Route::post('orders/{id}/payout/hold', [OrderController::class, 'holdPayout'])->name('orders.payout.hold');
         Route::post('orders/{id}/payout/hold/clear', [OrderController::class, 'clearHoldPayout'])->name('orders.payout.hold.clear');
+        Route::post('orders/{id}/payout/process', [OrderController::class, 'processPayout'])->name('orders.payout.process');
         Route::get('orders/{orderId}/cargo', [OrderCargoController::class, 'show'])->name('orders.cargo.show');
         Route::get('orders/{orderId}/cargo/offers', [OrderCargoController::class, 'offers'])->middleware('geliver.enabled')->name('orders.cargo.offers');
         Route::post('orders/{orderId}/cargo', [OrderCargoController::class, 'createShipment'])->middleware('geliver.enabled')->name('orders.cargo.create');

@@ -23,21 +23,32 @@
                   <div class="card-body">
                     <h6 class="text-primary mb-3">{{ __('admin.Earnings breakdown') }}</h6>
                     <div class="row">
-                      <div class="col-md-3 col-6 mb-2"><strong>{{ __('admin.Withdrawable balance') }}</strong><br>
+                      <div class="col-md-3 col-6 mb-2"><strong>Platformdaki toplam</strong><br>
+                        {{ $setting->currency_icon }}{{ number_format($earnings['total_in_platform'] ?? 0, 2, ',', '.') }}</div>
+                      <div class="col-md-3 col-6 mb-2"><strong>İyzico havuzu</strong><br>
+                        {{ $setting->currency_icon }}{{ number_format($earnings['iyzico_pool_balance'] ?? 0, 2, ',', '.') }}</div>
+                      <div class="col-md-3 col-6 mb-2"><strong>{{ __('admin.Withdrawable balance') }} (havale)</strong><br>
                         <span class="text-success">{{ $setting->currency_icon }}{{ number_format($earnings['withdrawable_balance'], 2, ',', '.') }}</span></div>
+                      <div class="col-md-3 col-6 mb-2"><strong>Havale beklemede</strong><br>
+                        {{ $setting->currency_icon }}{{ number_format($earnings['bank_pending_hold_balance'] ?? 0, 2, ',', '.') }}</div>
                       <div class="col-md-3 col-6 mb-2"><strong>{{ __('admin.Net from completed orders') }}</strong><br>
                         {{ $setting->currency_icon }}{{ number_format($earnings['settled_net'], 2, ',', '.') }}</div>
                       <div class="col-md-3 col-6 mb-2"><strong>{{ __('admin.Approved withdrawals total') }}</strong><br>
                         {{ $setting->currency_icon }}{{ number_format($earnings['approved_withdraw_total'], 2, ',', '.') }}</div>
                     </div>
-                    <div class="alert alert-light border mt-3 mb-0">
-                      <small class="text-muted">{!! __('admin.Earnings help marketplace') !!}</small>
+                    <div class="alert alert-info border mt-3 mb-0">
+                      <small>{{ $earnings['channel_note'] ?? '' }}</small>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
+            @if(empty($earnings['withdraw_request_allowed']))
+            <div class="alert alert-warning mt-3">
+              Şu anda çekim talebi oluşturamazsınız. Kredi kartı ödemeleri İyzico üzerinden otomatik aktarılır; havale ödemelerinde bekleme süresi dolduktan sonra çekim talebi açılır.
+            </div>
+            @else
             <div class="row mt-4">
                 <div class="col-6">
                   <div class="card">
@@ -79,6 +90,8 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            @endif
           </div>
         </section>
       </div>

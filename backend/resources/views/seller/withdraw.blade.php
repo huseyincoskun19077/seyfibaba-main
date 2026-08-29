@@ -15,40 +15,51 @@
           </div>
 
           <div class="section-body">
+            @if(!empty($earnings['withdraw_request_allowed']))
             <a href="{{ route('seller.my-withdraw.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> {{__('admin.New withdraw')}}</a>
+            @endif
 
             <div class="row mt-3">
-              <div class="col-md-4">
+              <div class="col-md-3">
+                <div class="card card-statistic-1">
+                  <div class="card-icon bg-primary"><i class="fas fa-coins"></i></div>
+                  <div class="card-wrap">
+                    <div class="card-header"><h4>Platformdaki toplam</h4></div>
+                    <div class="card-body">{{ $setting->currency_icon }}{{ number_format($earnings['total_in_platform'] ?? 0, 2, ',', '.') }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card card-statistic-1">
+                  <div class="card-icon bg-warning"><i class="fas fa-clock"></i></div>
+                  <div class="card-wrap">
+                    <div class="card-header"><h4>İyzico havuzu (otomatik aktarım)</h4></div>
+                    <div class="card-body">{{ $setting->currency_icon }}{{ number_format($earnings['iyzico_pool_balance'] ?? 0, 2, ',', '.') }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
                 <div class="card card-statistic-1">
                   <div class="card-icon bg-success"><i class="fas fa-wallet"></i></div>
                   <div class="card-wrap">
-                    <div class="card-header"><h4>{{ __('admin.Withdrawable balance') }}</h4></div>
+                    <div class="card-header"><h4>{{ __('admin.Withdrawable balance') }} (havale)</h4></div>
                     <div class="card-body">{{ $setting->currency_icon }}{{ number_format($earnings['withdrawable_balance'], 2, ',', '.') }}</div>
                   </div>
                 </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <div class="card card-statistic-1">
-                  <div class="card-icon bg-info"><i class="fas fa-check-circle"></i></div>
+                  <div class="card-icon bg-info"><i class="fas fa-hourglass-half"></i></div>
                   <div class="card-wrap">
-                    <div class="card-header"><h4>{{ __('admin.Net from completed orders') }}</h4></div>
-                    <div class="card-body">{{ $setting->currency_icon }}{{ number_format($earnings['settled_net'], 2, ',', '.') }}</div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="card card-statistic-1">
-                  <div class="card-icon bg-info"><i class="fas fa-percent"></i></div>
-                  <div class="card-wrap">
-                    <div class="card-header"><h4>{{ __('admin.Platform commission (settled orders)') }}</h4></div>
-                    <div class="card-body">{{ $setting->currency_icon }}{{ number_format($earnings['settled_commission'], 2, ',', '.') }}</div>
+                    <div class="card-header"><h4>Havale beklemede</h4></div>
+                    <div class="card-body">{{ $setting->currency_icon }}{{ number_format($earnings['bank_pending_hold_balance'] ?? 0, 2, ',', '.') }}</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="alert alert-light border mt-2 mb-0">
-              <small class="text-muted">{!! __('admin.Earnings help marketplace') !!}</small>
+            <div class="alert alert-info border mt-2 mb-0">
+              <small>{{ $earnings['channel_note'] ?? '' }}</small>
             </div>
 
             <div class="row mt-4">

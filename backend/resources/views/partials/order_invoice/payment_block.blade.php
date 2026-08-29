@@ -70,6 +70,40 @@
                     <h4>Payout Kontrolü</h4>
                 </div>
                 <div class="card-body">
+                    <div class="mb-3">
+                        <div class="text-muted" style="font-size:12px;">Hakediş durumu</div>
+                        <div class="d-flex flex-wrap" style="gap:8px;">
+                            <span class="badge badge-secondary">Sipariş: {{ $order->order_status == 3 ? 'Tamamlandı' : 'Bekliyor ('.$order->order_status.')' }}</span>
+                            <span class="badge badge-info">Payout: {{ $order->payout_status ?? 'pending' }}</span>
+                            @if ($order->payout_processed_at)
+                                <span class="badge badge-success">İşlendi: {{ \Carbon\Carbon::parse($order->payout_processed_at)->format('d.m.Y H:i') }}</span>
+                            @endif
+                            @if ($order->payout_eligible_at)
+                                <span class="badge badge-light">Uygun tarih: {{ \Carbon\Carbon::parse($order->payout_eligible_at)->format('d.m.Y H:i') }}</span>
+                            @endif
+                            @if ($setting->iyzico_payout_dry_run ?? false)
+                                <span class="badge badge-warning">İyzico dry-run AÇIK (simülasyon)</span>
+                            @endif
+                        </div>
+                        @if ((int) $order->order_status === 3 && ! $order->payout_processed_at && in_array(strtolower((string) $order->payment_method), ['iyzico', 'bankpayment'], true))
+                            <form action="{{ route('admin.orders.payout.process', $order->id) }}" method="POST" class="mt-3" onsubmit="return confirm('Bu siparişin hakedişini şimdi manuel işlemek istiyor musunuz? Bekleme süresi atlanır.');">
+                                @csrf
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    @if (strtolower((string) $order->payment_method) === 'iyzico')
+                                        İyzico Hakedişini Manuel Onayla
+                                    @else
+                                        Havaleyi Çekilebilir İşaretle
+                                    @endif
+                                </button>
+                                <small class="text-muted d-block mt-1">
+                                    Test için: dry-run açıksa gerçek İyzico API çağrısı yapılmaz, süreç simüle edilir.
+                                </small>
+                            </form>
+                        @elseif ($order->payout_processed_at)
+                            <small class="text-muted d-block mt-2">Bu siparişin hakedişi zaten işlendi.</small>
+                        @endif
+                    </div>
+
                     <div class="d-flex flex-wrap" style="gap:10px; align-items:flex-end;">
                         <div>
                             <div class="text-muted" style="font-size:12px;">Blok durumu</div>
