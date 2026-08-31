@@ -34,7 +34,7 @@ class UserProfileInfoCubit extends Cubit<UserProfileInfoState> {
 
       final result = await _profileRepository.getUserProfileInfo(_loginBloc.userInfo!.accessToken);
       result.fold((f) {
-        return UpdatedError(message: f.message);
+        emit(UpdatedError(message: f.message));
       }, (success) {
         updatedInfo = success;
 

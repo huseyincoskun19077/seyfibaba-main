@@ -50,7 +50,11 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
                 Utils.errorSnackBar(context, status.errorMsg);
               }
             } else if (state.state is LoginStateLoaded) {
-              Navigator.pushReplacementNamed(context, RouteNames.mainPage);
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                RouteNames.mainPage,
+                (route) => false,
+              );
             } else if (state.state is SendAccountCodeSuccess) {
               final messageState = state.state as SendAccountCodeSuccess;
               Utils.showSnackBar(context, messageState.msg);

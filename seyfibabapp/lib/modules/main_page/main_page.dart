@@ -4,6 +4,7 @@ import '/state_packages_names.dart';
 import '../../core/push/push_notification_service.dart';
 import '../../utils/k_images.dart';
 import '../../widgets/confirm_dialog.dart';
+import '../authentication/controller/login/login_bloc.dart';
 import '../profile/buyer_personalization_onboarding_screen.dart';
 import '../profile/controllers/updated_info/updated_info_cubit.dart';
 import '../profile/model/user_info/user_updated_info.dart';
@@ -47,7 +48,16 @@ class _MainPageState extends State<MainPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       PushNotificationService.instance.registerDeviceToken(context);
+      _checkPersonalizationFromCache();
     });
+  }
+
+  void _checkPersonalizationFromCache() {
+    if (!mounted) return;
+    final info = context.read<UserProfileInfoCubit>().updatedInfo;
+    if (info != null) {
+      _maybeShowBuyerPersonalization(info);
+    }
   }
 
 
@@ -76,12 +86,24 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     // context.read<CartCubit>().getCartProducts();
     // context.read<WishListCubit>().getWishList();
-    return BlocListener<UserProfileInfoCubit, UserProfileInfoState>(
-      listener: (context, state) {
-        if (state is UpdatedLoaded) {
-          _maybeShowBuyerPersonalization(state.updatedInfo);
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<UserProfileInfoCubit, UserProfileInfoState>(
+          listener: (context, state) {
+            if (state is UpdatedLoaded) {
+              _maybeShowBuyerPersonalization(state.updatedInfo);
+            }
+          },
+        ),
+        BlocListener<LoginBloc, LoginModelState>(
+          listenWhen: (previous, current) =>
+              current.state is LoginStateLoaded &&
+              previous.state is! LoginStateLoaded,
+          listener: (context, state) {
+            context.read<UserProfileInfoCubit>().getUserProfileInfo();
+          },
+        ),
+      ],
       child: WillPopScope(
       onWillPop: () async {
         showDialog(

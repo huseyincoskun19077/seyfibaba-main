@@ -58,6 +58,15 @@ class UserProfileInfo extends Equatable {
     };
   }
 
+  static bool _isTruthy(dynamic value) {
+    if (value == true || value == 1) return true;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      return normalized == '1' || normalized == 'true';
+    }
+    return false;
+  }
+
   factory UserProfileInfo.fromMap(Map<String, dynamic> map) {
     return UserProfileInfo(
       updateUserInfo:
@@ -82,7 +91,7 @@ class UserProfileInfo extends Equatable {
           : null,
       buyerPersonalization: BuyerPersonalizationData.fromPersonInfo(
         map['personInfo'] as Map<String, dynamic>? ?? {},
-        shouldShow: map['should_show_personalization'] == true,
+        shouldShow: _isTruthy(map['should_show_personalization']),
       ),
     );
   }
