@@ -34,12 +34,15 @@ class SingleReviewCardComponent extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Flexible(
-                      child: Text(reviewModel.user.name,
-                          maxLines: 2,
-                          style: const TextStyle(
-                              fontSize: 18,
-                              height: 1,
-                              fontWeight: FontWeight.w600)),
+                      child: Text(
+                        Utils.maskReviewerName(reviewModel.user.name),
+                        maxLines: 2,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          height: 1,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                     Text(
                       Utils.timeAgo(reviewModel.createdAt),

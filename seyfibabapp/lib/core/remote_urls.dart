@@ -50,6 +50,12 @@ class RemoteUrls {
   static String updateProfile(String token) =>
       '${baseUrl}user/update-profile?token=$token';
 
+  static String updateBuyerPersonalization(String token) =>
+      '${baseUrl}user/update-buyer-personalization?token=$token';
+
+  static String skipBuyerPersonalization(String token) =>
+      '${baseUrl}user/skip-buyer-personalization?token=$token';
+
   static String becomeSellerRequest(String token) =>
       '${baseUrl}user/seller-request?token=$token';
 
@@ -422,6 +428,29 @@ class RemoteUrls {
 
   static String loadMoreProducts(String keyword, int page, int perPage) =>
       '${baseUrl}search-product?highlight=$keyword&page=$page&per_page=$perPage';
+
+  static String searchHighlightProducts({
+    required String highlight,
+    required String page,
+    String? categorySlug,
+    String? subCategorySlug,
+    int perPage = 12,
+  }) {
+    final params = <String, String>{
+      'highlight': highlight,
+      'page': page,
+      'per_page': '$perPage',
+    };
+    if (categorySlug != null && categorySlug.isNotEmpty) {
+      params['category'] = categorySlug;
+    }
+    if (subCategorySlug != null && subCategorySlug.isNotEmpty) {
+      params['sub_category'] = subCategorySlug;
+    }
+    return Uri.parse('${baseUrl}search-product')
+        .replace(queryParameters: params)
+        .toString();
+  }
 
   static String categoryProducts(String slug, int page) =>
       '${baseUrl}product?category=$slug&page=$page';

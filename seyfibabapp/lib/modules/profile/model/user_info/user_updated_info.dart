@@ -6,6 +6,7 @@ import 'package:equatable/equatable.dart';
 import '../city_model.dart';
 import '../country_model.dart';
 import '../country_state_model.dart';
+import '../buyer_personalization_data.dart';
 import 'update_user_info.dart';
 
 class UserProfileInfo extends Equatable {
@@ -14,6 +15,7 @@ class UserProfileInfo extends Equatable {
   final List<CountryModel> countryModel;
   final List<CountryStateModel> stateModel;
   final DefaultImage? defaultImage;
+  final BuyerPersonalizationData buyerPersonalization;
 
   const UserProfileInfo({
     required this.updateUserInfo,
@@ -21,11 +23,12 @@ class UserProfileInfo extends Equatable {
     required this.countryModel,
     required this.stateModel,
     required this.defaultImage,
+    this.buyerPersonalization = const BuyerPersonalizationData(),
   });
 
   @override
   List<Object> get props =>
-      [updateUserInfo, cityModel, countryModel, stateModel,defaultImage!];
+      [updateUserInfo, cityModel, countryModel, stateModel, defaultImage!, buyerPersonalization];
 
   UserProfileInfo copyWith({
     UpdateUserInfo? updateUserInfo,
@@ -33,6 +36,7 @@ class UserProfileInfo extends Equatable {
     List<CountryModel>? countryModel,
     List<CountryStateModel>? stateModel,
     DefaultImage? defaultImage,
+    BuyerPersonalizationData? buyerPersonalization,
   }) {
     return UserProfileInfo(
       updateUserInfo: updateUserInfo ?? this.updateUserInfo,
@@ -40,6 +44,7 @@ class UserProfileInfo extends Equatable {
       countryModel: countryModel ?? this.countryModel,
       stateModel: stateModel ?? this.stateModel,
       defaultImage: defaultImage ?? this.defaultImage,
+      buyerPersonalization: buyerPersonalization ?? this.buyerPersonalization,
     );
   }
 
@@ -75,6 +80,10 @@ class UserProfileInfo extends Equatable {
       defaultImage: map['defaultProfile'] != null
           ? DefaultImage.fromMap(map['defaultProfile'] as Map<String, dynamic>)
           : null,
+      buyerPersonalization: BuyerPersonalizationData.fromPersonInfo(
+        map['personInfo'] as Map<String, dynamic>? ?? {},
+        shouldShow: map['should_show_personalization'] == true,
+      ),
     );
   }
 

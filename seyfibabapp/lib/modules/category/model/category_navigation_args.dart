@@ -14,8 +14,10 @@ class CategoryProductArgs {
   const CategoryProductArgs({
     required this.slug,
     required this.name,
+    this.categoryId,
   });
 
   final String slug;
   final String name;
+  final int? categoryId;
 }

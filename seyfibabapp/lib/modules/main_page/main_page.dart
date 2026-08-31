@@ -4,6 +4,10 @@ import '/state_packages_names.dart';
 import '../../core/push/push_notification_service.dart';
 import '../../utils/k_images.dart';
 import '../../widgets/confirm_dialog.dart';
+import '../profile/buyer_personalization_onboarding_screen.dart';
+import '../profile/controllers/updated_info/updated_info_cubit.dart';
+import '../profile/model/user_info/user_updated_info.dart';
+import '../../utils/utils.dart';
 import '../home/home_screen.dart';
 import '../order/order_screen.dart';
 import '../profile/profile_screen.dart';
@@ -20,6 +24,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   final _homeController = MainController();
+  bool _personalizationPromptShown = false;
 
   late List<Widget> pageList;
 
@@ -46,11 +51,38 @@ class _MainPageState extends State<MainPage> {
   }
 
 
+  void _maybeShowBuyerPersonalization(UserProfileInfo info) {
+    if (_personalizationPromptShown) return;
+    if (!Utils.isLoggedIn(context)) return;
+    if (Utils.isSeller(context)) return;
+    if (!info.buyerPersonalization.shouldPrompt) return;
+
+    _personalizationPromptShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => BuyerPersonalizationOnboardingScreen(
+            initialData: info.buyerPersonalization,
+          ),
+        ),
+      );
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
     // context.read<CartCubit>().getCartProducts();
     // context.read<WishListCubit>().getWishList();
-    return WillPopScope(
+    return BlocListener<UserProfileInfoCubit, UserProfileInfoState>(
+      listener: (context, state) {
+        if (state is UpdatedLoaded) {
+          _maybeShowBuyerPersonalization(state.updatedInfo);
+        }
+      },
+      child: WillPopScope(
       onWillPop: () async {
         showDialog(
           context: context,
@@ -77,6 +109,7 @@ class _MainPageState extends State<MainPage> {
           },
         ),
         bottomNavigationBar: const MyBottomNavigationBar(),
+      ),
       ),
     );
   }

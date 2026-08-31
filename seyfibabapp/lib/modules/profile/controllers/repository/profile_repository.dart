@@ -27,6 +27,11 @@ abstract class ProfileRepository {
 
   Future<Either<Failure, UserProfileInfo>> getUserProfileInfo(String token);
 
+  Future<Either<Failure, String>> updateBuyerPersonalization(
+      String token, Map<String, String> dataMap);
+
+  Future<Either<Failure, String>> skipBuyerPersonalization(String token);
+
   Future<Either<Failure, String>> updateProfileInformation(
       String token, Map<String, String> dataMap);
 
@@ -181,6 +186,28 @@ class ProfileRepositoryImp extends ProfileRepository {
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure('UPDATED ERROR ${e.message}', e.statusCode));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> updateBuyerPersonalization(
+      String token, Map<String, String> dataMap) async {
+    try {
+      final result =
+          await remoteDataSource.updateBuyerPersonalization(dataMap, token);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> skipBuyerPersonalization(String token) async {
+    try {
+      final result = await remoteDataSource.skipBuyerPersonalization(token);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
     }
   }
 

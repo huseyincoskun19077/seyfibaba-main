@@ -14,6 +14,7 @@ import 'core/router_name.dart';
 import 'firebase_options.dart';
 import 'state_injector.dart';
 import 'utils/k_strings.dart';
+import 'utils/tr_timeago_messages.dart';
 import 'utils/utils.dart';
 import 'widgets/custom_text.dart';
 
@@ -21,6 +22,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerTrTimeAgoMessages();
   // Emülatör/cihaz saati veya SSL sorunlarında fonts.gstatic.com çökmesin.
   GoogleFonts.config.allowRuntimeFetching = false;
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

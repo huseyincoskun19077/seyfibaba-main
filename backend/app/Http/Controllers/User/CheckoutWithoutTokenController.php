@@ -15,6 +15,7 @@ use App\Models\Vendor;
 use App\Models\Address;
 use App\Models\Country;
 use App\Support\OrderQuantityHelper;
+use App\Services\BuyerInvoiceService;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Shipping;
@@ -150,7 +151,9 @@ class CheckoutWithoutTokenController extends Controller
 
         $transaction_id = 'cash_on_delivery';
         $is_draft = 'no';
-        $order_result = $this->orderStore($total_price, $cartProducts, $totalProduct, 'Cash on Delivery', $transaction_id, 0, $shipping, $shipping_fee, $coupon_price, 1, $request->address, $is_draft);
+        $addressInfo = $this->mergeGuestAddressWithInvoice($request);
+        $invoiceData = app(BuyerInvoiceService::class)->validateFromAddressInfo($addressInfo, true);
+        $order_result = $this->orderStore($total_price, $cartProducts, $totalProduct, 'Cash on Delivery', $transaction_id, 0, $shipping, $shipping_fee, $coupon_price, 1, $addressInfo, $is_draft, $invoiceData);
 
         //  return $order_result;
 
@@ -232,7 +235,9 @@ class CheckoutWithoutTokenController extends Controller
 
         $transaction_id = 'cash_on_delivery';
         $is_draft = 'yes';
-        $order_result = $this->orderStore($total_price, $cartProducts, $totalProduct, 'draft', 'draft', 0, $shipping, $shipping_fee, $coupon_price, 1, $request->address, $is_draft);
+        $addressInfo = $this->mergeGuestAddressWithInvoice($request);
+        $invoiceData = app(BuyerInvoiceService::class)->validateFromAddressInfo($addressInfo, true);
+        $order_result = $this->orderStore($total_price, $cartProducts, $totalProduct, 'draft', 'draft', 0, $shipping, $shipping_fee, $coupon_price, 1, $addressInfo, $is_draft, $invoiceData);
 
         //  return $order_result;
 
@@ -325,7 +330,9 @@ class CheckoutWithoutTokenController extends Controller
 
         $is_draft = 'no';
         $transaction_id = $request->tnx_info;
-        $order_result = $this->orderStore($total_price, $cartProducts,  $totalProduct, 'bankpayment', $transaction_id, 0, $shipping, $shipping_fee, $coupon_price, 1, $request->address, $is_draft);
+        $addressInfo = $this->mergeGuestAddressWithInvoice($request);
+        $invoiceData = app(BuyerInvoiceService::class)->validateFromAddressInfo($addressInfo, true);
+        $order_result = $this->orderStore($total_price, $cartProducts,  $totalProduct, 'bankpayment', $transaction_id, 0, $shipping, $shipping_fee, $coupon_price, 1, $addressInfo, $is_draft, $invoiceData);
 
         $this->sendOrderSuccessMail($user, $total_price, 'Bank Payment', 0, $order_result['order'], $order_result['order_details']);
 
@@ -508,7 +515,7 @@ class CheckoutWithoutTokenController extends Controller
     }
 
 
-    public function orderStore($total_price, $cartProducts, $totalProduct, $payment_method, $transaction_id, $paymetn_status, $shipping, $shipping_fee, $coupon_price, $cash_on_delivery, $address_info, $is_draft)
+    public function orderStore($total_price, $cartProducts, $totalProduct, $payment_method, $transaction_id, $paymetn_status, $shipping, $shipping_fee, $coupon_price, $cash_on_delivery, $address_info, $is_draft, ?array $invoiceData = null)
     {
 
         if ($cartProducts->count() == 0) {
@@ -671,6 +678,9 @@ class CheckoutWithoutTokenController extends Controller
         $orderAddress->shipping_state = $stateName;
         $orderAddress->shipping_city = $cityName;
         $orderAddress->shipping_address_type = $address_info['type'] ?? '';
+        if ($invoiceData) {
+            app(BuyerInvoiceService::class)->applyToOrderAddress($orderAddress, $invoiceData);
+        }
         $orderAddress->save();
         foreach ($cartProducts as $cartProduct) {
             ShoppingCartVariant::where('shopping_cart_id', $cartProduct['product_id'])->delete();
@@ -751,6 +761,18 @@ class CheckoutWithoutTokenController extends Controller
         //          }catch(Exception $ex){}
         //      }
         //  }
+    }
+
+    private function mergeGuestAddressWithInvoice(Request $request): array
+    {
+        $address = is_array($request->input('address')) ? $request->input('address') : [];
+
+        return array_merge($address, $request->only([
+            'invoice_type',
+            'tc_identity',
+            'tax_number',
+            'tax_office',
+        ]));
     }
 
 

@@ -27,6 +27,7 @@ use App\Http\Controllers\WEB\Admin\FooterController;
 use App\Http\Controllers\WEB\Admin\SellerController;
 use App\Http\Controllers\WEB\Admin\CallCenterRegistrationController;
 use App\Http\Controllers\WEB\Admin\SliderController;
+use App\Http\Controllers\WEB\Admin\MobileSliderController;
 use App\Http\Controllers\WEB\Admin\AboutUsController;
 use App\Http\Controllers\WEB\Admin\ContentController;
 use App\Http\Controllers\WEB\Admin\CountryController;
@@ -1018,6 +1019,9 @@ Route::group(['middleware' => ['XSS']], function () {
 
         Route::resource('slider', SliderController::class);
         Route::put('slider-status/{id}', [SliderController::class, 'changeStatus'])->name('slider-status');
+        Route::get('mobile-slider', [MobileSliderController::class, 'index'])->name('mobile-slider.index');
+        Route::post('mobile-slider', [MobileSliderController::class, 'store'])->name('mobile-slider.store');
+        Route::delete('mobile-slider/{id}', [MobileSliderController::class, 'destroy'])->name('mobile-slider.destroy');
 
 
         Route::get('popular-category', [HomePageController::class, 'popularCategory'])->name('popular-category');

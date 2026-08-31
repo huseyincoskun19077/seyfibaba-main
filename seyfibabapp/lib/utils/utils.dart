@@ -555,10 +555,33 @@ class Utils {
   static String timeAgo(String? time) {
     try {
       if (time == null) return '';
-      return timeago.format(DateTime.parse(time));
+      return timeago.format(
+        DateTime.parse(time).toLocal(),
+        locale: 'tr',
+      );
     } catch (e) {
       return '';
     }
+  }
+
+  /// Yorum sahibi adını gizler: S**** C****
+  static String maskReviewerName(String? fullName) {
+    const maskLength = 4;
+    final mask = '*' * maskLength;
+
+    String maskPart(String part) {
+      final trimmed = part.trim();
+      if (trimmed.isEmpty) return '';
+      return '${trimmed[0].toUpperCase()}$mask';
+    }
+
+    final raw = (fullName ?? '').trim();
+    if (raw.isEmpty) return 'K$mask';
+
+    final parts = raw.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.length == 1) return maskPart(parts.first);
+
+    return '${maskPart(parts.first)} ${maskPart(parts.last)}';
   }
 
   static double toDouble(String? number) {

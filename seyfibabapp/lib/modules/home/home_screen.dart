@@ -14,6 +14,7 @@ import '../cart/controllers/cart/cart_cubit.dart';
 import 'component/category_grid_view.dart';
 import 'component/flash_sale_component.dart';
 import 'component/home_brands_section.dart';
+import 'component/home_product_hubs_section.dart';
 import 'component/home_app_bar.dart';
 import 'widgets/home_theme.dart';
 import 'component/hot_deal_banner_slider.dart';
@@ -145,18 +146,29 @@ class _LoadedHomePage extends StatelessWidget {
 
         //Slider visibility end
         CategoryGridView(model: homeModel),
-        SliverToBoxAdapter(child: HomeBrandsSection(model: homeModel)),
-        // const CountDownOfferAndProduct(),
 
-        HorizontalProductComponent(
-          productList: homeModel.popularCategoryProducts,
-          category: 'En popüler ürünler',
-          onTap: () {
+        HomeProductHubsSection(
+          popularProducts: homeModel.popularCategoryProducts,
+          discountedProducts: homeModel.discountedProducts,
+          onPopularTap: () {
             if (productCubit.state.initialPage > 1) {
               productCubit.initPage();
             }
-            const keyword = "popular_category";
-            const appBar = 'En popüler ürünler';
+            const keyword = 'popular_category';
+            const appBar = 'Popüler Ürünler';
+            productCubit.nameChange(appBar);
+            Navigator.pushNamed(
+              context,
+              RouteNames.allPopularProductScreen,
+              arguments: keyword,
+            );
+          },
+          onDiscountedTap: () {
+            if (productCubit.state.initialPage > 1) {
+              productCubit.initPage();
+            }
+            const keyword = 'discounted';
+            const appBar = 'İndirimli Ürünler';
             productCubit.nameChange(appBar);
             Navigator.pushNamed(
               context,
@@ -165,39 +177,6 @@ class _LoadedHomePage extends StatelessWidget {
             );
           },
         ),
-
-        HorizontalProductComponent(
-          productList: homeModel.discountedProducts,
-          category: 'İndirimli ürünler',
-          maxItems: 2,
-          onTap: () {
-            if (productCubit.state.initialPage > 1) {
-              productCubit.initPage();
-            }
-            const keyword = "discounted";
-            const appBar = 'İndirimli ürünler';
-            productCubit.nameChange(appBar);
-            Navigator.pushNamed(
-              context,
-              RouteNames.allPopularProductScreen,
-              arguments: keyword,
-            );
-          },
-        ),
-
-        //Flash sale product visibility start
-        if (appSetting!.flashSaleActive is bool ||
-            appSetting.flashSaleActive is int ||
-            appSetting.flashSaleActive is String) ...[
-          if (appSetting.flashSaleActive == true ||
-              appSetting.flashSaleActive == 1 ||
-              appSetting.flashSaleActive == '1') ...[
-            FlashSaleComponent(flashSale: homeModel.flashSale),
-          ]
-        ] else ...[
-          const SliverToBoxAdapter(child: SizedBox.shrink())
-        ],
-        //Flash sale product visibility end
 
         //Best seller product visibility start
         //Best seller section removed
@@ -237,6 +216,22 @@ class _LoadedHomePage extends StatelessWidget {
           const SliverToBoxAdapter(child: SizedBox.shrink())
         ],
         //Feature product visibility end
+
+        SliverToBoxAdapter(child: HomeBrandsSection(model: homeModel)),
+
+        //Flash sale product visibility start
+        if (appSetting!.flashSaleActive is bool ||
+            appSetting.flashSaleActive is int ||
+            appSetting.flashSaleActive is String) ...[
+          if (appSetting.flashSaleActive == true ||
+              appSetting.flashSaleActive == 1 ||
+              appSetting.flashSaleActive == '1') ...[
+            FlashSaleComponent(flashSale: homeModel.flashSale),
+          ]
+        ] else ...[
+          const SliverToBoxAdapter(child: SizedBox.shrink())
+        ],
+        //Flash sale product visibility end
 
         const SliverToBoxAdapter(child: SizedBox(height: 5)),
         //best product visibility start

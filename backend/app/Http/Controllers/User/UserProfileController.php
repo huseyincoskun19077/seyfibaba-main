@@ -244,7 +244,28 @@ class UserProfileController extends Controller
 
     public function myProfile(){
         $user = Auth::guard('api')->user();
-        $personInfo = User::select('id','name','email','phone','image','country_id','state_id','city_id','zip_code','address','tc_identity','tax_number')->find($user->id);
+        $personInfo = User::select(
+            'id',
+            'name',
+            'email',
+            'phone',
+            'image',
+            'country_id',
+            'state_id',
+            'city_id',
+            'zip_code',
+            'address',
+            'tc_identity',
+            'tax_number',
+            'invoice_type',
+            'tax_office',
+            'shop_name',
+            'business_type',
+            'business_type_other',
+            'business_status',
+            'personalization_completed_at',
+            'personalization_skipped_at'
+        )->find($user->id);
         $countries = Country::orderBy('name','asc')->where('status',1)->get();
         $states = CountryState::orderBy('name','asc')->where(['status' => 1, 'country_id' => $user->country_id])->get();
         $cities = City::orderBy('name','asc')->where(['status' => 1, 'country_state_id' => $user->state_id])->get();
@@ -266,6 +287,7 @@ class UserProfileController extends Controller
 
         return response()->json([
             'personInfo' => $personInfo,
+            'should_show_personalization' => $this->shouldShowBuyerPersonalization($personInfo),
             'countries' => $countries,
             'states' => $states,
             'cities' => $cities,
@@ -294,12 +316,19 @@ class UserProfileController extends Controller
 
         $user->name = $request->name;
         $user->phone = $request->phone;
-        $user->tc_identity = $request->tc_identity;
-        $user->tax_number = $request->tax_number;
         $user->country_id = $request->country;
         $user->state_id = $request->state;
         $user->city_id = $request->city;
         $user->address = $request->address;
+
+        if ($request->hasAny(['invoice_type', 'tc_identity', 'tax_number', 'tax_office'])) {
+            $invoice = app(\App\Services\BuyerInvoiceService::class)->validateFromRequest($request, $user, (bool) $request->filled('invoice_type'));
+            app(\App\Services\BuyerInvoiceService::class)->syncUser($user, $invoice);
+        } else {
+            $user->tc_identity = $request->tc_identity;
+            $user->tax_number = $request->tax_number;
+        }
+
         $user->save();
 
         if($request->file('image')){
@@ -321,6 +350,70 @@ class UserProfileController extends Controller
 
         $notification = trans('user_validation.Update Successfully');
         return response()->json(['notification' => $notification]);
+    }
+
+    public function updateBuyerPersonalization(Request $request)
+    {
+        $user = Auth::guard('api')->user();
+
+        $request->validate([
+            'shop_name' => ['nullable', 'string', 'max:150'],
+            'business_type' => ['required', 'in:female_hairdresser,male_hairdresser,barber,beauty_salon,other'],
+            'business_type_other' => ['nullable', 'string', 'max:120'],
+            'business_status' => ['required', 'in:own_shop,opening_soon,employed_in_salon,planning'],
+        ]);
+
+        if ($request->input('business_type') === 'other') {
+            $request->validate([
+                'business_type_other' => ['required', 'string', 'max:120'],
+            ]);
+        }
+
+        $user->shop_name = trim((string) $request->input('shop_name', '')) ?: null;
+        $user->business_type = $request->input('business_type');
+        $user->business_type_other = $request->input('business_type') === 'other'
+            ? trim((string) $request->input('business_type_other', ''))
+            : null;
+        $user->business_status = $request->input('business_status');
+        $user->personalization_completed_at = now();
+        $user->personalization_skipped_at = null;
+        $user->save();
+
+        return response()->json([
+            'notification' => 'Bilgileriniz kaydedildi',
+            'should_show_personalization' => false,
+        ]);
+    }
+
+    public function skipBuyerPersonalization()
+    {
+        $user = Auth::guard('api')->user();
+        $user->personalization_skipped_at = now();
+        $user->save();
+
+        return response()->json([
+            'notification' => 'Daha sonra hatırlatacağız',
+            'should_show_personalization' => false,
+        ]);
+    }
+
+    private function shouldShowBuyerPersonalization($personInfo): bool
+    {
+        if (! $personInfo) {
+            return false;
+        }
+
+        if (! empty($personInfo->personalization_completed_at)) {
+            return false;
+        }
+
+        if (empty($personInfo->personalization_skipped_at)) {
+            return true;
+        }
+
+        return now()->greaterThanOrEqualTo(
+            $personInfo->personalization_skipped_at->copy()->addDay()
+        );
     }
 
     public function updateDeviceToken(Request $request)

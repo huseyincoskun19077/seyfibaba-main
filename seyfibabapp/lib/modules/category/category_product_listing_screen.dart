@@ -12,9 +12,12 @@ import '../../widgets/filter_empty_state.dart';
 import '../../widgets/fetch_error_text.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/page_refresh.dart';
+import 'component/product_category_chip_bar.dart';
 import 'component/product_listing_filter_bar.dart';
 import 'controller/cubit/category_cubit.dart';
+import 'controller/cubit/cubit/sub_category_cubit.dart';
 import 'model/product_listing_kind.dart';
+import 'model/sub_category_model.dart';
 import 'utils/product_list_filter.dart';
 
 class CategoryProductListingScreen extends StatefulWidget {
@@ -23,11 +26,13 @@ class CategoryProductListingScreen extends StatefulWidget {
     required this.slug,
     required this.title,
     required this.kind,
+    this.categoryId,
   });
 
   final String slug;
   final String title;
   final ProductListingKind kind;
+  final int? categoryId;
 
   @override
   State<CategoryProductListingScreen> createState() =>
@@ -41,17 +46,54 @@ class _CategoryProductListingScreenState
   ProductListFilter _filter = const ProductListFilter();
   Set<int> _selectedBrandIds = {};
   (double, double)? _priceRange;
+  List<SubCategoryModel> _subCategories = const [];
+  String? _selectedSubCategorySlug;
+  String _listingSlug = '';
+  ProductListingKind _listingKind = ProductListingKind.category;
 
   @override
   void initState() {
     super.initState();
     _cubit = context.read<CategoryCubit>();
-    Future.microtask(() {
+    _listingSlug = widget.slug;
+    _listingKind = widget.kind;
+    Future.microtask(() async {
       _cubit.initPage();
       _cubit.changeTitle(widget.title);
-      _cubit.getProductListing(widget.slug, widget.kind);
+      await _cubit.getProductListing(_listingSlug, _listingKind);
+      if (widget.kind == ProductListingKind.category &&
+          widget.categoryId != null) {
+        await _loadSubCategories(widget.categoryId!);
+      }
     });
     _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _loadSubCategories(int categoryId) async {
+    final subCubit = context.read<SubCategoryCubit>();
+    await subCubit.getSubCategoryList('$categoryId');
+    if (!mounted) return;
+    final state = subCubit.state;
+    setState(() {
+      if (state is SubCategoryListLoadedState) {
+        _subCategories = state.subCategoryList;
+      }
+    });
+  }
+
+  Future<void> _onSubCategoryTap(SubCategoryModel? subCategory) async {
+    setState(() {
+      _selectedSubCategorySlug = subCategory?.slug;
+      if (subCategory == null) {
+        _listingSlug = widget.slug;
+        _listingKind = ProductListingKind.category;
+      } else {
+        _listingSlug = subCategory.slug;
+        _listingKind = ProductListingKind.subCategory;
+      }
+    });
+    _cubit.initPage();
+    await _cubit.getProductListing(_listingSlug, _listingKind);
   }
 
   @override
@@ -221,6 +263,16 @@ class _CategoryProductListingScreenState
                     ? _cubit.listingTotalProducts
                     : visible.length);
 
+            final chipBar = widget.kind == ProductListingKind.category &&
+                    _subCategories.isNotEmpty
+                ? ProductCategoryChipBar(
+                    showCategories: false,
+                    subCategories: _subCategories,
+                    selectedSubCategorySlug: _selectedSubCategorySlug,
+                    onSubCategoryTap: _onSubCategoryTap,
+                  )
+                : null;
+
             return Column(
               children: [
                 ProductListingFilterBar(
@@ -233,6 +285,7 @@ class _CategoryProductListingScreenState
                   priceMax: range.$2,
                   showBrandChip: brands.isNotEmpty,
                   activeFilterCount: _activeFilterCount(),
+                  categoryChips: chipBar,
                   onFilterChanged: (f) {
                     setState(() => _filter = f);
                     runListingApiSearch(f.query);

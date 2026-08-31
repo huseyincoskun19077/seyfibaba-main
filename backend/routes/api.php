@@ -280,6 +280,8 @@ Route::group([], function () {
         Route::get('get-review/{id}', [UserProfileController::class, 'showReview'])->name('show-review');
         Route::get('my-profile', [UserProfileController::class, 'myProfile'])->name('my-profile');
         Route::post('update-profile', [UserProfileController::class, 'updateProfile'])->name('update-profile');
+        Route::post('update-buyer-personalization', [UserProfileController::class, 'updateBuyerPersonalization'])->name('update-buyer-personalization');
+        Route::post('skip-buyer-personalization', [UserProfileController::class, 'skipBuyerPersonalization'])->name('skip-buyer-personalization');
         Route::post('update-device-token', [UserProfileController::class, 'updateDeviceToken'])->name('update-device-token');
         Route::get('notifications', [\App\Http\Controllers\User\NotificationController::class, 'index'])->middleware('auth:api')->name('notifications.index');
         Route::put('notifications/{id}/read', [\App\Http\Controllers\User\NotificationController::class, 'markAsRead'])->middleware('auth:api')->name('notifications.read');

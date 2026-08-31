@@ -14,6 +14,10 @@ class UpdateUserInfo extends Equatable {
   final int cityId;
   final String zipCode;
   final String address;
+  final String invoiceType;
+  final String tcIdentity;
+  final String taxNumber;
+  final String taxOffice;
 
   const UpdateUserInfo({
     required this.id,
@@ -26,6 +30,10 @@ class UpdateUserInfo extends Equatable {
     required this.cityId,
     required this.zipCode,
     required this.address,
+    this.invoiceType = 'individual',
+    this.tcIdentity = '',
+    this.taxNumber = '',
+    this.taxOffice = '',
   });
 
   @override
@@ -41,6 +49,10 @@ class UpdateUserInfo extends Equatable {
       cityId,
       zipCode,
       address,
+      invoiceType,
+      tcIdentity,
+      taxNumber,
+      taxOffice,
     ];
   }
 
@@ -100,6 +112,10 @@ class UpdateUserInfo extends Equatable {
       cityId: map['city_id'] != null ? int.parse(map['city_id'].toString()) : 0,
       zipCode: map['zip_code'] ?? '',
       address: map['address'] ?? '',
+      invoiceType: map['invoice_type']?.toString() ?? 'individual',
+      tcIdentity: map['tc_identity']?.toString() ?? '',
+      taxNumber: map['tax_number']?.toString() ?? '',
+      taxOffice: map['tax_office']?.toString() ?? '',
     );
   }
 

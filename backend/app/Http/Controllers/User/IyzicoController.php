@@ -14,6 +14,7 @@ use App\Models\Setting;
 use App\Models\Vendor;
 use App\Services\CartCleanupService;
 use App\Services\CategoryInstallmentService;
+use App\Services\BuyerInvoiceService;
 use App\Services\IyzicoService;
 use App\Support\OrderQuantityHelper;
 use Illuminate\Http\Request;
@@ -77,6 +78,8 @@ class IyzicoController extends Controller
             $couponPrice = $totalInfo['coupon_price'];
             $totalProduct = OrderQuantityHelper::fromCartProducts($cartProducts);
 
+            $invoiceData = app(BuyerInvoiceService::class)->validateFromRequest($request, $user, true);
+
             $orderResult = $paymentController->orderStore(
                 $user,
                 $totalPrice,
@@ -91,7 +94,8 @@ class IyzicoController extends Controller
                 0,
                 $request->billing_address_id,
                 $request->shipping_address_id,
-                'yes'
+                'yes',
+                $invoiceData
             );
 
             if ($orderResult instanceof \Illuminate\Http\JsonResponse) {
@@ -336,6 +340,12 @@ class IyzicoController extends Controller
             $couponPrice = $totalInfo['coupon_price'];
             $totalProduct = OrderQuantityHelper::fromCartProducts($cartProducts);
 
+            $addressInfo = array_merge(
+                is_array($request->address) ? $request->address : [],
+                $request->only(['invoice_type', 'tc_identity', 'tax_number', 'tax_office'])
+            );
+            $invoiceData = app(BuyerInvoiceService::class)->validateFromAddressInfo($addressInfo, true);
+
             $orderResult = $guestController->orderStore(
                 $totalPrice,
                 $cartProducts,
@@ -347,8 +357,9 @@ class IyzicoController extends Controller
                 $shippingFee,
                 $couponPrice,
                 0,
-                $request->address,
-                'yes'
+                $addressInfo,
+                'yes',
+                $invoiceData
             );
 
             if ($orderResult instanceof \Illuminate\Http\JsonResponse) {

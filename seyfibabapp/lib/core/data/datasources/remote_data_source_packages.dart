@@ -5,6 +5,7 @@ export 'dart:developer';
 export '/core/data/datasources/network_parser.dart';
 export '/modules/category/model/filter_model.dart';
 export '/modules/category/model/sub_category_model.dart';
+export '/modules/home/model/paged_products_result.dart';
 export '/modules/home/model/product_model.dart';
 export '/modules/message/models/seller_messages_dto.dart';
 export '../../../modules/authentication/models/set_password_model.dart';

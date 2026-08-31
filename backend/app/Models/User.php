@@ -54,6 +54,8 @@ class User extends Authenticatable implements JWTSubject
         'must_change_password' => 'boolean',
         'last_login_at' => 'datetime',
         'last_seen_at' => 'datetime',
+        'personalization_completed_at' => 'datetime',
+        'personalization_skipped_at' => 'datetime',
     ];
 
     public function seller(){

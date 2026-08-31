@@ -13,7 +13,10 @@ import '../../widgets/confirm_dialog.dart';
 import '../authentication/controller/login/login_bloc.dart';
 import '../home/widgets/home_theme.dart';
 import '../notification/controller/notification_cubit.dart';
+import 'buyer_personalization_onboarding_screen.dart';
 import 'component/profile_app_bar.dart';
+import 'controllers/updated_info/updated_info_cubit.dart';
+import 'model/buyer_personalization_data.dart';
 import 'controllers/delete_user/delete_user_cubit.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -90,6 +93,35 @@ class ProfileScreen extends StatelessWidget {
                           context,
                           RouteNames.addressScreen,
                         ),
+                      ),
+                      BlocBuilder<UserProfileInfoCubit, UserProfileInfoState>(
+                        builder: (context, state) {
+                          if (!Utils.isLoggedIn(context) || Utils.isSeller(context)) {
+                            return const SizedBox.shrink();
+                          }
+                          final data = state is UpdatedLoaded
+                              ? state.updatedInfo.buyerPersonalization
+                              : context
+                                  .read<UserProfileInfoCubit>()
+                                  .updatedInfo
+                                  ?.buyerPersonalization;
+                          return ProfileMenuTile(
+                            title: 'İşletme Bilgilerim',
+                            icon: Icons.store_mall_directory_outlined,
+                            iconColor: HomeTheme.brandYellow,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BuyerPersonalizationOnboardingScreen(
+                                    initialData: data ?? const BuyerPersonalizationData(),
+                                    isEditMode: true,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
                       ProfileMenuTile(
                         title: Language.allCategories.capitalizeByWord(),

@@ -12,17 +12,38 @@ class ProductsCubit extends Cubit<ProductStateModel> {
 
   final HomeRepository _homeRepository;
   List<ProductModel> highLightedProducts = [];
+  int highlightTotalProducts = 0;
+  String? filterCategorySlug;
+  String? filterSubCategorySlug;
 
   void nameChange(String name) {
     emit(state.copyWith(name: name));
   }
 
+  void resetCategoryFilters() {
+    filterCategorySlug = null;
+    filterSubCategorySlug = null;
+  }
+
+  void applyCategoryFilters({
+    String? categorySlug,
+    String? subCategorySlug,
+  }) {
+    filterCategorySlug = categorySlug;
+    filterSubCategorySlug = subCategorySlug;
+    initPage();
+    highLightedProducts = [];
+  }
+
   Future<void> getHighlightedProduct(String keyword) async {
-    print('new-arrival-loaded $keyword');
     emit(state.copyWith(productState: ProductsStateLoading()));
 
     final result = await _homeRepository.getHighlightProducts(
-        state.initialPage.toString(), keyword);
+      state.initialPage.toString(),
+      keyword,
+      categorySlug: filterCategorySlug,
+      subCategorySlug: filterSubCategorySlug,
+    );
     result.fold(
       (failure) {
         final errors = ProductsStateError(failure.message, failure.statusCode);
@@ -30,18 +51,20 @@ class ProductsCubit extends Cubit<ProductStateModel> {
       },
       (data) {
         if (state.initialPage == 1) {
-          highLightedProducts = data;
+          highLightedProducts = data.products;
+          highlightTotalProducts = data.total;
           final loaded =
               ProductsStateLoaded(highlightedProducts: highLightedProducts);
           emit(state.copyWith(productState: loaded));
         } else {
-          highLightedProducts.addAll(data);
+          highLightedProducts.addAll(data.products);
+          highlightTotalProducts = data.total;
           final loaded =
               MoreProductsStateLoaded(highlightedProducts: highLightedProducts);
           emit(state.copyWith(productState: loaded));
         }
         state.initialPage++;
-        if (data.isEmpty && state.initialPage != 1) {
+        if (data.products.isEmpty && state.initialPage != 1) {
           emit(state.copyWith(isListEmpty: true));
         }
       },

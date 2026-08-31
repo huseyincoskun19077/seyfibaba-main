@@ -17,6 +17,8 @@ import '../../widgets/page_refresh.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/rounded_app_bar.dart';
 import '../animated_splash_screen/controller/app_setting_cubit/app_setting_cubit.dart';
+import '../profile/component/buyer_invoice_form.dart';
+import '../profile/controllers/updated_info/updated_info_cubit.dart';
 import '../profile/model/address_model.dart';
 import 'component/address_card_component.dart';
 import 'component/checkout_legal_consent.dart';
@@ -136,6 +138,12 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
   int shippingAddressId = 0;
   double previousPrice = 0.0;
   double selectedShippingFee = 0.0;
+
+  String _invoiceType = 'individual';
+  String _tcIdentity = '';
+  String _taxNumber = '';
+  String _taxOffice = '';
+  bool _invoiceInitialized = false;
 
   static const basedOnWeight = 'base_on_weight';
   static const basedOnPrice = 'base_on_price';
@@ -302,6 +310,16 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
       Utils.errorSnackBar(context, Language.termAndCondition);
       return false;
     }
+    final invoiceError = validateBuyerInvoice(
+      invoiceType: _invoiceType,
+      tcIdentity: _tcIdentity,
+      taxNumber: _taxNumber,
+      taxOffice: _taxOffice,
+    );
+    if (invoiceError != null) {
+      Utils.errorSnackBar(context, invoiceError);
+      return false;
+    }
     if (billingAddressId < 1) {
       Utils.errorSnackBar(context, Language.selectBillingAddress);
       return false;
@@ -323,6 +341,13 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
     body['shipping_address_id'] = shippingAddressId.toString();
     body['billing_address_id'] = billingAddressId.toString();
     body['shipping_method_id'] = shippingMethod.toString();
+    body['invoice_type'] = _invoiceType;
+    if (_invoiceType == 'corporate') {
+      body['tax_number'] = _taxNumber;
+      body['tax_office'] = _taxOffice;
+    } else {
+      body['tc_identity'] = _tcIdentity;
+    }
 
     Navigator.pushNamed(
       context,
@@ -358,6 +383,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
               if (Utils.isMapEnable(context))
                 SliverToBoxAdapter(child: _locationWiseCharge()),
               SliverToBoxAdapter(child: _buildOrderSummary()),
+              SliverToBoxAdapter(child: _buildInvoiceSection()),
               SliverToBoxAdapter(
                 child: CheckoutLegalConsentPanel(
                   values: _legalConsents,
@@ -372,6 +398,39 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
         ),
         _bottomBtn(),
       ],
+    );
+  }
+
+  Widget _buildInvoiceSection() {
+    if (!_invoiceInitialized) {
+      final info = context.read<UserProfileInfoCubit>().updatedInfo?.updateUserInfo;
+      if (info != null) {
+        _invoiceType = info.invoiceType.isNotEmpty ? info.invoiceType : 'individual';
+        _tcIdentity = info.tcIdentity;
+        _taxNumber = info.taxNumber;
+        _taxOffice = info.taxOffice;
+      }
+      _invoiceInitialized = true;
+    }
+
+    return BuyerInvoiceForm(
+      invoiceType: _invoiceType,
+      tcIdentity: _tcIdentity,
+      taxNumber: _taxNumber,
+      taxOffice: _taxOffice,
+      onChanged: ({
+        required invoiceType,
+        required tcIdentity,
+        required taxNumber,
+        required taxOffice,
+      }) {
+        setState(() {
+          _invoiceType = invoiceType;
+          _tcIdentity = tcIdentity;
+          _taxNumber = taxNumber;
+          _taxOffice = taxOffice;
+        });
+      },
     );
   }
 

@@ -16,6 +16,7 @@
 
           <div class="section-body">
             <a href="{{ route('admin.slider.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> {{__('admin.Add New')}}</a>
+            <a href="{{ route('admin.mobile-slider.index') }}" class="btn btn-outline-primary ml-2"><i class="fas fa-mobile-alt"></i> Mobil Slider</a>
             <div class="row mt-4">
                 <div class="col">
                   <div class="card">

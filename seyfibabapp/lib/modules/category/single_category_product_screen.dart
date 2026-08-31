@@ -9,22 +9,26 @@ class SingleCategoryProductScreen extends StatelessWidget {
     super.key,
     required this.slug,
     this.name = '',
+    this.categoryId,
   });
 
   final String slug;
   final String name;
+  final int? categoryId;
 
   factory SingleCategoryProductScreen.fromArgs(Object? arguments) {
     if (arguments is CategoryProductArgs) {
       return SingleCategoryProductScreen(
         slug: arguments.slug,
         name: arguments.name,
+        categoryId: arguments.categoryId,
       );
     }
     if (arguments is CategoryNavigationArgs) {
       return SingleCategoryProductScreen(
         slug: arguments.slug,
         name: arguments.name,
+        categoryId: arguments.id,
       );
     }
     final slug = arguments?.toString() ?? '';
@@ -41,6 +45,7 @@ class SingleCategoryProductScreen extends StatelessWidget {
       slug: slug,
       title: title,
       kind: ProductListingKind.category,
+      categoryId: categoryId,
     );
   }
 }

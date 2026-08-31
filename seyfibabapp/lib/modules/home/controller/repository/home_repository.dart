@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '/modules/home/model/brand_model.dart';
+import '/modules/home/model/paged_products_result.dart';
 import '/modules/home/model/product_model.dart';
 import '../../../../core/data/datasources/remote_data_source.dart';
 import '../../../../core/error/exception.dart';
@@ -10,8 +11,12 @@ import '../../model/home_model.dart';
 abstract class HomeRepository {
   Future<Either<Failure, HomeModel>> getHomeData();
   Future<Either<Failure, List<BrandModel>>> getBrandList();
-  Future<Either<Failure, List<ProductModel>>> getHighlightProducts(
-      String page, String keyword);
+  Future<Either<Failure, PagedProductsResult>> getHighlightProducts(
+    String page,
+    String keyword, {
+    String? categorySlug,
+    String? subCategorySlug,
+  });
 
   Future<Either<Failure, List<ProductModel>>> loadMoreProducts(
       String keyword, int page, int perPage);
@@ -42,10 +47,19 @@ class HomeRepositoryImp extends HomeRepository {
   }
 
   @override
-  Future<Either<Failure, List<ProductModel>>> getHighlightProducts(
-      String page, String keyword) async {
+  Future<Either<Failure, PagedProductsResult>> getHighlightProducts(
+    String page,
+    String keyword, {
+    String? categorySlug,
+    String? subCategorySlug,
+  }) async {
     try {
-      final result = await remoteDataSource.getHighlightProducts(page, keyword);
+      final result = await remoteDataSource.getHighlightProducts(
+        page,
+        keyword,
+        categorySlug: categorySlug,
+        subCategorySlug: subCategorySlug,
+      );
       return right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, e.statusCode));

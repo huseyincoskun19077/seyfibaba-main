@@ -24,6 +24,11 @@ abstract class RemoteDataSource {
 
   Future<UserProfileInfo> getProfileInfo(String token);
 
+  Future<String> updateBuyerPersonalization(
+      Map<String, String> dataMap, String token);
+
+  Future<String> skipBuyerPersonalization(String token);
+
   Future<String> deleteUserAccount(String token);
 
   Future<EditAddressModel> editAddress(String id, String token);
@@ -47,7 +52,12 @@ abstract class RemoteDataSource {
   Future<String> updateProfileInformation(
       Map<String, String> dataMap, String token);
 
-  Future<List<ProductModel>> getHighlightProducts(String page, String keyWord);
+  Future<PagedProductsResult> getHighlightProducts(
+    String page,
+    String keyWord, {
+    String? categorySlug,
+    String? subCategorySlug,
+  });
 
   Future<List<ProductModel>> loadMoreProducts(
       String keyword, int page, int perPage);
@@ -1057,16 +1067,40 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   }
 
   @override
-  Future<List<ProductModel>> getHighlightProducts(
-      String page, String keyWord) async {
-    final uri = Uri.parse(RemoteUrls.getProductByKeyword(page, keyWord));
+  Future<PagedProductsResult> getHighlightProducts(
+    String page,
+    String keyWord, {
+    String? categorySlug,
+    String? subCategorySlug,
+  }) async {
+    final uri = Uri.parse(
+      RemoteUrls.searchHighlightProducts(
+        highlight: keyWord,
+        page: page,
+        categorySlug: categorySlug,
+        subCategorySlug: subCategorySlug,
+      ),
+    );
 
     final clientMethod = client.get(uri, headers: defaultHeader);
     final responseJsonBody =
         await NetworkParser.callClientWithCatchException(() => clientMethod);
-    final mapList = responseJsonBody['products']['data'] as List;
+    final productsPayload = responseJsonBody['products'];
+    final productsMap = productsPayload is Map
+        ? Map<String, dynamic>.from(productsPayload)
+        : <String, dynamic>{};
+    final mapList = productsMap['data'] is List
+        ? productsMap['data'] as List
+        : (productsPayload is List ? productsPayload : const []);
 
-    return List<ProductModel>.from(mapList.map((e) => ProductModel.fromMap(e)));
+    final total = int.tryParse('${productsMap['total'] ?? ''}') ?? mapList.length;
+
+    return PagedProductsResult(
+      products: List<ProductModel>.from(
+        mapList.map((e) => ProductModel.fromMap(e as Map<String, dynamic>)),
+      ),
+      total: total,
+    );
   }
 
   @override
@@ -1158,6 +1192,27 @@ class RemoteDataSourceImpl implements RemoteDataSource {
         await NetworkParser.callClientWithCatchException(() => clientMethod);
 
     return UserProfileInfo.fromMap(responseJsonBody);
+  }
+
+  @override
+  Future<String> updateBuyerPersonalization(
+    Map<String, String> dataMap,
+    String token,
+  ) async {
+    final uri = Uri.parse(RemoteUrls.updateBuyerPersonalization(token));
+    final clientMethod = client.post(uri, headers: postHeader, body: dataMap);
+    final responseJsonBody =
+        await NetworkParser.callClientWithCatchException(() => clientMethod);
+    return responseJsonBody['notification']?.toString() ?? 'Kaydedildi';
+  }
+
+  @override
+  Future<String> skipBuyerPersonalization(String token) async {
+    final uri = Uri.parse(RemoteUrls.skipBuyerPersonalization(token));
+    final clientMethod = client.post(uri, headers: postHeader);
+    final responseJsonBody =
+        await NetworkParser.callClientWithCatchException(() => clientMethod);
+    return responseJsonBody['notification']?.toString() ?? 'Tamam';
   }
 
   @override

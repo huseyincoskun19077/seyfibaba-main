@@ -44,6 +44,7 @@ use App\Models\ShoppingCartVariant;
 use App\Http\Controllers\Controller;
 use App\Services\CartCleanupService;
 use App\Services\CommissionService;
+use App\Services\BuyerInvoiceService;
 use App\Support\OrderQuantityHelper;
 
 class PaymentController extends Controller
@@ -140,7 +141,8 @@ class PaymentController extends Controller
 
         $transaction_id = $request->razorpay_payment_id;
         $is_draft = 'no';
-        $order_result = $this->orderStore($user, $total_price, $cartProducts, $totalProduct, 'Cash on Delivery', 'cash_on_delivery', 0, $shipping, $shipping_fee, $coupon_price, 1, $request->billing_address_id, $request->shipping_address_id, $is_draft);
+        $invoiceData = app(BuyerInvoiceService::class)->validateFromRequest($request, $user, true);
+        $order_result = $this->orderStore($user, $total_price, $cartProducts, $totalProduct, 'Cash on Delivery', 'cash_on_delivery', 0, $shipping, $shipping_fee, $coupon_price, 1, $request->billing_address_id, $request->shipping_address_id, $is_draft, $invoiceData);
 
         $this->sendOrderSuccessMail($user, $total_price, 'Cash on Delivery', 0, $order_result['order'], $order_result['order_details']);
         $this->sendOrderNotificationToSellers($order_result['order']);
@@ -238,7 +240,8 @@ class PaymentController extends Controller
 
         $transaction_id = 'draft';
         $is_draft = 'yes';
-        $order_result = $this->orderStore($user, $total_price, $cartProducts, $totalProduct, 'draft', $transaction_id, 1, $shipping, $shipping_fee, $coupon_price, 0, $request->billing_address_id, $request->shipping_address_id, $is_draft);
+        $invoiceData = app(BuyerInvoiceService::class)->validateFromRequest($request, $user, true);
+        $order_result = $this->orderStore($user, $total_price, $cartProducts, $totalProduct, 'draft', $transaction_id, 1, $shipping, $shipping_fee, $coupon_price, 0, $request->billing_address_id, $request->shipping_address_id, $is_draft, $invoiceData);
         // $this->sendOrderSuccessMail($user, $total_price, 'Stripe', 1, $order_result['order'], $order_result['order_details']);
 
         // $this->sendOrderSuccessSms($user, $order_result['order']);
@@ -334,7 +337,8 @@ class PaymentController extends Controller
 
         $transaction_id = $request->tnx_info;
         $is_draft = 'no';
-        $order_result = $this->orderStore($user, $total_price, $cartProducts,  $totalProduct, 'bankpayment', $transaction_id, 0, $shipping, $shipping_fee, $coupon_price, 1, $request->billing_address_id, $request->shipping_address_id, $is_draft);
+        $invoiceData = app(BuyerInvoiceService::class)->validateFromRequest($request, $user, true);
+        $order_result = $this->orderStore($user, $total_price, $cartProducts,  $totalProduct, 'bankpayment', $transaction_id, 0, $shipping, $shipping_fee, $coupon_price, 1, $request->billing_address_id, $request->shipping_address_id, $is_draft, $invoiceData);
 
         try {
             $this->sendOrderSuccessMail($user, $total_price, 'Bank Payment', 0, $order_result['order'], $order_result['order_details']);
@@ -525,7 +529,7 @@ class PaymentController extends Controller
     }
 
 
-    public function orderStore($user, $total_price, $cartProducts, $totalProduct, $payment_method, $transaction_id, $paymetn_status, $shipping, $shipping_fee, $coupon_price, $cash_on_delivery, $billing_address_id, $shipping_address_id, $is_draft)
+    public function orderStore($user, $total_price, $cartProducts, $totalProduct, $payment_method, $transaction_id, $paymetn_status, $shipping, $shipping_fee, $coupon_price, $cash_on_delivery, $billing_address_id, $shipping_address_id, $is_draft, ?array $invoiceData = null)
     {
         // $cartProducts = ShoppingCart::with('product','variants.variantItem')->where('user_id', $user->id)->select('id','product_id','qty')->get();
         if ($cartProducts->count() == 0) {
@@ -675,6 +679,10 @@ class PaymentController extends Controller
         $orderAddress->shipping_state = optional($shippingAddress->countryState)->name ?? '';
         $orderAddress->shipping_city = optional($shippingAddress->city)->name ?? '';
         $orderAddress->shipping_address_type = $shippingAddress->type;
+        if ($invoiceData) {
+            app(BuyerInvoiceService::class)->applyToOrderAddress($orderAddress, $invoiceData);
+            app(BuyerInvoiceService::class)->syncUser($user, $invoiceData);
+        }
         $orderAddress->save();
         // Sepet temizleme: frontend başarılı siparişten sonra Redux sepetini temizliyor.
         // Buradaki eski silme kodu (shopping_cart_id yerine product_id) hatalı eşleşmeye yol açıyordu.

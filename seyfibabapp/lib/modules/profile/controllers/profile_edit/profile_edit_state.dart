@@ -12,6 +12,10 @@ class ProfileEditStateModel extends Equatable {
   final String country;
   final String state;
   final String city;
+  final String invoiceType;
+  final String tcIdentity;
+  final String taxNumber;
+  final String taxOffice;
   final ProfileEditState stateStatus;
 
   const ProfileEditStateModel({
@@ -19,12 +23,15 @@ class ProfileEditStateModel extends Equatable {
     required this.phone,
     required this.email,
     required this.countryCode,
-    // required this.zipCode,
     required this.address,
     required this.image,
     required this.country,
     required this.state,
     required this.city,
+    this.invoiceType = 'individual',
+    this.tcIdentity = '',
+    this.taxNumber = '',
+    this.taxOffice = '',
     required this.stateStatus,
   });
 
@@ -55,6 +62,10 @@ class ProfileEditStateModel extends Equatable {
     String? state,
     String? city,
     String? email,
+    String? invoiceType,
+    String? tcIdentity,
+    String? taxNumber,
+    String? taxOffice,
     ProfileEditState? stateStatus,
   }) {
     return ProfileEditStateModel(
@@ -62,12 +73,15 @@ class ProfileEditStateModel extends Equatable {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       countryCode: phoneCode ?? countryCode,
-      // zipCode: zipCode ?? this.zipCode,
       address: address ?? this.address,
       image: image ?? this.image,
       country: country ?? this.country,
       state: state ?? this.state,
       city: city ?? this.city,
+      invoiceType: invoiceType ?? this.invoiceType,
+      tcIdentity: tcIdentity ?? this.tcIdentity,
+      taxNumber: taxNumber ?? this.taxNumber,
+      taxOffice: taxOffice ?? this.taxOffice,
       stateStatus: stateStatus ?? this.stateStatus,
     );
   }
@@ -78,12 +92,17 @@ class ProfileEditStateModel extends Equatable {
     result.addAll({'name': name});
     result.addAll({'email': email});
     result.addAll({'phone': phone.isNotEmpty ? countryCode + phone : ''});
-    // result.addAll({'zip_code': zipCode});
     result.addAll({'address': address});
-    // result.addAll({'image': image});
     result.addAll({'country': country});
     result.addAll({'state': state});
     result.addAll({'city': city});
+    result.addAll({'invoice_type': invoiceType});
+    if (invoiceType == 'corporate') {
+      result.addAll({'tax_number': taxNumber});
+      result.addAll({'tax_office': taxOffice});
+    } else {
+      result.addAll({'tc_identity': tcIdentity});
+    }
 
     return result;
   }
@@ -127,6 +146,10 @@ class ProfileEditStateModel extends Equatable {
       country,
       state,
       city,
+      invoiceType,
+      tcIdentity,
+      taxNumber,
+      taxOffice,
       stateStatus,
     ];
   }

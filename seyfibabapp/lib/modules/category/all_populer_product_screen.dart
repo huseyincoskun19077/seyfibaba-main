@@ -8,12 +8,17 @@ import '../../utils/utils.dart';
 import '../../widgets/fetch_error_text.dart';
 import '../../widgets/filter_empty_state.dart';
 import '../../widgets/loading_widget.dart';
+import '../category/component/product_category_chip_bar.dart';
+import '../category/controller/cubit/category_cubit.dart';
+import '../category/controller/cubit/cubit/sub_category_cubit.dart';
+import '../category/model/sub_category_model.dart';
+import '../category/utils/product_list_filter.dart';
 import '../home/controller/cubit/product/product_state_model.dart';
 import '../home/controller/cubit/product/products_cubit.dart';
 import '../home/controller/cubit/product/products_state.dart';
+import '../home/model/home_category_model.dart';
 import '../home/model/product_model.dart';
 import 'component/product_listing_filter_bar.dart';
-import 'utils/product_list_filter.dart';
 
 class AllPopularProductScreen extends StatefulWidget {
   const AllPopularProductScreen({super.key, required this.keyword});
@@ -31,12 +36,79 @@ class _AllPopularProductScreenState extends State<AllPopularProductScreen>
   ProductListFilter _filter = const ProductListFilter();
   (double, double)? _priceRange;
 
+  List<HomePageCategoriesModel> _categories = const [];
+  List<SubCategoryModel> _subCategories = const [];
+  String? _selectedCategorySlug;
+  String? _selectedSubCategorySlug;
+  bool _loadingCategories = true;
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(() =>
-        context.read<ProductsCubit>().getHighlightedProduct(widget.keyword));
+    _filter = widget.keyword == 'discounted'
+        ? const ProductListFilter(onlyDiscount: true)
+        : const ProductListFilter();
+    final productCubit = context.read<ProductsCubit>();
+    productCubit
+      ..resetCategoryFilters()
+      ..initPage();
+    Future.microtask(() async {
+      await productCubit.getHighlightedProduct(widget.keyword);
+      await _loadCategories();
+    });
     _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _loadCategories() async {
+    final categoryCubit = context.read<CategoryCubit>();
+    await categoryCubit.getCategoryList();
+    if (!mounted) return;
+    setState(() {
+      _categories = categoryCubit.categoryList;
+      _loadingCategories = false;
+    });
+  }
+
+  Future<void> _loadSubCategories(int categoryId) async {
+    final subCubit = context.read<SubCategoryCubit>();
+    await subCubit.getSubCategoryList('$categoryId');
+    if (!mounted) return;
+    final state = subCubit.state;
+    setState(() {
+      if (state is SubCategoryListLoadedState) {
+        _subCategories = state.subCategoryList;
+      } else {
+        _subCategories = const [];
+      }
+    });
+  }
+
+  Future<void> _reloadProducts() async {
+    final productCubit = context.read<ProductsCubit>();
+    productCubit.applyCategoryFilters(
+      categorySlug: _selectedCategorySlug,
+      subCategorySlug: _selectedSubCategorySlug,
+    );
+    await productCubit.getHighlightedProduct(widget.keyword);
+  }
+
+  Future<void> _onCategoryTap(HomePageCategoriesModel? category) async {
+    setState(() {
+      _selectedCategorySlug = category?.slug;
+      _selectedSubCategorySlug = null;
+      _subCategories = const [];
+    });
+    if (category != null) {
+      await _loadSubCategories(category.id);
+    }
+    await _reloadProducts();
+  }
+
+  Future<void> _onSubCategoryTap(SubCategoryModel? subCategory) async {
+    setState(() {
+      _selectedSubCategorySlug = subCategory?.slug;
+    });
+    await _reloadProducts();
   }
 
   @override
@@ -64,9 +136,21 @@ class _AllPopularProductScreenState extends State<AllPopularProductScreen>
     final usingApiSearch =
         _filter.query.trim().length >= 2 && apiResults != null;
     final listSource = usingApiSearch ? apiResults : source;
-    final filterToApply =
+    var filterToApply =
         usingApiSearch ? _filter.copyWith(query: '') : _filter;
+
+    if (widget.keyword == 'discounted') {
+      filterToApply = filterToApply.copyWith(onlyDiscount: true);
+    }
+
     return applyProductListFilter(listSource, filterToApply);
+  }
+
+  ProductListFilter _initialFilter() {
+    if (widget.keyword == 'discounted') {
+      return const ProductListFilter(onlyDiscount: true);
+    }
+    return const ProductListFilter();
   }
 
   @override
@@ -81,9 +165,13 @@ class _AllPopularProductScreenState extends State<AllPopularProductScreen>
             productCubit.initPage();
           }
           setState(() {
-            _filter = const ProductListFilter();
+            _filter = _initialFilter();
             _priceRange = null;
+            _selectedCategorySlug = null;
+            _selectedSubCategorySlug = null;
+            _subCategories = const [];
           });
+          productCubit.resetCategoryFilters();
           await productCubit.getHighlightedProduct(widget.keyword);
         },
         child: BlocConsumer<ProductsCubit, ProductStateModel>(
@@ -116,6 +204,17 @@ class _AllPopularProductScreenState extends State<AllPopularProductScreen>
               return FetchErrorText(text: state.errorMessage);
             }
 
+            final chipBar = _loadingCategories
+                ? const SizedBox.shrink()
+                : ProductCategoryChipBar(
+                    categories: _categories,
+                    subCategories: _subCategories,
+                    selectedCategorySlug: _selectedCategorySlug,
+                    selectedSubCategorySlug: _selectedSubCategorySlug,
+                    onCategoryTap: _onCategoryTap,
+                    onSubCategoryTap: _onSubCategoryTap,
+                  );
+
             if (products.isEmpty &&
                 state is! ProductsStateLoading &&
                 productCubit.state.initialPage == 1) {
@@ -127,6 +226,7 @@ class _AllPopularProductScreenState extends State<AllPopularProductScreen>
                     filter: _filter,
                     priceMin: 0,
                     priceMax: 1,
+                    categoryChips: chipBar,
                     onFilterChanged: (f) => setState(() => _filter = f),
                   ),
                   Expanded(
@@ -148,15 +248,21 @@ class _AllPopularProductScreenState extends State<AllPopularProductScreen>
                     _filter.activeCount == 0
                 ? products
                 : filtered;
+            final count = _filter.query.trim().length >= 2
+                ? visible.length
+                : (productCubit.highlightTotalProducts > 0
+                    ? productCubit.highlightTotalProducts
+                    : visible.length);
 
             return Column(
               children: [
                 ProductListingFilterBar(
                   title: productCubit.state.name,
-                  productCount: visible.length,
+                  productCount: count,
                   filter: _filter,
                   priceMin: range.$1,
                   priceMax: range.$2,
+                  categoryChips: chipBar,
                   onFilterChanged: (f) {
                     setState(() => _filter = f);
                     runListingApiSearch(f.query);

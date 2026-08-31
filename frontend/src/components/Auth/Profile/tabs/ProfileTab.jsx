@@ -53,8 +53,10 @@ export default function ProfileTab({ profileInfo }) {
     name: profileInfo.personInfo.name,
     email: profileInfo.personInfo.email,
     phone: null,
+    invoice_type: profileInfo.personInfo.invoice_type || "individual",
     tc_identity: profileInfo.personInfo.tc_identity || "",
     tax_number: profileInfo.personInfo.tax_number || "",
+    tax_office: profileInfo.personInfo.tax_office || "",
     country: null,
     state: null,
     city: null,
@@ -323,8 +325,10 @@ export default function ProfileTab({ profileInfo }) {
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
-      tc_identity: formData.tc_identity,
-      tax_number: formData.tax_number,
+      invoice_type: formData.invoice_type,
+      tc_identity: formData.invoice_type === "individual" ? formData.tc_identity : "",
+      tax_number: formData.invoice_type === "corporate" ? formData.tax_number : "",
+      tax_office: formData.invoice_type === "corporate" ? formData.tax_office : "",
       country: formData.country,
       address: formData.address,
       image: formImg ? formImg : null,
@@ -611,28 +615,64 @@ export default function ProfileTab({ profileInfo }) {
                 )}
               </div>
             </div>
-            {/* TC Kimlik / Vergi No */}
-            <div className="input-item md:flex md:space-x-2.5 rtl:space-x-reverse mb-8">
-              <div className="md:w-1/2 w-full mb-8 md:mb-0">
+            {/* Fatura bilgileri */}
+            <div className="input-item mb-8">
+              <p className="text-sm font-medium text-qblack mb-3">Fatura Bilgileri</p>
+              <div className="flex flex-wrap gap-4 mb-4">
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={formData.invoice_type !== "corporate"}
+                    onChange={() => handleInputChange("invoice_type", "individual")}
+                  />
+                  <span className="text-sm">Bireysel (TC)</span>
+                </label>
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={formData.invoice_type === "corporate"}
+                    onChange={() => handleInputChange("invoice_type", "corporate")}
+                  />
+                  <span className="text-sm">Kurumsal (Vergi No)</span>
+                </label>
+              </div>
+              {formData.invoice_type === "corporate" ? (
+                <div className="md:flex md:space-x-2.5 rtl:space-x-reverse">
+                  <div className="md:w-1/2 w-full mb-4 md:mb-0">
+                    <InputCom
+                      label="Vergi Numarası"
+                      placeholder="10 haneli vergi no"
+                      type="text"
+                      inputClasses="h-[50px]"
+                      value={formData.tax_number}
+                      inputHandler={(e) =>
+                        handleInputChange("tax_number", e.target.value.replace(/\D/g, "").slice(0, 10))
+                      }
+                    />
+                  </div>
+                  <div className="md:w-1/2 w-full">
+                    <InputCom
+                      label="Vergi Dairesi"
+                      placeholder="Vergi dairesi"
+                      type="text"
+                      inputClasses="h-[50px]"
+                      value={formData.tax_office}
+                      inputHandler={(e) => handleInputChange("tax_office", e.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : (
                 <InputCom
                   label="TC Kimlik No"
                   placeholder="11 haneli TC Kimlik No"
                   type="text"
                   inputClasses="h-[50px]"
                   value={formData.tc_identity}
-                  inputHandler={(e) => handleInputChange("tc_identity", e.target.value)}
+                  inputHandler={(e) =>
+                    handleInputChange("tc_identity", e.target.value.replace(/\D/g, "").slice(0, 11))
+                  }
                 />
-              </div>
-              <div className="md:w-1/2 w-full">
-                <InputCom
-                  label="Vergi No (Kurumsal)"
-                  placeholder="Vergi numarası (opsiyonel)"
-                  type="text"
-                  inputClasses="h-[50px]"
-                  value={formData.tax_number}
-                  inputHandler={(e) => handleInputChange("tax_number", e.target.value)}
-                />
-              </div>
+              )}
             </div>
             {/* Address input */}
             <div className="input-item mb-8">

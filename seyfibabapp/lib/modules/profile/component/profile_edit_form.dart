@@ -12,6 +12,7 @@ import '../../../utils/constants.dart';
 import '../../../utils/utils.dart';
 import '../../../widgets/custom_image.dart';
 import '../../../widgets/primary_button.dart';
+import 'buyer_invoice_form.dart';
 import '../../authentication/widgets/sign_up_form.dart';
 import '../model/city_model.dart';
 import '../model/country_model.dart';
@@ -62,6 +63,12 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
     profile.changeCity("${data.cityId}");
     profile.changePhone(number);
     profile.changePhoneCode(dialCode);
+    profile.changeInvoice(
+      invoiceType: data.invoiceType,
+      tcIdentity: data.tcIdentity,
+      taxNumber: data.taxNumber,
+      taxOffice: data.taxOffice,
+    );
     //
 
     // _countryState = null;
@@ -282,7 +289,32 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
               },
             ),
             const SizedBox(height: 16),
-            cityField(),
+            cityField(            ),
+            const SizedBox(height: 16),
+            BlocBuilder<ProfileEditCubit, ProfileEditStateModel>(
+              builder: (context, state) {
+                return BuyerInvoiceForm(
+                  invoiceType: state.invoiceType,
+                  tcIdentity: state.tcIdentity,
+                  taxNumber: state.taxNumber,
+                  taxOffice: state.taxOffice,
+                  showIntro: false,
+                  onChanged: ({
+                    required invoiceType,
+                    required tcIdentity,
+                    required taxNumber,
+                    required taxOffice,
+                  }) {
+                    profileEdBlc.changeInvoice(
+                      invoiceType: invoiceType,
+                      tcIdentity: tcIdentity,
+                      taxNumber: taxNumber,
+                      taxOffice: taxOffice,
+                    );
+                  },
+                );
+              },
+            ),
             const SizedBox(height: 16),
             BlocBuilder<ProfileEditCubit, ProfileEditStateModel>(
               builder: (context, state) {

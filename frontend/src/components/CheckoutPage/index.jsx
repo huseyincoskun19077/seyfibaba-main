@@ -37,8 +37,12 @@ import { isGuestCheckoutEnabled } from "@/utils/guestCheckout";
 import useRefreshCartPrices from "@/hooks/useRefreshCartPrices";
 import CheckoutAddressForm from "./components/CheckoutAddressForm";
 import GuestCheckoutAddressForm from "./components/GuestCheckoutAddressForm";
+import InvoiceCheckoutSection, {
+  defaultInvoiceState,
+} from "./components/InvoiceCheckoutSection";
 
 export default function CheckoutPage() {
+  const [invoiceData, setInvoiceData] = useState(defaultInvoiceState());
   // Redux selectors
   const { websiteSetup } = useSelector((state) => state.websiteSetup);
   const { cart } = useSelector((state) => state.cart);
@@ -324,6 +328,7 @@ export default function CheckoutPage() {
     selectPayment,
     transactionInfo,
     legalConsentValues,
+    invoiceData,
     guestFields: {
       fName,
       lName,
@@ -602,6 +607,9 @@ export default function CheckoutPage() {
     setShipppingRules(shippings);
 
     if (isRealUser) {
+      if (response.data?.buyer_invoice) {
+        setInvoiceData(defaultInvoiceState(response.data.buyer_invoice));
+      }
       // Set addresses
       const checkoutAddresses = response.data.addresses || [];
       setAddresses(checkoutAddresses);
@@ -796,6 +804,12 @@ export default function CheckoutPage() {
                     price={price}
                     totalWeight={totalWeight}
                     totalQty={totalQty}
+                  />
+
+                  <InvoiceCheckoutSection
+                    className="mt-6"
+                    invoice={invoiceData}
+                    onChange={setInvoiceData}
                   />
 
                   {/* Payment Methods */}

@@ -22,6 +22,19 @@
                 @endif
                 {{ $oa->billing_address }},
                 {{ $oa->billing_city.', '.$oa->billing_state.', '.$oa->billing_country }}<br>
+                @if (!empty($oa->invoice_type))
+                    <br><strong>Fatura:</strong>
+                    {{ $oa->invoice_type === 'corporate' ? 'Kurumsal' : 'Bireysel' }}<br>
+                @endif
+                @if (!empty($oa->tc_identity))
+                    TC: {{ $oa->tc_identity }}<br>
+                @endif
+                @if (!empty($oa->tax_number))
+                    Vergi No: {{ $oa->tax_number }}<br>
+                @endif
+                @if (!empty($oa->tax_office))
+                    Vergi Dairesi: {{ $oa->tax_office }}<br>
+                @endif
             </address>
         </div>
         <div class="col-md-6 text-md-right">

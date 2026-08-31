@@ -12,6 +12,7 @@ import 'home_seller_model.dart';
 import 'product_model.dart';
 import 'section_title_model.dart';
 import 'slider_model.dart';
+import 'mobile_slider_model.dart';
 
 class HomeModel extends Equatable {
   final List<CategoriesModel> popularCategories;
@@ -28,6 +29,7 @@ class HomeModel extends Equatable {
   final String? popularCategorySidebarBanner;
   final BannerModel? singleBannerTwo;
   final List<SliderModel> sliders;
+  final List<MobileSliderModel> mobileSliders;
   final List<ProductModel> popularCategoryProducts;
   final List<ProductModel> featuredCategoryProducts;
   final List<ProductModel> topRatedProducts;
@@ -51,6 +53,7 @@ class HomeModel extends Equatable {
     required this.sectionTitle,
     required this.flashSale,
     required this.sliders,
+    this.mobileSliders = const [],
     required this.featuredCategoryProducts,
     required this.newArrivalProducts,
     required this.topRatedProducts,
@@ -93,6 +96,10 @@ class HomeModel extends Equatable {
       sliders: map['sliders'] != null
           ? List<SliderModel>.from(
               map['sliders'].map((x) => SliderModel.fromMap(x)))
+          : [],
+      mobileSliders: map['mobileSliders'] != null
+          ? List<MobileSliderModel>.from(
+              map['mobileSliders'].map((x) => MobileSliderModel.fromMap(x)))
           : [],
       featuredCategoryProducts: map['featuredCategoryProducts'] != null
           ? List<ProductModel>.from(map['featuredCategoryProducts']
@@ -178,6 +185,7 @@ class HomeModel extends Equatable {
       sectionTitle,
       flashSale,
       sliders,
+      mobileSliders,
       featuredCategoryProducts,
       newArrivalProducts,
       topRatedProducts,

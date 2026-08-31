@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../modules/authentication/controller/login/login_bloc.dart';
 import '../../../modules/home/widgets/home_theme.dart';
+import '../../../utils/utils.dart';
 import '../services/seller_api_service.dart';
 
 class SellerReviewsScreen extends StatefulWidget {
@@ -57,10 +58,10 @@ class _SellerReviewsScreenState extends State<SellerReviewsScreen> {
     final user = review['user'];
     if (user is Map) {
       final name = '${user['name'] ?? ''}'.trim();
-      if (name.isNotEmpty) return name;
-      return '${user['email'] ?? 'Kullanıcı'}';
+      if (name.isNotEmpty) return Utils.maskReviewerName(name);
+      return Utils.maskReviewerName('${user['email'] ?? 'Kullanıcı'}');
     }
-    return '${review['user_name'] ?? 'Kullanıcı'}';
+    return Utils.maskReviewerName('${review['user_name'] ?? 'Kullanıcı'}');
   }
 
   @override

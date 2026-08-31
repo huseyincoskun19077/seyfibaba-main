@@ -10,6 +10,7 @@ use App\Models\HomePageOneVisibility;
 use App\Models\Brand;
 
 use App\Models\Slider;
+use App\Models\MobileSlider;
 
 use App\Models\Category;
 
@@ -549,7 +550,11 @@ class HomeController extends Controller
 
         $sliderVisibilty = $sliderVisibilty->status == 1 ? true : false;
 
-
+        $mobileSliders = MobileSlider::query()
+            ->where('status', true)
+            ->orderBy('serial')
+            ->orderBy('id')
+            ->get();
 
         $sliderBannerOne = BannerImage::select('id','product_slug','image','banner_location','title_one','title_two','badge','status')->find(16);
 
@@ -727,6 +732,8 @@ class HomeController extends Controller
             'sliderVisibilty' => $sliderVisibilty,
 
             'sliders' => $sliders,
+
+            'mobileSliders' => $mobileSliders,
 
             'sliderBannerOne' => $sliderBannerOne,
 

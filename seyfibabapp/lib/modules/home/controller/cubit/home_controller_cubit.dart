@@ -35,16 +35,53 @@ class HomeControllerCubit extends Cubit<HomeControllerState> {
   }
 
   void storeBannerImage() {
-    if (sliderBanner.isNotEmpty) {
-      sliderBanner.clear();
+    sliderBanner.clear();
+    if (homeModel == null) return;
+
+    if (homeModel!.mobileSliders.isNotEmpty) {
+      for (final slider in homeModel!.mobileSliders) {
+        sliderBanner.add(
+          BannerModel(
+            id: slider.id,
+            link: slider.link,
+            image: slider.image,
+            productSlug: slider.productSlug,
+            bannerLocation: '',
+            slug: slider.productSlug,
+            titleOne: slider.title,
+            titleTwo: slider.subtitle,
+            status: slider.status ? 1 : 0,
+            badge: '',
+          ),
+        );
+      }
+      return;
     }
-    if (homeModel != null && homeModel!.sliderBannerOne != null) {
-      //print('storeBannerImage1 ${homeModel!.sliderBannerTwo!.image}');
+
+    if (homeModel!.sliderBannerOne != null) {
       sliderBanner.add(homeModel!.sliderBannerOne!);
     }
-    if (homeModel != null && homeModel!.sliderBannerTwo != null) {
-      //print('storeBannerImage2 ${homeModel!.sliderBannerTwo!.image}');
+    if (homeModel!.sliderBannerTwo != null) {
       sliderBanner.add(homeModel!.sliderBannerTwo!);
+    }
+
+    if (sliderBanner.isEmpty && homeModel!.sliders.isNotEmpty) {
+      for (final slider in homeModel!.sliders) {
+        sliderBanner.add(
+          BannerModel(
+            id: slider.id,
+            link: '',
+            image: slider.image,
+            productSlug: slider.productSlug,
+            bannerLocation: slider.sliderLocation,
+            slug: slider.productSlug,
+            titleOne: slider.titleOne,
+            titleTwo: slider.titleTwo,
+            status: slider.status,
+            badge: slider.badge,
+          ),
+        );
+      }
     }
   }
 }

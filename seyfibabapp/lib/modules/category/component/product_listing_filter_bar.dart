@@ -29,6 +29,7 @@ class ProductListingFilterBar extends StatelessWidget {
     this.showTitleRow = true,
     this.searchController,
     this.showSearchField = true,
+    this.categoryChips,
   });
 
   final String title;
@@ -44,6 +45,7 @@ class ProductListingFilterBar extends StatelessWidget {
   final bool showTitleRow;
   final TextEditingController? searchController;
   final bool showSearchField;
+  final Widget? categoryChips;
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +151,7 @@ class ProductListingFilterBar extends StatelessWidget {
                 ],
               ),
             ),
+            if (categoryChips != null) categoryChips!,
             const Divider(height: 1, color: grayBorderColor),
           ],
         ),

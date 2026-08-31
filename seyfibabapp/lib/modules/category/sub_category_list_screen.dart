@@ -31,6 +31,7 @@ class SubCategoryListScreen extends StatelessWidget {
       arguments: CategoryProductArgs(
         slug: args.slug,
         name: args.name,
+        categoryId: args.id,
       ),
     );
   }

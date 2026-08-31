@@ -15,7 +15,7 @@ class OfferBannerSlider extends StatefulWidget {
 }
 
 class _OfferBannerSliderState extends State<OfferBannerSlider> {
-  static const double _height = 160;
+  static const double _height = 172;
   int _currentIndex = 0;
 
   @override
@@ -23,8 +23,10 @@ class _OfferBannerSliderState extends State<OfferBannerSlider> {
     final homeCubit = context.read<HomeControllerCubit>();
     if (homeCubit.sliderBanner.isEmpty) return const SizedBox.shrink();
 
+    final count = homeCubit.sliderBanner.length;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 10),
       child: SizedBox(
         height: _height,
         child: Stack(
@@ -33,32 +35,35 @@ class _OfferBannerSliderState extends State<OfferBannerSlider> {
             CarouselSlider(
               options: CarouselOptions(
                 height: _height,
-                viewportFraction: 0.92,
-                enlargeCenterPage: true,
-                enlargeFactor: 0.18,
-                enableInfiniteScroll: homeCubit.sliderBanner.length > 1,
-                autoPlay: homeCubit.sliderBanner.length > 1,
+                viewportFraction: 0.9,
+                enlargeCenterPage: false,
+                padEnds: true,
+                enableInfiniteScroll: count > 1,
+                autoPlay: count > 1,
                 autoPlayInterval: const Duration(seconds: 4),
-                autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                autoPlayAnimationDuration: const Duration(milliseconds: 700),
                 onPageChanged: (index, _) {
                   setState(() => _currentIndex = index);
                 },
               ),
               items: homeCubit.sliderBanner
-                  .map((e) => SingleOfferBanner(slider: e))
+                  .map((e) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: SingleOfferBanner(slider: e),
+                      ))
                   .toList(),
             ),
-            if (homeCubit.sliderBanner.length > 1)
+            if (count > 1)
               Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: DotsIndicator(
-                  dotsCount: homeCubit.sliderBanner.length,
+                  dotsCount: count,
                   position: _currentIndex.toDouble(),
                   decorator: DotsDecorator(
                     activeColor: HomeTheme.brandYellow,
-                    color: Colors.white.withValues(alpha: 0.7),
-                    activeSize: const Size(18, 5),
-                    size: const Size(6, 5),
+                    color: Colors.black.withValues(alpha: 0.22),
+                    activeSize: const Size(16, 5),
+                    size: const Size(5, 5),
                     activeShape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(3),
                     ),

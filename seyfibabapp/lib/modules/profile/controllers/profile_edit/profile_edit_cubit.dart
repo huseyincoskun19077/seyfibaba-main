@@ -105,6 +105,23 @@ class ProfileEditCubit extends Cubit<ProfileEditStateModel> {
     );
   }
 
+  void changeInvoice({
+    required String invoiceType,
+    required String tcIdentity,
+    required String taxNumber,
+    required String taxOffice,
+  }) {
+    emit(
+      state.copyWith(
+        invoiceType: invoiceType,
+        tcIdentity: tcIdentity,
+        taxNumber: taxNumber,
+        taxOffice: taxOffice,
+        stateStatus: const ProfileEditStateInitial(),
+      ),
+    );
+  }
+
   Future<void> submitForm() async {
     print('update-profile-body ${state.toMap()}');
     emit(state.copyWith(stateStatus: const ProfileEditStateLoading()));

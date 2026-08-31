@@ -18,6 +18,7 @@ use App\Models\ShoppingCart;
 use App\Models\Coupon;
 use App\Models\Shipping;
 use App\Models\IyzicoPayment;
+use App\Services\BuyerInvoiceService;
 use Cart;
 use Session;
 class CheckoutController extends Controller
@@ -68,6 +69,7 @@ class CheckoutController extends Controller
                 'couponOffer' => '',
                 'bankPaymentInfo' => $bankPaymentInfo,
                 'iyzico' => $iyzico,
+                'buyer_invoice' => app(BuyerInvoiceService::class)->profilePayload($user),
                 'message' => trans('user_validation.Your shopping cart is empty'),
             ],200);
         }
@@ -128,6 +130,7 @@ class CheckoutController extends Controller
             'couponOffer' => $couponOffer,
             'bankPaymentInfo' => $bankPaymentInfo,
             'iyzico' => $iyzico,
+            'buyer_invoice' => app(BuyerInvoiceService::class)->profilePayload($user),
         ],200);
 
     }

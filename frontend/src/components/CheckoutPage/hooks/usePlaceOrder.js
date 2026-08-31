@@ -18,6 +18,7 @@ import guestFormValidation from "../utils/guestFormValidation";
 import { allRequiredChecked } from "@/components/Legal/LegalConsentCheckboxes";
 import { CHECKOUT_REQUIRED_CONSENTS } from "@/config/legalDocuments";
 import { getGuestConsentId, recordLegalConsents } from "@/api/recordLegalConsents";
+import { validateInvoiceForm } from "../components/InvoiceCheckoutSection";
 
 export default function usePlaceOrder({
   carts,
@@ -30,6 +31,7 @@ export default function usePlaceOrder({
   selectPayment,
   transactionInfo,
   legalConsentValues = {},
+  invoiceData = {},
   guestFields = {},
   setNewAddress = () => {},
   ServeLangItem = () => ({}),
@@ -79,10 +81,13 @@ export default function usePlaceOrder({
     phone: guestFields.phone,
     address: guestFields.address,
     type: guestFields.home || guestFields.office || null,
-    // Backend validates country and city as `required|string` — send names, not numeric IDs
     country: guestFields.countryName || String(guestFields.country || ""),
     state: String(guestFields.state || ""),
     city: String(guestFields.city || ""),
+    invoice_type: invoiceData.invoice_type,
+    tc_identity: invoiceData.tc_identity,
+    tax_number: invoiceData.tax_number,
+    tax_office: invoiceData.tax_office,
     latitude:
       Number(webSettings?.map_status) === 1 && guestFields.location
         ? guestFields.location.lat
@@ -155,13 +160,26 @@ export default function usePlaceOrder({
       return;
     }
 
+    const invoiceError = validateInvoiceForm(invoiceData);
+    if (invoiceError) {
+      toast.error(invoiceError);
+      return;
+    }
+
     const isGuest = false;
+    const invoicePayload = {
+      invoice_type: invoiceData.invoice_type,
+      tc_identity: invoiceData.tc_identity,
+      tax_number: invoiceData.tax_number,
+      tax_office: invoiceData.tax_office,
+    };
     const basePayload = isGuest
       ? {
           address: buildGuestAddressObject(),
           cart_products: carts,
           shipping_method_id: parseInt(selectedRule),
           coupon: couponCode && couponCode.code,
+          ...invoicePayload,
         }
       : {
           cart_products: carts,
@@ -169,6 +187,7 @@ export default function usePlaceOrder({
           billing_address_id: selectedBilling,
           shipping_method_id: parseInt(selectedRule),
           coupon: couponCode && couponCode.code,
+          ...invoicePayload,
         };
 
     const routes = {
