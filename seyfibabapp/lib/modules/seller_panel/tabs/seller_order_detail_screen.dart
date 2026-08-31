@@ -4,6 +4,7 @@ import '../../../modules/home/widgets/home_theme.dart';
 import '../../../utils/utils.dart';
 import '../models/seller_order_model.dart';
 import '../services/seller_api_service.dart';
+import '../widgets/seller_order_flow_card.dart';
 
 class SellerOrderDetailScreen extends StatefulWidget {
   const SellerOrderDetailScreen({
@@ -64,6 +65,36 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
     }
   }
 
+  Future<void> _confirmPreparing() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hazırlık onayı'),
+        content: const Text(
+          'Siparişi hazırlamaya başlayacağınızı onaylıyor musunuz?\n\n'
+          'Sonraki adımda kargo bilgisi gireceksiniz.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: HomeTheme.brandYellow,
+              foregroundColor: HomeTheme.textDark,
+            ),
+            child: const Text('Evet, Onayla'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) {
+      await _updateStatus(1);
+    }
+  }
+
   Future<void> _shipOrder() async {
     final payload = await showModalBottomSheet<Map<String, String>>(
       context: context,
@@ -82,6 +113,32 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
     final trackingUrl = payload['tracking_url'] ?? '';
 
     if (carrier.isEmpty || tracking.isEmpty) return;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Kargoya teslim'),
+        content: Text(
+          'Kargo bilgilerini kaydedip siparişi kargoya verildi olarak işaretlemek istiyor musunuz?\n\n'
+          '$carrier — $tracking',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: HomeTheme.brandYellow,
+              foregroundColor: HomeTheme.textDark,
+            ),
+            child: const Text('Kargoya Teslim Ettim'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
 
     try {
       Utils.loadingDialog(context);
@@ -111,19 +168,14 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
     }
   }
 
-  int _sellerStatus(Map<String, dynamic> raw) {
+  Map<String, dynamic> _orderMap(Map<String, dynamic> raw) {
     final order = raw['order'];
-    if (order is! Map) return -1;
-    final products = order['order_products'] ?? order['orderProducts'];
-    if (products is! List || products.isEmpty) return -1;
-    final first = products.first;
-    if (first is! Map) return -1;
-    return int.tryParse('${first['seller_status'] ?? -1}') ?? -1;
+    if (order is Map) return Map<String, dynamic>.from(order);
+    return raw;
   }
 
   List<Map<String, dynamic>> _products(Map<String, dynamic> raw) {
-    final order = raw['order'];
-    if (order is! Map) return const [];
+    final order = _orderMap(raw);
     final products = order['order_products'] ?? order['orderProducts'];
     if (products is! List) return const [];
     return products
@@ -157,7 +209,8 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
             );
           }
           final detail = snapshot.data!;
-          final sellerStatus = _sellerStatus(detail.raw);
+          final orderMap = _orderMap(detail.raw);
+          final flow = SellerOrderFlowInfo.fromOrderMap(orderMap);
           final products = _products(detail.raw);
 
           return RefreshIndicator(
@@ -189,45 +242,16 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                         Utils.formatPrice(detail.order.totalAmount, context),
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Satıcı durumu: $sellerStatus',
-                        style: const TextStyle(
-                          color: HomeTheme.textMuted,
-                          fontSize: 12,
-                        ),
-                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (sellerStatus == 0 || sellerStatus == 1)
-                  Row(
-                    children: [
-                      if (sellerStatus == 0)
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: () => _updateStatus(1),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: HomeTheme.brandYellow,
-                              foregroundColor: HomeTheme.textDark,
-                            ),
-                            child: const Text('Onayla / Hazırla'),
-                          ),
-                        ),
-                      if (sellerStatus == 1)
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: _shipOrder,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: HomeTheme.brandYellow,
-                              foregroundColor: HomeTheme.textDark,
-                            ),
-                            child: const Text('Kargoya Ver'),
-                          ),
-                        ),
-                    ],
-                  ),
+                SellerOrderFlowCard(
+                  flow: flow,
+                  onConfirmPreparing:
+                      flow.sellerStatus == 0 ? _confirmPreparing : null,
+                  onShip: flow.sellerStatus == 1 ? _shipOrder : null,
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Ürünler',
@@ -322,7 +346,7 @@ class _ManualShipFormSheetState extends State<_ManualShipFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Manuel Kargo Bilgisi',
+              'Kargo Bilgisi',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 18,
@@ -331,7 +355,7 @@ class _ManualShipFormSheetState extends State<_ManualShipFormSheet> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Kargo firması ve takip numarasını girin. Takip numarası için özel bir format yok; kargo firmasından aldığınız numarayı olduğu gibi yazın.',
+              'Kargoya teslim ettiğinizde firma ve takip numarasını girin.',
               style: TextStyle(color: HomeTheme.textMuted, fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -372,7 +396,7 @@ class _ManualShipFormSheetState extends State<_ManualShipFormSheet> {
                 foregroundColor: HomeTheme.textDark,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text('Kargoya Ver'),
+              child: const Text('Devam Et'),
             ),
           ],
         ),

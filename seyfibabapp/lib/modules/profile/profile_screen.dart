@@ -137,10 +137,10 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   _ProfileSection(
-                    title: 'Yasal Belgeler',
+                    title: 'Sözleşmeler ve Politikalar',
                     children: [
                       ProfileMenuTile(
-                        title: 'Yasal Belgeler',
+                        title: 'Sözleşmeler ve Politikalar',
                         icon: Icons.gavel_outlined,
                         requiresAuth: false,
                         onTap: () => Navigator.pushNamed(
@@ -200,102 +200,120 @@ class ProfileScreen extends StatelessWidget {
                     ],
                   ),
                   if (Utils.isLoggedIn(context)) ...[
-                  const SizedBox(height: 16),
-                  _ProfileSection(
-                    title: 'Hesap işlemleri',
-                    children: [
-                      BlocListener<DeleteUserCubit, DeleteUserState>(
-                        listener: (context, state) {
-                          if (state is DeleteUserLoading) {
-                            Utils.loadingDialog(context);
-                          } else {
-                            Utils.closeDialog(context);
-                            if (state is DeleteUserError) {
-                              Utils.errorSnackBar(context, state.message);
-                            } else if (state is DeleteUserLoaded) {
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                RouteNames.authenticationScreen,
-                                (route) => false,
-                              );
+                    const SizedBox(height: 16),
+                    _ProfileSection(
+                      title: 'Oturum',
+                      children: [
+                        BlocListener<LoginBloc, LoginModelState>(
+                          listener: (context, state) {
+                            final logout = state.state;
+                            if (logout is LoginStateLogOutLoading) {
+                              Utils.loadingDialog(context);
+                            } else {
+                              Utils.closeDialog(context);
+                              if (logout is LoginStateSignOutError) {
+                                Utils.errorSnackBar(context, logout.errorMsg);
+                              } else if (logout is LoginStateLogOut) {
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  RouteNames.authenticationScreen,
+                                  (route) => false,
+                                );
+                                Utils.showSnackBar(context, logout.msg);
+                              }
                             }
-                          }
-                        },
-                        child: ProfileMenuTile(
-                          title: Language.deleteAccount,
-                          icon: Icons.delete_outline_rounded,
-                          isDestructive: true,
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) => ConfirmDialog(
-                                icon: Kimages.deleteIcon2,
-                                message:
-                                    'Hesabınızı silmek\nistediğinize emin misiniz?',
-                                confirmText: 'Evet, Sil',
-                                cancelText: 'İptal',
-                                onTap: () {
-                                  Navigator.of(context).pop();
-                                  context
-                                      .read<DeleteUserCubit>()
-                                      .deleteUserAccount();
-                                },
-                              ),
-                            );
                           },
-                        ),
-                      ),
-                      BlocListener<LoginBloc, LoginModelState>(
-                        listener: (context, state) {
-                          final logout = state.state;
-                          if (logout is LoginStateLogOutLoading) {
-                            Utils.loadingDialog(context);
-                          } else {
-                            Utils.closeDialog(context);
-                            if (logout is LoginStateSignOutError) {
-                              Utils.errorSnackBar(context, logout.errorMsg);
-                            } else if (logout is LoginStateLogOut) {
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                RouteNames.authenticationScreen,
-                                (route) => false,
+                          child: ProfileMenuTile(
+                            title: Language.logout.capitalizeByWord(),
+                            icon: Icons.logout_rounded,
+                            iconColor: HomeTheme.textDark,
+                            showDivider: false,
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (dialogContext) => ConfirmDialog(
+                                  icon: Kimages.logout2,
+                                  message:
+                                      'Çıkış yapmak\nistediğinize emin misiniz?',
+                                  confirmText: 'Evet, Çık',
+                                  cancelText: 'İptal',
+                                  onTap: () {
+                                    Navigator.of(dialogContext).pop();
+                                    final loginBloc = context.read<LoginBloc>();
+                                    PushNotificationService.instance
+                                        .clearDeviceToken(context)
+                                        .whenComplete(() {
+                                      loginBloc.add(const LoginEventLogout());
+                                    });
+                                  },
+                                ),
                               );
-                              Utils.showSnackBar(context, logout.msg);
-                            }
-                          }
-                        },
-                        child: ProfileMenuTile(
-                          title: Language.logout.capitalizeByWord(),
-                          icon: Icons.logout_rounded,
-                          isDestructive: true,
-                          showDivider: false,
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (dialogContext) => ConfirmDialog(
-                                icon: Kimages.logout2,
-                                message: 'Çıkış yapmak\nistediğinize emin misiniz?',
-                                confirmText: 'Evet, Çık',
-                                cancelText: 'İptal',
-                                onTap: () {
-                                  Navigator.of(dialogContext).pop();
-                                  final loginBloc = context.read<LoginBloc>();
-                                  // FCM temizliği çıkışı engellemesin
-                                  PushNotificationService.instance
-                                      .clearDeviceToken(context)
-                                      .whenComplete(() {
-                                    loginBloc.add(const LoginEventLogout());
-                                  });
-                                },
-                              ),
-                            );
-                          },
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    _ProfileSection(
+                      title: 'Hesap silme',
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: Text(
+                            'Bu işlem geri alınamaz. Hesabınızı kalıcı olarak silmek istiyorsanız aşağıdaki seçeneği kullanın.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              height: 1.4,
+                              color: HomeTheme.textMuted.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ),
+                        BlocListener<DeleteUserCubit, DeleteUserState>(
+                          listener: (context, state) {
+                            if (state is DeleteUserLoading) {
+                              Utils.loadingDialog(context);
+                            } else {
+                              Utils.closeDialog(context);
+                              if (state is DeleteUserError) {
+                                Utils.errorSnackBar(context, state.message);
+                              } else if (state is DeleteUserLoaded) {
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  RouteNames.authenticationScreen,
+                                  (route) => false,
+                                );
+                              }
+                            }
+                          },
+                          child: ProfileMenuTile(
+                            title: Language.deleteAccount,
+                            icon: Icons.delete_outline_rounded,
+                            isDestructive: true,
+                            showDivider: false,
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => ConfirmDialog(
+                                  icon: Kimages.deleteIcon2,
+                                  message:
+                                      'Hesabınızı silmek\nistediğinize emin misiniz?',
+                                  confirmText: 'Evet, Sil',
+                                  cancelText: 'İptal',
+                                  onTap: () {
+                                    Navigator.of(context).pop();
+                                    context
+                                        .read<DeleteUserCubit>()
+                                        .deleteUserAccount();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ]),
               ),

@@ -70,13 +70,9 @@ class _MainPageState extends State<MainPage> {
     _personalizationPromptShown = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          fullscreenDialog: true,
-          builder: (_) => BuyerPersonalizationOnboardingScreen(
-            initialData: info.buyerPersonalization,
-          ),
-        ),
+      BuyerPersonalizationOnboardingScreen.showPrompt(
+        context,
+        info.buyerPersonalization,
       );
     });
   }

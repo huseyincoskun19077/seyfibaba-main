@@ -59,6 +59,9 @@ class SellerOrderModel {
     required this.paymentStatus,
     required this.createdAt,
     required this.customerName,
+    required this.sellerStatus,
+    required this.payoutState,
+    required this.payoutLabel,
   });
 
   final int id;
@@ -68,6 +71,9 @@ class SellerOrderModel {
   final int paymentStatus;
   final String createdAt;
   final String customerName;
+  final int sellerStatus;
+  final String payoutState;
+  final String payoutLabel;
 
   factory SellerOrderModel.fromMap(Map<String, dynamic> map) {
     final user = map['user'];
@@ -75,6 +81,17 @@ class SellerOrderModel {
     if (user is Map) {
       customerName = '${user['name'] ?? ''}'.trim();
     }
+
+    final products = map['order_products'] ?? map['orderProducts'];
+    final flowOrder = Map<String, dynamic>.from(map);
+    if (products is List && products.isNotEmpty) {
+      flowOrder['order_products'] = products;
+    }
+
+    // Lazy import avoided: duplicate minimal payout parse for list cards
+    final sellerStatus = _sellerStatusFromProducts(products);
+    final payout = _payoutFromOrder(flowOrder, sellerStatus);
+
     return SellerOrderModel(
       id: int.tryParse('${map['id']}') ?? 0,
       orderId: '${map['order_id'] ?? map['id'] ?? ''}',
@@ -83,7 +100,37 @@ class SellerOrderModel {
       paymentStatus: int.tryParse('${map['payment_status'] ?? 0}') ?? 0,
       createdAt: '${map['created_at'] ?? ''}',
       customerName: customerName,
+      sellerStatus: sellerStatus,
+      payoutState: payout.$1,
+      payoutLabel: payout.$2,
     );
+  }
+
+  static int _sellerStatusFromProducts(dynamic products) {
+    if (products is! List || products.isEmpty) return 0;
+    if (products.any((p) => p is Map && int.tryParse('${p['seller_status']}') == 4)) {
+      return 4;
+    }
+    var min = 99;
+    for (final item in products) {
+      if (item is! Map) continue;
+      final s = int.tryParse('${item['seller_status'] ?? 0}') ?? 0;
+      if (s < min) min = s;
+    }
+    return min == 99 ? 0 : min;
+  }
+
+  static (String, String) _payoutFromOrder(Map<String, dynamic> order, int sellerStatus) {
+    if (sellerStatus < 3) return ('waiting', 'Bekliyor');
+    final payoutStatus = '${order['payout_status'] ?? 'pending'}';
+    final paid = '${order['payout_processed_at'] ?? ''}'.trim().isNotEmpty ||
+        payoutStatus == 'completed' ||
+        payoutStatus == 'paid';
+    if (paid) return ('paid', 'Ödendi');
+    if ('${order['payout_blocked_at'] ?? ''}'.trim().isNotEmpty) {
+      return ('blocked', 'Bekletiliyor');
+    }
+    return ('pending', 'Beklemede');
   }
 }
 

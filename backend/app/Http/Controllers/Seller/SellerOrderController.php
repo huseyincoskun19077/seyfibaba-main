@@ -20,7 +20,9 @@ class SellerOrderController extends Controller
 
     public function index(){
         $seller = Auth::guard('api')->user()->seller;
-        $orders = Order::with('user','deliveryman')->whereHas('orderProducts',function($query) use ($seller){
+        $orders = Order::with(['user','deliveryman','orderProducts' => function ($query) use ($seller) {
+            $query->where('seller_id', $seller->id);
+        }])->whereHas('orderProducts',function($query) use ($seller){
             $query->where(['seller_id' => $seller->id]);
         })->where('payment_status', 1)->orderBy('id','desc')->paginate(15);
         $title = trans('All Orders');
@@ -34,7 +36,9 @@ class SellerOrderController extends Controller
 
     public function pregressOrder(){
         $seller = Auth::guard('api')->user()->seller;
-        $orders = Order::with('user','deliveryman')->whereHas('orderProducts',function($query) use ($seller){
+        $orders = Order::with(['user','deliveryman','orderProducts' => function ($query) use ($seller) {
+            $query->where('seller_id', $seller->id);
+        }])->whereHas('orderProducts',function($query) use ($seller){
             $query->where(['seller_id' => $seller->id]);
         })->where('payment_status', 1)->whereHas('orderProducts', function($q) use ($seller) {
             $q->where('seller_id', $seller->id)->whereIn('seller_status', [0, 1]);
@@ -46,7 +50,9 @@ class SellerOrderController extends Controller
 
     public function deliveredOrder(){
         $seller = Auth::guard('api')->user()->seller;
-        $orders = Order::with('user','deliveryman')->whereHas('orderProducts',function($query) use ($seller){
+        $orders = Order::with(['user','deliveryman','orderProducts' => function ($query) use ($seller) {
+            $query->where('seller_id', $seller->id);
+        }])->whereHas('orderProducts',function($query) use ($seller){
             $query->where(['seller_id' => $seller->id]);
         })->where('payment_status', 1)->whereHas('orderProducts', function($q) use ($seller) {
             $q->where('seller_id', $seller->id)->where('seller_status', 2);
@@ -58,7 +64,9 @@ class SellerOrderController extends Controller
 
     public function completedOrder(){
         $seller = Auth::guard('api')->user()->seller;
-        $orders = Order::with('user','deliveryman')->whereHas('orderProducts',function($query) use ($seller){
+        $orders = Order::with(['user','deliveryman','orderProducts' => function ($query) use ($seller) {
+            $query->where('seller_id', $seller->id);
+        }])->whereHas('orderProducts',function($query) use ($seller){
             $query->where(['seller_id' => $seller->id]);
         })->where('payment_status', 1)->whereHas('orderProducts', function($q) use ($seller) {
             $q->where('seller_id', $seller->id)->whereIn('seller_status', [3]);
@@ -70,7 +78,9 @@ class SellerOrderController extends Controller
 
     public function declinedOrder(){
         $seller = Auth::guard('api')->user()->seller;
-        $orders = Order::with('user','deliveryman')->whereHas('orderProducts',function($query) use ($seller){
+        $orders = Order::with(['user','deliveryman','orderProducts' => function ($query) use ($seller) {
+            $query->where('seller_id', $seller->id);
+        }])->whereHas('orderProducts',function($query) use ($seller){
             $query->where(['seller_id' => $seller->id]);
         })->where('payment_status', 1)->whereHas('orderProducts', function($q) use ($seller) {
             $q->where('seller_id', $seller->id)->where('seller_status', 4);
@@ -82,7 +92,9 @@ class SellerOrderController extends Controller
 
     public function cashOnDelivery(){
         $seller = Auth::guard('api')->user()->seller;
-        $orders = Order::with('user','deliveryman')->whereHas('orderProducts',function($query) use ($seller){
+        $orders = Order::with(['user','deliveryman','orderProducts' => function ($query) use ($seller) {
+            $query->where('seller_id', $seller->id);
+        }])->whereHas('orderProducts',function($query) use ($seller){
             $query->where(['seller_id' => $seller->id]);
         })->where('payment_status', 1)->where('cash_on_delivery',1)->orderBy('id','desc')->paginate(15);
 
@@ -94,7 +106,7 @@ class SellerOrderController extends Controller
     public function show($id){
         $seller = Auth::guard('api')->user()->seller;
 
-        $order = Order::with(['user', 'orderAddress', 'deliveryman'])
+        $order = Order::with(['user', 'orderAddress', 'deliveryman', 'cargoShipment'])
             ->where('payment_status', 1)
             ->whereHas('orderProducts', function($query) use ($seller) {
                 $query->where('seller_id', $seller->id);

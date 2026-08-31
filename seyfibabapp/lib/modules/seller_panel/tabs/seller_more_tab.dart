@@ -82,14 +82,14 @@ class SellerMoreTab extends StatelessWidget {
       ),
       _MoreItem(
         Icons.gavel_outlined,
-        'Yasal Belgeler',
-        'Mesafeli satış, KVKK ve diğer belgeler',
+        'Sözleşmeler ve Politikalar',
+        'Mesafeli satış, KVKK ve diğer sözleşmeler',
         () => Navigator.pushNamed(context, RouteNames.legalDocumentsHubScreen),
       ),
       _MoreItem(
         Icons.support_agent_outlined,
-        'Admin Talebi',
-        'Konulu mesaj gönder, geçmişi gör',
+        'Seyfibaba Destek',
+        'seyfibaba.com ile iletişime geçin',
         () =>
             Navigator.pushNamed(context, RouteNames.sellerAdminContactScreen),
       ),

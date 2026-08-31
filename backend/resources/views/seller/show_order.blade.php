@@ -40,6 +40,7 @@
                                     <div class="invoice-number">Order #{{ $order->order_id }}</div>
                                 </div>
                                 <hr>
+                                @include('partials.seller_order_flow', ['order' => $order])
                                 @php
                                     $orderAddress = $order->orderAddress;
                                 @endphp
@@ -66,54 +67,11 @@
                                     'sellerLinesSubtotal' => $sellerLinesSubtotal,
                                 ])
 
-                                @if(config('features.geliver_enabled'))
+                                @if(config('features.geliver_enabled') && \App\Support\SellerOrderFlow::sellerStatus($order->orderProducts) === 1)
                                 @include('partials.order_geliver_card', ['order' => $order, 'cardId' => 'geliver-kargo'])
                                 @endif
 
-                                <div class="row mt-4">
-                                    <div class="col-12">
-                                        <div class="card">
-                                            <div class="card-header d-flex justify-content-between align-items-center">
-                                                <h4 class="mb-0">Manuel Kargo (Anlaşmalı Kargo)</h4>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="alert alert-light border">
-                                                    <div><strong>Not:</strong> Geliver kullanmıyorsanız kargo firması ve takip numarasını buradan girin.</div>
-                                                </div>
-
-                                                <div class="row" style="row-gap:12px;">
-                                                    <form action="{{ route('seller.orders.cargo.manual.ship', $order->id) }}" method="POST" class="col-12">
-                                                        @csrf
-                                                        <div class="row" style="row-gap:12px;">
-                                                            <div class="col-md-4">
-                                                                <label>Kargo Firması</label>
-                                                                <input type="text" name="carrier_name" class="form-control" placeholder="Örn: Yurtiçi Kargo" required>
-                                                            </div>
-                                                            <div class="col-md-4">
-                                                                <label>Takip Numarası</label>
-                                                                <input type="text" name="tracking_number" class="form-control" placeholder="Takip no" required>
-                                                            </div>
-                                                            <div class="col-md-4">
-                                                                <label>Takip Linki (opsiyonel)</label>
-                                                                <input type="url" name="tracking_url" class="form-control" placeholder="https://...">
-                                                            </div>
-                                                            <div class="col-12 d-flex" style="gap:10px;">
-                                                                <button type="submit" class="btn btn-primary btn-sm">Kargoya Verildi Kaydet</button>
-                                                            </div>
-                                                        </div>
-                                                    </form>
-
-                                                    <div class="col-12">
-                                                        <form action="{{ route('seller.orders.cargo.manual.delivered', $order->id) }}" method="POST">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-success btn-sm">Teslim Edildi İşaretle</button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                {{-- Manuel kargo ve aksiyonlar artık seller_order_flow partial içinde sıralı gösteriliyor --}}
                             </div>
                         </div>
                     </div>

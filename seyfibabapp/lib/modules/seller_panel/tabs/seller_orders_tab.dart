@@ -4,6 +4,7 @@ import '../../../modules/home/widgets/home_theme.dart';
 import '../../../utils/utils.dart';
 import '../models/seller_order_model.dart';
 import '../services/seller_api_service.dart';
+import '../widgets/seller_order_flow_card.dart';
 import 'seller_order_detail_screen.dart';
 
 class SellerOrdersTab extends StatefulWidget {
@@ -50,16 +51,8 @@ class _SellerOrdersTabState extends State<SellerOrdersTab> {
     });
   }
 
-  String _statusLabel(int status) {
-    return switch (status) {
-      0 => 'Hazırlanıyor',
-      1 => 'Hazırlanıyor',
-      2 => 'Kargoda',
-      3 => 'Tamamlandı',
-      4 => 'İptal',
-      _ => 'Durum $status',
-    };
-  }
+  String _statusLabel(SellerOrderModel order) =>
+      sellerStatusListLabel(order.sellerStatus);
 
   @override
   Widget build(BuildContext context) {
@@ -190,11 +183,35 @@ class _SellerOrdersTabState extends State<SellerOrdersTab> {
                                   ),
                                 ),
                                 Text(
-                                  _statusLabel(order.orderStatus),
+                                  _statusLabel(order),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
                                     color: HomeTheme.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: HomeTheme.bg,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: HomeTheme.border),
+                                  ),
+                                  child: Text(
+                                    'Hakediş: ${sellerPayoutShortLabel(order.payoutState)}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: HomeTheme.textMuted,
+                                    ),
                                   ),
                                 ),
                               ],

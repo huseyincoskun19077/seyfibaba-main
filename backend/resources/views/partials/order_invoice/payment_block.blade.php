@@ -19,42 +19,6 @@
             <strong>{{ __('admin.Order Information') }}:</strong><br>
             {{ __('admin.Date') }}: {{ $order->created_at->format('d F, Y') }}<br>
             {{ __('admin.Shipping') }}: {{ $order->shipping_method }}<br>
-
-            @if (($invoiceContext ?? 'admin') === 'seller')
-                {{-- Satıcı için seller_status kontrolü --}}
-                @php
-                    $myProducts = $order->orderProducts;
-                    $hasPending = $myProducts->contains(fn($op) => $op->seller_status == 0);
-                    $hasProgress = $myProducts->contains(fn($op) => $op->seller_status == 1);
-                    $hasDelivered = $myProducts->contains(fn($op) => $op->seller_status == 2);
-                @endphp
-
-                @if ($hasPending)
-                    <div class="mt-2">
-                        <form action="{{ route('seller.update-order-status', $order->id) }}" method="POST">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="order_status" value="1" />
-                            <button class="btn btn-success btn-sm" type="submit">Siparişi Onayla</button>
-                        </form>
-                    </div>
-                @endif
-
-                @if ($hasProgress && !$hasDelivered)
-                    <div class="mt-2">
-                        <form action="{{ route('seller.update-order-status', $order->id) }}" method="POST">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="order_status" value="2" />
-                            <button class="btn btn-info btn-sm" type="submit">Kargoya Verildi</button>
-                        </form>
-                    </div>
-                @endif
-
-                @if ($hasDelivered)
-                    <span class="badge badge-info">Kargoya Verildi</span>
-                @endif
-            @endif
         </address>
     </div>
     {{-- Not: satıcı süreçleri seller_status üzerinden yürür; order_status admin özetidir. --}}

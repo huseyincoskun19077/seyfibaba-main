@@ -14,18 +14,6 @@ class SellerAiFab extends StatefulWidget {
 
 class _SellerAiFabState extends State<SellerAiFab> {
   final _service = SellerApiService();
-  static bool _autoOpened = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (!_autoOpened) {
-      _autoOpened = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _openChat();
-      });
-    }
-  }
 
   Future<void> _openChat() async {
     await showModalBottomSheet<void>(

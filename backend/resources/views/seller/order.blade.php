@@ -30,6 +30,7 @@
                                     <th width="10%">{{__('admin.Quantity')}}</th>
                                     <th width="10%">{{__('admin.Amount')}}</th>
                                     <th width="10%">{{__('admin.Order Status')}}</th>
+                                    <th width="10%">Hakediş</th>
                                     <th width="10%">{{__('admin.Payment')}}</th>
                                     <th width="15%">{{__('admin.Action')}}</th>
                                   </tr>
@@ -44,17 +45,24 @@
                                         <td>{{ $order->orderProducts->sum('qty') }}</td>
                                         <td>{{ $setting->currency_icon }}{{ round($order->orderProducts->sum(function($op) { return ($op->qty ?? 1) * ($op->unit_price ?? 0); })) }}</td>
                                         <td>
-                                            @if ($order->orderProducts->contains(fn($op) => (int) $op->seller_status === 4))
+                                            @php
+                                                $sellerStatus = \App\Support\SellerOrderFlow::sellerStatus($order->orderProducts);
+                                                $payout = \App\Support\SellerOrderFlow::payoutInfo($order, $order->orderProducts);
+                                            @endphp
+                                            @if ($sellerStatus === 4)
                                                 <span class="badge badge-danger">{{__('admin.Declined')}}</span>
-                                            @elseif ($order->orderProducts->contains(fn($op) => (int) $op->seller_status === 3))
+                                            @elseif ($sellerStatus === 3)
                                                 <span class="badge badge-success">{{__('admin.Completed')}}</span>
-                                            @elseif ($order->orderProducts->contains(fn($op) => (int) $op->seller_status === 2))
-                                                <span class="badge badge-info">Kargoya Verildi</span>
-                                            @elseif ($order->orderProducts->contains(fn($op) => (int) $op->seller_status === 1))
-                                                <span class="badge badge-success">Hazırlanıyor</span>
+                                            @elseif ($sellerStatus === 2)
+                                                <span class="badge badge-info">Kargoda</span>
+                                            @elseif ($sellerStatus === 1)
+                                                <span class="badge badge-warning">Hazırlanıyor</span>
                                             @else
-                                                <span class="badge badge-success">Hazırlanıyor</span>
+                                                <span class="badge badge-secondary">Yeni Sipariş</span>
                                             @endif
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-{{ $payout['badge'] }}">{{ $payout['state'] === 'paid' ? 'Ödendi' : ($payout['state'] === 'waiting' ? 'Bekliyor' : 'Beklemede') }}</span>
                                         </td>
                                         <td>
                                             @if($order->payment_status == 1)

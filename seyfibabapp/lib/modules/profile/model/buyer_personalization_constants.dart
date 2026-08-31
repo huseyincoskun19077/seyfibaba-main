@@ -33,7 +33,7 @@ class BuyerPersonalizationCopy {
   static const introBody =
       'Size özel ürün, paket ve kampanyalar sunabilmemiz için birkaç kısa soru soruyoruz. İsterseniz atlayabilirsiniz.';
   static const whyWeAsk =
-      'Bu bilgiler yalnızca size uygun ürün ve fırsatları göstermek için kullanılır. Satıcılarla paylaşılmaz.';
+      'Bu bilgiler yalnızca size uygun ürün ve fırsatları göstermek için kullanılır.';
 
   static const shopNameTitle = 'Salonunuzun veya işletmenizin adı nedir?';
   static const shopNameHint = 'Örn: Kuaför Ahmet, Güzellik Merkezi...';

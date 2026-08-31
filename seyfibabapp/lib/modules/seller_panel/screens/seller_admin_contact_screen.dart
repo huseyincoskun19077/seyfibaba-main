@@ -96,7 +96,7 @@ class _SellerAdminContactScreenState extends State<SellerAdminContactScreen> {
     return Scaffold(
       backgroundColor: HomeTheme.bg,
       appBar: AppBar(
-        title: const Text('Admin Talebi'),
+        title: const Text('Seyfibaba Destek'),
         backgroundColor: HomeTheme.header,
         foregroundColor: HomeTheme.textDark,
         elevation: 0,
@@ -110,7 +110,8 @@ class _SellerAdminContactScreenState extends State<SellerAdminContactScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   const Text(
-                    'Alıcıya mesaj yok. Satıcı taleplerini doğrudan admin’e iletirsiniz.',
+                    'Sorularınız ve talepleriniz için seyfibaba.com üzerinden bizimle iletişime geçebilirsiniz. '
+                    'İsterseniz aşağıdaki formu da kullanabilirsiniz.',
                     style: TextStyle(color: HomeTheme.textMuted, height: 1.4),
                   ),
                   const SizedBox(height: 16),

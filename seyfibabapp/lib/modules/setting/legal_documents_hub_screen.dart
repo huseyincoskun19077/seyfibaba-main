@@ -12,7 +12,7 @@ class LegalDocumentsHubScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: HomeTheme.bg,
-      appBar: RoundedAppBar(titleText: 'Yasal Belgeler'),
+      appBar: RoundedAppBar(titleText: 'Sözleşmeler ve Politikalar'),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: LegalDocumentsCatalog.profileLinks.length,
