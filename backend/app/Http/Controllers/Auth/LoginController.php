@@ -88,8 +88,11 @@ class LoginController extends Controller
             $user = $this->findUserByPhone($normalizedPhone, $digits);
         }
 
-        if (!$user && $login_by === 'phone') {
-            return response()->json(['message' => 'Telefon numarası veya şifre hatalı.'], 422);
+        if (! $user && $login_by === 'phone') {
+            return response()->json([
+                'message' => 'Bu telefon numarası ile kayıtlı hesap bulunamadı. Kayıt olabilirsiniz.',
+                'error_code' => 'account_not_found',
+            ], 404);
         }
 
         if($user){
@@ -103,8 +106,10 @@ class LoginController extends Controller
                     || ($seller && (bool) $user->must_change_password);
 
                 if (! $allowWithoutEmailVerify) {
-                    $notification = trans('user_validation.Please verify your acount. If you didn\'t get OTP, please resend your OTP and verify');
-                    return response()->json(['notification' => $notification],402);
+                    return response()->json([
+                        'notification' => 'Hesabınızı doğrulamanız gerekiyor. E-postanıza gelen kodu girin veya yeniden gönderin.',
+                        'error_code' => 'email_verification_required',
+                    ], 402);
                 }
             }
 
@@ -186,18 +191,24 @@ class LoginController extends Controller
                     }
 
 
-                }else{
-                    $notification = trans('user_validation.Credentials does not exist');
-                    return response()->json(['notification' => $notification],402);
+                } else {
+                    $message = $login_by === 'phone'
+                        ? 'Telefon numarası veya şifre hatalı.'
+                        : 'E-posta veya şifre hatalı.';
+
+                    return response()->json(['message' => $message], 422);
                 }
 
             }else{
-                $notification = trans('user_validation.Disabled Account');
-                return response()->json(['notification' => $notification],402);
+                return response()->json([
+                    'message' => 'Hesabınız devre dışı bırakılmış. Destek ile iletişime geçin.',
+                ], 403);
             }
         }else{
-            $notification = trans('user_validation.Email does not exist');
-            return response()->json(['notification' => $notification],402);
+            return response()->json([
+                'message' => 'Bu e-posta adresi ile kayıtlı hesap bulunamadı.',
+                'error_code' => 'account_not_found',
+            ], 404);
         }
     }
 

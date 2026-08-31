@@ -73,7 +73,10 @@ class SignUpModelState extends Equatable {
 
     result.addAll({'agree': agree.toString()});
     result.addAll({'name': name.trim()});
-    result.addAll({'email': email.trim()});
+    final trimmedEmail = email.trim();
+    if (trimmedEmail.isNotEmpty) {
+      result.addAll({'email': trimmedEmail});
+    }
     result.addAll({'phone': fullPhone});
     result.addAll({'password': password});
     result.addAll({'password_confirmation': passwordConfirmation});

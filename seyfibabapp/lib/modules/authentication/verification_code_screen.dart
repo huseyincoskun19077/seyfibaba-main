@@ -201,12 +201,12 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
 
   Widget _buildContinueBtn() {
     return PrimaryButton(
-      text: 'Continue',
+      text: 'Doğrula',
       onPressed: () {
         if (_isValid) {
           _submitCode(pinController.text);
         } else {
-          Utils.showSnackBar(context, 'Please enter valid OTP');
+          Utils.showSnackBar(context, 'Lütfen geçerli bir doğrulama kodu girin.');
         }
       },
     );

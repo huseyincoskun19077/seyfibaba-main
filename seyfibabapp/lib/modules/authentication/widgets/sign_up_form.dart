@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +8,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import '../../../widgets/custom_text.dart';
 import '../../../widgets/translate_form_text.dart';
 import '/widgets/capitalized_word.dart';
+import '../../../core/router_name.dart';
 import '../../../../utils/constants.dart';
 import '../../../../widgets/primary_button.dart';
 import '../../../utils/language_string.dart';
@@ -52,7 +54,10 @@ class _SignUpFormState extends State<SignUpForm> {
                           initialValue: state.name,
                           onChanged: (value) =>
                               bloc.add(SignUpEventName(value)),
-                          decoration: InputDecoration(hintText: snap),
+                          decoration: InputDecoration(
+                            hintText: snap.isNotEmpty ? snap : 'Ad Soyad',
+                            labelText: 'Ad Soyad*',
+                          ),
                         );
                       },
                     ),
@@ -65,35 +70,40 @@ class _SignUpFormState extends State<SignUpForm> {
               },
             ),
             const SizedBox(height: 16),
-            BlocBuilder<SignUpBloc, SignUpModelState>(
-              builder: (context, state) {
-                final s = state.state;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TranslateWidget(
-                      future: Utils.hintText(context, Language.email),
-                      hintText: Language.email,
-                      builder: (context, snap) {
-                        return TextFormField(
-                          keyboardType: TextInputType.emailAddress,
-                          initialValue: state.email,
-                          onChanged: (value) =>
-                              bloc.add(SignUpEventEmail(value)),
-                          decoration: InputDecoration(hintText: snap),
-                        );
-                      },
-                    ),
-                    if (bloc.state.name.isNotEmpty)
-                      if (s is SignUpStateFormValidationError) ...[
-                        if (s.errors.email.isNotEmpty)
-                          ErrorText(text: s.errors.email.first),
-                      ]
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 16),
+            if (appSettingBloc.phoneNumberRequired != 1) ...[
+              BlocBuilder<SignUpBloc, SignUpModelState>(
+                builder: (context, state) {
+                  final s = state.state;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TranslateWidget(
+                        future: Utils.hintText(context, Language.email),
+                        hintText: Language.email,
+                        builder: (context, snap) {
+                          return TextFormField(
+                            keyboardType: TextInputType.emailAddress,
+                            initialValue: state.email,
+                            onChanged: (value) =>
+                                bloc.add(SignUpEventEmail(value)),
+                            decoration: InputDecoration(
+                              hintText: snap,
+                              labelText: 'E-posta (opsiyonel)',
+                            ),
+                          );
+                        },
+                      ),
+                      if (bloc.state.name.isNotEmpty)
+                        if (s is SignUpStateFormValidationError) ...[
+                          if (s.errors.email.isNotEmpty)
+                            ErrorText(text: s.errors.email.first),
+                        ]
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
             if (appSettingBloc.phoneNumberRequired == 1) ...[
               BlocBuilder<SignUpBloc, SignUpModelState>(
                 builder: (context, state) {
@@ -130,12 +140,10 @@ class _SignUpFormState extends State<SignUpForm> {
                           FilteringTextInputFormatter.deny('a'),
                         ],
                       ),
-                      if (appSettingBloc.enableUserRegister == 1 &&
-                          state.email.isNotEmpty)
-                        if (validate is SignUpStateFormValidationError) ...[
-                          if (validate.errors.phone.isNotEmpty)
-                            ErrorText(text: validate.errors.phone.first),
-                        ]
+                      if (validate is SignUpStateFormValidationError) ...[
+                        if (validate.errors.phone.isNotEmpty)
+                          ErrorText(text: validate.errors.phone.first),
+                      ]
                     ],
                   );
                 },
@@ -311,7 +319,7 @@ class _SignUpFormState extends State<SignUpForm> {
         return Padding(
           padding: Utils.only(top: 4.0),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 height: Utils.vSize(24.0),
@@ -327,9 +335,40 @@ class _SignUpFormState extends State<SignUpForm> {
                   },
                 ),
               ),
-              CustomText(
-                  text: Language.signUpCondition.capitalizeByWord(),
-                  color: blackColor.withOpacity(0.5))
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: blackColor.withOpacity(0.65),
+                      height: 1.35,
+                    ),
+                    children: [
+                      const TextSpan(text: 'Alıcı '),
+                      TextSpan(
+                        text: 'Gizlilik Politikası',
+                        style: const TextStyle(
+                          color: redColor,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            Navigator.pushNamed(
+                              context,
+                              RouteNames.legalDocumentScreen,
+                              arguments: {
+                                'slug': 'privacy-policy',
+                                'title': 'Alıcı Gizlilik Politikası',
+                              },
+                            );
+                          },
+                      ),
+                      const TextSpan(text: ' metnini okudum ve kabul ediyorum.'),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         );

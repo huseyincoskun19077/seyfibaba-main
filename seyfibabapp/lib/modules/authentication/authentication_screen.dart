@@ -44,7 +44,13 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
           listener: (context, state) {
             if (state.state is LoginStateError) {
               final status = state.state as LoginStateError;
-              if (status.statusCode == 402) {
+              if (status.statusCode == 404) {
+                Utils.errorSnackBar(context, status.errorMsg);
+                final loginState = context.read<LoginBloc>().state;
+                if (loginState.loginInputType == LoginInputType.phone) {
+                  _openSignUpWithPhone(loginState.text);
+                }
+              } else if (status.statusCode == 402) {
                 _showVerifyAccountDialog(context, status.errorMsg);
               } else {
                 Utils.errorSnackBar(context, status.errorMsg);
@@ -74,6 +80,15 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
           },
           listener: (context, state) {
             if (state.state is SignUpStateFormValidationError) {
+              final error = state.state as SignUpStateFormValidationError;
+              final message = [
+                ...error.errors.message,
+                ...error.errors.phone,
+                ...error.errors.email,
+                ...error.errors.password,
+                ...error.errors.name,
+              ].firstWhere((item) => item.isNotEmpty, orElse: () => 'Kayıt bilgileri geçersiz.');
+              Utils.errorSnackBar(context, message);
             } else if (state.state is SignUpStateFormError) {
               final status = state.state as SignUpStateFormError;
               Utils.errorSnackBar(context, status.errorMsg);
@@ -148,6 +163,24 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
         ),
       ),
     );
+  }
+
+  void _openSignUpWithPhone(String rawPhone) {
+    final digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+    final local = digits.length > 10 ? digits.substring(digits.length - 10) : digits;
+    if (local.isEmpty) return;
+
+    final signUpBloc = context.read<SignUpBloc>();
+    signUpBloc.add(const SignUpEventCountryCode('+90'));
+    signUpBloc.add(SignUpEventPhone(local));
+
+    _pageController.animateToPage(
+      1,
+      duration: kDuration,
+      curve: Curves.easeOut,
+    );
+    setState(() => _currentPage = 1);
+    Utils.showSnackBar(context, 'Bu numara kayıtlı değil. Kayıt ol sekmesine yönlendirildiniz.');
   }
 
   void _showVerifyAccountDialog(BuildContext context, String message) {

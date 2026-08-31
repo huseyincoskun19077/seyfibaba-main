@@ -99,24 +99,60 @@ class SignUpBloc extends Bloc<SignUpEvent, SignUpModelState> {
   void _submitForm(
       SignUpEventSubmit event, Emitter<SignUpModelState> emit) async {
     debugPrint('signup-body ${state.toMap()}');
+
+    if (state.name.trim().isEmpty) {
+      emit(state.copyWith(
+        state: const SignUpStateFormError('Ad soyad gereklidir.', 422),
+      ));
+      return;
+    }
+
+    if (state.fullPhone.isEmpty) {
+      emit(state.copyWith(
+        state: const SignUpStateFormError('Telefon numarası gereklidir.', 422),
+      ));
+      return;
+    }
+
+    if (state.password.trim().isEmpty) {
+      emit(state.copyWith(
+        state: const SignUpStateFormError('Şifre gereklidir.', 422),
+      ));
+      return;
+    }
+
+    if (state.password != state.passwordConfirmation) {
+      emit(state.copyWith(
+        state: const SignUpStateFormError('Şifreler eşleşmiyor.', 422),
+      ));
+      return;
+    }
+
     if (state.agree == 0) {
-      const stateError =
-          SignUpStateFormError('Please agree terms & condition', 404);
-      emit(state.copyWith(state: const SignUpStateInitial()));
-      emit(state.copyWith(state: stateError));
+      emit(state.copyWith(
+        state: const SignUpStateFormError(
+          'Devam etmek için gizlilik politikasını kabul etmelisiniz.',
+          422,
+        ),
+      ));
       return;
     }
 
     emit(state.copyWith(state: const SignUpStateLoading()));
 
     if (state.fullPhone.isNotEmpty) {
-      final result = await repository.sendOtp({
+      final otpBody = <String, dynamic>{
         'phone': state.fullPhone,
-        'email': state.email.trim(),
         'purpose': 'register',
         'password': state.password,
         'password_confirmation': state.passwordConfirmation,
-      });
+      };
+      final email = state.email.trim();
+      if (email.isNotEmpty) {
+        otpBody['email'] = email;
+      }
+
+      final result = await repository.sendOtp(otpBody);
       result.fold(
         (failure) {
           emit(state.copyWith(
@@ -214,7 +250,7 @@ class SignUpBloc extends Bloc<SignUpEvent, SignUpModelState> {
 
     final result = await repository.sendOtp({
       'phone': state.fullPhone,
-      'email': state.email.trim(),
+      if (state.email.trim().isNotEmpty) 'email': state.email.trim(),
       'purpose': 'register',
       'password': state.password,
       'password_confirmation': state.passwordConfirmation,

@@ -20,6 +20,7 @@ use App\Support\PasswordRules;
 use Mail;
 use Str;
 use Exception;
+use App\Services\CallCenter\QuickSellerRegistrationService;
 use App\Services\LegalConsentService;
 
 class RegisterController extends Controller
@@ -40,20 +41,24 @@ class RegisterController extends Controller
         $setting = Setting::first();
         $enable_phone_required = $setting->phone_number_required;
 
+        $emailRule = $enable_phone_required == 1
+            ? 'nullable|email|max:255|unique:users'
+            : 'required|email|max:255|unique:users';
+
         $rules = array_merge([
             'name'=>'required',
             'agree'=>'required',
-            'email'=>'required|unique:users',
+            'email'=> $emailRule,
             'phone'=> $enable_phone_required == 1 ? 'required|unique:users' : '',
             'g-recaptcha-response'=>new Captcha()
         ], PasswordRules::registerRules());
         $customMessages = array_merge([
-            'name.required' => trans('user_validation.Name is required'),
+            'name.required' => 'Ad soyad gereklidir.',
             'email.required' => trans('user_validation.Email is required'),
             'email.unique' => trans('user_validation.Email already exist'),
-            'phone.required' => trans('user_validation.Phone number is required'),
-            'phone.unique' => trans('user_validation.Phone number already exist'),
-            'agree.required' => trans('user_validation.Consent filed is required'),
+            'phone.required' => 'Telefon numarası gereklidir.',
+            'phone.unique' => 'Bu telefon numarası ile zaten kayıt var.',
+            'agree.required' => 'Devam etmek için gizlilik politikasını kabul etmelisiniz.',
         ], PasswordRules::messages());
 
         // OTP verification required when phone is required
@@ -87,9 +92,15 @@ class RegisterController extends Controller
             Cache::forget('otp_verified_token:' . $request->otp_verified_token);
         }
 
+        $email = trim((string) $request->email);
+        if ($email === '' && $enable_phone_required == 1) {
+            $phoneDigits = preg_replace('/[^0-9]/', '', (string) ($normalizedPhone ?? $request->phone));
+            $email = $this->placeholderEmailForPhone($phoneDigits);
+        }
+
         $user = new User();
         $user->name = $request->name;
-        $user->email = $request->email;
+        $user->email = $email;
         $user->phone = $request->phone ? $normalizedPhone ?? $request->phone : '';
         $user->agree_policy = $request->agree ? 1 : 0;
         $user->password = Hash::make($request->password);
@@ -191,5 +202,18 @@ class RegisterController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+    }
+
+    private function placeholderEmailForPhone(string $phoneDigits): string
+    {
+        $digits = preg_replace('/[^0-9]/', '', $phoneDigits) ?: Str::random(8);
+        $domain = QuickSellerRegistrationService::PENDING_EMAIL_DOMAIN;
+        $candidate = $digits.'@'.$domain;
+
+        while (User::where('email', $candidate)->exists()) {
+            $candidate = $digits.'_'.Str::lower(Str::random(4)).'@'.$domain;
+        }
+
+        return $candidate;
     }
 }
