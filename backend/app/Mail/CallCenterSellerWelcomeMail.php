@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Helpers\MailHelper;
 use App\Services\CallCenter\QuickSellerRegistrationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -24,6 +25,8 @@ class CallCenterSellerWelcomeMail extends Mailable
 
     public function build()
     {
+        MailHelper::setMailConfig();
+
         return $this
             ->subject('Seyfibaba Satıcı Hesabınız Oluşturuldu')
             ->view('emails.call_center_seller_welcome');

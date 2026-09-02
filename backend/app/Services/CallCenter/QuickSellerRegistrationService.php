@@ -517,12 +517,8 @@ class QuickSellerRegistrationService
         try {
             MailHelper::setMailConfig();
 
-            if (
-                config('mail.default') === 'array'
-                && app()->environment('production')
-                && ! app()->runningUnitTests()
-            ) {
-                Log::warning('Call center quick registration email skipped: SMTP not configured', [
+            if (! app()->runningUnitTests() && ! MailHelper::isSmtpConfigured()) {
+                Log::warning('Call center quick registration email skipped: SMTP not configured in admin', [
                     'email' => $email,
                 ]);
 
@@ -531,7 +527,8 @@ class QuickSellerRegistrationService
 
             $phoneUsername = $phone ? $this->loginUsernameFromPhone($phone) : null;
 
-            Mail::to($email)->send(new CallCenterSellerWelcomeMail(
+            $mailer = app()->runningUnitTests() ? Mail::mailer() : Mail::mailer('smtp');
+            $mailer->to($email)->send(new CallCenterSellerWelcomeMail(
                 contactName: $contactName,
                 shopName: $shopName,
                 email: $email,
