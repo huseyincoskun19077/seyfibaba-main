@@ -192,4 +192,43 @@ class QuickSellerOnboardingStatusTest extends TestCase
         $this->assertFalse($status['can_edit_registration']);
         $this->assertSame('SMS gitmedi, sisteme girmedi', $status['summary']);
     }
+
+    public function test_email_only_registration_summary_when_sms_not_sent(): void
+    {
+        $user = new User();
+        $user->forceFill([
+            'name' => 'Mail Seller',
+            'email' => 'mail@example.com',
+            'phone' => null,
+            'must_change_password' => true,
+        ])->save();
+
+        $vendor = Vendor::query()->create([
+            'user_id' => $user->id,
+            'shop_name' => 'Mail Magaza',
+            'registration_source' => 'call_center',
+            'email' => 'mail@example.com',
+            'welcome_sms_sent' => false,
+            'welcome_email_sent' => true,
+            'welcome_email_sent_at' => now(),
+        ]);
+        $vendor->setRelation('user', $user);
+
+        OtpVerification::query()->create([
+            'phone' => \App\Services\CallCenter\QuickSellerRegistrationService::emailOtpIdentifier('mail@example.com'),
+            'otp_code' => '123456',
+            'purpose' => 'seller_first_login',
+            'expires_at' => Carbon::now()->addYear(),
+            'verified_at' => null,
+        ]);
+
+        $status = QuickSellerOnboardingStatus::for($vendor);
+
+        $this->assertTrue($status['applicable']);
+        $this->assertFalse($status['sms_sent']);
+        $this->assertTrue($status['email_sent']);
+        $this->assertTrue($status['can_resend_email']);
+        $this->assertFalse($status['can_resend_sms']);
+        $this->assertSame('E-posta gitti, sisteme girmedi', $status['summary']);
+    }
 }

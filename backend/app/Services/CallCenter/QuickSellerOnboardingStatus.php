@@ -50,7 +50,7 @@ class QuickSellerOnboardingStatus
             ? ! (bool) ($user->must_change_password ?? false)
             : false;
 
-        [$summary, $badge] = self::summarize($smsSent, $loggedIn, $passwordChanged);
+        [$summary, $badge] = self::summarize($smsSent, $emailSent, $loggedIn, $passwordChanged);
 
         return [
             'applicable' => true,
@@ -82,7 +82,7 @@ class QuickSellerOnboardingStatus
     /**
      * @return array{0: string, 1: string}
      */
-    protected static function summarize(?bool $smsSent, bool $loggedIn, bool $passwordChanged): array
+    protected static function summarize(?bool $smsSent, ?bool $emailSent, bool $loggedIn, bool $passwordChanged): array
     {
         if ($passwordChanged) {
             return ['Şifre oluşturuldu', 'success'];
