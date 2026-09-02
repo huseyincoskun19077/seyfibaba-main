@@ -35,15 +35,34 @@
                                 <input type="text" name="contact_name" class="form-control" value="{{ old('contact_name') }}" required>
                             </div>
 
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label>Telefon <span class="text-danger">*</span></label>
-                                    <input type="text" name="phone" class="form-control" placeholder="5XXXXXXXXX" value="{{ old('phone') }}" required>
+                            <div class="form-group">
+                                <label>Giriş bilgisi nasıl gönderilsin? <span class="text-danger">*</span></label>
+                                <div class="d-flex flex-wrap" style="gap: 12px;">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="login_channel_sms" name="login_channel" value="sms" class="custom-control-input" @checked(old('login_channel', 'sms') === 'sms') required>
+                                        <label class="custom-control-label" for="login_channel_sms">SMS (telefon)</label>
+                                    </div>
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="login_channel_email" name="login_channel" value="email" class="custom-control-input" @checked(old('login_channel') === 'email')>
+                                        <label class="custom-control-label" for="login_channel_email">E-posta</label>
+                                    </div>
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="login_channel_both" name="login_channel" value="both" class="custom-control-input" @checked(old('login_channel') === 'both')>
+                                        <label class="custom-control-label" for="login_channel_both">SMS + E-posta</label>
+                                    </div>
                                 </div>
-                                <div class="form-group col-md-6">
-                                    <label>E-posta <small class="text-muted">(opsiyonel)</small></label>
-                                    <input type="email" name="email" class="form-control" value="{{ old('email') }}" placeholder="İsteğe bağlı">
-                                    <small class="text-muted">Boş bırakılabilir; satıcı sonra panelden ekleyebilir.</small>
+                                <small class="text-muted d-block mt-1">Satıcının ilk girişte kullanacağı kanalı seçin. Tek kullanımlık şifre seçilen kanal(lar) ile gönderilir.</small>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group col-md-6" id="phone_field_group">
+                                    <label>Telefon <span class="text-danger phone-required">*</span></label>
+                                    <input type="text" name="phone" id="phone" class="form-control" placeholder="5XXXXXXXXX" value="{{ old('phone') }}">
+                                </div>
+                                <div class="form-group col-md-6" id="email_field_group">
+                                    <label>E-posta <span class="text-danger email-required" style="display:none;">*</span><small class="text-muted email-optional"> (opsiyonel)</small></label>
+                                    <input type="email" name="email" id="email" class="form-control" value="{{ old('email') }}" placeholder="ornek@firma.com">
+                                    <small class="text-muted email-hint">SMS seçiliyse boş bırakılabilir.</small>
                                 </div>
                             </div>
 
@@ -92,8 +111,8 @@
                 <div class="card">
                     <div class="card-header"><h4>Bilgi</h4></div>
                     <div class="card-body">
-                        <p class="mb-2">Kayıt oluşturulunca satıcıya <strong>tek kullanımlık şifre SMS</strong> ile gider. E-posta girildiyse giriş bilgisi mail ile de gönderilir.</p>
-                        <p class="mb-2">E-posta zorunlu değildir; satıcı sonra profil/mağaza ayarlarından ekleyebilir.</p>
+                        <p class="mb-2"><strong>Giriş kanalı:</strong> SMS, e-posta veya ikisi birden seçilebilir. Tek kullanımlık şifre yalnızca seçilen kanal(lar) ile gönderilir.</p>
+                        <p class="mb-2">SMS seçiliyse kullanıcı adı telefon (son 10 hane), e-posta seçiliyse e-posta adresidir.</p>
                         <p class="mb-2">Satıcı ilk girişte yeni şifre oluşturmak zorundadır; değiştirmeden panelde ilerleyemez.</p>
                         <p class="mb-2">Satıcı hesabı <strong>hemen aktif</strong> olur; admin onayı gerekmez.</p>
                         <p class="mb-0">Ürün yüklemek için satıcının panelden KYC doğrulaması yapması gerekir.</p>
@@ -127,7 +146,31 @@
         });
     }
 
+    function syncLoginChannelFields() {
+        const channel = $('input[name="login_channel"]:checked').val() || 'sms';
+        const $phone = $('#phone');
+        const $email = $('#email');
+
+        const phoneRequired = channel === 'sms' || channel === 'both';
+        const emailRequired = channel === 'email' || channel === 'both';
+
+        $('.phone-required').toggle(phoneRequired);
+        $('.email-required').toggle(emailRequired);
+        $('.email-optional').toggle(!emailRequired);
+        $('.email-hint').text(
+            channel === 'sms'
+                ? 'SMS seçiliyse boş bırakılabilir.'
+                : (channel === 'email' ? 'Giriş bilgileri bu adrese gönderilir.' : 'Giriş bilgileri SMS ve e-posta ile gönderilir.')
+        );
+
+        $phone.prop('required', phoneRequired);
+        $email.prop('required', emailRequired);
+    }
+
     $(document).ready(function () {
+        $('input[name="login_channel"]').on('change', syncLoginChannelFields);
+        syncLoginChannelFields();
+
         $('#state_id').on('change', function () {
             loadCities($(this).val(), null);
         });

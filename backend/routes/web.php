@@ -228,6 +228,9 @@ Route::group(['middleware' => ['XSS']], function () {
                 Route::post('registrations/{id}/resend-sms', [QuickRegistrationController::class, 'resendSms'])
                     ->middleware('throttle:10,1')
                     ->name('registrations.resend-sms');
+                Route::post('registrations/{id}/resend-email', [QuickRegistrationController::class, 'resendEmail'])
+                    ->middleware('throttle:10,1')
+                    ->name('registrations.resend-email');
                 Route::put('registrations/{id}', [QuickRegistrationController::class, 'update'])
                     ->middleware('throttle:10,1')
                     ->name('registrations.update');

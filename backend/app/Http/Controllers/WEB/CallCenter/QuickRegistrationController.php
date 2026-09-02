@@ -42,8 +42,9 @@ class QuickRegistrationController extends Controller
         $validated = $request->validate([
             'shop_name' => 'required|string|max:255',
             'contact_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|max:255',
+            'login_channel' => 'required|in:sms,email,both',
+            'phone' => 'required_if:login_channel,sms,both|nullable|string|max:20',
+            'email' => 'required_if:login_channel,email,both|nullable|email|max:255',
             'state_id' => 'nullable|integer|exists:country_states,id',
             'city_id' => 'nullable|integer|exists:cities,id',
             'category_id' => 'nullable|integer|exists:categories,id',
@@ -63,20 +64,30 @@ class QuickRegistrationController extends Controller
 
         $message = 'Satıcı kaydı oluşturuldu.';
         $alertType = 'success';
+        $loginChannel = $validated['login_channel'];
         $hasRealEmail = $result->user->email
             && ! \App\Services\CallCenter\QuickSellerRegistrationService::isPendingEmail($result->user->email);
 
-        if ($hasRealEmail && $result->emailSent && $result->smsSent) {
-            $message .= ' Giriş bilgileri e-posta ve SMS ile gönderildi.';
-        } elseif ($hasRealEmail && $result->emailSent) {
-            $message .= ' Giriş bilgileri e-posta ile gönderildi.';
-        } elseif ($result->smsSent && ! $hasRealEmail) {
-            $message .= ' E-posta girilmedi; giriş bilgileri SMS ile gönderildi. Satıcı e-postayı panelden sonra ekleyebilir.';
-        } elseif ($result->smsSent) {
+        if ($loginChannel === 'both' && $result->smsSent && $result->emailSent) {
+            $message .= ' Giriş bilgileri SMS ve e-posta ile gönderildi.';
+        } elseif ($loginChannel === 'both' && $result->smsSent && ! $result->emailSent) {
             $message .= ' SMS gönderildi ancak e-posta iletilemedi; teknik ekibe bildirin.';
             $alertType = 'warning';
+        } elseif ($loginChannel === 'both' && ! $result->smsSent && $result->emailSent) {
+            $message .= ' E-posta gönderildi ancak SMS iletilemedi; teknik ekibe bildirin.';
+            $alertType = 'warning';
+        } elseif ($loginChannel === 'both') {
+            $message .= ' SMS ve e-posta gönderilemedi; teknik ekibe bildirin.';
+            $alertType = 'error';
+        } elseif ($loginChannel === 'email' && $result->emailSent) {
+            $message .= ' Giriş bilgileri e-posta ile gönderildi.';
+        } elseif ($loginChannel === 'email') {
+            $message .= ' E-posta gönderilemedi; teknik ekibe bildirin.';
+            $alertType = 'error';
+        } elseif ($result->smsSent) {
+            $message .= ' Giriş bilgileri SMS ile gönderildi.';
         } else {
-            $message .= ' E-posta ve SMS gönderilemedi; teknik ekibe bildirin.';
+            $message .= ' SMS gönderilemedi; teknik ekibe bildirin.';
             $alertType = 'error';
         }
 
@@ -89,6 +100,7 @@ class QuickRegistrationController extends Controller
                     'shop_name' => $result->vendor->shop_name,
                     'email' => $hasRealEmail ? $result->user->email : null,
                     'phone' => $result->user->phone,
+                    'login_channel' => $loginChannel,
                     'sms_sent' => $result->smsSent,
                     'email_sent' => $result->emailSent,
                     'email_skipped' => ! $hasRealEmail,
@@ -154,6 +166,28 @@ class QuickRegistrationController extends Controller
 
         return back()->with([
             'messege' => 'Hoş geldin SMS\'i aynı giriş şifresiyle yeniden gönderildi.',
+            'alert-type' => 'success',
+        ]);
+    }
+
+    public function resendEmail(int $id)
+    {
+        $agent = Auth::guard('admin')->user();
+
+        $vendor = Vendor::query()
+            ->with('user')
+            ->where('registration_source', 'call_center')
+            ->where('registered_by_admin_id', $agent->id)
+            ->findOrFail($id);
+
+        try {
+            $this->registrationService->resendFirstLoginEmail($vendor);
+        } catch (RuntimeException $exception) {
+            return back()->with(['messege' => $exception->getMessage(), 'alert-type' => 'error']);
+        }
+
+        return back()->with([
+            'messege' => 'Hoş geldin e-postası aynı giriş şifresiyle yeniden gönderildi.',
             'alert-type' => 'success',
         ]);
     }

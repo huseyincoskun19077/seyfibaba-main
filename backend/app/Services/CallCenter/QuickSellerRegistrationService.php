@@ -27,6 +27,12 @@ class QuickSellerRegistrationService
 {
     public const PENDING_EMAIL_DOMAIN = 'pending.seyfibaba.local';
 
+    public const LOGIN_CHANNEL_SMS = 'sms';
+
+    public const LOGIN_CHANNEL_EMAIL = 'email';
+
+    public const LOGIN_CHANNEL_BOTH = 'both';
+
     public function __construct(
         protected SmsServiceInterface $smsService
     ) {
@@ -43,8 +49,9 @@ class QuickSellerRegistrationService
      * @param  array{
      *     shop_name: string,
      *     contact_name: string,
-     *     phone: string,
+     *     phone?: string|null,
      *     email?: string|null,
+     *     login_channel?: string,
      *     state_id?: int|null,
      *     city_id?: int|null,
      *     category_id?: int|null,
@@ -83,8 +90,9 @@ class QuickSellerRegistrationService
      * @param  array{
      *     shop_name: string,
      *     contact_name: string,
-     *     phone: string,
+     *     phone?: string|null,
      *     email?: string|null,
+     *     login_channel?: string,
      *     state_id?: int|null,
      *     city_id?: int|null,
      *     category_id?: int|null,
@@ -93,31 +101,51 @@ class QuickSellerRegistrationService
      */
     protected function registerWithSource(array $data, string $registrationSource, ?int $registeredByAdminId): QuickRegistrationResult
     {
-        $phone = PhoneNormalizer::toE164($data['phone']);
-        $phoneDigits = PhoneNormalizer::digitsOnly($phone);
+        $loginChannel = $this->resolveLoginChannel($data, $registrationSource);
+        $phone = null;
+        $phoneDigits = '';
 
-        if ($phoneDigits === '' || strlen($phoneDigits) < 10) {
-            throw new RuntimeException('Geçerli bir telefon numarası girin.');
+        if ($this->loginChannelUsesSms($loginChannel)) {
+            $phone = PhoneNormalizer::toE164((string) ($data['phone'] ?? ''));
+            $phoneDigits = PhoneNormalizer::digitsOnly($phone);
+
+            if ($phoneDigits === '' || strlen($phoneDigits) < 10) {
+                throw new RuntimeException('Geçerli bir telefon numarası girin.');
+            }
+        } elseif (trim((string) ($data['phone'] ?? '')) !== '') {
+            $phone = PhoneNormalizer::toE164((string) $data['phone']);
+            $phoneDigits = PhoneNormalizer::digitsOnly($phone);
+
+            if ($phoneDigits !== '' && strlen($phoneDigits) < 10) {
+                throw new RuntimeException('Geçerli bir telefon numarası girin.');
+            }
         }
 
-        $existingUser = User::query()
-            ->where(function ($query) use ($phone, $phoneDigits) {
-                $query->where('phone', $phone)
-                    ->orWhere('phone', $phoneDigits)
-                    ->orWhere('phone', '+90'.$phoneDigits)
-                    ->orWhere('phone', '0'.substr($phoneDigits, -10));
-            })
-            ->first();
+        $existingUser = $this->findExistingUserForRegistration($loginChannel, $phone, $phoneDigits, $data, null);
 
         if ($existingUser?->seller) {
-            throw new RuntimeException('Bu telefon numarasına bağlı bir satıcı hesabı zaten var.');
+            throw new RuntimeException($loginChannel === self::LOGIN_CHANNEL_EMAIL
+                ? 'Bu e-posta adresine bağlı bir satıcı hesabı zaten var.'
+                : 'Bu telefon numarasına bağlı bir satıcı hesabı zaten var.');
         }
 
-        [$email, $hasRealEmail] = $this->resolveEmail($data['email'] ?? null, $phoneDigits, $existingUser);
+        if ($this->loginChannelUsesEmail($loginChannel)) {
+            $emailInput = strtolower(trim((string) ($data['email'] ?? '')));
+            if ($emailInput === '') {
+                throw new RuntimeException('E-posta adresi zorunludur.');
+            }
+
+            $email = $this->assertValidEmail($emailInput, $existingUser?->id);
+            $hasRealEmail = true;
+        } else {
+            [$email, $hasRealEmail] = $this->resolveEmail($data['email'] ?? null, $phoneDigits ?: '0', $existingUser);
+        }
+
         $address = $this->buildAddress($data['state_id'] ?? null, $data['city_id'] ?? null);
         $shopName = trim($data['shop_name']);
         $contactName = trim($data['contact_name']);
         $loginUrl = SellerLoginUrl::public();
+        $otpIdentifier = $this->firstLoginOtpIdentifier($phone, $email, $loginChannel);
 
         return DB::transaction(function () use (
             $data,
@@ -130,7 +158,9 @@ class QuickSellerRegistrationService
             $address,
             $shopName,
             $contactName,
-            $loginUrl
+            $loginUrl,
+            $loginChannel,
+            $otpIdentifier
         ) {
             $wasExistingUser = $existingUser !== null;
 
@@ -191,13 +221,31 @@ class QuickSellerRegistrationService
 
             $vendor->save();
 
-            $otpCode = $this->createFirstLoginOtp($phone);
-            $emailSent = $hasRealEmail
-                ? $this->sendWelcomeEmail($contactName, $shopName, $email, $loginUrl)
-                : false;
-            $smsSent = $this->sendWelcomeSms($phone, $email, $otpCode, $loginUrl);
+            $otpCode = $this->createFirstLoginOtp($otpIdentifier);
+            $smsSent = false;
+            $emailSent = false;
 
-            $this->persistWelcomeDeliveryStatus($vendor, $smsSent, $hasRealEmail ? $emailSent : null);
+            if ($this->loginChannelUsesSms($loginChannel) && $phone) {
+                $smsSent = $this->sendWelcomeSms($phone, $email, $otpCode, $loginUrl);
+            }
+
+            if ($this->loginChannelUsesEmail($loginChannel) && $hasRealEmail) {
+                $emailSent = $this->sendWelcomeEmail(
+                    $contactName,
+                    $shopName,
+                    $email,
+                    $loginUrl,
+                    $otpCode,
+                    $loginChannel,
+                    $phone
+                );
+            }
+
+            $this->persistWelcomeDeliveryStatus(
+                $vendor,
+                $smsSent,
+                $this->loginChannelUsesEmail($loginChannel) ? $emailSent : null
+            );
 
             return new QuickRegistrationResult(
                 user: $user,
@@ -236,12 +284,62 @@ class QuickSellerRegistrationService
             throw new RuntimeException('Geçerli bir telefon numarası bulunamadı.');
         }
 
-        $otpCode = $this->getActiveFirstLoginOtpCode($phone);
+        $otp = self::findActiveFirstLoginOtp($user);
+        if (! $otp) {
+            throw new RuntimeException('Tek kullanımlık giriş kodu bulunamadı.');
+        }
+
+        $otpCode = $otp->otp_code;
         $smsSent = $this->sendWelcomeSms($phone, (string) $user->email, $otpCode, SellerLoginUrl::public());
         $this->persistWelcomeDeliveryStatus($vendor, $smsSent, null);
 
         if (! $smsSent) {
             throw new RuntimeException('SMS gönderilemedi. Teknik ekibe bildirin.');
+        }
+
+        return true;
+    }
+
+    /**
+     * Yeniden hoş geldin e-postası gönder (aynı tek girişlik şifre korunur).
+     */
+    public function resendFirstLoginEmail(Vendor $vendor): bool
+    {
+        if (! $vendor->isQuickOnboardingRegistration()) {
+            throw new RuntimeException('Bu işlem sadece ilk giriş kaydı olan satıcılar için geçerlidir.');
+        }
+
+        $user = $vendor->user;
+        if (! $user) {
+            throw new RuntimeException('Satıcı kullanıcısı bulunamadı.');
+        }
+
+        if (! (bool) ($user->must_change_password ?? false)) {
+            throw new RuntimeException('Satıcı yeni şifresini oluşturmuş. Tek kullanımlık e-posta gönderilemez.');
+        }
+
+        if (self::isPendingEmail($user->email)) {
+            throw new RuntimeException('Satıcıda geçerli bir e-posta adresi bulunamadı.');
+        }
+
+        $otp = self::findActiveFirstLoginOtp($user);
+        if (! $otp) {
+            throw new RuntimeException('Tek kullanımlık giriş kodu bulunamadı.');
+        }
+
+        $emailSent = $this->sendWelcomeEmail(
+            (string) $user->name,
+            (string) $vendor->shop_name,
+            (string) $user->email,
+            SellerLoginUrl::public(),
+            $otp->otp_code,
+            $user->phone ? self::LOGIN_CHANNEL_BOTH : self::LOGIN_CHANNEL_EMAIL,
+            $user->phone ? (string) $user->phone : null,
+        );
+        $this->persistWelcomeDeliveryStatus($vendor, false, $emailSent);
+
+        if (! $emailSent) {
+            throw new RuntimeException('E-posta gönderilemedi. Teknik ekibe bildirin.');
         }
 
         return true;
@@ -350,7 +448,7 @@ class QuickSellerRegistrationService
             }
         }
 
-        $otp = $this->findFirstLoginOtpForPhone($currentPhone);
+        $otp = QuickSellerRegistrationService::findActiveFirstLoginOtp($user);
 
         if ($phoneChanged) {
             $user->phone = $newPhone;
@@ -411,7 +509,10 @@ class QuickSellerRegistrationService
         string $contactName,
         string $shopName,
         string $email,
-        string $loginUrl
+        string $loginUrl,
+        string $otpCode,
+        string $loginChannel,
+        ?string $phone = null,
     ): bool {
         try {
             MailHelper::setMailConfig();
@@ -428,11 +529,16 @@ class QuickSellerRegistrationService
                 return false;
             }
 
+            $phoneUsername = $phone ? $this->loginUsernameFromPhone($phone) : null;
+
             Mail::to($email)->send(new CallCenterSellerWelcomeMail(
                 contactName: $contactName,
                 shopName: $shopName,
                 email: $email,
                 loginUrl: $loginUrl,
+                otpCode: $otpCode,
+                loginChannel: $loginChannel,
+                phoneUsername: $phoneUsername,
             ));
 
             return true;
@@ -467,27 +573,79 @@ class QuickSellerRegistrationService
         }
     }
 
-    protected function getActiveFirstLoginOtpCode(string $phone): string
+    protected function getActiveFirstLoginOtpCode(string $identifier): string
     {
-        $existing = $this->findFirstLoginOtpForPhone($phone);
+        $existing = $this->findFirstLoginOtpForIdentifier($identifier);
 
         if ($existing && $existing->verified_at === null) {
             return $existing->otp_code;
         }
 
-        return $this->createFirstLoginOtp($phone);
+        return $this->createFirstLoginOtp($identifier);
     }
 
-    protected function findFirstLoginOtpForPhone(string $phone): ?OtpVerification
+    protected function findFirstLoginOtpForIdentifier(string $identifier): ?OtpVerification
     {
-        $variants = $this->phoneVariants($phone);
+        $keys = str_starts_with($identifier, 'e:')
+            ? [$identifier]
+            : $this->phoneVariants($identifier);
 
         return OtpVerification::query()
-            ->whereIn('phone', $variants)
+            ->whereIn('phone', $keys)
             ->where('purpose', 'seller_first_login')
             ->whereNull('verified_at')
             ->orderByDesc('id')
             ->first();
+    }
+
+    /**
+     * @deprecated use findFirstLoginOtpForIdentifier
+     */
+    protected function findFirstLoginOtpForPhone(string $phone): ?OtpVerification
+    {
+        return $this->findFirstLoginOtpForIdentifier($phone);
+    }
+
+    public static function findActiveFirstLoginOtp(User $user): ?OtpVerification
+    {
+        $keys = self::firstLoginOtpLookupKeys($user);
+
+        if ($keys === []) {
+            return null;
+        }
+
+        return OtpVerification::query()
+            ->whereIn('phone', $keys)
+            ->where('purpose', 'seller_first_login')
+            ->whereNull('verified_at')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function firstLoginOtpLookupKeys(User $user): array
+    {
+        $keys = [];
+
+        if ($user->phone) {
+            $service = app(self::class);
+            $keys = array_merge($keys, $service->phoneVariants((string) $user->phone));
+        }
+
+        if ($user->email && ! self::isPendingEmail($user->email)) {
+            $keys[] = self::emailOtpIdentifier($user->email);
+        }
+
+        return array_values(array_unique(array_filter($keys)));
+    }
+
+    public static function emailOtpIdentifier(string $email): string
+    {
+        $email = strtolower(trim($email));
+
+        return 'e:'.substr(hash('sha256', $email), 0, 17);
     }
 
     /**
@@ -551,10 +709,10 @@ class QuickSellerRegistrationService
         }
     }
 
-    protected function createFirstLoginOtp(string $phone): string
+    protected function createFirstLoginOtp(string $identifier): string
     {
         OtpVerification::query()
-            ->where('phone', $phone)
+            ->where('phone', $identifier)
             ->where('purpose', 'seller_first_login')
             ->whereNull('verified_at')
             ->delete();
@@ -562,7 +720,7 @@ class QuickSellerRegistrationService
         $otpCode = $this->generateOtpCode();
 
         OtpVerification::create([
-            'phone' => $phone,
+            'phone' => $identifier,
             'otp_code' => $otpCode,
             'purpose' => 'seller_first_login',
             'attempts' => 0,
@@ -572,6 +730,87 @@ class QuickSellerRegistrationService
         ]);
 
         return $otpCode;
+    }
+
+    protected function resolveLoginChannel(array $data, string $registrationSource): string
+    {
+        if ($registrationSource === 'public_web') {
+            return self::LOGIN_CHANNEL_SMS;
+        }
+
+        $channel = strtolower(trim((string) ($data['login_channel'] ?? self::LOGIN_CHANNEL_SMS)));
+
+        if (! in_array($channel, [self::LOGIN_CHANNEL_SMS, self::LOGIN_CHANNEL_EMAIL, self::LOGIN_CHANNEL_BOTH], true)) {
+            throw new RuntimeException('Geçersiz giriş kanalı seçimi.');
+        }
+
+        return $channel;
+    }
+
+    protected function loginChannelUsesSms(string $loginChannel): bool
+    {
+        return in_array($loginChannel, [self::LOGIN_CHANNEL_SMS, self::LOGIN_CHANNEL_BOTH], true);
+    }
+
+    protected function loginChannelUsesEmail(string $loginChannel): bool
+    {
+        return in_array($loginChannel, [self::LOGIN_CHANNEL_EMAIL, self::LOGIN_CHANNEL_BOTH], true);
+    }
+
+    protected function firstLoginOtpIdentifier(?string $phone, string $email, string $loginChannel): string
+    {
+        if ($this->loginChannelUsesSms($loginChannel) && $phone) {
+            return PhoneNormalizer::toE164($phone);
+        }
+
+        if ($this->loginChannelUsesEmail($loginChannel) && ! self::isPendingEmail($email)) {
+            return self::emailOtpIdentifier($email);
+        }
+
+        throw new RuntimeException('Giriş bilgileri oluşturulamadı.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function findExistingUserForRegistration(
+        string $loginChannel,
+        ?string $phone,
+        string $phoneDigits,
+        array $data,
+        ?int $ignoreUserId
+    ): ?User {
+        if ($loginChannel === self::LOGIN_CHANNEL_EMAIL) {
+            $email = strtolower(trim((string) ($data['email'] ?? '')));
+            if ($email === '') {
+                return null;
+            }
+
+            $query = User::query()->where('email', $email);
+            if ($ignoreUserId !== null) {
+                $query->where('id', '!=', $ignoreUserId);
+            }
+
+            return $query->first();
+        }
+
+        if ($phone === null || $phoneDigits === '') {
+            return null;
+        }
+
+        $query = User::query()
+            ->where(function ($q) use ($phone, $phoneDigits) {
+                $q->where('phone', $phone)
+                    ->orWhere('phone', $phoneDigits)
+                    ->orWhere('phone', '+90'.$phoneDigits)
+                    ->orWhere('phone', '0'.substr($phoneDigits, -10));
+            });
+
+        if ($ignoreUserId !== null) {
+            $query->where('id', '!=', $ignoreUserId);
+        }
+
+        return $query->first();
     }
 
     protected function generateOtpCode(): string

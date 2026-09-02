@@ -115,16 +115,7 @@ class LoginController extends Controller
 
             if($user->status==1){
                 if ($seller && $user->must_change_password) {
-                    $otpPhones = array_values(array_unique(array_filter([
-                        $user->phone,
-                        $normalizedPhone,
-                    ])));
-                    $otp = OtpVerification::query()
-                        ->whereIn('phone', $otpPhones ?: [$user->phone])
-                        ->where('purpose', 'seller_first_login')
-                        ->whereNull('verified_at')
-                        ->latest('id')
-                        ->first();
+                    $otp = QuickSellerRegistrationService::findActiveFirstLoginOtp($user);
 
                     if (! $otp) {
                         return response()->json([

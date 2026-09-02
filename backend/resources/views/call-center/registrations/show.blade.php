@@ -93,6 +93,7 @@
                     'onboarding' => $onboarding,
                     'wrapperClass' => 'mt-3',
                     'resendSmsRoute' => route('call-center.registrations.resend-sms', $vendor->id),
+                    'resendEmailRoute' => route('call-center.registrations.resend-email', $vendor->id),
                 ])
 
                 <hr>

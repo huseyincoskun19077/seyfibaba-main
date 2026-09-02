@@ -70,7 +70,8 @@ class QuickSellerOnboardingStatus
             'logged_in' => $loggedIn,
             'logged_in_at' => $loggedInAt,
             'password_changed' => $passwordChanged,
-            'can_resend_sms' => ! $passwordChanged,
+            'can_resend_sms' => ! $passwordChanged && $user && self::hasValidPhone($user),
+            'can_resend_email' => ! $passwordChanged && ! $emailSkipped,
             'can_edit_phone' => $vendor->isCallCenterRegistration() && ! $passwordChanged,
             'can_edit_registration' => $vendor->isCallCenterRegistration(),
             'summary' => $summary,
@@ -91,6 +92,14 @@ class QuickSellerOnboardingStatus
             return ['Giriş yaptı, şifre oluşturmadı', 'warning'];
         }
 
+        if ($smsSent === false && $emailSent === false) {
+            return ['Bildirim gitmedi, sisteme girmedi', 'danger'];
+        }
+
+        if ($emailSent === true && $smsSent !== true) {
+            return ['E-posta gitti, sisteme girmedi', 'warning'];
+        }
+
         if ($smsSent === false) {
             return ['SMS gitmedi, sisteme girmedi', 'danger'];
         }
@@ -104,17 +113,31 @@ class QuickSellerOnboardingStatus
 
     protected static function findFirstLoginOtp(?User $user): ?OtpVerification
     {
-        if (! $user || empty($user->phone)) {
+        if (! $user) {
             return null;
         }
 
-        $phones = self::phoneVariants($user->phone);
+        $keys = QuickSellerRegistrationService::firstLoginOtpLookupKeys($user);
+        if ($keys === []) {
+            return null;
+        }
 
         return OtpVerification::query()
-            ->whereIn('phone', $phones)
+            ->whereIn('phone', $keys)
             ->where('purpose', 'seller_first_login')
             ->orderByDesc('id')
             ->first();
+    }
+
+    protected static function hasValidPhone(User $user): bool
+    {
+        if (empty($user->phone)) {
+            return false;
+        }
+
+        $digits = PhoneNormalizer::digitsOnly((string) $user->phone);
+
+        return strlen($digits) >= 10;
     }
 
     /**
@@ -179,6 +202,7 @@ class QuickSellerOnboardingStatus
             'logged_in_at' => null,
             'password_changed' => false,
             'can_resend_sms' => false,
+            'can_resend_email' => false,
             'can_edit_phone' => false,
             'can_edit_registration' => false,
             'summary' => '',

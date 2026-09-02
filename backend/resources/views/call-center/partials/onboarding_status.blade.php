@@ -82,8 +82,21 @@
                     Satıcı yeni şifresini oluşturmadıysa kullanılabilir. Mevcut tek girişlik şifre değişmez.
                 </small>
             </form>
-        @elseif($onboarding['password_changed'] ?? false)
-            <p class="text-muted mb-0 small">Yeni şifre oluşturulduğu için hoş geldin SMS gönderilemez.</p>
+        @endif
+
+        @if(($onboarding['can_resend_email'] ?? false) && ! empty($resendEmailRoute ?? null))
+            <form method="POST" action="{{ $resendEmailRoute }}" class="mb-3"
+                  onsubmit="return confirm('Hoş geldin e-postası aynı giriş şifresiyle yeniden gönderilsin mi?');">
+                @csrf
+                <button type="submit" class="btn btn-info btn-sm">
+                    <i class="fas fa-envelope"></i> E-posta Yeniden Gönder
+                </button>
+                <small class="text-muted d-block mt-1">
+                    Giriş bilgileri e-posta ile yeniden iletilir. Mevcut tek girişlik şifre değişmez.
+                </small>
+            </form>
+        @elseif(($onboarding['password_changed'] ?? false) && ! ($onboarding['can_resend_sms'] ?? false))
+            <p class="text-muted mb-0 small">Yeni şifre oluşturulduğu için hoş geldin bildirimi gönderilemez.</p>
         @endif
     </div>
 @endif

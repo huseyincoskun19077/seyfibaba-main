@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Services\CallCenter\QuickSellerRegistrationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
@@ -15,6 +16,9 @@ class CallCenterSellerWelcomeMail extends Mailable
         public string $shopName,
         public string $email,
         public string $loginUrl,
+        public string $otpCode,
+        public string $loginChannel,
+        public ?string $phoneUsername = null,
     ) {
     }
 
@@ -23,5 +27,21 @@ class CallCenterSellerWelcomeMail extends Mailable
         return $this
             ->subject('Seyfibaba Satıcı Hesabınız Oluşturuldu')
             ->view('emails.call_center_seller_welcome');
+    }
+
+    public function includesSmsCredentials(): bool
+    {
+        return in_array($this->loginChannel, [
+            QuickSellerRegistrationService::LOGIN_CHANNEL_SMS,
+            QuickSellerRegistrationService::LOGIN_CHANNEL_BOTH,
+        ], true) && $this->phoneUsername;
+    }
+
+    public function includesEmailCredentials(): bool
+    {
+        return in_array($this->loginChannel, [
+            QuickSellerRegistrationService::LOGIN_CHANNEL_EMAIL,
+            QuickSellerRegistrationService::LOGIN_CHANNEL_BOTH,
+        ], true);
     }
 }

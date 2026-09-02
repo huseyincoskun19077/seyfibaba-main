@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\WEB\Seller\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\OtpVerification;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Services\CallCenter\QuickSellerRegistrationService;
 use App\Providers\RouteServiceProvider;
 use App\Support\PhoneNormalizer;
 use App\Support\SellerLoginUrl;
@@ -60,12 +60,7 @@ class SellerLoginController extends Controller
                 }
                 if($vendor->status == 1){
                     if($user->must_change_password){
-                        $otp = OtpVerification::query()
-                            ->where('phone', $user->phone)
-                            ->where('purpose', 'seller_first_login')
-                            ->whereNull('verified_at')
-                            ->latest('id')
-                            ->first();
+                        $otp = QuickSellerRegistrationService::findActiveFirstLoginOtp($user);
 
                         // Hızlı kayıt kodu giriş yapılana kadar geçerlidir (süre kontrolü yok)
                         if (! $otp) {

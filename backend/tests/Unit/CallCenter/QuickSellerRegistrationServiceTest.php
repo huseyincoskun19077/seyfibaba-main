@@ -164,6 +164,7 @@ class QuickSellerRegistrationServiceTest extends TestCase
             'contact_name' => 'Ahmet Yılmaz',
             'phone' => '5321234567',
             'email' => 'ahmet@example.com',
+            'login_channel' => 'both',
             'note' => 'Telefon görüşmesi',
         ]);
 
@@ -186,7 +187,7 @@ class QuickSellerRegistrationServiceTest extends TestCase
         $this->assertStringContainsString('Hosgeldiniz!', $this->sentSmsMessages[0]['message']);
         $this->assertStringContainsString('Kullanici Adiniz: 5321234567', $this->sentSmsMessages[0]['message']);
         $this->assertStringContainsString('Sifreniz:'.$result->otpCode, $this->sentSmsMessages[0]['message']);
-        $this->assertStringContainsString('seyfibaba.com/satici-giris', $this->sentSmsMessages[0]['message']);
+        $this->assertStringContainsString('satici-giris', $this->sentSmsMessages[0]['message']);
         $this->assertStringNotContainsString('Gecerlilik suresi', $this->sentSmsMessages[0]['message']);
 
         $otp = OtpVerification::where('phone', '+905321234567')->where('purpose', 'seller_first_login')->first();
@@ -194,10 +195,53 @@ class QuickSellerRegistrationServiceTest extends TestCase
         $this->assertTrue($otp->expires_at->greaterThan(now()->addYears(50)));
         $this->assertSame(50, (int) $otp->max_attempts);
 
-        Mail::assertSent(CallCenterSellerWelcomeMail::class, function (CallCenterSellerWelcomeMail $mail) {
+        Mail::assertSent(CallCenterSellerWelcomeMail::class, function (CallCenterSellerWelcomeMail $mail) use ($result) {
             return $mail->hasTo('ahmet@example.com')
                 && $mail->email === 'ahmet@example.com'
-                && $mail->loginUrl !== '';
+                && $mail->loginUrl !== ''
+                && $mail->otpCode === $result->otpCode
+                && $mail->loginChannel === 'both';
+        });
+    }
+
+    public function test_registers_with_sms_channel_only(): void
+    {
+        $agent = $this->createCallCenterAgent();
+
+        $result = $this->service->register($agent, [
+            'shop_name' => 'SMS Kanal Mağaza',
+            'contact_name' => 'Ali Veli',
+            'phone' => '5325554433',
+            'email' => 'ali@example.com',
+            'login_channel' => 'sms',
+        ]);
+
+        $this->assertTrue($result->smsSent);
+        $this->assertFalse($result->emailSent);
+        Mail::assertNothingSent();
+    }
+
+    public function test_registers_with_email_channel_only(): void
+    {
+        $agent = $this->createCallCenterAgent();
+
+        $result = $this->service->register($agent, [
+            'shop_name' => 'Mail Kanal Mağaza',
+            'contact_name' => 'Zeynep Kaya',
+            'email' => 'zeynep@example.com',
+            'login_channel' => 'email',
+        ]);
+
+        $this->assertFalse($result->smsSent);
+        $this->assertTrue($result->emailSent);
+        $this->assertEmpty($this->sentSmsMessages);
+        $this->assertSame('zeynep@example.com', $result->user->email);
+        $this->assertSame(1, OtpVerification::where('phone', QuickSellerRegistrationService::emailOtpIdentifier('zeynep@example.com'))->where('purpose', 'seller_first_login')->count());
+
+        Mail::assertSent(CallCenterSellerWelcomeMail::class, function (CallCenterSellerWelcomeMail $mail) use ($result) {
+            return $mail->hasTo('zeynep@example.com')
+                && $mail->otpCode === $result->otpCode
+                && $mail->loginChannel === 'email';
         });
     }
 
@@ -210,6 +254,7 @@ class QuickSellerRegistrationServiceTest extends TestCase
             'contact_name' => 'Ayşe Demir',
             'phone' => '5329876543',
             'email' => '',
+            'login_channel' => 'sms',
         ]);
 
         $this->assertTrue($result->smsSent);
@@ -241,6 +286,7 @@ class QuickSellerRegistrationServiceTest extends TestCase
             'contact_name' => 'Mevcut Müşteri',
             'phone' => '5321234567',
             'email' => 'musteri@example.com',
+            'login_channel' => 'both',
         ]);
 
         $this->assertTrue($result->wasExistingUser);
