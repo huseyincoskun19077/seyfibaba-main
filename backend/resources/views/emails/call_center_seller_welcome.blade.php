@@ -6,13 +6,18 @@
     <title>Satıcı Hesabınız Oluşturuldu</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #222; max-width: 600px; margin: 0 auto; padding: 24px;">
+    @php
+        $showEmailCredentials = in_array($loginChannel, ['email', 'both'], true);
+        $showSmsCredentials = in_array($loginChannel, ['sms', 'both'], true) && ! empty($phoneUsername);
+    @endphp
+
     <h2 style="margin-top: 0;">Hoş geldiniz, {{ $contactName }}</h2>
 
     <p>
         <strong>{{ $shopName }}</strong> için Seyfibaba satıcı hesabınız oluşturuldu.
-        @if($includesEmailCredentials() && $loginChannel === \App\Services\CallCenter\QuickSellerRegistrationService::LOGIN_CHANNEL_EMAIL)
+        @if($showEmailCredentials && $loginChannel === 'email')
             Giriş bilgileriniz aşağıdadır.
-        @elseif($includesEmailCredentials() && $includesSmsCredentials())
+        @elseif($showEmailCredentials && $showSmsCredentials)
             Giriş bilgileriniz e-posta ile de iletilmiştir; aynı tek kullanımlık şifre SMS ile de gönderilmiştir.
         @else
             Hesap bilgileriniz aşağıdadır.
@@ -24,7 +29,7 @@
             <td style="padding: 8px 0; font-weight: bold; width: 140px;">Giriş adresi</td>
             <td style="padding: 8px 0;"><a href="{{ $loginUrl }}">{{ $loginUrl }}</a></td>
         </tr>
-        @if($includesEmailCredentials())
+        @if($showEmailCredentials)
             <tr>
                 <td style="padding: 8px 0; font-weight: bold;">Kullanıcı adı</td>
                 <td style="padding: 8px 0;">{{ $email }}</td>
@@ -34,7 +39,7 @@
                 <td style="padding: 8px 0;"><strong>{{ $otpCode }}</strong></td>
             </tr>
         @endif
-        @if($includesSmsCredentials())
+        @if($showSmsCredentials)
             <tr>
                 <td style="padding: 8px 0; font-weight: bold;">SMS kullanıcı adı</td>
                 <td style="padding: 8px 0;">{{ $phoneUsername }}</td>
@@ -47,9 +52,9 @@
     </table>
 
     <p style="margin-bottom: 0;">
-        @if($includesEmailCredentials() && $includesSmsCredentials())
+        @if($showEmailCredentials && $showSmsCredentials)
             Satıcı paneline e-posta adresiniz veya telefon numaranız ile, yukarıdaki tek kullanımlık şifre ile giriş yapabilirsiniz.
-        @elseif($includesEmailCredentials())
+        @elseif($showEmailCredentials)
             Satıcı paneline e-posta adresiniz ve yukarıdaki tek kullanımlık şifre ile giriş yapabilirsiniz.
         @else
             Satıcı paneline telefon numaranız ve SMS ile gelen tek kullanımlık şifre ile giriş yapabilirsiniz.
