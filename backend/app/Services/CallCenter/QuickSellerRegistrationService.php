@@ -224,13 +224,17 @@ class QuickSellerRegistrationService
             $otpCode = $this->createFirstLoginOtp($otpIdentifier);
             $smsSent = false;
             $emailSent = false;
+            $smsError = null;
+            $emailError = null;
 
             if ($this->loginChannelUsesSms($loginChannel) && $phone) {
-                $smsSent = $this->sendWelcomeSms($phone, $email, $otpCode, $loginUrl);
+                $smsDelivery = $this->sendWelcomeSms($phone, $email, $otpCode, $loginUrl);
+                $smsSent = $smsDelivery->sent;
+                $smsError = $smsDelivery->error;
             }
 
             if ($this->loginChannelUsesEmail($loginChannel) && $hasRealEmail) {
-                $emailSent = $this->sendWelcomeEmail(
+                $emailDelivery = $this->sendWelcomeEmail(
                     $contactName,
                     $shopName,
                     $email,
@@ -239,6 +243,8 @@ class QuickSellerRegistrationService
                     $loginChannel,
                     $phone
                 );
+                $emailSent = $emailDelivery->sent;
+                $emailError = $emailDelivery->error;
             }
 
             $this->persistWelcomeDeliveryStatus(
@@ -254,6 +260,8 @@ class QuickSellerRegistrationService
                 smsSent: $smsSent,
                 emailSent: $emailSent,
                 wasExistingUser: $wasExistingUser,
+                smsError: $smsError,
+                emailError: $emailError,
             );
         });
     }
@@ -290,11 +298,11 @@ class QuickSellerRegistrationService
         }
 
         $otpCode = $otp->otp_code;
-        $smsSent = $this->sendWelcomeSms($phone, (string) $user->email, $otpCode, SellerLoginUrl::public());
-        $this->persistWelcomeDeliveryStatus($vendor, $smsSent, null);
+        $smsDelivery = $this->sendWelcomeSms($phone, (string) $user->email, $otpCode, SellerLoginUrl::public());
+        $this->persistWelcomeDeliveryStatus($vendor, $smsDelivery->sent, null);
 
-        if (! $smsSent) {
-            throw new RuntimeException('SMS gönderilemedi. Teknik ekibe bildirin.');
+        if (! $smsDelivery->sent) {
+            throw new RuntimeException($smsDelivery->error ?? 'SMS gönderilemedi.');
         }
 
         return true;
@@ -336,10 +344,10 @@ class QuickSellerRegistrationService
             $user->phone ? self::LOGIN_CHANNEL_BOTH : self::LOGIN_CHANNEL_EMAIL,
             $user->phone ? (string) $user->phone : null,
         );
-        $this->persistWelcomeDeliveryStatus($vendor, false, $emailSent);
+        $this->persistWelcomeDeliveryStatus($vendor, false, $emailSent->sent);
 
-        if (! $emailSent) {
-            throw new RuntimeException('E-posta gönderilemedi. Teknik ekibe bildirin.');
+        if (! $emailSent->sent) {
+            throw new RuntimeException($emailSent->error ?? 'E-posta gönderilemedi.');
         }
 
         return true;
@@ -473,11 +481,11 @@ class QuickSellerRegistrationService
         }
 
         $otpCode = $otp?->otp_code ?? $this->getActiveFirstLoginOtpCode($newPhone);
-        $smsSent = $this->sendWelcomeSms($newPhone, (string) $user->email, $otpCode, SellerLoginUrl::public());
-        $this->persistWelcomeDeliveryStatus($vendor, $smsSent, null);
+        $smsDelivery = $this->sendWelcomeSms($newPhone, (string) $user->email, $otpCode, SellerLoginUrl::public());
+        $this->persistWelcomeDeliveryStatus($vendor, $smsDelivery->sent, null);
 
-        if (! $smsSent) {
-            throw new RuntimeException('SMS gönderilemedi. Teknik ekibe bildirin.');
+        if (! $smsDelivery->sent) {
+            throw new RuntimeException($smsDelivery->error ?? 'SMS gönderilemedi.');
         }
     }
 
@@ -513,16 +521,20 @@ class QuickSellerRegistrationService
         string $otpCode,
         string $loginChannel,
         ?string $phone = null,
-    ): bool {
+    ): WelcomeChannelResult {
         try {
             MailHelper::setMailConfig();
 
-            if (! app()->runningUnitTests() && ! MailHelper::isSmtpConfigured()) {
-                Log::warning('Call center quick registration email skipped: SMTP not configured in admin', [
-                    'email' => $email,
-                ]);
+            if (! app()->runningUnitTests()) {
+                $configurationIssue = MailHelper::smtpConfigurationIssue();
+                if ($configurationIssue !== null) {
+                    Log::warning('Call center quick registration email skipped: SMTP configuration issue', [
+                        'email' => $email,
+                        'issue' => $configurationIssue,
+                    ]);
 
-                return false;
+                    return new WelcomeChannelResult(false, $configurationIssue);
+                }
             }
 
             $phoneUsername = $phone ? $this->loginUsernameFromPhone($phone) : null;
@@ -538,35 +550,44 @@ class QuickSellerRegistrationService
                 phoneUsername: $phoneUsername,
             ));
 
-            return true;
+            return new WelcomeChannelResult(true);
         } catch (\Throwable $exception) {
+            $error = MailHelper::humanizeMailException($exception);
+
             Log::error('Call center quick registration email failed', [
                 'email' => $email,
                 'error' => $exception->getMessage(),
+                'friendly_error' => $error,
             ]);
 
             if (app()->runningUnitTests()) {
                 throw $exception;
             }
 
-            return false;
+            return new WelcomeChannelResult(false, $error);
         }
     }
 
-    protected function sendWelcomeSms(string $phone, string $email, string $otpCode, string $loginUrl): bool
+    protected function sendWelcomeSms(string $phone, string $email, string $otpCode, string $loginUrl): WelcomeChannelResult
     {
         $loginUsername = $this->loginUsernameFromPhone($phone);
         $message = OtpMessageBuilder::buildCallCenterWelcome($loginUsername, $otpCode);
 
         try {
-            return $this->smsService->sendTransactional($phone, $message);
+            $sent = $this->smsService->sendTransactional($phone, $message);
+
+            if (! $sent) {
+                return new WelcomeChannelResult(false, 'SMS servisi gönderimi reddetti. SMS ayarlarını kontrol edin.');
+            }
+
+            return new WelcomeChannelResult(true);
         } catch (\Throwable $exception) {
             Log::error('Call center quick registration SMS failed', [
                 'phone' => $phone,
                 'error' => $exception->getMessage(),
             ]);
 
-            return false;
+            return new WelcomeChannelResult(false, 'SMS gönderilemedi: '.$exception->getMessage());
         }
     }
 

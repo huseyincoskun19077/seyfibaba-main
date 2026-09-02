@@ -14,6 +14,8 @@ class QuickRegistrationResult
         public bool $smsSent,
         public bool $emailSent,
         public bool $wasExistingUser,
+        public ?string $smsError = null,
+        public ?string $emailError = null,
     ) {
     }
 }

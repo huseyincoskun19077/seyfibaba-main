@@ -33,10 +33,17 @@
                 @elseif($registrationResult['email_sent'] ?? false)
                     <p class="mb-1">Giriş adresi ve hesap bilgisi <strong>{{ $registrationResult['email'] }}</strong> adresine e-posta ile gönderildi.</p>
                 @else
-                    <p class="mb-1 text-danger">E-posta gönderilemedi. Teknik ekibe bildirin.</p>
+                    <p class="mb-1 text-danger">
+                        E-posta gönderilemedi.
+                        @if(!empty($registrationResult['email_error']))
+                            <strong>{{ $registrationResult['email_error'] }}</strong>
+                        @endif
+                    </p>
                 @endif
                 @if($registrationResult['sms_sent'] ?? false)
                     <p class="mb-0">Tek kullanımlık giriş şifresi SMS ile gönderildi.</p>
+                @elseif(!empty($registrationResult['sms_error']))
+                    <p class="mb-0 text-danger">SMS gönderilemedi: {{ $registrationResult['sms_error'] }}</p>
                 @endif
             </div>
         @endif

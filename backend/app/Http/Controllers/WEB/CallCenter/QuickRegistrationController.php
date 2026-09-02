@@ -71,23 +71,29 @@ class QuickRegistrationController extends Controller
         if ($loginChannel === 'both' && $result->smsSent && $result->emailSent) {
             $message .= ' Giriş bilgileri SMS ve e-posta ile gönderildi.';
         } elseif ($loginChannel === 'both' && $result->smsSent && ! $result->emailSent) {
-            $message .= ' SMS gönderildi ancak e-posta iletilemedi; teknik ekibe bildirin.';
+            $message .= ' SMS gönderildi. E-posta gönderilemedi'.($result->emailError ? ': '.$result->emailError : '.');
             $alertType = 'warning';
         } elseif ($loginChannel === 'both' && ! $result->smsSent && $result->emailSent) {
-            $message .= ' E-posta gönderildi ancak SMS iletilemedi; teknik ekibe bildirin.';
+            $message .= ' E-posta gönderildi. SMS gönderilemedi'.($result->smsError ? ': '.$result->smsError : '.');
             $alertType = 'warning';
         } elseif ($loginChannel === 'both') {
-            $message .= ' SMS ve e-posta gönderilemedi; teknik ekibe bildirin.';
+            $message .= ' SMS ve e-posta gönderilemedi.';
+            if ($result->smsError) {
+                $message .= ' SMS: '.$result->smsError;
+            }
+            if ($result->emailError) {
+                $message .= ' E-posta: '.$result->emailError;
+            }
             $alertType = 'error';
         } elseif ($loginChannel === 'email' && $result->emailSent) {
             $message .= ' Giriş bilgileri e-posta ile gönderildi.';
         } elseif ($loginChannel === 'email') {
-            $message .= ' E-posta gönderilemedi; teknik ekibe bildirin.';
+            $message .= ' Kayıt oluşturuldu ancak e-posta gönderilemedi'.($result->emailError ? ': '.$result->emailError : '.');
             $alertType = 'error';
         } elseif ($result->smsSent) {
             $message .= ' Giriş bilgileri SMS ile gönderildi.';
         } else {
-            $message .= ' SMS gönderilemedi; teknik ekibe bildirin.';
+            $message .= ' SMS gönderilemedi'.($result->smsError ? ': '.$result->smsError : '.');
             $alertType = 'error';
         }
 
@@ -103,6 +109,8 @@ class QuickRegistrationController extends Controller
                     'login_channel' => $loginChannel,
                     'sms_sent' => $result->smsSent,
                     'email_sent' => $result->emailSent,
+                    'sms_error' => $result->smsError,
+                    'email_error' => $result->emailError,
                     'email_skipped' => ! $hasRealEmail,
                     'was_existing_user' => $result->wasExistingUser,
                 ],
