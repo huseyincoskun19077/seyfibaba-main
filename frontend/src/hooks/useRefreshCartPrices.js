@@ -8,19 +8,25 @@ import { refreshCartPrices } from "@/utils/cartPriceRefresh";
 
 /**
  * Sepet açıldığında güncel fiyatları sunucudan çeker (Trendyol: canlı fiyat).
+ * Silme/qty değişiminde eski isteklerin sepeti geri yazmasını engeller.
  */
 export default function useRefreshCartPrices(cartProducts, { enabled = true, notify = true } = {}) {
   const dispatch = useDispatch();
-  const inFlightRef = useRef(false);
+  const seqRef = useRef(0);
 
   const runRefresh = useCallback(async () => {
-    if (!enabled || !cartProducts?.length || inFlightRef.current) {
+    if (!enabled || !cartProducts?.length) {
+      seqRef.current += 1;
       return;
     }
 
-    inFlightRef.current = true;
+    const seq = ++seqRef.current;
     try {
       const result = await refreshCartPrices(cartProducts);
+
+      if (seq !== seqRef.current) {
+        return;
+      }
 
       if (result.cartProducts?.length) {
         dispatch(updateAllItems(result.cartProducts));
@@ -31,8 +37,6 @@ export default function useRefreshCartPrices(cartProducts, { enabled = true, not
       }
     } catch {
       // Sessiz: checkout sunucuda yine güncel fiyatla hesaplanır
-    } finally {
-      inFlightRef.current = false;
     }
   }, [cartProducts, dispatch, enabled, notify]);
 

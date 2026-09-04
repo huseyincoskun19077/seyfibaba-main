@@ -205,6 +205,11 @@ class CartController extends Controller
     public function cartItemRemove($rowId){
         $user = Auth::guard('api')->user();
         $cartProduct = ShoppingCart::where(['user_id' => $user->id, 'id' => $rowId])->first();
+        if (!$cartProduct) {
+            $notification = trans('user_validation.Remove successfully');
+            return response()->json(['message' => $notification]);
+        }
+
         ShoppingCartVariant::where('shopping_cart_id', $rowId)->delete();
         $cartProduct->delete();
 

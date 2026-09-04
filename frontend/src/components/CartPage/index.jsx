@@ -115,7 +115,7 @@ function CartPage() {
 
     const newQty = existingItem.qty + quantityChange;
     if (newQty < 1) {
-      dispatch(deleteItemAction(productId));
+      dispatch(deleteItemAction(existingItem.product_id ?? productId));
       return;
     }
 

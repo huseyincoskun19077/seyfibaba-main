@@ -18,6 +18,8 @@ use App\Models\ShoppingCart;
 use App\Models\Coupon;
 use App\Models\Shipping;
 use App\Models\IyzicoPayment;
+use App\Models\Admin;
+use App\Models\User;
 use App\Services\BuyerInvoiceService;
 use Cart;
 use Session;
@@ -77,35 +79,43 @@ class CheckoutController extends Controller
 
         $setting = Setting::first();
 
-        if ($setting->map_status == 1) {
-            $vendorIds = $cartProducts->pluck('product.vendor_id')->unique();
-            $vendor_id = $vendorIds[0];
+        $addresses = Address::with('country', 'countryState', 'city')->where(['user_id' => $user->id])->get();
 
-            if ($vendor_id == 0) {
+        if ($setting->map_status == 1) {
+            $vendor_id = $cartProducts->pluck('product.vendor_id')->filter(function ($id) {
+                return $id !== null;
+            })->unique()->values()->first();
+            $vendor_id = $vendor_id === null ? 0 : $vendor_id;
+
+            $vendor_lat_long = null;
+            if ((int) $vendor_id === 0) {
                 $vendor_lat_long = Admin::where('id', 1)->select('latitude', 'longitude')->first();
             } else {
                 $find_user = Vendor::where('id', $vendor_id)->select('user_id')->first();
-                $vendor_lat_long = User::where('id', $find_user->user_id)->select('id', 'latitude', 'longitude')->first();
+                if ($find_user && $find_user->user_id) {
+                    $vendor_lat_long = User::where('id', $find_user->user_id)->select('id', 'latitude', 'longitude')->first();
+                }
             }
 
-            $addresses = Address::with('country', 'countryState', 'city')->where(['user_id' => $user->id])->get();
+            if (
+                $vendor_lat_long &&
+                $vendor_lat_long->latitude !== null &&
+                $vendor_lat_long->longitude !== null
+            ) {
+                $addresses = $addresses->map(function ($address) use ($vendor_lat_long, $setting) {
+                    $distance = $this->calculateDistance(
+                        $vendor_lat_long->latitude,
+                        $vendor_lat_long->longitude,
+                        $address->latitude,
+                        $address->longitude
+                    );
 
-            $addresses_with_distance = $addresses->map(function ($address) use ($vendor_lat_long, $setting) {
-                $distance = $this->calculateDistance(
-                    $vendor_lat_long['latitude'],
-                    $vendor_lat_long['longitude'],
-                    $address->latitude,
-                    $address->longitude
-                );
+                    $address->distance_in_km = $distance;
+                    $address->per_km_price_range = $setting->per_km_price_range;
 
-                $address->distance_in_km = $distance;
-                $address->per_km_price_range = $setting->per_km_price_range;
-
-                return $address;
-            });
-
-        } else {
-            $addresses = Address::with('country', 'countryState', 'city')->where(['user_id' => $user->id])->get();
+                    return $address;
+                });
+            }
         }
 
 
