@@ -341,13 +341,37 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
       postalCode: _postalCode,
     );
     if (invoiceError != null) {
-      Utils.errorSnackBar(context, invoiceError);
+      Utils.errorSnackBar(
+        context,
+        '$invoiceError Adresi düzenleyerek fatura bilgilerini tamamlayın.',
+      );
       return false;
     }
     if (billingAddressId < 1) {
       Utils.errorSnackBar(context, Language.selectBillingAddress);
       return false;
     }
+
+    final addresses = context.read<AddressCubit>().address?.addresses ?? [];
+    AddressModel? billing;
+    for (final item in addresses) {
+      if (item.id == billingAddressId) {
+        billing = item;
+        break;
+      }
+    }
+    final email = (billing?.email ?? '').trim().toLowerCase();
+    if (email.isEmpty ||
+        email.endsWith('.local') ||
+        email.endsWith('@pending.seyfibaba.local') ||
+        !email.contains('@')) {
+      Utils.errorSnackBar(
+        context,
+        'Sipariş için geçerli e-posta zorunludur. Lütfen adresi düzenleyip gerçek e-posta girin.',
+      );
+      return false;
+    }
+
     if (shippingAddressId < 1) {
       Utils.errorSnackBar(context, Language.selectLocation);
       return false;

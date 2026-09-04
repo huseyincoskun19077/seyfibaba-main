@@ -295,6 +295,23 @@ export default function usePlaceOrder({
       return toast.error("Lütfen fatura adresi seçin");
     }
 
+    if (!isGuest) {
+      const billing = addresses?.find(
+        (f) => parseInt(f.id) === parseInt(selectedBilling)
+      );
+      const billingEmail = String(billing?.email || "").trim().toLowerCase();
+      if (
+        !billingEmail ||
+        billingEmail.endsWith("@pending.seyfibaba.local") ||
+        billingEmail.endsWith(".local") ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billingEmail)
+      ) {
+        return toast.error(
+          "Sipariş için geçerli e-posta zorunludur. Lütfen adresi düzenleyip gerçek e-posta girin."
+        );
+      }
+    }
+
     if (!selectedRule)
       return toast.error(ServeLangItem()?.Please_Select_Shipping_Rule);
 

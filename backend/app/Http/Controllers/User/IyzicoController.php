@@ -216,6 +216,14 @@ class IyzicoController extends Controller
                 ?: '34000'
             );
 
+            $buyerEmail = $this->resolveBuyerEmail($user, $billingAddress, $shippingAddress);
+            if (! $this->isUsableBuyerEmail($buyerEmail)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sipariş için geçerli bir e-posta zorunludur. Lütfen teslimat/fatura adresinizdeki e-postayı güncelleyin.',
+                ], 422);
+            }
+
             $session = $this->iyzicoService->createCheckoutForm([
                 'locale' => 'tr',
                 'conversation_id' => $conversationId,
@@ -230,7 +238,7 @@ class IyzicoController extends Controller
                     'name' => (string)($this->extractFirstName($user->name) ?: 'Musteri'),
                     'surname' => (string)($this->extractLastName($user->name) ?: 'User'),
                     'gsm_number' => (string)($user->phone ?? $shippingAddress->phone ?? '+900000000000'),
-                    'email' => (string)($user->email ?? 'musteri@seyfibaba.com'),
+                    'email' => $buyerEmail,
                     'identity_number' => (string) (
                         ($invoiceData['tc_identity'] ?? null)
                         ?: ($invoiceData['tax_number'] ?? null)
@@ -1051,6 +1059,37 @@ class IyzicoController extends Controller
         $subMerchantPrice = $linePrice - $commission;
 
         return number_format(max(0, $subMerchantPrice), 2, '.', '');
+    }
+
+    private function resolveBuyerEmail($user, $billingAddress = null, $shippingAddress = null): string
+    {
+        $candidates = [
+            $billingAddress->email ?? null,
+            $shippingAddress->email ?? null,
+            $user->email ?? null,
+        ];
+
+        foreach ($candidates as $candidate) {
+            $email = strtolower(trim((string) $candidate));
+            if ($this->isUsableBuyerEmail($email)) {
+                return $email;
+            }
+        }
+
+        return '';
+    }
+
+    private function isUsableBuyerEmail(?string $email): bool
+    {
+        $email = strtolower(trim((string) $email));
+        if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+        if (str_ends_with($email, '@pending.seyfibaba.local') || str_ends_with($email, '.local')) {
+            return false;
+        }
+
+        return true;
     }
 
     private function extractFirstName(?string $fullName): string

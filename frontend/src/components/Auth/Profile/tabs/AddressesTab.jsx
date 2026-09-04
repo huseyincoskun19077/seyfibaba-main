@@ -275,6 +275,10 @@ export default function AddressesTab({ countryLists }) {
     }
   };
   const saveAddress = async () => {
+    if (!String(formData.email || "").trim()) {
+      toast.error("E-posta zorunludur.");
+      return;
+    }
     const invoiceError = validateInvoiceForm(invoice);
     if (invoiceError) {
       toast.error(invoiceError);
@@ -334,6 +338,17 @@ export default function AddressesTab({ countryLists }) {
         state: parseInt(addressData.state_id),
         city: parseInt(addressData.city_id),
       });
+      setInvoice(
+        defaultInvoiceState({
+          invoice_type: addressData.invoice_type,
+          tc_identity: addressData.tc_identity,
+          tax_number: addressData.tax_number,
+          tax_office: addressData.tax_office,
+          company_name: addressData.company_name,
+          is_e_invoice: addressData.is_e_invoice,
+          postal_code: addressData.zip_code || addressData.postal_code,
+        })
+      );
       await getState({ id: addressData.country_id });
       await getcity({ id: addressData.state_id });
       if (
@@ -346,7 +361,7 @@ export default function AddressesTab({ countryLists }) {
           lng: Number(addressData?.longitude) ?? null,
         });
       }
-      setNewAddress(!newAddress);
+      setNewAddress(true);
     } else {
       toast.error("Adres bulunamadı");
     }
@@ -370,6 +385,15 @@ export default function AddressesTab({ countryLists }) {
     }
   };
   const updateAddress = async (id) => {
+    if (!String(formData.email || "").trim()) {
+      toast.error("E-posta zorunludur.");
+      return;
+    }
+    const invoiceError = validateInvoiceForm(invoice);
+    if (invoiceError) {
+      toast.error(invoiceError);
+      return;
+    }
     const data = createAddressData();
     const userToken = auth()?.access_token;
 

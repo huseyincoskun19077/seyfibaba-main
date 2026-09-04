@@ -13,6 +13,7 @@ import {
   useLazyGetCityListApiQuery,
   useLazyGetCountryListApiQuery,
   useAddNewAddressMutation,
+  useUpdateAddressApiMutation,
 } from "@/redux/features/locations/apiSlice";
 import ArrowDownIcoCheck from "@/components/Helpers/icons/ArrowDownIcoCheck";
 import {
@@ -23,6 +24,7 @@ import {
 import {
   AddressInvoiceFields,
   defaultInvoiceState,
+  invoiceFromAddress,
   validateInvoiceForm,
 } from "./InvoiceCheckoutSection";
 
@@ -30,32 +32,50 @@ const MapComponent = dynamic(() => import("@/components/MapComponent/Index"), {
   ssr: false,
 });
 
-const CheckoutAddressForm = ({ onAddressSaved, onCancel }) => {
+function isUsableEmail(email) {
+  const value = String(email || "").trim().toLowerCase();
+  if (!value) return false;
+  if (value.endsWith("@pending.seyfibaba.local") || value.endsWith(".local")) {
+    return false;
+  }
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }) => {
   const webSettings = settings();
   const _auth = auth();
   const _user = _auth?.user || _auth;
+  const isEditing = Boolean(editingAddress?.id);
+
+  const initialEmail = isUsableEmail(editingAddress?.email)
+    ? editingAddress.email
+    : isUsableEmail(_user?.email)
+      ? _user.email
+      : "";
 
   const [formData, setFormData] = useState({
-    fName: _user?.name || "",
-    email: _user?.email || "",
-    phone: _user?.phone || "",
-    address: "",
-    home: true,
-    office: false,
-    country: null,
-    state: null,
-    city: null,
+    fName: editingAddress?.name || _user?.name || "",
+    email: initialEmail,
+    phone: editingAddress?.phone || _user?.phone || "",
+    address: editingAddress?.address || "",
+    home: editingAddress ? editingAddress.type !== "office" : true,
+    office: editingAddress?.type === "office",
+    country: editingAddress ? Number(editingAddress.country_id) : null,
+    state: editingAddress ? Number(editingAddress.state_id) : null,
+    city: editingAddress ? Number(editingAddress.city_id) : null,
   });
   const [invoice, setInvoice] = useState(() =>
-    defaultInvoiceState({
-      tc_identity: _user?.tc_identity,
-      tax_number: _user?.tax_number,
-      tax_office: _user?.tax_office,
-      company_name: _user?.company_name,
-      is_e_invoice: _user?.is_e_invoice,
-      postal_code: _user?.zip_code,
-      invoice_type: _user?.invoice_type,
-    })
+    editingAddress
+      ? invoiceFromAddress(editingAddress)
+      : defaultInvoiceState({
+          tc_identity: _user?.tc_identity,
+          tax_number: _user?.tax_number,
+          tax_office: _user?.tax_office,
+          company_name: _user?.company_name,
+          is_e_invoice: _user?.is_e_invoice,
+          postal_code: _user?.zip_code,
+          invoice_type: _user?.invoice_type,
+        })
   );
 
   const [countryDropdown, setCountryDropdown] = useState([]);
@@ -69,6 +89,8 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel }) => {
   const [getCityListApi] = useLazyGetCityListApiQuery();
   const [addNewAddressQuery, { isLoading: isAddNewAddressLoading }] =
     useAddNewAddressMutation();
+  const [updateAddressApi, { isLoading: isUpdateAddressLoading }] =
+    useUpdateAddressApiMutation();
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -78,6 +100,20 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel }) => {
         if (response.data) {
           const countries = response.data.countries || [];
           setCountryDropdown(countries);
+
+          if (editingAddress?.country_id) {
+            await getState({ id: editingAddress.country_id });
+            if (editingAddress.state_id) {
+              await getcity({ id: editingAddress.state_id, name: editingAddress?.country_state?.name });
+            }
+            if (editingAddress.latitude && editingAddress.longitude) {
+              setLocation({
+                lat: Number(editingAddress.latitude),
+                lng: Number(editingAddress.longitude),
+              });
+            }
+            return;
+          }
 
           if (!formData.country) {
             const turkeyCountry = findTurkeyCountry(countries);
@@ -93,7 +129,7 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel }) => {
 
     fetchCountries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getCountryListApi]);
+  }, [getCountryListApi, editingAddress?.id]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -211,6 +247,15 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel }) => {
   };
 
   const saveAddress = async () => {
+    if (!String(formData.email || "").trim()) {
+      toast.error("E-posta zorunludur.");
+      return;
+    }
+    if (!isUsableEmail(formData.email)) {
+      toast.error("Geçerli bir e-posta adresi girin.");
+      return;
+    }
+
     const invoiceError = validateInvoiceForm(invoice);
     if (invoiceError) {
       toast.error(invoiceError);
@@ -218,12 +263,17 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel }) => {
     }
 
     const requestSaveAddress = async () => {
-      await addNewAddressQuery({
+      const payload = {
         data: createAddressData(),
         token: auth()?.access_token,
         success: saveAddressSuccessHandler,
         error: saveAddressErrorHandler,
-      });
+      };
+      if (isEditing) {
+        await updateAddressApi({ ...payload, id: editingAddress.id });
+      } else {
+        await addNewAddressQuery(payload);
+      }
     };
 
     if (Number(webSettings?.map_status) === 1) {
@@ -243,7 +293,7 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel }) => {
     <div className="w-full">
       <div className="flex justify-between items-center">
         <h2 className="sm:text-2xl text-xl text-qblack font-medium mb-5">
-          Yeni Adres Ekle
+          {isEditing ? "Adresi Düzenle" : "Yeni Adres Ekle"}
         </h2>
         <span onClick={onCancel} className="text-qyellow cursor-pointer">
           <svg
@@ -283,7 +333,7 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel }) => {
             <div className="sm:w-1/2 w-full">
               <InputCom
                 label="E-posta*"
-                placeholder="E-posta"
+                placeholder="ornek@mail.com"
                 inputClasses="w-full h-[50px]"
                 value={formData.email}
                 inputHandler={(e) => handleInputChange("email", e.target.value)}
@@ -291,6 +341,12 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel }) => {
                 name="email"
                 type="email"
               />
+              {hasError("email") && (
+                <span className="text-sm mt-1 text-qred">{getErrorMessage("email")}</span>
+              )}
+              <p className="text-xs text-qgraytwo mt-1">
+                Ödeme için zorunludur. Aynı e-posta ile başka hesap olamaz.
+              </p>
             </div>
             <div className="sm:w-1/2 w-full">
               <InputCom
@@ -456,11 +512,13 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel }) => {
             onClick={saveAddress}
             type="button"
             className="w-full h-[50px] disabled:cursor-not-allowed"
-            disabled={isAddNewAddressLoading}
+            disabled={isAddNewAddressLoading || isUpdateAddressLoading}
           >
             <div className="yellow-btn rounded">
-              <span className="text-sm text-qblack">Adresi Kaydet</span>
-              {isAddNewAddressLoading && (
+              <span className="text-sm text-qblack">
+                {isEditing ? "Adresi Güncelle" : "Adresi Kaydet"}
+              </span>
+              {(isAddNewAddressLoading || isUpdateAddressLoading) && (
                 <span className="w-5" style={{ transform: "scale(0.3)" }}>
                   <LoaderStyleOne />
                 </span>

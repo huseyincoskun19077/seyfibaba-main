@@ -22,6 +22,7 @@ const AddressTabs = ({
   onAddressRefresh,
 }) => {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
   const prevAddressCountRef = useRef(null);
 
   useEffect(() => {
@@ -60,11 +61,18 @@ const AddressTabs = ({
   };
 
   const handleNewAddressToggle = () => {
+    setEditingAddress(null);
     setShowNewAddressForm(!showNewAddressForm);
+  };
+
+  const handleEditAddress = (address) => {
+    setEditingAddress(address);
+    setShowNewAddressForm(true);
   };
 
   const handleAddressSaved = () => {
     setShowNewAddressForm(false);
+    setEditingAddress(null);
     if (onAddressRefresh) {
       onAddressRefresh();
     }
@@ -72,6 +80,7 @@ const AddressTabs = ({
 
   const handleCancelNewAddress = () => {
     setShowNewAddressForm(false);
+    setEditingAddress(null);
   };
 
   if (isAddressLoading && (addresses === null || addresses === undefined)) {
@@ -155,12 +164,15 @@ const AddressTabs = ({
             setBilling={setBilling}
             shippingHandler={shippingHandler}
             deleteAddress={deleteAddress}
+            onEditAddress={handleEditAddress}
           />
         </div>
       )}
 
       {showNewAddressForm && (
         <CheckoutAddressForm
+          key={editingAddress?.id || "new"}
+          editingAddress={editingAddress}
           onAddressSaved={handleAddressSaved}
           onCancel={handleCancelNewAddress}
         />

@@ -597,9 +597,25 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                   PrimaryButton(
                     text: Language.updateAddress.capitalizeByWord(),
                     onPressed: () {
+                      final emailValue =
+                          addressCubit.emailCtr.text.trim().toLowerCase();
+                      if (emailValue.isEmpty) {
+                        Utils.errorSnackBar(context, 'E-posta zorunludur.');
+                        return;
+                      }
+                      if (!emailValue.contains('@') ||
+                          emailValue.endsWith('.local') ||
+                          emailValue
+                              .endsWith('@pending.seyfibaba.local')) {
+                        Utils.errorSnackBar(
+                          context,
+                          'Geçerli bir e-posta adresi girin.',
+                        );
+                        return;
+                      }
                       final dataMap = {
                         'name': addressCubit.nameCtr.text.trim(),
-                        'email': addressCubit.emailCtr.text.trim(),
+                        'email': emailValue,
                         'phone': addressCubit.phoneCtr.text.trim(),
                         'type': 'home',
                         'address': addressCubit.addressCtr.text.trim(),
@@ -613,7 +629,6 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                             : "",
                         'city':
                             _cityModel != null ? _cityModel!.id.toString() : "",
-                        // 'zip_code': zipCtr.text.trim(),
                       };
                       debugPrint(dataMap.toString());
                       context

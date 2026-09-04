@@ -13,6 +13,7 @@ const AddressList = ({
   setBilling,
   shippingHandler,
   deleteAddress,
+  onEditAddress,
 }) => {
   /**
    * Handle billing address selection
@@ -76,13 +77,27 @@ const AddressList = ({
           <p className="title text-[22px] font-semibold">
             Adres #{index + 1}
           </p>
-          <button
-            onClick={(e) => handleDeleteAddress(e, address.id)}
-            type="button"
-            className="border border-qgray w-[34px] h-[34px] rounded-full flex justify-center items-center"
-          >
-            <AddressDltCheck />
-          </button>
+          <div className="flex items-center gap-2">
+            {onEditAddress && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditAddress(address);
+                }}
+                type="button"
+                className="border border-qgray px-3 h-[34px] rounded-full text-xs font-medium text-qblack hover:bg-white"
+              >
+                Düzenle
+              </button>
+            )}
+            <button
+              onClick={(e) => handleDeleteAddress(e, address.id)}
+              type="button"
+              className="border border-qgray w-[34px] h-[34px] rounded-full flex justify-center items-center"
+            >
+              <AddressDltCheck />
+            </button>
+          </div>
         </div>
 
         {/* Address Details */}

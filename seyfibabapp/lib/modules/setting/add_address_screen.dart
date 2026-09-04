@@ -307,6 +307,21 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         text: Language.addNewAddress.capitalizeByWord(),
                         onPressed: () {
                           Utils.closeKeyBoard(context);
+                          final emailValue = emailCtr.text.trim().toLowerCase();
+                          if (emailValue.isEmpty) {
+                            Utils.errorSnackBar(context, 'E-posta zorunludur.');
+                            return;
+                          }
+                          if (!emailValue.contains('@') ||
+                              emailValue.endsWith('.local') ||
+                              emailValue.endsWith('@pending.seyfibaba.local')) {
+                            Utils.errorSnackBar(
+                              context,
+                              'Geçerli bir e-posta adresi girin.',
+                            );
+                            return;
+                          }
+
                           final invoiceError = validateBuyerInvoice(
                             invoiceType: _invoiceType,
                             tcIdentity: _tcIdentity,
@@ -324,11 +339,10 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
                           final dataMap = {
                             'name': nameCtr.text.trim(),
-                            'email': emailCtr.text.trim(),
+                            'email': emailValue,
                             'phone': phoneCtr.text.trim(),
                             'type': 'home',
-                            'address':
-                            addressCtr.text.trim(),
+                            'address': addressCtr.text.trim(),
                             'latitude': aCubit.state.latitude.toString(),
                             'longitude': aCubit.state.longitude.toString(),
                             'country': _countryModel != null
