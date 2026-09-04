@@ -533,6 +533,9 @@ class LoginController extends Controller
             $token = Auth::guard('api')->login($user);
 
             return response()->json([
+                'access_token' => $token,
+                'token_type' => 'bearer',
+                'expires_in' => auth()->factory()->getTTL() * 60,
                 'notification' => 'Giriş başarılı. Yeni şifrenizi oluşturun.',
                 'force_password_change' => true,
                 'redirect_url' => app(SellerSsoTicketService::class)->redirectUrl((int) $user->id, 'change-password'),

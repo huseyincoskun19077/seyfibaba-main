@@ -49,6 +49,29 @@ class OtpController extends Controller
             }
         }
 
+        // Şifre sıfırlama: yalnızca kayıtlı telefona SMS; yoksa aynı mesaj (enumeration azaltma)
+        if ($purpose === 'password_reset') {
+            $phoneDigits = PhoneNormalizer::digitsOnly($phone);
+            $last10 = strlen($phoneDigits) >= 10 ? substr($phoneDigits, -10) : $phoneDigits;
+            $userExists = User::query()
+                ->whereIn('phone', array_values(array_unique(array_filter([
+                    $phone,
+                    $phoneDigits,
+                    '0'.$last10,
+                    '+90'.$last10,
+                    '90'.$last10,
+                ]))))
+                ->exists();
+
+            if (! $userExists) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Doğrulama kodu gönderildi.',
+                    'expires_in' => (int) config('sms.otp.expire_minutes', 5) * 60,
+                ]);
+            }
+        }
+
         $latestOtp = OtpVerification::where('phone', $phone)
             ->where('purpose', $purpose)
             ->latest('id')
