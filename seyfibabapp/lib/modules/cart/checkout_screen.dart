@@ -165,7 +165,10 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
       if (!mounted || addresses.isEmpty) return;
       setState(() {
         final first = addresses.first;
-        if (billingAddressId < 1) billingAddressId = first.id;
+        if (billingAddressId < 1) {
+          billingAddressId = first.id;
+          _applyInvoiceFromAddress(first);
+        }
         if (shippingAddressId < 1) {
           shippingAddressId = first.id;
           if (!Utils.isMapEnable(context)) {
@@ -182,6 +185,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
     setState(() {
       if (_isBillingTab) {
         billingAddressId = address.id;
+        _applyInvoiceFromAddress(address);
         if (shippingAddressId < 1) {
           shippingAddressId = address.id;
           if (!Utils.isMapEnable(context)) {
@@ -190,7 +194,10 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
         }
       } else {
         shippingAddressId = address.id;
-        if (billingAddressId < 1) billingAddressId = address.id;
+        if (billingAddressId < 1) {
+          billingAddressId = address.id;
+          _applyInvoiceFromAddress(address);
+        }
         if (Utils.isMapEnable(context)) {
           deliveryCubit.addDistancePerKM(address.distance, address.priceRange);
         } else {
@@ -198,6 +205,18 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
         }
       }
     });
+  }
+
+  void _applyInvoiceFromAddress(AddressModel address) {
+    _invoiceType =
+        address.invoiceType.isNotEmpty ? address.invoiceType : 'individual';
+    _tcIdentity = address.tcIdentity;
+    _taxNumber = address.taxNumber;
+    _taxOffice = address.taxOffice;
+    _companyName = address.companyName;
+    _isEInvoice = address.isEInvoice;
+    _postalCode = address.zipCode;
+    _invoiceInitialized = true;
   }
 
   @override
@@ -391,7 +410,6 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
               if (Utils.isMapEnable(context))
                 SliverToBoxAdapter(child: _locationWiseCharge()),
               SliverToBoxAdapter(child: _buildOrderSummary()),
-              SliverToBoxAdapter(child: _buildInvoiceSection()),
               SliverToBoxAdapter(
                 child: CheckoutLegalConsentPanel(
                   values: _legalConsents,
@@ -410,48 +428,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
   }
 
   Widget _buildInvoiceSection() {
-    if (!_invoiceInitialized) {
-      final info = context.read<UserProfileInfoCubit>().updatedInfo?.updateUserInfo;
-      if (info != null) {
-        _invoiceType = info.invoiceType.isNotEmpty ? info.invoiceType : 'individual';
-        _tcIdentity = info.tcIdentity;
-        _taxNumber = info.taxNumber;
-        _taxOffice = info.taxOffice;
-        _companyName = info.companyName;
-        _isEInvoice = info.isEInvoice;
-        _postalCode = info.postalCode.isNotEmpty ? info.postalCode : info.zipCode;
-      }
-      _invoiceInitialized = true;
-    }
-
-    return BuyerInvoiceForm(
-      invoiceType: _invoiceType,
-      tcIdentity: _tcIdentity,
-      taxNumber: _taxNumber,
-      taxOffice: _taxOffice,
-      companyName: _companyName,
-      isEInvoice: _isEInvoice,
-      postalCode: _postalCode,
-      onChanged: ({
-        required invoiceType,
-        required tcIdentity,
-        required taxNumber,
-        required taxOffice,
-        required companyName,
-        required isEInvoice,
-        required postalCode,
-      }) {
-        setState(() {
-          _invoiceType = invoiceType;
-          _tcIdentity = tcIdentity;
-          _taxNumber = taxNumber;
-          _taxOffice = taxOffice;
-          _companyName = companyName;
-          _isEInvoice = isEInvoice;
-          _postalCode = postalCode;
-        });
-      },
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildOrderSummary() {

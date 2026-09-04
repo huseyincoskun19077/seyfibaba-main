@@ -67,6 +67,9 @@ class AddressCotroller extends Controller
 
         $this->validate($request, $rules,$customMessages);
 
+        // Fatura bilgileri adresle birlikte zorunlu
+        app(\App\Services\BuyerInvoiceService::class)->validateFromRequest($request, null, true);
+
         $user = Auth::guard('api')->user();
         $isExist = Address::where(['user_id' => $user->id])->count();
         $address = new Address();
@@ -82,6 +85,7 @@ class AddressCotroller extends Controller
         $address->type = $request->type;
         $address->latitude = $request->latitude;
         $address->longitude = $request->longitude;
+        $this->applyInvoiceFields($address, $request);
         if($isExist == 0){
             $address->default_billing = 1;
             $address->default_shipping = 1;
@@ -184,6 +188,7 @@ class AddressCotroller extends Controller
         $address->type = $request->type;
         $address->latitude = $request->latitude;
         $address->longitude = $request->longitude;
+        $this->applyInvoiceFields($address, $request);
         $address->save();
 
         $address = Address::with('country','countryState','city')->where(['id' => $address->id])->first();
@@ -207,6 +212,29 @@ class AddressCotroller extends Controller
             $address->delete();
             $notification = trans('user_validation.Delete Successfully');
             return response()->json(['notification' => $notification]);
+        }
+    }
+
+    private function applyInvoiceFields(Address $address, Request $request): void
+    {
+        if ($request->has('zip_code') || $request->has('postal_code')) {
+            $zip = preg_replace('/\D+/', '', (string) ($request->input('postal_code', $request->input('zip_code'))));
+            $address->zip_code = $zip !== '' ? $zip : null;
+        }
+
+        if (! $request->filled('invoice_type') && ! $request->has('tc_identity') && ! $request->has('tax_number')) {
+            return;
+        }
+
+        $invoice = app(\App\Services\BuyerInvoiceService::class)->validateFromRequest($request, null, true);
+        $address->invoice_type = $invoice['invoice_type'];
+        $address->tc_identity = $invoice['tc_identity'];
+        $address->tax_number = $invoice['tax_number'];
+        $address->tax_office = $invoice['tax_office'];
+        $address->company_name = $invoice['company_name'];
+        $address->is_e_invoice = $invoice['is_e_invoice'] ? 1 : 0;
+        if (! empty($invoice['postal_code'])) {
+            $address->zip_code = $invoice['postal_code'];
         }
     }
 }

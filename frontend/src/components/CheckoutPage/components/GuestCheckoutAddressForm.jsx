@@ -19,6 +19,7 @@ import {
   sortTurkeyDistrictOptions,
   sortTurkeyStateOptions,
 } from "@/data/turkey-cities";
+import { AddressInvoiceFields } from "./InvoiceCheckoutSection";
 
 function GuestCheckoutAddressForm({
   fName,
@@ -45,8 +46,9 @@ function GuestCheckoutAddressForm({
   guestLocation,
   setGuestLocation,
   errors,
-  // this method works for shipping rule
   shippingHandler,
+  invoice,
+  setInvoice,
 }) {
   const webSettings = settings();
 
@@ -160,6 +162,9 @@ function GuestCheckoutAddressForm({
   return (
     <div className="w-full">
       <div className="form-area">
+        {invoice && setInvoice ? (
+          <AddressInvoiceFields invoice={invoice} onChange={setInvoice} />
+        ) : null}
         <div className="mb-6">
           <div className="sm:flex sm:space-x-5 items-center">
             <div className="sm:w-1/2 w-full  mb-5 sm:mb-0">

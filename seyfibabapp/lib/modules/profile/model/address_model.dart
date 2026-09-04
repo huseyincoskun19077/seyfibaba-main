@@ -31,6 +31,13 @@ class AddressModel extends Equatable {
   final CountryStateModel? countryState;
   final AddressState addState;
   final CityModel? city;
+  final String invoiceType;
+  final String tcIdentity;
+  final String taxNumber;
+  final String taxOffice;
+  final String companyName;
+  final bool isEInvoice;
+  final String zipCode;
 
   const AddressModel({
     required this.id,
@@ -56,6 +63,13 @@ class AddressModel extends Equatable {
      this.serialNo  = 0,
      this.addState = const AddressStateInitial(),
     required this.city,
+    this.invoiceType = 'individual',
+    this.tcIdentity = '',
+    this.taxNumber = '',
+    this.taxOffice = '',
+    this.companyName = '',
+    this.isEInvoice = false,
+    this.zipCode = '',
   });
 
   AddressModel copyWith({
@@ -198,6 +212,17 @@ class AddressModel extends Equatable {
           ? CountryStateModel.fromMap(map['country_state'])
           : null,
       city: map['city'] != null ? CityModel.fromMap(map['city']) : null,
+      invoiceType: map['invoice_type']?.toString() ?? 'individual',
+      tcIdentity: map['tc_identity']?.toString() ?? '',
+      taxNumber: map['tax_number']?.toString() ?? '',
+      taxOffice: map['tax_office']?.toString() ?? '',
+      companyName: map['company_name']?.toString() ?? '',
+      isEInvoice: map['is_e_invoice'] == true ||
+          map['is_e_invoice'] == 1 ||
+          map['is_e_invoice']?.toString() == '1',
+      zipCode: map['zip_code']?.toString() ??
+          map['postal_code']?.toString() ??
+          '',
     );
   }
 

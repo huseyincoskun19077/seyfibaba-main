@@ -37,8 +37,9 @@ import { isGuestCheckoutEnabled } from "@/utils/guestCheckout";
 import useRefreshCartPrices from "@/hooks/useRefreshCartPrices";
 import CheckoutAddressForm from "./components/CheckoutAddressForm";
 import GuestCheckoutAddressForm from "./components/GuestCheckoutAddressForm";
-import InvoiceCheckoutSection, {
+import {
   defaultInvoiceState,
+  invoiceFromAddress,
 } from "./components/InvoiceCheckoutSection";
 
 export default function CheckoutPage() {
@@ -317,6 +318,16 @@ export default function CheckoutPage() {
       error: deleteAddressErrorHandler,
     });
   };
+
+  useEffect(() => {
+    if (!addresses?.length || !selectedBilling) return;
+    const billing = addresses.find(
+      (item) => parseInt(item.id) === parseInt(selectedBilling)
+    );
+    if (billing) {
+      setInvoiceData(invoiceFromAddress(billing));
+    }
+  }, [addresses, selectedBilling]);
 
   /**
    * Place order handler
@@ -612,9 +623,6 @@ export default function CheckoutPage() {
     setShipppingRules(shippings);
 
     if (isRealUser) {
-      if (response.data?.buyer_invoice) {
-        setInvoiceData(defaultInvoiceState(response.data.buyer_invoice));
-      }
       // Set addresses
       const checkoutAddresses = response.data.addresses || [];
       setAddresses(checkoutAddresses);
@@ -625,6 +633,7 @@ export default function CheckoutPage() {
 
         setShipping(defaultShippingAddress.id);
         setBilling(defaultShippingAddress.id);
+        setInvoiceData(invoiceFromAddress(defaultShippingAddress));
 
         // Calculate location shipping price if map is enabled
         if (Number(webSettings?.map_status) === 1) {
@@ -720,6 +729,8 @@ export default function CheckoutPage() {
     setGuestLocation,
     shippingHandler,
     errors,
+    invoice: invoiceData,
+    setInvoice: setInvoiceData,
   };
 
   // Don't render if no cart
@@ -811,12 +822,6 @@ export default function CheckoutPage() {
                     price={price}
                     totalWeight={totalWeight}
                     totalQty={totalQty}
-                  />
-
-                  <InvoiceCheckoutSection
-                    className="mt-6"
-                    invoice={invoiceData}
-                    onChange={setInvoiceData}
                   />
 
                   {/* Payment Methods */}

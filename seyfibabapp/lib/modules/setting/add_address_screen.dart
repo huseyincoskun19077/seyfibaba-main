@@ -19,6 +19,7 @@ import '../profile/model/address_model.dart';
 import '../profile/model/city_model.dart';
 import '../profile/model/country_model.dart';
 import '../profile/model/country_state_model.dart';
+import '../profile/component/buyer_invoice_form.dart';
 import 'component/map_address.dart';
 
 class AddAddressScreen extends StatefulWidget {
@@ -45,6 +46,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   final phoneCtr = TextEditingController();
   final addressCtr = TextEditingController();
   final zipCtr = TextEditingController();
+
+  String _invoiceType = 'individual';
+  String _tcIdentity = '';
+  String _taxNumber = '';
+  String _taxOffice = '';
+  String _companyName = '';
+  bool _isEInvoice = false;
+  String _postalCode = '';
 
   @override
   void initState() {
@@ -120,6 +129,39 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                         height: 1.5),
+                    const SizedBox(height: 12),
+                    BuyerInvoiceForm(
+                      invoiceType: _invoiceType,
+                      tcIdentity: _tcIdentity,
+                      taxNumber: _taxNumber,
+                      taxOffice: _taxOffice,
+                      companyName: _companyName,
+                      isEInvoice: _isEInvoice,
+                      postalCode: _postalCode,
+                      showIntro: false,
+                      onChanged: ({
+                        required invoiceType,
+                        required tcIdentity,
+                        required taxNumber,
+                        required taxOffice,
+                        required companyName,
+                        required isEInvoice,
+                        required postalCode,
+                      }) {
+                        setState(() {
+                          _invoiceType = invoiceType;
+                          _tcIdentity = tcIdentity;
+                          _taxNumber = taxNumber;
+                          _taxOffice = taxOffice;
+                          _companyName = companyName;
+                          _isEInvoice = isEInvoice;
+                          _postalCode = postalCode;
+                          if (postalCode.isNotEmpty) {
+                            zipCtr.text = postalCode;
+                          }
+                        });
+                      },
+                    ),
                     const SizedBox(height: 9),
                     BlocBuilder<MapCubit, MapStateModel>(
                       builder: (context, state) {
@@ -265,6 +307,21 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         text: Language.addNewAddress.capitalizeByWord(),
                         onPressed: () {
                           Utils.closeKeyBoard(context);
+                          final invoiceError = validateBuyerInvoice(
+                            invoiceType: _invoiceType,
+                            tcIdentity: _tcIdentity,
+                            taxNumber: _taxNumber,
+                            taxOffice: _taxOffice,
+                            companyName: _companyName,
+                            postalCode: _postalCode.isNotEmpty
+                                ? _postalCode
+                                : zipCtr.text.trim(),
+                          );
+                          if (invoiceError != null) {
+                            Utils.errorSnackBar(context, invoiceError);
+                            return;
+                          }
+
                           final dataMap = {
                             'name': nameCtr.text.trim(),
                             'email': emailCtr.text.trim(),
@@ -283,7 +340,21 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             'city': _cityModel != null
                                 ? _cityModel!.id.toString()
                                 : "",
-                            'zip_code': zipCtr.text.trim(),
+                            'zip_code': _postalCode.isNotEmpty
+                                ? _postalCode
+                                : zipCtr.text.trim(),
+                            'postal_code': _postalCode.isNotEmpty
+                                ? _postalCode
+                                : zipCtr.text.trim(),
+                            'invoice_type': _invoiceType,
+                            if (_invoiceType == 'corporate') ...{
+                              'tax_number': _taxNumber,
+                              'tax_office': _taxOffice,
+                              'company_name': _companyName,
+                              'is_e_invoice': _isEInvoice ? '1' : '0',
+                            } else ...{
+                              'tc_identity': _tcIdentity,
+                            },
                           };
 
                           if (_countryModel == null) {

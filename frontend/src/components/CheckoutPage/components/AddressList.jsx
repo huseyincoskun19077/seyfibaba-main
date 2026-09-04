@@ -119,6 +119,26 @@ const AddressList = ({
                 </td>
               </tr>
 
+              {(address.invoice_type ||
+                address.tc_identity ||
+                address.tax_number ||
+                address.company_name) && (
+                <tr className="flex mb-3">
+                  <td className="text-base text-qgraytwo w-[70px] block line-clamp-1 capitalize">
+                    Fatura:
+                  </td>
+                  <td className="text-base text-qblack font-medium">
+                    {address.invoice_type === "corporate"
+                      ? "Kurumsal"
+                      : "Bireysel"}
+                    {address.company_name ? ` · ${address.company_name}` : ""}
+                    {address.tc_identity ? ` · TC ${address.tc_identity}` : ""}
+                    {address.tax_number ? ` · ${address.tax_number}` : ""}
+                    {address.zip_code ? ` · ${address.zip_code}` : ""}
+                  </td>
+                </tr>
+              )}
+
               {/* Country */}
               <tr className="flex mb-3">
                 <td className="text-base text-qgraytwo w-[70px] block line-clamp-1 capitalize">

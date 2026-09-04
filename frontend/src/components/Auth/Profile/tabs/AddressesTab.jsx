@@ -29,6 +29,11 @@ import {
   useUpdateAddressApiMutation,
   useDeleteAddressApiMutation,
 } from "@/redux/features/locations/apiSlice";
+import {
+  AddressInvoiceFields,
+  defaultInvoiceState,
+  validateInvoiceForm,
+} from "@/components/CheckoutPage/components/InvoiceCheckoutSection";
 
 // Dynamically import MapComponent to prevent loading on the server
 const MapComponent = dynamic(
@@ -61,6 +66,7 @@ export default function AddressesTab({ countryLists }) {
     state: null,
     city: null,
   });
+  const [invoice, setInvoice] = useState(defaultInvoiceState());
 
   // UI states
   const [errors, setErrors] = useState(null);
@@ -104,6 +110,7 @@ export default function AddressesTab({ countryLists }) {
       state: null,
       city: null,
     });
+    setInvoice(defaultInvoiceState());
     setCountryDropdown(null);
     setStateDropdown(null);
     setCityDropdown(null);
@@ -125,6 +132,14 @@ export default function AddressesTab({ countryLists }) {
       country: formData.country,
       state: formData.state,
       city: formData.city,
+      invoice_type: invoice.invoice_type,
+      tc_identity: invoice.tc_identity,
+      tax_number: invoice.tax_number,
+      tax_office: invoice.tax_office,
+      company_name: invoice.company_name,
+      is_e_invoice: invoice.is_e_invoice ? 1 : 0,
+      postal_code: invoice.postal_code,
+      zip_code: invoice.postal_code,
       latitude:
         Number(webSettings?.map_status) === 1 && location
           ? location.lat
@@ -260,6 +275,12 @@ export default function AddressesTab({ countryLists }) {
     }
   };
   const saveAddress = async () => {
+    const invoiceError = validateInvoiceForm(invoice);
+    if (invoiceError) {
+      toast.error(invoiceError);
+      return;
+    }
+
     // requestSaveAddress function to save address
     const requestSaveAddress = async () => {
       const userData = createAddressData();
@@ -453,6 +474,8 @@ export default function AddressesTab({ countryLists }) {
           {/* Form Content */}
           <div className="form-area">
             <form>
+              <AddressInvoiceFields invoice={invoice} onChange={setInvoice} />
+
               {/* Name Field */}
               <div className="mb-6">
                 <div className="w-full  mb-5 sm:mb-0">
