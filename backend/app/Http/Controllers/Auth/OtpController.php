@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\SmsServiceInterface;
 use App\Support\OtpMessageBuilder;
 use App\Support\PasswordRules;
+use App\Support\PhoneNormalizer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -19,24 +20,9 @@ class OtpController extends Controller
         $this->middleware('guest:api');
     }
 
-    /**
-     * Normalize phone: keep only digits and leading +
-     */
     protected function normalizePhone(string $phone): string
     {
-        // Strip everything except digits
-        $digits = preg_replace('/[^0-9]/', '', $phone);
-
-        // Ensure +90 prefix for Turkey
-        if (str_starts_with($digits, '90') && strlen($digits) === 12) {
-            return '+' . $digits;
-        }
-        if (strlen($digits) === 10 && str_starts_with($digits, '5')) {
-            return '+90' . $digits;
-        }
-
-        // Fallback: return with + prefix if original had it
-        return str_starts_with($phone, '+') ? '+' . $digits : $digits;
+        return PhoneNormalizer::toE164($phone);
     }
 
     public function send(Request $request)
@@ -128,8 +114,16 @@ class OtpController extends Controller
 
         $phone = $this->normalizePhone($validated['phone']);
         $purpose = $validated['purpose'] ?? 'register';
+        $phoneDigits = PhoneNormalizer::digitsOnly($phone);
+        $last10 = strlen($phoneDigits) >= 10 ? substr($phoneDigits, -10) : $phoneDigits;
 
-        $otp = OtpVerification::where('phone', $phone)
+        $otp = OtpVerification::whereIn('phone', array_values(array_unique(array_filter([
+                $phone,
+                $phoneDigits,
+                '0'.$last10,
+                '+90'.$last10,
+                '90'.$last10,
+            ]))))
             ->where('purpose', $purpose)
             ->whereNull('verified_at')
             ->latest('id')
@@ -179,13 +173,17 @@ class OtpController extends Controller
         $otp->markVerified();
 
         $verifiedToken = bin2hex(random_bytes(24));
+        $tokenTtlMinutes = $purpose === 'password_reset'
+            ? max(15, (int) config('sms.otp.expire_minutes', 5))
+            : (int) config('sms.otp.expire_minutes', 5);
+
         Cache::put(
             'otp_verified_token:' . $verifiedToken,
             [
                 'phone' => $phone,
                 'purpose' => $purpose,
             ],
-            Carbon::now()->addMinutes((int) config('sms.otp.expire_minutes', 5))
+            Carbon::now()->addMinutes($tokenTtlMinutes)
         );
 
         return response()->json([

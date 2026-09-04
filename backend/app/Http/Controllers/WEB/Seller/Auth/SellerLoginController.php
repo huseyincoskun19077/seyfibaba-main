@@ -60,38 +60,51 @@ class SellerLoginController extends Controller
                 }
                 if($vendor->status == 1){
                     if($user->must_change_password){
+                        $passwordInput = trim((string) $request->password);
                         $otp = QuickSellerRegistrationService::findActiveFirstLoginOtp($user);
 
-                        // Hızlı kayıt kodu giriş yapılana kadar geçerlidir (süre kontrolü yok)
-                        if (! $otp) {
-                            $notification= 'Tek kullanımlık giriş kodu bulunamadı.';
-                            return response()->json(['error'=>$notification]);
+                        if ($otp && $otp->otp_code === $passwordInput) {
+                            if (! $otp->hasAttemptsRemaining()) {
+                                $notification= 'Tek kullanımlık giriş kodu için maksimum deneme sayısına ulaşıldı.';
+                                return response()->json(['error'=>$notification]);
+                            }
+
+                            $otp->markVerified();
+                            if ((int) $user->email_verified !== 1) {
+                                $user->email_verified = 1;
+                                $user->save();
+                            }
+                            Auth::guard('web')->login($user, $request->remember);
+                            session(['seller_first_login_verified' => true]);
+                            $notification= 'Giriş başarılı. Devam etmek için yeni şifre oluşturun.';
+                            return response()->json([
+                                'success'=>$notification,
+                                'redirect' => route('seller.change-password'),
+                                'force_password_change' => true,
+                            ]);
                         }
 
-                        if (! $otp->hasAttemptsRemaining()) {
-                            $notification= 'Tek kullanımlık giriş kodu için maksimum deneme sayısına ulaşıldı.';
-                            return response()->json(['error'=>$notification]);
-                        }
-
-                        if ($otp->otp_code !== trim((string) $request->password)) {
-                            $otp->increment('attempts');
-                            $notification= 'Tek kullanımlık giriş kodu hatalı.';
-                            return response()->json(['error'=>$notification]);
-                        }
-
-                        $otp->markVerified();
-                        if ((int) $user->email_verified !== 1) {
-                            $user->email_verified = 1;
+                        // Şifre sıfırlama sonrası must_change_password takılı kalmış olabilir
+                        if ($passwordInput !== '' && Hash::check($passwordInput, $user->password)) {
+                            $user->must_change_password = 0;
                             $user->save();
+                            if ($otp) {
+                                $otp->markVerified();
+                            }
+                        } else {
+                            if ($otp) {
+                                if (! $otp->hasAttemptsRemaining()) {
+                                    $notification= 'Tek kullanımlık giriş kodu için maksimum deneme sayısına ulaşıldı.';
+                                    return response()->json(['error'=>$notification]);
+                                }
+                                $otp->increment('attempts');
+                                $notification= 'Tek kullanımlık giriş kodu hatalı. SMS/e-posta ile gelen kodu girin veya şifrenizi sıfırlayın.';
+                                return response()->json(['error'=>$notification]);
+                            }
+
+                            $notification= 'Tek kullanımlık giriş kodu bulunamadı. Şifrenizi sıfırlayın veya çağrı merkezinden yeniden kod isteyin.';
+                            return response()->json(['error'=>$notification]);
                         }
-                        Auth::guard('web')->login($user, $request->remember);
-                        session(['seller_first_login_verified' => true]);
-                        $notification= 'Giriş başarılı. Devam etmek için yeni şifre oluşturun.';
-                        return response()->json([
-                            'success'=>$notification,
-                            'redirect' => route('seller.change-password'),
-                            'force_password_change' => true,
-                        ]);
                     }
 
                     $credential = [

@@ -115,36 +115,10 @@ class LoginController extends Controller
 
             if($user->status==1){
                 if ($seller && $user->must_change_password) {
-                    $otp = QuickSellerRegistrationService::findActiveFirstLoginOtp($user);
-
-                    if (! $otp) {
-                        return response()->json([
-                            'notification' => 'Tek kullanımlık giriş kodu bulunamadı. Lütfen çağrı merkezi ile yeniden hızlı kayıt açın.',
-                        ], 402);
+                    $firstLoginResponse = $this->handleSellerFirstLoginAttempt($user, (string) $request->password);
+                    if ($firstLoginResponse !== null) {
+                        return $firstLoginResponse;
                     }
-
-                    if (! $otp->hasAttemptsRemaining()) {
-                        return response()->json([
-                            'notification' => 'Tek kullanımlık giriş kodu için maksimum deneme sayısına ulaşıldı.',
-                        ], 402);
-                    }
-
-                    if ($otp->otp_code === trim((string) $request->password)) {
-                        $otp->markVerified();
-                        $this->markPhoneVerifiedIfNeeded($user);
-                        $token = Auth::guard('api')->login($user);
-
-                        return response()->json([
-                            'notification' => 'Giriş başarılı. Yeni şifrenizi oluşturun.',
-                            'force_password_change' => true,
-                            'redirect_url' => app(SellerSsoTicketService::class)->redirectUrl((int) $user->id, 'change-password'),
-                        ], 200);
-                    }
-
-                    $otp->increment('attempts');
-                    return response()->json([
-                        'notification' => 'Tek kullanımlık giriş kodu hatalı.',
-                    ], 402);
                 }
 
                 if(Hash::check($request->password,$user->password)){
@@ -306,8 +280,7 @@ class LoginController extends Controller
         $user = User::where(['email' => $request->email, 'forget_password_token' => $token])->first();
         if($user){
             $user->password=Hash::make($request->password);
-            $user->forget_password_token=null;
-            $user->save();
+            $this->finalizePasswordReset($user);
 
             $notification = trans('user_validation.Password Reset successfully');
             return response()->json(['notification' => $notification],200);
@@ -479,37 +452,121 @@ class LoginController extends Controller
         $payload = Cache::get('otp_verified_token:' . $verifiedToken);
 
         $phone = PhoneNormalizer::toE164((string) $request->phone);
+        $phoneDigits = PhoneNormalizer::digitsOnly($phone);
+        $payloadPhone = PhoneNormalizer::toE164((string) ($payload['phone'] ?? ''));
+        $payloadDigits = PhoneNormalizer::digitsOnly($payloadPhone);
 
-        if (!$payload || ($payload['purpose'] ?? null) !== 'password_reset' || ($payload['phone'] ?? null) !== $phone) {
+        if (! $payload || ($payload['purpose'] ?? null) !== 'password_reset') {
             return response()->json([
-                'notification' => 'Şifre sıfırlama oturumu geçersiz veya süresi dolmuş.',
+                'notification' => 'Şifre sıfırlama oturumu geçersiz veya süresi dolmuş. Lütfen doğrulama kodunu yeniden isteyin.',
+            ], 422);
+        }
+
+        if ($payloadDigits === '' || $phoneDigits === '' || $payloadDigits !== $phoneDigits) {
+            return response()->json([
+                'notification' => 'Telefon numarası doğrulama oturumuyla eşleşmiyor. Lütfen aynı numarayla tekrar deneyin.',
             ], 422);
         }
 
         $user = User::query()
-            ->where(function ($query) use ($phone) {
-                $phoneDigits = PhoneNormalizer::digitsOnly($phone);
+            ->where(function ($query) use ($phone, $phoneDigits) {
                 $query->where('phone', $phone)
                     ->orWhere('phone', $phoneDigits)
                     ->orWhere('phone', '+90'.$phoneDigits)
                     ->orWhere('phone', '0'.substr($phoneDigits, -10));
             })
             ->first();
-        if (!$user) {
+        if (! $user) {
             return response()->json([
-                'notification' => 'Şifre sıfırlama oturumu geçersiz veya süresi dolmuş.',
+                'notification' => 'Bu telefon numarasına kayıtlı hesap bulunamadı.',
             ], 422);
         }
 
         $user->password = Hash::make($request->password);
-        $user->forget_password_token = null;
-        $user->save();
+        $this->finalizePasswordReset($user);
 
         Cache::forget('otp_verified_token:' . $verifiedToken);
 
         return response()->json([
             'notification' => trans('user_validation.Password Reset successfully'),
         ], 200);
+    }
+
+    /**
+     * Şifre sıfırlandıktan sonra çağrı merkezi "ilk giriş OTP" kilidini de kaldır.
+     */
+    protected function finalizePasswordReset(User $user): void
+    {
+        $user->forget_password_token = null;
+        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'must_change_password')) {
+            $user->must_change_password = 0;
+        }
+        $user->save();
+
+        $otpKeys = QuickSellerRegistrationService::firstLoginOtpLookupKeys($user);
+        if ($otpKeys !== []) {
+            OtpVerification::query()
+                ->whereIn('phone', $otpKeys)
+                ->where('purpose', 'seller_first_login')
+                ->delete();
+        }
+    }
+
+    /**
+     * Çağrı merkezi tek kullanımlık kod ile giriş, veya şifre sıfırlama sonrası takılı kalan bayrak.
+     * null = bayrak temizlendi, normal şifre akışına devam et.
+     */
+    protected function handleSellerFirstLoginAttempt(User $user, string $passwordInput)
+    {
+        $passwordInput = trim($passwordInput);
+        $otp = QuickSellerRegistrationService::findActiveFirstLoginOtp($user);
+
+        if ($otp && $otp->otp_code === $passwordInput) {
+            if (! $otp->hasAttemptsRemaining()) {
+                return response()->json([
+                    'notification' => 'Tek kullanımlık giriş kodu için maksimum deneme sayısına ulaşıldı.',
+                ], 402);
+            }
+
+            $otp->markVerified();
+            $this->markPhoneVerifiedIfNeeded($user);
+            $token = Auth::guard('api')->login($user);
+
+            return response()->json([
+                'notification' => 'Giriş başarılı. Yeni şifrenizi oluşturun.',
+                'force_password_change' => true,
+                'redirect_url' => app(SellerSsoTicketService::class)->redirectUrl((int) $user->id, 'change-password'),
+            ], 200);
+        }
+
+        // Şifre sıfırlama / panelden şifre koyulmuş ama must_change_password hâlâ 1 olabilir.
+        if ($passwordInput !== '' && Hash::check($passwordInput, $user->password)) {
+            $user->must_change_password = 0;
+            $user->save();
+            if ($otp) {
+                $otp->markVerified();
+            }
+
+            return null;
+        }
+
+        if ($otp) {
+            if (! $otp->hasAttemptsRemaining()) {
+                return response()->json([
+                    'notification' => 'Tek kullanımlık giriş kodu için maksimum deneme sayısına ulaşıldı.',
+                ], 402);
+            }
+
+            $otp->increment('attempts');
+
+            return response()->json([
+                'notification' => 'Tek kullanımlık giriş kodu hatalı. SMS/e-posta ile gelen kodu girin veya şifrenizi sıfırlayın.',
+            ], 402);
+        }
+
+        return response()->json([
+            'notification' => 'Tek kullanımlık giriş kodu bulunamadı. Şifrenizi sıfırlayın veya çağrı merkezinden yeniden kod isteyin.',
+        ], 402);
     }
 
     protected function generateOtpCode(): string
