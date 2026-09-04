@@ -26,14 +26,23 @@
                     <br><strong>Fatura:</strong>
                     {{ $oa->invoice_type === 'corporate' ? 'Kurumsal' : 'Bireysel' }}<br>
                 @endif
+                @if (!empty($oa->company_name))
+                    Firma: {{ $oa->company_name }}<br>
+                @endif
                 @if (!empty($oa->tc_identity))
                     TC: {{ $oa->tc_identity }}<br>
                 @endif
                 @if (!empty($oa->tax_number))
-                    Vergi No: {{ $oa->tax_number }}<br>
+                    VKN/TCKN: {{ $oa->tax_number }}<br>
                 @endif
                 @if (!empty($oa->tax_office))
                     Vergi Dairesi: {{ $oa->tax_office }}<br>
+                @endif
+                @if (!empty($oa->billing_zip_code))
+                    Posta Kodu: {{ $oa->billing_zip_code }}<br>
+                @endif
+                @if (!empty($oa->is_e_invoice))
+                    E-fatura mükellefi: Evet<br>
                 @endif
             </address>
         </div>

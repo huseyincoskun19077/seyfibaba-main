@@ -88,6 +88,9 @@ export default function usePlaceOrder({
     tc_identity: invoiceData.tc_identity,
     tax_number: invoiceData.tax_number,
     tax_office: invoiceData.tax_office,
+    company_name: invoiceData.company_name,
+    is_e_invoice: invoiceData.is_e_invoice ? 1 : 0,
+    postal_code: invoiceData.postal_code,
     latitude:
       Number(webSettings?.map_status) === 1 && guestFields.location
         ? guestFields.location.lat
@@ -172,6 +175,9 @@ export default function usePlaceOrder({
       tc_identity: invoiceData.tc_identity,
       tax_number: invoiceData.tax_number,
       tax_office: invoiceData.tax_office,
+      company_name: invoiceData.company_name,
+      is_e_invoice: invoiceData.is_e_invoice ? 1 : 0,
+      postal_code: invoiceData.postal_code,
     };
     const basePayload = isGuest
       ? {

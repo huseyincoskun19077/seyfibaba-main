@@ -184,6 +184,68 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
         .toList();
   }
 
+  Map<String, dynamic>? _orderAddress(Map<String, dynamic> raw) {
+    final order = _orderMap(raw);
+    final oa = order['order_address'] ?? order['orderAddress'];
+    if (oa is Map) return Map<String, dynamic>.from(oa);
+    return null;
+  }
+
+  Widget _buyerInvoiceCard(Map<String, dynamic>? oa) {
+    if (oa == null) return const SizedBox.shrink();
+    final type = '${oa['invoice_type'] ?? ''}'.trim();
+    final tc = '${oa['tc_identity'] ?? ''}'.trim();
+    final tax = '${oa['tax_number'] ?? ''}'.trim();
+    final office = '${oa['tax_office'] ?? ''}'.trim();
+    final company = '${oa['company_name'] ?? ''}'.trim();
+    final zip = '${oa['billing_zip_code'] ?? oa['shipping_zip_code'] ?? ''}'.trim();
+    final isEInvoice = oa['is_e_invoice'] == true ||
+        oa['is_e_invoice'] == 1 ||
+        '${oa['is_e_invoice']}' == '1';
+
+    if (type.isEmpty && tc.isEmpty && tax.isEmpty && company.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final lines = <String>[
+      if (type.isNotEmpty)
+        'Tür: ${type == 'corporate' ? 'Kurumsal' : 'Bireysel'}',
+      if (company.isNotEmpty) 'Firma: $company',
+      if (tc.isNotEmpty) 'TC: $tc',
+      if (tax.isNotEmpty) 'VKN/TCKN: $tax',
+      if (office.isNotEmpty) 'Vergi Dairesi: $office',
+      if (zip.isNotEmpty) 'Posta Kodu: $zip',
+      if (isEInvoice) 'E-fatura mükellefi: Evet',
+    ];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: HomeTheme.cardDecoration(),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Alıcı Fatura Bilgileri',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'E-fatura / e-arşiv keserken bu bilgileri kullanın.',
+            style: TextStyle(fontSize: 12, color: HomeTheme.textMuted),
+          ),
+          const SizedBox(height: 10),
+          ...lines.map(
+            (line) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(line),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -242,6 +304,14 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                         Utils.formatPrice(detail.order.totalAmount, context),
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Tutar yalnızca sizin ürünlerinize aittir.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: HomeTheme.textMuted,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -253,6 +323,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                   onShip: flow.sellerStatus == 1 ? _shipOrder : null,
                 ),
                 const SizedBox(height: 16),
+                _buyerInvoiceCard(_orderAddress(detail.raw)),
                 const Text(
                   'Ürünler',
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),

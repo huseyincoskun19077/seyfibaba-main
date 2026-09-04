@@ -23,6 +23,9 @@ import {
 import { useUpdateProfileApiMutation } from "@/redux/features/auth/apiSlice";
 import { useRouter } from "next/navigation";
 import appConfig from "@/appConfig";
+import InvoiceCheckoutSection, {
+  defaultInvoiceState,
+} from "@/components/CheckoutPage/components/InvoiceCheckoutSection";
 
 // arrow down svg
 const ArrowDownIco = () => {
@@ -53,10 +56,15 @@ export default function ProfileTab({ profileInfo }) {
     name: profileInfo.personInfo.name,
     email: profileInfo.personInfo.email,
     phone: null,
-    invoice_type: profileInfo.personInfo.invoice_type || "individual",
-    tc_identity: profileInfo.personInfo.tc_identity || "",
-    tax_number: profileInfo.personInfo.tax_number || "",
-    tax_office: profileInfo.personInfo.tax_office || "",
+    ...defaultInvoiceState({
+      invoice_type: profileInfo.personInfo.invoice_type,
+      tc_identity: profileInfo.personInfo.tc_identity,
+      tax_number: profileInfo.personInfo.tax_number,
+      tax_office: profileInfo.personInfo.tax_office,
+      company_name: profileInfo.personInfo.company_name,
+      is_e_invoice: profileInfo.personInfo.is_e_invoice,
+      postal_code: profileInfo.personInfo.zip_code,
+    }),
     country: null,
     state: null,
     city: null,
@@ -329,6 +337,9 @@ export default function ProfileTab({ profileInfo }) {
       tc_identity: formData.invoice_type === "individual" ? formData.tc_identity : "",
       tax_number: formData.invoice_type === "corporate" ? formData.tax_number : "",
       tax_office: formData.invoice_type === "corporate" ? formData.tax_office : "",
+      company_name: formData.invoice_type === "corporate" ? formData.company_name : "",
+      is_e_invoice: formData.invoice_type === "corporate" && formData.is_e_invoice ? 1 : 0,
+      postal_code: formData.invoice_type === "individual" ? formData.postal_code : "",
       country: formData.country,
       address: formData.address,
       image: formImg ? formImg : null,
@@ -617,62 +628,23 @@ export default function ProfileTab({ profileInfo }) {
             </div>
             {/* Fatura bilgileri */}
             <div className="input-item mb-8">
-              <p className="text-sm font-medium text-qblack mb-3">Fatura Bilgileri</p>
-              <div className="flex flex-wrap gap-4 mb-4">
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={formData.invoice_type !== "corporate"}
-                    onChange={() => handleInputChange("invoice_type", "individual")}
-                  />
-                  <span className="text-sm">Bireysel (TC)</span>
-                </label>
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={formData.invoice_type === "corporate"}
-                    onChange={() => handleInputChange("invoice_type", "corporate")}
-                  />
-                  <span className="text-sm">Kurumsal (Vergi No)</span>
-                </label>
-              </div>
-              {formData.invoice_type === "corporate" ? (
-                <div className="md:flex md:space-x-2.5 rtl:space-x-reverse">
-                  <div className="md:w-1/2 w-full mb-4 md:mb-0">
-                    <InputCom
-                      label="Vergi Numarası"
-                      placeholder="10 haneli vergi no"
-                      type="text"
-                      inputClasses="h-[50px]"
-                      value={formData.tax_number}
-                      inputHandler={(e) =>
-                        handleInputChange("tax_number", e.target.value.replace(/\D/g, "").slice(0, 10))
-                      }
-                    />
-                  </div>
-                  <div className="md:w-1/2 w-full">
-                    <InputCom
-                      label="Vergi Dairesi"
-                      placeholder="Vergi dairesi"
-                      type="text"
-                      inputClasses="h-[50px]"
-                      value={formData.tax_office}
-                      inputHandler={(e) => handleInputChange("tax_office", e.target.value)}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <InputCom
-                  label="TC Kimlik No"
-                  placeholder="11 haneli TC Kimlik No"
-                  type="text"
-                  inputClasses="h-[50px]"
-                  value={formData.tc_identity}
-                  inputHandler={(e) =>
-                    handleInputChange("tc_identity", e.target.value.replace(/\D/g, "").slice(0, 11))
-                  }
-                />
-              )}
+              <InvoiceCheckoutSection
+                invoice={{
+                  invoice_type: formData.invoice_type,
+                  tc_identity: formData.tc_identity,
+                  tax_number: formData.tax_number,
+                  tax_office: formData.tax_office,
+                  company_name: formData.company_name,
+                  is_e_invoice: formData.is_e_invoice,
+                  postal_code: formData.postal_code,
+                }}
+                onChange={(next) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    ...next,
+                  }))
+                }
+              />
             </div>
             {/* Address input */}
             <div className="input-item mb-8">

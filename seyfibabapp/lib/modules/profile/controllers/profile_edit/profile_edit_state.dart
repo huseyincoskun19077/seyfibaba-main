@@ -16,6 +16,9 @@ class ProfileEditStateModel extends Equatable {
   final String tcIdentity;
   final String taxNumber;
   final String taxOffice;
+  final String companyName;
+  final bool isEInvoice;
+  final String postalCode;
   final ProfileEditState stateStatus;
 
   const ProfileEditStateModel({
@@ -32,6 +35,9 @@ class ProfileEditStateModel extends Equatable {
     this.tcIdentity = '',
     this.taxNumber = '',
     this.taxOffice = '',
+    this.companyName = '',
+    this.isEInvoice = false,
+    this.postalCode = '',
     required this.stateStatus,
   });
 
@@ -66,6 +72,9 @@ class ProfileEditStateModel extends Equatable {
     String? tcIdentity,
     String? taxNumber,
     String? taxOffice,
+    String? companyName,
+    bool? isEInvoice,
+    String? postalCode,
     ProfileEditState? stateStatus,
   }) {
     return ProfileEditStateModel(
@@ -82,6 +91,9 @@ class ProfileEditStateModel extends Equatable {
       tcIdentity: tcIdentity ?? this.tcIdentity,
       taxNumber: taxNumber ?? this.taxNumber,
       taxOffice: taxOffice ?? this.taxOffice,
+      companyName: companyName ?? this.companyName,
+      isEInvoice: isEInvoice ?? this.isEInvoice,
+      postalCode: postalCode ?? this.postalCode,
       stateStatus: stateStatus ?? this.stateStatus,
     );
   }
@@ -100,8 +112,11 @@ class ProfileEditStateModel extends Equatable {
     if (invoiceType == 'corporate') {
       result.addAll({'tax_number': taxNumber});
       result.addAll({'tax_office': taxOffice});
+      result.addAll({'company_name': companyName});
+      result.addAll({'is_e_invoice': isEInvoice ? '1' : '0'});
     } else {
       result.addAll({'tc_identity': tcIdentity});
+      result.addAll({'postal_code': postalCode});
     }
 
     return result;
@@ -150,6 +165,9 @@ class ProfileEditStateModel extends Equatable {
       tcIdentity,
       taxNumber,
       taxOffice,
+      companyName,
+      isEInvoice,
+      postalCode,
       stateStatus,
     ];
   }

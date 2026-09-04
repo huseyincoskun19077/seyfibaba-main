@@ -118,12 +118,34 @@ class SellerOrderController extends Controller
         }
 
         // Sadece bu satıcıya ait ürünleri döndür
-        $order->setRelation(
-            'orderProducts',
-            $order->orderProducts()->where('seller_id', $seller->id)->with('orderProductVariants')->get()
-        );
+        $sellerProducts = $order->orderProducts()
+            ->where('seller_id', $seller->id)
+            ->with('orderProductVariants')
+            ->get();
 
-        return response()->json(['order' => $order], 200);
+        $order->setRelation('orderProducts', $sellerProducts);
+
+        $sellerLinesSubtotal = 0.0;
+        foreach ($sellerProducts as $orderProduct) {
+            $line = (float) $orderProduct->unit_price * (int) $orderProduct->qty;
+            foreach ($orderProduct->orderProductVariants as $variant) {
+                $line += (float) $variant->variant_price * (int) $orderProduct->qty;
+            }
+            $sellerLinesSubtotal += $line;
+        }
+
+        $sellerCargo = CargoShipment::query()
+            ->where('order_id', $order->id)
+            ->where('seller_id', $seller->id)
+            ->whereNotIn('status', ['cancelled'])
+            ->latest()
+            ->first();
+
+        $payload = $order->toArray();
+        $payload['seller_lines_subtotal'] = round($sellerLinesSubtotal, 2);
+        $payload['seller_cargo'] = $sellerCargo;
+
+        return response()->json(['order' => $payload], 200);
     }
 
     /**

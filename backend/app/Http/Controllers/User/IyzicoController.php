@@ -210,7 +210,11 @@ class IyzicoController extends Controller
                 ?? optional($billingAddress->countryState)->name
                 ?? 'Istanbul');
             $billingCountry = (string)(optional($billingAddress->country)->name ?? 'Turkey');
-            $zipCode = '34000';
+            $zipCode = (string) (
+                ($invoiceData['postal_code'] ?? null)
+                ?: data_get($user, 'zip_code')
+                ?: '34000'
+            );
 
             $session = $this->iyzicoService->createCheckoutForm([
                 'locale' => 'tr',
@@ -227,7 +231,13 @@ class IyzicoController extends Controller
                     'surname' => (string)($this->extractLastName($user->name) ?: 'User'),
                     'gsm_number' => (string)($user->phone ?? $shippingAddress->phone ?? '+900000000000'),
                     'email' => (string)($user->email ?? 'musteri@seyfibaba.com'),
-                    'identity_number' => (string)(data_get($user, 'identity_number') ?: '00000000000'),
+                    'identity_number' => (string) (
+                        ($invoiceData['tc_identity'] ?? null)
+                        ?: ($invoiceData['tax_number'] ?? null)
+                        ?: data_get($user, 'identity_number')
+                        ?: data_get($user, 'tc_identity')
+                        ?: '00000000000'
+                    ),
                     'last_login_date' => now()->format('Y-m-d H:i:s'),
                     'registration_date' => ($user->created_at ?? now())->format('Y-m-d H:i:s'),
                     'registration_address' => $addressText,
@@ -342,7 +352,16 @@ class IyzicoController extends Controller
 
             $addressInfo = array_merge(
                 is_array($request->address) ? $request->address : [],
-                $request->only(['invoice_type', 'tc_identity', 'tax_number', 'tax_office'])
+                $request->only([
+                    'invoice_type',
+                    'tc_identity',
+                    'tax_number',
+                    'tax_office',
+                    'company_name',
+                    'is_e_invoice',
+                    'postal_code',
+                    'zip_code',
+                ])
             );
             $invoiceData = app(BuyerInvoiceService::class)->validateFromAddressInfo($addressInfo, true);
 
@@ -442,7 +461,12 @@ class IyzicoController extends Controller
             $addressText = (string)($addr['address'] ?? 'Adres belirtilmedi');
             $city = (string)($addr['city'] ?? 'Istanbul');
             $country = (string)($addr['country'] ?? 'Turkey');
-            $zipCode = (string)($addr['zip_code'] ?? '34000');
+            $zipCode = (string) (
+                ($invoiceData['postal_code'] ?? null)
+                ?: ($addr['postal_code'] ?? null)
+                ?: ($addr['zip_code'] ?? null)
+                ?: '34000'
+            );
 
             $session = $this->iyzicoService->createCheckoutForm([
                 'locale' => 'tr',

@@ -110,6 +110,9 @@ class ProfileEditCubit extends Cubit<ProfileEditStateModel> {
     required String tcIdentity,
     required String taxNumber,
     required String taxOffice,
+    String companyName = '',
+    bool isEInvoice = false,
+    String postalCode = '',
   }) {
     emit(
       state.copyWith(
@@ -117,6 +120,9 @@ class ProfileEditCubit extends Cubit<ProfileEditStateModel> {
         tcIdentity: tcIdentity,
         taxNumber: taxNumber,
         taxOffice: taxOffice,
+        companyName: companyName,
+        isEInvoice: isEInvoice,
+        postalCode: postalCode,
         stateStatus: const ProfileEditStateInitial(),
       ),
     );

@@ -18,6 +18,8 @@ class UpdateUserInfo extends Equatable {
   final String tcIdentity;
   final String taxNumber;
   final String taxOffice;
+  final String companyName;
+  final bool isEInvoice;
 
   const UpdateUserInfo({
     required this.id,
@@ -34,7 +36,11 @@ class UpdateUserInfo extends Equatable {
     this.tcIdentity = '',
     this.taxNumber = '',
     this.taxOffice = '',
+    this.companyName = '',
+    this.isEInvoice = false,
   });
+
+  String get postalCode => zipCode;
 
   @override
   List<Object> get props {
@@ -53,6 +59,8 @@ class UpdateUserInfo extends Equatable {
       tcIdentity,
       taxNumber,
       taxOffice,
+      companyName,
+      isEInvoice,
     ];
   }
 
@@ -116,6 +124,10 @@ class UpdateUserInfo extends Equatable {
       tcIdentity: map['tc_identity']?.toString() ?? '',
       taxNumber: map['tax_number']?.toString() ?? '',
       taxOffice: map['tax_office']?.toString() ?? '',
+      companyName: map['company_name']?.toString() ?? '',
+      isEInvoice: map['is_e_invoice'] == true ||
+          map['is_e_invoice'] == 1 ||
+          map['is_e_invoice']?.toString() == '1',
     );
   }
 

@@ -4,29 +4,23 @@ import CheckoutAddressForm from "./CheckoutAddressForm";
 
 /**
  * Address Tabs Component
- * Handles switching between billing and shipping address selection
- * Uses the same pattern as AddressTab component for address creation
+ * Teslimat / fatura aynıysa tek liste; ayrıysa iki sekme.
  */
 const AddressTabs = ({
-  // Address data
   addresses,
-  /** RTK Query: adresler yüklenirken true — ilk render'da addresses=null iken yanlışlıkla "yeni adres" açılmasını önler */
   isAddressLoading = false,
   activeAddress,
   selectedBilling,
   selectedShipping,
   webSettings,
-
-  // Address handlers
+  sameAsShipping = true,
+  setSameAsShipping,
   setActiveAddress,
   setBilling,
   shippingHandler,
   deleteAddress,
-
-  // Callback for address refresh
   onAddressRefresh,
 }) => {
-  // İlk render'da addresses henüz null; useState ilk değeri bir daha hesaplanmaz → API geldikten sonra da "yeni adres" açık kalıyordu
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const prevAddressCountRef = useRef(null);
 
@@ -38,7 +32,6 @@ const AddressTabs = ({
     const prev = prevAddressCountRef.current;
 
     if (len > 0) {
-      // Sadece ilk yükleme veya boş listeden en az bir adrese geçişte listeyi göster; refetch ile formu kapatma
       if (prev === null || prev === 0) {
         setShowNewAddressForm(false);
       }
@@ -49,24 +42,27 @@ const AddressTabs = ({
     }
   }, [addresses, isAddressLoading]);
 
-  /**
-   * Handle tab switching
-   * @param {string} tab - Tab to switch to (billing or shipping)
-   */
+  const handleSameAddressChange = (checked) => {
+    setSameAsShipping?.(checked);
+    if (checked) {
+      setActiveAddress("shipping");
+      if (selectedShipping) {
+        setBilling(selectedShipping);
+      }
+    } else {
+      setActiveAddress("billing");
+    }
+  };
+
   const handleTabSwitch = (tab) => {
+    if (sameAsShipping && tab === "billing") return;
     setActiveAddress(tab);
   };
 
-  /**
-   * Handle new address toggle
-   */
   const handleNewAddressToggle = () => {
     setShowNewAddressForm(!showNewAddressForm);
   };
 
-  /**
-   * Handle address saved callback
-   */
   const handleAddressSaved = () => {
     setShowNewAddressForm(false);
     if (onAddressRefresh) {
@@ -74,9 +70,6 @@ const AddressTabs = ({
     }
   };
 
-  /**
-   * Handle cancel new address
-   */
   const handleCancelNewAddress = () => {
     setShowNewAddressForm(false);
   };
@@ -89,52 +82,73 @@ const AddressTabs = ({
     );
   }
 
+  const listActiveAddress = sameAsShipping ? "shipping" : activeAddress;
+
   return (
     <>
-      {/* Address Tabs Header */}
       {!showNewAddressForm && (
         <div className="addresses-widget w-full">
+          <label className="flex items-start gap-3 mb-4 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 accent-qyellow"
+              checked={sameAsShipping}
+              onChange={(e) => handleSameAddressChange(e.target.checked)}
+            />
+            <span>
+              <span className="block text-sm font-medium text-qblack">
+                Fatura adresi teslimat adresi ile aynı
+              </span>
+              <span className="block text-xs text-qgraytwo mt-0.5">
+                Aynıysa bir kez seçin. Farklıysa fatura ve teslimat adresini ayrı seçin.
+              </span>
+            </span>
+          </label>
+
           <div className="sm:flex justify-between items-center w-full mb-5">
-            <div className="bg-qyellowlow/10 border border-qyellow rounded p-2">
-              <button
-                onClick={() => handleTabSwitch("billing")}
-                type="button"
-                className={`px-4 py-3 text-md font-medium rounded-md ${
-                  activeAddress === "billing"
-                    ? "text-qblack bg-qyellow"
-                    : "text-qyellow"
-                }`}
-              >
-                Fatura Adresi
-              </button>
-              <button
-                onClick={() => handleTabSwitch("shipping")}
-                type="button"
-                className={`px-4 py-3 text-md font-medium rounded-md ml-1 ${
-                  activeAddress === "shipping"
-                    ? "text-qblack bg-qyellow"
-                    : "text-qyellow"
-                }`}
-              >
-                Teslimat Adresi
-              </button>
-            </div>
+            {!sameAsShipping ? (
+              <div className="bg-qyellowlow/10 border border-qyellow rounded p-2">
+                <button
+                  onClick={() => handleTabSwitch("billing")}
+                  type="button"
+                  className={`px-4 py-3 text-md font-medium rounded-md ${
+                    activeAddress === "billing"
+                      ? "text-qblack bg-qyellow"
+                      : "text-qyellow"
+                  }`}
+                >
+                  Fatura Adresi
+                </button>
+                <button
+                  onClick={() => handleTabSwitch("shipping")}
+                  type="button"
+                  className={`px-4 py-3 text-md font-medium rounded-md ml-1 ${
+                    activeAddress === "shipping"
+                      ? "text-qblack bg-qyellow"
+                      : "text-qyellow"
+                  }`}
+                >
+                  Teslimat Adresi
+                </button>
+              </div>
+            ) : (
+              <h3 className="text-base font-semibold text-qblack">
+                Teslimat / Fatura Adresi
+              </h3>
+            )}
 
             <button
               onClick={handleNewAddressToggle}
               type="button"
               className="w-[100px] h-[40px] mt-2 sm:mt-0 border border-qblack hover:bg-qblack hover:text-white transition-all duration-300 ease-in-out"
             >
-              <span className="text-sm font-semibold">
-                Yeni Ekle
-              </span>
+              <span className="text-sm font-semibold">Yeni Ekle</span>
             </button>
           </div>
 
-          {/* Address List */}
           <AddressList
             addresses={addresses}
-            activeAddress={activeAddress}
+            activeAddress={listActiveAddress}
             selectedBilling={selectedBilling}
             selectedShipping={selectedShipping}
             webSettings={webSettings}
@@ -145,7 +159,6 @@ const AddressTabs = ({
         </div>
       )}
 
-      {/* New Address Form - Using CheckoutAddressForm component */}
       {showNewAddressForm && (
         <CheckoutAddressForm
           onAddressSaved={handleAddressSaved}

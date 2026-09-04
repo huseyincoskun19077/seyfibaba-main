@@ -128,7 +128,9 @@ class SellerOrderFlowInfo {
   }
 
   static (String?, String?, String?) _cargo(Map<String, dynamic> order) {
-    final cargo = order['cargo_shipment'] ?? order['cargoShipment'];
+    final cargo = order['seller_cargo'] ??
+        order['cargo_shipment'] ??
+        order['cargoShipment'];
     if (cargo is Map) {
       return (
         '${cargo['carrier_name'] ?? ''}'.trim().isEmpty

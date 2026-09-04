@@ -143,6 +143,9 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
   String _tcIdentity = '';
   String _taxNumber = '';
   String _taxOffice = '';
+  String _companyName = '';
+  bool _isEInvoice = false;
+  String _postalCode = '';
   bool _invoiceInitialized = false;
 
   static const basedOnWeight = 'base_on_weight';
@@ -315,6 +318,8 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
       tcIdentity: _tcIdentity,
       taxNumber: _taxNumber,
       taxOffice: _taxOffice,
+      companyName: _companyName,
+      postalCode: _postalCode,
     );
     if (invoiceError != null) {
       Utils.errorSnackBar(context, invoiceError);
@@ -345,8 +350,11 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
     if (_invoiceType == 'corporate') {
       body['tax_number'] = _taxNumber;
       body['tax_office'] = _taxOffice;
+      body['company_name'] = _companyName;
+      body['is_e_invoice'] = _isEInvoice ? 1 : 0;
     } else {
       body['tc_identity'] = _tcIdentity;
+      body['postal_code'] = _postalCode;
     }
 
     Navigator.pushNamed(
@@ -409,6 +417,9 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
         _tcIdentity = info.tcIdentity;
         _taxNumber = info.taxNumber;
         _taxOffice = info.taxOffice;
+        _companyName = info.companyName;
+        _isEInvoice = info.isEInvoice;
+        _postalCode = info.postalCode.isNotEmpty ? info.postalCode : info.zipCode;
       }
       _invoiceInitialized = true;
     }
@@ -418,17 +429,26 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
       tcIdentity: _tcIdentity,
       taxNumber: _taxNumber,
       taxOffice: _taxOffice,
+      companyName: _companyName,
+      isEInvoice: _isEInvoice,
+      postalCode: _postalCode,
       onChanged: ({
         required invoiceType,
         required tcIdentity,
         required taxNumber,
         required taxOffice,
+        required companyName,
+        required isEInvoice,
+        required postalCode,
       }) {
         setState(() {
           _invoiceType = invoiceType;
           _tcIdentity = tcIdentity;
           _taxNumber = taxNumber;
           _taxOffice = taxOffice;
+          _companyName = companyName;
+          _isEInvoice = isEInvoice;
+          _postalCode = postalCode;
         });
       },
     );

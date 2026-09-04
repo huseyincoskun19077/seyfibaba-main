@@ -772,6 +772,10 @@ class CheckoutWithoutTokenController extends Controller
             'tc_identity',
             'tax_number',
             'tax_office',
+            'company_name',
+            'is_e_invoice',
+            'postal_code',
+            'zip_code',
         ]));
     }
 

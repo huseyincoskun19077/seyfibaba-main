@@ -259,6 +259,8 @@ class UserProfileController extends Controller
             'tax_number',
             'invoice_type',
             'tax_office',
+            'company_name',
+            'is_e_invoice',
             'shop_name',
             'business_type',
             'business_type_other',
@@ -321,7 +323,15 @@ class UserProfileController extends Controller
         $user->city_id = $request->city;
         $user->address = $request->address;
 
-        if ($request->hasAny(['invoice_type', 'tc_identity', 'tax_number', 'tax_office'])) {
+        if ($request->hasAny([
+            'invoice_type',
+            'tc_identity',
+            'tax_number',
+            'tax_office',
+            'company_name',
+            'is_e_invoice',
+            'postal_code',
+        ])) {
             $invoice = app(\App\Services\BuyerInvoiceService::class)->validateFromRequest($request, $user, (bool) $request->filled('invoice_type'));
             app(\App\Services\BuyerInvoiceService::class)->syncUser($user, $invoice);
         } else {

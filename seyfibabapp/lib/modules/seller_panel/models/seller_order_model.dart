@@ -91,11 +91,16 @@ class SellerOrderModel {
     // Lazy import avoided: duplicate minimal payout parse for list cards
     final sellerStatus = _sellerStatusFromProducts(products);
     final payout = _payoutFromOrder(flowOrder, sellerStatus);
+    final sellerSubtotal = _sellerSubtotalFromProducts(products);
+    final apiSubtotal = double.tryParse('${map['seller_lines_subtotal'] ?? ''}');
 
     return SellerOrderModel(
       id: int.tryParse('${map['id']}') ?? 0,
       orderId: '${map['order_id'] ?? map['id'] ?? ''}',
-      totalAmount: double.tryParse('${map['total_amount'] ?? map['amount'] ?? 0}') ?? 0,
+      totalAmount: apiSubtotal ??
+          (sellerSubtotal > 0
+              ? sellerSubtotal
+              : double.tryParse('${map['total_amount'] ?? map['amount'] ?? 0}') ?? 0),
       orderStatus: int.tryParse('${map['order_status'] ?? 0}') ?? 0,
       paymentStatus: int.tryParse('${map['payment_status'] ?? 0}') ?? 0,
       createdAt: '${map['created_at'] ?? ''}',
@@ -118,6 +123,29 @@ class SellerOrderModel {
       if (s < min) min = s;
     }
     return min == 99 ? 0 : min;
+  }
+
+  static double _sellerSubtotalFromProducts(dynamic products) {
+    if (products is! List) return 0;
+    var sum = 0.0;
+    for (final item in products) {
+      if (item is! Map) continue;
+      final qty = int.tryParse('${item['qty'] ?? 1}') ?? 1;
+      final unit =
+          double.tryParse('${item['unit_price'] ?? item['price'] ?? 0}') ?? 0;
+      var line = unit * qty;
+      final variants =
+          item['order_product_variants'] ?? item['orderProductVariants'];
+      if (variants is List) {
+        for (final variant in variants) {
+          if (variant is! Map) continue;
+          line += (double.tryParse('${variant['variant_price'] ?? 0}') ?? 0) *
+              qty;
+        }
+      }
+      sum += line;
+    }
+    return sum;
   }
 
   static (String, String) _payoutFromOrder(Map<String, dynamic> order, int sellerStatus) {

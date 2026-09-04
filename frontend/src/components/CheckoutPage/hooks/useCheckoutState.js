@@ -11,7 +11,8 @@ export const useCheckoutState = () => {
   // Location and address state
   const [location, setLocation] = useState(null);
   const [addresses, setAddresses] = useState(null);
-  const [activeAddress, setActiveAddress] = useState("billing");
+  const [activeAddress, setActiveAddress] = useState("shipping");
+  const [sameAsShipping, setSameAsShipping] = useState(true);
   const [selectedShipping, setShipping] = useState(null);
   const [selectedBilling, setBilling] = useState(null);
 
@@ -89,6 +90,8 @@ export const useCheckoutState = () => {
     setAddresses,
     activeAddress,
     setActiveAddress,
+    sameAsShipping,
+    setSameAsShipping,
     selectedShipping,
     setShipping,
     selectedBilling,

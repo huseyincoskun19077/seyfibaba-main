@@ -84,6 +84,8 @@ export default function CheckoutPage() {
     setAddresses,
     activeAddress,
     setActiveAddress,
+    sameAsShipping,
+    setSameAsShipping,
     selectedShipping,
     setShipping,
     selectedBilling,
@@ -246,6 +248,9 @@ export default function CheckoutPage() {
 
     if (auth() && addressId) {
       setShipping(addressId);
+      if (sameAsShipping) {
+        setBilling(addressId);
+      }
 
       if (Number(webSettings?.map_status) === 1) {
         const findAddress = addresses?.find(
@@ -763,6 +768,8 @@ export default function CheckoutPage() {
                       selectedBilling={selectedBilling}
                       selectedShipping={selectedShipping}
                       webSettings={webSettings}
+                      sameAsShipping={sameAsShipping}
+                      setSameAsShipping={setSameAsShipping}
                       setActiveAddress={setActiveAddress}
                       setBilling={setBilling}
                       shippingHandler={shippingHandler}

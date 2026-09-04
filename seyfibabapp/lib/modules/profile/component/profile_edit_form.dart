@@ -68,6 +68,9 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
       tcIdentity: data.tcIdentity,
       taxNumber: data.taxNumber,
       taxOffice: data.taxOffice,
+      companyName: data.companyName,
+      isEInvoice: data.isEInvoice,
+      postalCode: data.postalCode,
     );
     //
 
@@ -298,18 +301,27 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
                   tcIdentity: state.tcIdentity,
                   taxNumber: state.taxNumber,
                   taxOffice: state.taxOffice,
+                  companyName: state.companyName,
+                  isEInvoice: state.isEInvoice,
+                  postalCode: state.postalCode,
                   showIntro: false,
                   onChanged: ({
                     required invoiceType,
                     required tcIdentity,
                     required taxNumber,
                     required taxOffice,
+                    required companyName,
+                    required isEInvoice,
+                    required postalCode,
                   }) {
                     profileEdBlc.changeInvoice(
                       invoiceType: invoiceType,
                       tcIdentity: tcIdentity,
                       taxNumber: taxNumber,
                       taxOffice: taxOffice,
+                      companyName: companyName,
+                      isEInvoice: isEInvoice,
+                      postalCode: postalCode,
                     );
                   },
                 );
