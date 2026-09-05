@@ -245,6 +245,9 @@ class PushNotificationService {
       case 'seller_new_order':
         Navigator.of(context).pushNamed(RouteNames.sellerPanelScreen);
         break;
+      case 'seller_withdraw_approved':
+        Navigator.of(context).pushNamed(RouteNames.sellerEarningsScreen);
+        break;
       case 'stock_alert':
         final productId =
             int.tryParse(data['product_id']?.toString() ?? '') ?? 0;

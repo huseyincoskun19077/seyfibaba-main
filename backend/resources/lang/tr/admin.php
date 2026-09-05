@@ -580,7 +580,7 @@ return array (
   'Email Log' => 'E-posta Günlüğü',
   'Edit Profile' => 'Profili Düzenle',
   'Select a City' => 'Bir Şehir Seç',
-  'Withdraw Charge Amount' => 'Para Çekme Ücret Tutarı',
+  'Withdraw Charge Amount' => 'İşlem Ücreti',
   'Approved Date' => 'Onay Tarihi',
   'Approve withdraw' => 'Para çekmeyi onayla',
   'Delete withdraw request' => 'Para çekme isteğini sil',

@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\EmailTemplate;
 use App\Helpers\MailHelper;
 use App\Mail\SellerWithdrawApproval;
+use App\Notifications\SellerWithdrawApprovedNotification;
 use App\Services\CommissionService;
 use Mail;
 use Auth;
@@ -80,6 +81,15 @@ class SellerWithdrawController extends Controller
             $message = str_replace('{{approval_date}}', (string) $withdraw->approved_date, $message);
             MailHelper::setMailConfig();
             Mail::to($user->email)->send(new SellerWithdrawApproval($subject, $message));
+        }
+
+        try {
+            $user->notify(new SellerWithdrawApprovedNotification($withdraw));
+        } catch (\Throwable $e) {
+            \Log::warning('Seller withdraw push failed', [
+                'withdraw_id' => $withdraw->id,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return response()->json(['notification' => trans('admin_validation.Withdraw request approval successfully')], 200);

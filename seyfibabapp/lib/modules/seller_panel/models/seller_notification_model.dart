@@ -65,6 +65,7 @@ class SellerNotificationItem {
             'stock_alert' => 'Stok uyarısı',
             'kyc_status' => 'KYC durumu',
             'kyc_reminder' => 'KYC hatırlatma',
+            'seller_withdraw_approved' => 'Para transferi',
             _ => 'Bildirim',
           };
     final initialQty = int.tryParse('${payload['initial_qty'] ?? ''}');

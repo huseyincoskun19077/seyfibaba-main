@@ -96,11 +96,10 @@ class WithdrawController extends Controller
             $widthdraw = new SellerWithdraw();
             $widthdraw->seller_id = $seller->id;
             $widthdraw->method = $method->name;
+            // Komisyon satışta kesilir; çekimde ek ücret yok — talep tutarının tamamı satıcıya.
             $widthdraw->total_amount = $request->withdraw_amount;
-            $withdraw_request = $request->withdraw_amount;
-            $withdraw_charge = ($method->withdraw_charge / 100) * $withdraw_request;
-            $widthdraw->withdraw_amount = $request->withdraw_amount - $withdraw_charge;
-            $widthdraw->withdraw_charge = $withdraw_charge;
+            $widthdraw->withdraw_amount = $request->withdraw_amount;
+            $widthdraw->withdraw_charge = 0;
             $widthdraw->account_info = $request->account_info;
             $widthdraw->save();
             $notification = trans('admin_validation.Withdraw request send successfully, please wait for admin approval');
