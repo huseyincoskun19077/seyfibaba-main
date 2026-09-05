@@ -19,6 +19,14 @@ class AddressInfo extends Equatable {
   final double longitude;
   final String createdAt;
   final String updatedAt;
+  final String invoiceType;
+  final String tcIdentity;
+  final String taxNumber;
+  final String taxOffice;
+  final String companyName;
+  final bool isEInvoice;
+  final String zipCode;
+  final String neighborhood;
 
   const AddressInfo({
     required this.id,
@@ -37,6 +45,14 @@ class AddressInfo extends Equatable {
     required this.longitude,
     required this.createdAt,
     required this.updatedAt,
+    this.invoiceType = 'individual',
+    this.tcIdentity = '',
+    this.taxNumber = '',
+    this.taxOffice = '',
+    this.companyName = '',
+    this.isEInvoice = false,
+    this.zipCode = '',
+    this.neighborhood = '',
   });
 
   AddressInfo copyWith({
@@ -56,6 +72,14 @@ class AddressInfo extends Equatable {
     double? longitude,
     String? createdAt,
     String? updatedAt,
+    String? invoiceType,
+    String? tcIdentity,
+    String? taxNumber,
+    String? taxOffice,
+    String? companyName,
+    bool? isEInvoice,
+    String? zipCode,
+    String? neighborhood,
   }) {
     return AddressInfo(
       id: id ?? this.id,
@@ -74,6 +98,14 @@ class AddressInfo extends Equatable {
       longitude: longitude ?? this.longitude,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      invoiceType: invoiceType ?? this.invoiceType,
+      tcIdentity: tcIdentity ?? this.tcIdentity,
+      taxNumber: taxNumber ?? this.taxNumber,
+      taxOffice: taxOffice ?? this.taxOffice,
+      companyName: companyName ?? this.companyName,
+      isEInvoice: isEInvoice ?? this.isEInvoice,
+      zipCode: zipCode ?? this.zipCode,
+      neighborhood: neighborhood ?? this.neighborhood,
     );
   }
 
@@ -94,6 +126,14 @@ class AddressInfo extends Equatable {
     result.addAll({'default_billing': defaultBilling});
     result.addAll({'created_at': createdAt});
     result.addAll({'updated_at': updatedAt});
+    result.addAll({'invoice_type': invoiceType});
+    result.addAll({'tc_identity': tcIdentity});
+    result.addAll({'tax_number': taxNumber});
+    result.addAll({'tax_office': taxOffice});
+    result.addAll({'company_name': companyName});
+    result.addAll({'is_e_invoice': isEInvoice ? 1 : 0});
+    result.addAll({'zip_code': zipCode});
+    result.addAll({'neighborhood': neighborhood});
 
     return result;
   }
@@ -111,7 +151,7 @@ class AddressInfo extends Equatable {
           ? int.parse(map['country_id'].toString())
           : 0,
       stateId:
-      map['state_id'] != null ? int.parse(map['state_id'].toString()) : 0,
+          map['state_id'] != null ? int.parse(map['state_id'].toString()) : 0,
       cityId: map['city_id'] != null ? int.parse(map['city_id'].toString()) : 0,
       defaultShipping: map['default_shipping'] != null
           ? int.parse(map['default_shipping'].toString())
@@ -127,6 +167,18 @@ class AddressInfo extends Equatable {
           : 0.0,
       createdAt: map['created_at'] ?? '',
       updatedAt: map['updated_at'] ?? '',
+      invoiceType: map['invoice_type']?.toString() ?? 'individual',
+      tcIdentity: map['tc_identity']?.toString() ?? '',
+      taxNumber: map['tax_number']?.toString() ?? '',
+      taxOffice: map['tax_office']?.toString() ?? '',
+      companyName: map['company_name']?.toString() ?? '',
+      isEInvoice: map['is_e_invoice'] == true ||
+          map['is_e_invoice'] == 1 ||
+          map['is_e_invoice']?.toString() == '1',
+      zipCode: map['zip_code']?.toString() ??
+          map['postal_code']?.toString() ??
+          '',
+      neighborhood: map['neighborhood']?.toString() ?? '',
     );
   }
 
@@ -160,6 +212,14 @@ class AddressInfo extends Equatable {
       cityId,
       createdAt,
       updatedAt,
+      invoiceType,
+      tcIdentity,
+      taxNumber,
+      taxOffice,
+      companyName,
+      isEInvoice,
+      zipCode,
+      neighborhood,
     ];
   }
 }

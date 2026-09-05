@@ -745,6 +745,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
               _isBillingTab ? billingAddressId : shippingAddressId,
           addressModel: addresses[index],
           type: addresses[index].type,
+          showInvoice: _isBillingTab,
         ),
       ),
     );

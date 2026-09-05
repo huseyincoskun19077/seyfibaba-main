@@ -63,7 +63,13 @@ const MAHKEY_SEP = "\x1e";
  * İl → ilçe → mahalle (mahalle, veri setindeki alt bölge + mahalle çiftiyle eşlenir; ayrı "bölge" seçimi yok)
  * @param {{ value?: { province?: string; district?: string; locality?: string; neighborhood?: string }; onChange: (v: ReturnType<typeof emptyValue>) => void; disabled?: boolean; className?: string }} props
  */
-export default function TurkeyAddressSelects({ value, onChange, disabled = false, className = "" }) {
+export default function TurkeyAddressSelects({
+  value,
+  onChange,
+  disabled = false,
+  className = "",
+  onlyNeighborhood = false,
+}) {
   const v = value || emptyValue();
   const [tree, setTree] = useState([]);
   const [hasMahalleData, setHasMahalleData] = useState(false);
@@ -129,6 +135,64 @@ export default function TurkeyAddressSelects({ value, onChange, disabled = false
   const legacyMahalleInList = mahalleSelectValue && flatMahalle.some((m) => m.key === mahalleSelectValue);
   const showMahalle = hasMahalleData || Boolean(v.neighborhood);
 
+  const mahalleSelect = showMahalle ? (
+    <div>
+      <label className="block text-xs text-qgray mb-1">Mahalle</label>
+      <select
+        className={wrap}
+        disabled={disabled || !v.district}
+        value={mahalleSelectValue}
+        onChange={(e) => {
+          const raw = e.target.value;
+          if (!raw) {
+            emit({ province: v.province, district: v.district, locality: "", neighborhood: "" });
+            return;
+          }
+          const i = raw.indexOf(MAHKEY_SEP);
+          if (i === -1) return;
+          const locality = raw.slice(0, i);
+          const neighborhood = raw.slice(i + MAHKEY_SEP.length);
+          emit({ province: v.province, district: v.district, locality, neighborhood });
+        }}
+      >
+        <option value="">Seçin</option>
+        {mahalleSelectValue && !legacyMahalleInList && (
+          <option value={mahalleSelectValue}>{v.neighborhood} (kayıtlı)</option>
+        )}
+        {flatMahalle.map((m) => (
+          <option key={m.key} value={m.key}>
+            {m.label}
+          </option>
+        ))}
+      </select>
+      {!v.district && (
+        <p className="text-xs text-qgraytwo mt-1">Önce il ve ilçe seçin.</p>
+      )}
+    </div>
+  ) : (
+    <div>
+      <label className="block text-xs text-qgray mb-1">Mahalle</label>
+      <input
+        className={wrap}
+        disabled={disabled}
+        placeholder="Mahalle adı"
+        value={v.neighborhood || ""}
+        onChange={(e) =>
+          emit({
+            province: v.province,
+            district: v.district,
+            locality: "",
+            neighborhood: e.target.value,
+          })
+        }
+      />
+    </div>
+  );
+
+  if (onlyNeighborhood) {
+    return <div className={className}>{mahalleSelect}</div>;
+  }
+
   return (
     <div className={`grid gap-3 ${showMahalle ? "md:grid-cols-3" : "md:grid-cols-2"} ${className}`}>
       <div>
@@ -169,38 +233,7 @@ export default function TurkeyAddressSelects({ value, onChange, disabled = false
           ))}
         </select>
       </div>
-      {showMahalle ? (
-        <div>
-          <label className="block text-xs text-qgray mb-1">Mahalle</label>
-          <select
-            className={wrap}
-            disabled={disabled || !v.district}
-            value={mahalleSelectValue}
-            onChange={(e) => {
-              const raw = e.target.value;
-              if (!raw) {
-                emit({ province: v.province, district: v.district, locality: "", neighborhood: "" });
-                return;
-              }
-              const i = raw.indexOf(MAHKEY_SEP);
-              if (i === -1) return;
-              const locality = raw.slice(0, i);
-              const neighborhood = raw.slice(i + MAHKEY_SEP.length);
-              emit({ province: v.province, district: v.district, locality, neighborhood });
-            }}
-          >
-            <option value="">Seçin</option>
-            {mahalleSelectValue && !legacyMahalleInList && (
-              <option value={mahalleSelectValue}>{v.neighborhood} (kayıtlı)</option>
-            )}
-            {flatMahalle.map((m) => (
-              <option key={m.key} value={m.key}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : null}
+      {mahalleSelect}
     </div>
   );
 }

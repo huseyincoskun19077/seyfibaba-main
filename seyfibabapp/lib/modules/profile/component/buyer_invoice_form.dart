@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../utils/constants.dart';
+import '../../../utils/language_string.dart';
 import '../../../widgets/custom_text.dart';
+import '../../cart/component/address_card_component.dart';
 import '../../home/widgets/home_theme.dart';
 
 class BuyerInvoiceForm extends StatefulWidget {
@@ -16,6 +18,7 @@ class BuyerInvoiceForm extends StatefulWidget {
     this.postalCode = '',
     required this.onChanged,
     this.showIntro = true,
+    this.embedded = false,
   });
 
   final String invoiceType;
@@ -35,6 +38,7 @@ class BuyerInvoiceForm extends StatefulWidget {
     required String postalCode,
   }) onChanged;
   final bool showIntro;
+  final bool embedded;
 
   @override
   State<BuyerInvoiceForm> createState() => _BuyerInvoiceFormState();
@@ -44,7 +48,50 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
   static const _individual = 'individual';
   static const _corporate = 'corporate';
 
+  late final TextEditingController _tcCtrl;
+  late final TextEditingController _postalCtrl;
+  late final TextEditingController _taxCtrl;
+  late final TextEditingController _taxOfficeCtrl;
+  late final TextEditingController _companyCtrl;
+
   bool get _isCorporate => widget.invoiceType == _corporate;
+
+  @override
+  void initState() {
+    super.initState();
+    _tcCtrl = TextEditingController(text: widget.tcIdentity);
+    _postalCtrl = TextEditingController(text: widget.postalCode);
+    _taxCtrl = TextEditingController(text: widget.taxNumber);
+    _taxOfficeCtrl = TextEditingController(text: widget.taxOffice);
+    _companyCtrl = TextEditingController(text: widget.companyName);
+  }
+
+  @override
+  void didUpdateWidget(covariant BuyerInvoiceForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _sync(_tcCtrl, widget.tcIdentity);
+    _sync(_postalCtrl, widget.postalCode);
+    _sync(_taxCtrl, widget.taxNumber);
+    _sync(_taxOfficeCtrl, widget.taxOffice);
+    _sync(_companyCtrl, widget.companyName);
+  }
+
+  void _sync(TextEditingController ctrl, String value) {
+    if (ctrl.text != value) {
+      ctrl.text = value;
+      ctrl.selection = TextSelection.collapsed(offset: value.length);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tcCtrl.dispose();
+    _postalCtrl.dispose();
+    _taxCtrl.dispose();
+    _taxOfficeCtrl.dispose();
+    _companyCtrl.dispose();
+    super.dispose();
+  }
 
   void _emit({
     String? invoiceType,
@@ -71,72 +118,89 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
     return digits.substring(0, digits.length.clamp(0, max));
   }
 
+  Widget _typeRadio({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              selected ? Icons.radio_button_checked : Icons.radio_button_off,
+              size: 20,
+              color: selected ? HomeTheme.brandYellow : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 14, color: blackColor),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: whiteColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor),
-      ),
+      margin: widget.embedded
+          ? EdgeInsets.zero
+          : const EdgeInsets.fromLTRB(20, 8, 20, 8),
+      padding: widget.embedded ? EdgeInsets.zero : const EdgeInsets.all(16),
+      decoration: widget.embedded
+          ? null
+          : BoxDecoration(
+              color: whiteColor,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: borderColor),
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const CustomText(
-            text: 'Fatura Türü',
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
+            text: 'Fatura Tipi',
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
           if (widget.showIntro) ...[
             const SizedBox(height: 6),
             Text(
               'Satıcının e-fatura / e-arşiv kesmesi için zorunludur.',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.35),
+              style: TextStyle(
+                  fontSize: 13, color: Colors.grey.shade700, height: 1.35),
             ),
           ],
-          const SizedBox(height: 12),
-          Row(
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 20,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: !_isCorporate ? HomeTheme.brandYellow : Colors.black87,
-                    side: BorderSide(
-                      color: !_isCorporate ? HomeTheme.brandYellow : borderColor,
-                    ),
-                    backgroundColor: !_isCorporate
-                        ? HomeTheme.brandYellow.withOpacity(0.08)
-                        : whiteColor,
-                  ),
-                  onPressed: () => _emit(
-                    invoiceType: _individual,
-                    taxNumber: '',
-                    taxOffice: '',
-                    companyName: '',
-                    isEInvoice: false,
-                  ),
-                  child: const Text('Bireysel'),
+              _typeRadio(
+                label: 'Bireysel',
+                selected: !_isCorporate,
+                onTap: () => _emit(
+                  invoiceType: _individual,
+                  taxNumber: '',
+                  taxOffice: '',
+                  companyName: '',
+                  isEInvoice: false,
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _isCorporate ? HomeTheme.brandYellow : Colors.black87,
-                    side: BorderSide(
-                      color: _isCorporate ? HomeTheme.brandYellow : borderColor,
-                    ),
-                    backgroundColor: _isCorporate
-                        ? HomeTheme.brandYellow.withOpacity(0.08)
-                        : whiteColor,
-                  ),
-                  onPressed: () => _emit(
-                    invoiceType: _corporate,
-                    tcIdentity: '',
-                  ),
-                  child: const Text('Kurumsal'),
+              _typeRadio(
+                label: 'Kurumsal / Şahıs Firması',
+                selected: _isCorporate,
+                onTap: () => _emit(
+                  invoiceType: _corporate,
+                  tcIdentity: '',
                 ),
               ),
             ],
@@ -144,7 +208,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
           const SizedBox(height: 12),
           if (!_isCorporate) ...[
             TextFormField(
-              initialValue: widget.tcIdentity,
+              controller: _tcCtrl,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'TC Kimlik No *',
@@ -161,7 +225,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              initialValue: widget.postalCode,
+              controller: _postalCtrl,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Posta Kodu *',
@@ -188,7 +252,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              initialValue: widget.taxNumber,
+              controller: _taxCtrl,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'VKN/TCKN *',
@@ -201,7 +265,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              initialValue: widget.taxOffice,
+              controller: _taxOfficeCtrl,
               decoration: const InputDecoration(
                 labelText: 'Vergi Dairesi *',
                 hintText: 'Vergi Dairesi Giriniz',
@@ -213,7 +277,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              initialValue: widget.companyName,
+              controller: _companyCtrl,
               decoration: const InputDecoration(
                 labelText: 'Firma Adı *',
                 hintText: 'Firma Adı Giriniz',
@@ -223,7 +287,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
                 companyName: value,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,
               value: widget.isEInvoice,
@@ -280,4 +344,98 @@ String? validateBuyerInvoice({
     return 'Bireysel fatura için 5 haneli posta kodu zorunludur.';
   }
   return null;
+}
+
+bool addressTypeIsHome(String type) =>
+    !AddressCardComponent.isOfficeType(type);
+
+String addressTypeValue(bool isHome) => isHome ? 'home' : 'office';
+
+/// Ev / Ofis seçimi — web AddressesTab ile aynı.
+class AddressPlaceTypeSelector extends StatelessWidget {
+  const AddressPlaceTypeSelector({
+    super.key,
+    required this.isHome,
+    required this.onChanged,
+  });
+
+  final bool isHome;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const CustomText(
+          text: 'Adres Tipi',
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _chip(
+                label: Language.addressTypeHome,
+                selected: isHome,
+                onTap: () => onChanged(true),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _chip(
+                label: Language.addressTypeOffice,
+                selected: !isHome,
+                onTap: () => onChanged(false),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _chip({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? HomeTheme.brandYellow.withOpacity(0.12)
+              : whiteColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? HomeTheme.brandYellow : borderColor,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              selected ? Icons.check_circle : Icons.circle_outlined,
+              size: 18,
+              color: selected ? HomeTheme.brandYellow : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: blackColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

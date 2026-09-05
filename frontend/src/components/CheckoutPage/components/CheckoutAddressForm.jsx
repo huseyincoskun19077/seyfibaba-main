@@ -27,6 +27,7 @@ import {
   invoiceFromAddress,
   validateInvoiceForm,
 } from "./InvoiceCheckoutSection";
+import TurkeyAddressSelects from "@/components/SecondHand/TurkeyAddressSelects";
 
 const MapComponent = dynamic(() => import("@/components/MapComponent/Index"), {
   ssr: false,
@@ -63,6 +64,8 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
     country: editingAddress ? Number(editingAddress.country_id) : null,
     state: editingAddress ? Number(editingAddress.state_id) : null,
     city: editingAddress ? Number(editingAddress.city_id) : null,
+    neighborhood: editingAddress?.neighborhood || "",
+    locality: "",
   });
   const [invoice, setInvoice] = useState(() =>
     editingAddress
@@ -154,6 +157,8 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
       country: null,
       state: null,
       city: null,
+      neighborhood: "",
+      locality: "",
     });
     setInvoice(defaultInvoiceState());
     setStateDropdown(null);
@@ -171,6 +176,7 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
     country: formData.country,
     state: formData.state,
     city: formData.city,
+    neighborhood: formData.neighborhood || "",
     invoice_type: invoice.invoice_type,
     tc_identity: invoice.tc_identity,
     tax_number: invoice.tax_number,
@@ -196,6 +202,8 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
       country: value.id,
       state: null,
       city: null,
+      neighborhood: "",
+      locality: "",
     }));
     const response = await getStateListApi({
       countryId: Number(value.id),
@@ -209,7 +217,13 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
 
   const getcity = async (value) => {
     if (!value?.id) return;
-    setFormData((prev) => ({ ...prev, state: value.id, city: null }));
+    setFormData((prev) => ({
+      ...prev,
+      state: value.id,
+      city: null,
+      neighborhood: "",
+      locality: "",
+    }));
     const response = await getCityListApi({
       stateId: Number(value.id),
       token: auth()?.access_token,
@@ -223,7 +237,12 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
 
   const selectCity = (value) => {
     if (value?.id) {
-      setFormData((prev) => ({ ...prev, city: value.id }));
+      setFormData((prev) => ({
+        ...prev,
+        city: value.id,
+        neighborhood: "",
+        locality: "",
+      }));
     }
   };
 
@@ -456,6 +475,35 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
                 </SearchableSelectbox>
               </div>
             </div>
+          </div>
+
+          <div className="mb-6">
+            <TurkeyAddressSelects
+              onlyNeighborhood
+              value={{
+                province:
+                  (stateDropdown || []).find(
+                    (s) => Number(s.id) === Number(formData.state)
+                  )?.name ||
+                  editingAddress?.country_state?.name ||
+                  "",
+                district:
+                  (cityDropdown || []).find(
+                    (c) => Number(c.id) === Number(formData.city)
+                  )?.name ||
+                  editingAddress?.city?.name ||
+                  "",
+                locality: formData.locality || "",
+                neighborhood: formData.neighborhood || "",
+              }}
+              onChange={(next) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  neighborhood: next.neighborhood || "",
+                  locality: next.locality || "",
+                }))
+              }
+            />
           </div>
 
           <div className="mb-6">

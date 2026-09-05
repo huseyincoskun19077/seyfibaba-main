@@ -38,6 +38,7 @@ class AddressModel extends Equatable {
   final String companyName;
   final bool isEInvoice;
   final String zipCode;
+  final String neighborhood;
 
   const AddressModel({
     required this.id,
@@ -70,6 +71,7 @@ class AddressModel extends Equatable {
     this.companyName = '',
     this.isEInvoice = false,
     this.zipCode = '',
+    this.neighborhood = '',
   });
 
   AddressModel copyWith({
@@ -223,6 +225,7 @@ class AddressModel extends Equatable {
       zipCode: map['zip_code']?.toString() ??
           map['postal_code']?.toString() ??
           '',
+      neighborhood: map['neighborhood']?.toString() ?? '',
     );
   }
 

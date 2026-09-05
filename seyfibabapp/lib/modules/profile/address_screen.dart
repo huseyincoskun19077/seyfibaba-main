@@ -29,6 +29,11 @@ class AddressScreen extends StatefulWidget {
 }
 
 class _AddressScreenState extends State<AddressScreen> {
+  String _addressTab = Language.billingAddress.capitalizeByWord();
+
+  bool get _isBillingTab =>
+      _addressTab == Language.billingAddress.capitalizeByWord();
+
   @override
   void initState() {
     Future.microtask(() {
@@ -62,15 +67,27 @@ class _AddressScreenState extends State<AddressScreen> {
             return const LoadingWidget();
           } else if (state is AddressStateError) {
             if (state.statusCode == 503 || addressCubit.address != null) {
-              return _LoadedWidget(address: addressCubit.address!);
+              return _LoadedWidget(
+                address: addressCubit.address!,
+                addressTypeSelect: _addressTab,
+                onTabChanged: (value) => setState(() => _addressTab = value),
+              );
             } else {
               return FetchErrorText(text: state.message);
             }
           } else if (state is AddressStateLoaded) {
-            return _LoadedWidget(address: state.address);
+            return _LoadedWidget(
+              address: state.address,
+              addressTypeSelect: _addressTab,
+              onTabChanged: (value) => setState(() => _addressTab = value),
+            );
           }
           if (addressCubit.address != null) {
-            return _LoadedWidget(address: addressCubit.address!);
+            return _LoadedWidget(
+              address: addressCubit.address!,
+              addressTypeSelect: _addressTab,
+              onTabChanged: (value) => setState(() => _addressTab = value),
+            );
           } else {
             return FetchErrorText(text: Language.somethingWentWrong);
           }
@@ -103,7 +120,10 @@ class _AddressScreenState extends State<AddressScreen> {
         Navigator.pushNamed(
           context,
           RouteNames.addAddressScreen,
-          arguments: {"type": "new"},
+          arguments: {
+            "type": "new",
+            "show_invoice": _isBillingTab,
+          },
         );
       },
       child: const Icon(Icons.add, color: Colors.white),
@@ -112,9 +132,15 @@ class _AddressScreenState extends State<AddressScreen> {
 }
 
 class _LoadedWidget extends StatefulWidget {
-  const _LoadedWidget({required this.address});
+  const _LoadedWidget({
+    required this.address,
+    required this.addressTypeSelect,
+    required this.onTabChanged,
+  });
 
   final AddressBook address;
+  final String addressTypeSelect;
+  final ValueChanged<String> onTabChanged;
 
   @override
   State<_LoadedWidget> createState() => _LoadedWidgetState();
@@ -123,9 +149,11 @@ class _LoadedWidget extends StatefulWidget {
 class _LoadedWidgetState extends State<_LoadedWidget> {
   final _pageController =
       PageController(initialPage: 0, keepPage: true, viewportFraction: 1);
-  String addressTypeSelect = Language.billingAddress.capitalizeByWord();
   int billingAddressId = 0;
   int shippingAddressId = 0;
+
+  bool get _isBillingTab =>
+      widget.addressTypeSelect == Language.billingAddress.capitalizeByWord();
 
   @override
   void initState() {
@@ -163,22 +191,16 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                 ...addressType.asMap().entries.map(
                       (e) => InkWell(
                     onTap: () {
-                      setState(
-                            () {
-                          addressTypeSelect = e.value;
-                          _pageController.animateToPage(e.key,
-                              duration: const Duration(microseconds: 500),
-                              curve: Curves.ease);
-                        },
-                      );
+                      widget.onTabChanged(e.value);
+                      _pageController.animateToPage(e.key,
+                          duration: const Duration(microseconds: 500),
+                          curve: Curves.ease);
                     },
                     child: AnimatedContainer(
-                      // width: Utils.mediaQuery(context).width / 2.6,
-
                       duration: const Duration(microseconds: 300),
                       curve: Curves.ease,
                       decoration: BoxDecoration(
-                        color: addressTypeSelect == e.value
+                        color: widget.addressTypeSelect == e.value
                             ? tabBgColor
                             : transparent,
                         borderRadius: Utils.borderRadius(r: 6.0),
@@ -220,8 +242,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                       child: InkWell(
                         borderRadius: Utils.borderRadius(r: 12.0),
                         onTap: () {
-                          if (addressTypeSelect ==
-                              Language.billingAddress.capitalizeByWord()) {
+                          if (_isBillingTab) {
                             billingAddressId = item.id;
                           } else {
                             shippingAddressId = item.id;
@@ -243,7 +264,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                               },
                                   (success) {
                                 widget.address.addresses.remove(item);
-                                setState(() {}); // Update the UI
+                                setState(() {});
                                 Utils.showSnackBar(
                                     context, Language.addressDeletedSuccessfully);
                               },
@@ -265,8 +286,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                             );
                           },
                           child: AddressCardComponent(
-                            selectAddress: addressTypeSelect ==
-                                Language.billingAddress.capitalizeByWord()
+                            selectAddress: _isBillingTab
                                 ? billingAddressId
                                 : shippingAddressId,
                             addressModel:
@@ -275,6 +295,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                                 .toList()[index]
                                 .type,
                             isEditButtonShow: false,
+                            showInvoice: _isBillingTab,
                           ),
                         ),
                       ),
@@ -291,8 +312,11 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
               title: Language.noAddress,
               subtitle: Language.emptyAddressHint,
               action: TextButton(
-                onPressed: () =>
-                    Navigator.pushNamed(context, RouteNames.addAddressScreen),
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  RouteNames.addAddressScreen,
+                  arguments: {"show_invoice": _isBillingTab},
+                ),
                 child: Text(Language.addNewAddress),
               ),
             ),

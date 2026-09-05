@@ -80,11 +80,14 @@ class TurkeyAddressSelects extends StatefulWidget {
     required this.value,
     required this.onChanged,
     this.showNeighborhood = true,
+    this.onlyNeighborhood = false,
   });
 
   final TurkeyAddressValue value;
   final ValueChanged<TurkeyAddressValue> onChanged;
   final bool showNeighborhood;
+  /// İl/ilçe zaten seçiliyse yalnızca mahalle dropdown gösterir.
+  final bool onlyNeighborhood;
 
   @override
   State<TurkeyAddressSelects> createState() => _TurkeyAddressSelectsState();
@@ -220,6 +223,7 @@ class _TurkeyAddressSelectsState extends State<TurkeyAddressSelects> {
 
     return Column(
       children: [
+        if (!widget.onlyNeighborhood) ...[
         ShDropdownField<String>(
           label: 'İl',
           value: provinceValue.isEmpty ? '' : provinceValue,
@@ -258,8 +262,9 @@ class _TurkeyAddressSelectsState extends State<TurkeyAddressSelects> {
             );
           },
         ),
+        ],
         if (_hasMahalle) ...[
-          const SizedBox(height: 10),
+          if (!widget.onlyNeighborhood) const SizedBox(height: 10),
           ShDropdownField<String>(
             label: 'Mahalle',
             value: mahKey,
@@ -299,7 +304,32 @@ class _TurkeyAddressSelectsState extends State<TurkeyAddressSelects> {
                         neighborhood: raw.substring(i + _mahSep.length),
                       ),
                     );
-                  },
+            },
+          ),
+          if (widget.onlyNeighborhood && districtValue.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 6),
+              child: Text(
+                'Önce il ve ilçe seçin.',
+                style: TextStyle(fontSize: 12, color: ShTheme.muted),
+              ),
+            ),
+        ] else if (widget.onlyNeighborhood) ...[
+          TextFormField(
+            initialValue: v.neighborhood,
+            decoration: const InputDecoration(
+              labelText: 'Mahalle',
+              hintText: 'Mahalle adı',
+            ),
+            onChanged: (value) {
+              widget.onChanged(
+                TurkeyAddressValue(
+                  province: v.province,
+                  district: v.district,
+                  neighborhood: value,
+                ),
+              );
+            },
           ),
         ],
       ],

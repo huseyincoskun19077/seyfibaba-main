@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../widgets/custom_text.dart';
 import '../../widgets/fetch_error_text.dart';
 import '../../widgets/loading_widget.dart';
-import '../../widgets/translate_form_text.dart';
 import '../profile/controllers/map/map_cubit.dart';
 import '../profile/controllers/map/map_state_model.dart';
 import '../profile/model/address_model.dart';
@@ -24,6 +23,8 @@ import '../profile/model/city_model.dart';
 import '../profile/model/country_model.dart';
 import '../profile/model/country_state_model.dart';
 import '../profile/model/edit_address_model.dart';
+import '../profile/component/buyer_invoice_form.dart';
+import '../second_hand/widgets/turkey_address_selects.dart';
 import 'component/map_address.dart';
 
 class EditAddressScreen extends StatefulWidget {
@@ -78,17 +79,23 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                 if (editState.statusCode == 503 ||
                     addressCubit.editAddress != null) {
                   return LoadedAddressView(
-                      id: widget.map['address_id'].toString());
+                    id: widget.map['address_id'].toString(),
+                    showInvoice: widget.map['show_invoice'] != false,
+                  );
                 } else {
                   return FetchErrorText(text: editState.message);
                 }
               } else if (editState is EditAddressStateLoaded) {
                 return LoadedAddressView(
-                    id: widget.map['address_id'].toString());
+                  id: widget.map['address_id'].toString(),
+                  showInvoice: widget.map['show_invoice'] != false,
+                );
               }
               if (addressCubit.editAddress != null) {
                 return LoadedAddressView(
-                    id: widget.map['address_id'].toString());
+                  id: widget.map['address_id'].toString(),
+                  showInvoice: widget.map['show_invoice'] != false,
+                );
               } else {
                 return FetchErrorText(text: Language.somethingWentWrong);
               }
@@ -306,9 +313,14 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
 }
 
 class LoadedAddressView extends StatefulWidget {
-  const LoadedAddressView({super.key, required this.id});
+  const LoadedAddressView({
+    super.key,
+    required this.id,
+    this.showInvoice = true,
+  });
 
   final String id;
+  final bool showInvoice;
 
   @override
   State<LoadedAddressView> createState() => _LoadedAddressViewState();
@@ -327,6 +339,20 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
   List<CountryStateModel> stateList = [];
   List<CityModel> cityList = [];
 
+  String _invoiceType = 'individual';
+  String _tcIdentity = '';
+  String _taxNumber = '';
+  String _taxOffice = '';
+  String _companyName = '';
+  bool _isEInvoice = false;
+  String _postalCode = '';
+  bool _isHome = true;
+  bool _invoiceLoaded = false;
+  String _neighborhood = '';
+  String _locality = '';
+
+  bool get _showInvoice => widget.showInvoice;
+
   @override
   void initState() {
     addressCubit = context.read<EditAddressCubit>();
@@ -338,8 +364,25 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
     context.read<CountryStateByIdCubit>().cities = addressCubit.cities;
 
     _defaultValue();
-    //ifUpdateAddress(addressCubit.editAddress!);
+    _loadInvoiceAndType();
     super.initState();
+  }
+
+  void _loadInvoiceAndType() {
+    final address = addressCubit.editAddress?.address;
+    if (address == null || _invoiceLoaded) return;
+    _invoiceLoaded = true;
+    _invoiceType =
+        address.invoiceType.isNotEmpty ? address.invoiceType : 'individual';
+    _tcIdentity = address.tcIdentity;
+    _taxNumber = address.taxNumber;
+    _taxOffice = address.taxOffice;
+    _companyName = address.companyName;
+    _isEInvoice = address.isEInvoice;
+    _postalCode = address.zipCode;
+    _isHome = addressTypeIsHome(address.type);
+    _neighborhood = address.neighborhood;
+    _locality = '';
   }
 
   _existLocation() async {
@@ -377,6 +420,8 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
     _countryModel = countryModel;
     _countryStateModel = null;
     _cityModel = null;
+    _neighborhood = '';
+    _locality = '';
 
     final stateLoadIdCountryId =
         context.read<CountryStateByIdCubit>().stateLoadIdCountryId;
@@ -387,6 +432,8 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
   void _loadCity(CountryStateModel countryStateModel) {
     _countryStateModel = countryStateModel;
     _cityModel = null;
+    _neighborhood = '';
+    _locality = '';
 
     final cityLoadIdStateId =
         context.read<CountryStateByIdCubit>().cityLoadIdStateId;
@@ -448,7 +495,45 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     height: 1.5),
-                const SizedBox(height: 9),
+                const SizedBox(height: 16),
+                if (_showInvoice) ...[
+                  BuyerInvoiceForm(
+                    invoiceType: _invoiceType,
+                    tcIdentity: _tcIdentity,
+                    taxNumber: _taxNumber,
+                    taxOffice: _taxOffice,
+                    companyName: _companyName,
+                    isEInvoice: _isEInvoice,
+                    postalCode: _postalCode,
+                    showIntro: false,
+                    embedded: true,
+                    onChanged: ({
+                      required invoiceType,
+                      required tcIdentity,
+                      required taxNumber,
+                      required taxOffice,
+                      required companyName,
+                      required isEInvoice,
+                      required postalCode,
+                    }) {
+                      setState(() {
+                        _invoiceType = invoiceType;
+                        _tcIdentity = tcIdentity;
+                        _taxNumber = taxNumber;
+                        _taxOffice = taxOffice;
+                        _companyName = companyName;
+                        _isEInvoice = isEInvoice;
+                        _postalCode = postalCode;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                AddressPlaceTypeSelector(
+                  isHome: _isHome,
+                  onChanged: (isHome) => setState(() => _isHome = isHome),
+                ),
+                const SizedBox(height: 16),
                 BlocBuilder<MapCubit, MapStateModel>(
                   builder: (context, state) {
                     if (Utils.isMapEnable(context)){
@@ -497,38 +582,27 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                   },
                 ),
                 const SizedBox(height: 16.0),
-
-
-                TranslateWidget(
-                  future: Utils.hintText(context, Language.name),
-                  hintText: Language.name,
-                  builder: (context, snap) {
-                    return TextFormField(
-                      controller: addressCubit.nameCtr,
-                      keyboardType: TextInputType.name,
-                      decoration: InputDecoration(hintText: snap),
-                    );
-                  },
+                TextFormField(
+                  controller: addressCubit.nameCtr,
+                  keyboardType: TextInputType.name,
+                  decoration: const InputDecoration(
+                    labelText: 'Ad Soyad *',
+                    hintText: 'Ad Soyad',
+                  ),
                 ),
                 if (addressState is AddressStateInvalidDataError) ...[
                   if (addressState.errorMsg.name.isNotEmpty)
                     ErrorText(text: addressState.errorMsg.name.first),
                 ],
                 const SizedBox(height: 16),
-                TranslateWidget(
-                  future: Utils.hintText(context, Language.email),
-                  hintText: Language.email,
-                  builder: (context, snap) {
-                    return TextFormField(
-                      controller: addressCubit.emailCtr,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        hintText: snap,
-                      ),
-                    );
-                  },
+                TextFormField(
+                  controller: addressCubit.emailCtr,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'E-posta *',
+                    hintText: 'ornek@mail.com',
+                  ),
                 ),
-
                 if (addressState is AddressStateInvalidDataError) ...[
                   if (addressState.errorMsg.email.isNotEmpty)
                     ErrorText(text: addressState.errorMsg.email.first),
@@ -552,40 +626,45 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                     ErrorText(text: addressState.errorMsg.city.first),
                 ],
                 const SizedBox(height: 16),
-
-                TranslateWidget(
-                  future: Utils.hintText(context, Language.phoneNumber),
-                  hintText: Language.phoneNumber,
-                  builder: (context, snap) {
-                    return TextFormField(
-                      controller: addressCubit.phoneCtr,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        hintText: snap,
-                      ),
-                    );
+                TurkeyAddressSelects(
+                  onlyNeighborhood: true,
+                  value: TurkeyAddressValue(
+                    province: _countryStateModel?.name ?? '',
+                    district: _cityModel?.name ?? '',
+                    locality: _locality,
+                    neighborhood: _neighborhood,
+                  ),
+                  onChanged: (next) {
+                    setState(() {
+                      _neighborhood = next.neighborhood;
+                      _locality = next.locality;
+                    });
                   },
                 ),
-
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: addressCubit.phoneCtr,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Telefon *',
+                    hintText: '5xx xxx xx xx',
+                  ),
+                ),
                 if (addressState is AddressStateInvalidDataError) ...[
                   if (addressState.errorMsg.phone.isNotEmpty)
                     ErrorText(text: addressState.errorMsg.phone.first),
                 ],
                 const SizedBox(height: 16),
-                TranslateWidget(
-                  future: Utils.hintText(context, Language.address),
-                  hintText: Language.address,
-                  builder: (context, snap) {
-                    return TextFormField(
-                      controller: addressCubit.addressCtr,
-                      keyboardType: TextInputType.streetAddress,
-                      decoration: InputDecoration(
-                        hintText: snap,
-                      ),
-                    );
-                  },
+                TextFormField(
+                  controller: addressCubit.addressCtr,
+                  keyboardType: TextInputType.streetAddress,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Açık Adres *',
+                    hintText: 'Cadde, sokak, bina no, daire',
+                    alignLabelWithHint: true,
+                  ),
                 ),
-
                 if (addressState is AddressStateInvalidDataError) ...[
                   if (addressState.errorMsg.address.isNotEmpty)
                     ErrorText(text: addressState.errorMsg.address.first),
@@ -613,12 +692,27 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                         );
                         return;
                       }
-                      final dataMap = {
+                      if (_showInvoice) {
+                        final invoiceError = validateBuyerInvoice(
+                          invoiceType: _invoiceType,
+                          tcIdentity: _tcIdentity,
+                          taxNumber: _taxNumber,
+                          taxOffice: _taxOffice,
+                          companyName: _companyName,
+                          postalCode: _postalCode,
+                        );
+                        if (invoiceError != null) {
+                          Utils.errorSnackBar(context, invoiceError);
+                          return;
+                        }
+                      }
+                      final dataMap = <String, String>{
                         'name': addressCubit.nameCtr.text.trim(),
                         'email': emailValue,
                         'phone': addressCubit.phoneCtr.text.trim(),
-                        'type': 'home',
+                        'type': addressTypeValue(_isHome),
                         'address': addressCubit.addressCtr.text.trim(),
+                        'neighborhood': _neighborhood.trim(),
                         'latitude': aCubit.state.latitude.toString(),
                         'longitude': aCubit.state.longitude.toString(),
                         'country': _countryModel != null
@@ -630,6 +724,19 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                         'city':
                             _cityModel != null ? _cityModel!.id.toString() : "",
                       };
+                      if (_showInvoice) {
+                        dataMap['zip_code'] = _postalCode;
+                        dataMap['postal_code'] = _postalCode;
+                        dataMap['invoice_type'] = _invoiceType;
+                        if (_invoiceType == 'corporate') {
+                          dataMap['tax_number'] = _taxNumber;
+                          dataMap['tax_office'] = _taxOffice;
+                          dataMap['company_name'] = _companyName;
+                          dataMap['is_e_invoice'] = _isEInvoice ? '1' : '0';
+                        } else {
+                          dataMap['tc_identity'] = _tcIdentity;
+                        }
+                      }
                       debugPrint(dataMap.toString());
                       context
                           .read<AddressCubit>()
@@ -692,8 +799,9 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
       },
       onChanged: (value) {
         if (value == null) return;
-        // _cityModel = null;
         _countryStateModel = value;
+        _neighborhood = '';
+        _locality = '';
         _loadCity(value);
         cSCCubit.cityStateChangeCityFilter(value);
       },
@@ -725,7 +833,11 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
         Utils.closeKeyBoard(context);
       },
       onChanged: (value) {
-        _cityModel = value;
+        setState(() {
+          _cityModel = value;
+          _neighborhood = '';
+          _locality = '';
+        });
         if (value == null) return;
       },
       isDense: true,

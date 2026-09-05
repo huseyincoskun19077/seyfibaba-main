@@ -38,7 +38,10 @@ class AddressCotroller extends Controller
     public function store(Request $request)
     {
         $this->validateAddressRequest($request);
-        app(\App\Services\BuyerInvoiceService::class)->validateFromRequest($request, null, true);
+        // Fatura alanları yalnızca gönderildiyse zorunlu (teslimat adresi TC gerektirmez)
+        if ($request->filled('invoice_type') || $request->has('tc_identity') || $request->has('tax_number')) {
+            app(\App\Services\BuyerInvoiceService::class)->validateFromRequest($request, null, true);
+        }
 
         $user = Auth::guard('api')->user();
         $email = $this->normalizeEmail($request->email);
@@ -52,6 +55,9 @@ class AddressCotroller extends Controller
         $address->email = $email;
         $address->phone = $request->phone;
         $address->address = $request->address;
+        $address->neighborhood = $request->filled('neighborhood')
+            ? trim((string) $request->neighborhood)
+            : null;
         $address->country_id = $request->country;
         $address->state_id = $request->state;
         $address->city_id = $request->city;
@@ -124,6 +130,10 @@ class AddressCotroller extends Controller
         $address->email = $email;
         $address->phone = $request->phone;
         $address->address = $request->address;
+        if ($request->has('neighborhood')) {
+            $neighborhood = trim((string) $request->neighborhood);
+            $address->neighborhood = $neighborhood !== '' ? $neighborhood : null;
+        }
         $address->country_id = $request->country;
         $address->state_id = $request->state;
         $address->city_id = $request->city;
@@ -170,6 +180,7 @@ class AddressCotroller extends Controller
             'city' => 'required',
             'address' => 'required',
             'type' => 'required',
+            'neighborhood' => 'nullable|string|max:191',
         ];
         $customMessages = [
             'name.required' => 'Ad soyad zorunludur.',
@@ -179,7 +190,7 @@ class AddressCotroller extends Controller
             'country.required' => 'Ülke zorunludur.',
             'state.required' => 'İl zorunludur.',
             'city.required' => 'İlçe zorunludur.',
-            'address.required' => 'Adres zorunludur.',
+            'address.required' => 'Açık adres zorunludur.',
             'type.required' => 'Adres tipi zorunludur.',
             'latitude.required' => 'Konum (enlem) zorunludur.',
             'longitude.required' => 'Konum (boylam) zorunludur.',

@@ -19,6 +19,7 @@ class AddressCardComponent extends StatelessWidget {
     this.pWidth,
     this.selectAddress = 0,
     this.isEditButtonShow = true,
+    this.showInvoice = true,
   });
 
   final AddressModel addressModel;
@@ -27,10 +28,29 @@ class AddressCardComponent extends StatelessWidget {
   final double? pWidth;
   final int selectAddress;
   final bool isEditButtonShow;
+  final bool showInvoice;
+
+  static bool isOfficeType(String type) {
+    final value = type.trim().toLowerCase();
+    return value == 'office' || value == '1';
+  }
+
+  static String typeLabel(String type) {
+    return isOfficeType(type)
+        ? Language.addressTypeOffice
+        : Language.addressTypeHome;
+  }
 
   @override
   Widget build(BuildContext context) {
     final width = pWidth ?? MediaQuery.of(context).size.width * 0.8;
+    final invoiceLabel = addressModel.invoiceType == 'corporate'
+        ? 'Kurumsal'
+        : 'Bireysel';
+    final invoiceExtra = addressModel.invoiceType == 'corporate'
+        ? addressModel.companyName
+        : '';
+
     return Container(
       padding: Utils.symmetric(v: 8.0, h: 10.0),
       width: width,
@@ -45,20 +65,8 @@ class AddressCardComponent extends StatelessWidget {
                 offset: const Offset(0.0, 0.0),
                 spreadRadius: 0.0,
                 blurRadius: 0.0,
-                // color: whiteColor
                 color: const Color(0xFF000000).withOpacity(0.4)),
           ]),
-
-      // color: selectAddress == addressModel.id
-      //     ? Utils.dynamicPrimaryColor(context).withOpacity(.05)
-      //     : Colors.white,
-      // borderRadius: BorderRadius.circular(4),
-      // border: Border.all(
-      //   color: selectAddress == addressModel.id?greenColor:greenColor.withOpacity(0.1)
-      //       // ? Utils.dynamicPrimaryColor(context)
-      //       // : Utils.dynamicPrimaryColor(context).withOpacity(0.2),
-      // ),
-
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -92,7 +100,10 @@ class AddressCardComponent extends StatelessWidget {
                               Navigator.pushNamed(
                                 context,
                                 RouteNames.editAddressScreen,
-                                arguments: {"address_id": addressModel.id},
+                                arguments: {
+                                  "address_id": addressModel.id,
+                                  "show_invoice": showInvoice,
+                                },
                               );
                             },
                             child: CircleAvatar(
@@ -116,12 +127,27 @@ class AddressCardComponent extends StatelessWidget {
                 ),
                 Utils.verticalSpace(4.0),
                 CustomText(
-                  text: addressModel.type == '1' ? 'Office' : "Home",
+                  text: typeLabel(addressModel.type.isNotEmpty
+                      ? addressModel.type
+                      : type),
                   color: redColor,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  maxLine: 2,
+                  maxLine: 1,
                 ),
+                if (showInvoice) ...[
+                  Utils.verticalSpace(2.0),
+                  CustomText(
+                    text: invoiceExtra.trim().isEmpty
+                        ? invoiceLabel
+                        : '$invoiceLabel · $invoiceExtra',
+                    color: iconGreyColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    maxLine: 1,
+                    isTranslate: false,
+                  ),
+                ],
                 Row(
                   children: [
                     CustomText(
@@ -131,7 +157,11 @@ class AddressCardComponent extends StatelessWidget {
                     ),
                     Flexible(
                       child: CustomText(
-                        text: addressModel.address,
+                        text: [
+                          if (addressModel.neighborhood.trim().isNotEmpty)
+                            addressModel.neighborhood.trim(),
+                          addressModel.address,
+                        ].where((e) => e.isNotEmpty).join(', '),
                         color: iconGreyColor,
                         isTranslate: false,
                         maxLine: 2,

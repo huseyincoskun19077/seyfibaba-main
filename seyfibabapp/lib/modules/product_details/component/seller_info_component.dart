@@ -52,7 +52,7 @@ class SellerInfo extends StatelessWidget {
                       contentHeight: 96,
                     );
                     final rows = (count / 3).ceil();
-                    final height = rows * delegate.mainAxisExtent +
+                    final height = rows * (delegate.mainAxisExtent ?? 0) +
                         (rows - 1) * delegate.mainAxisSpacing;
                     return SizedBox(
                       height: height,

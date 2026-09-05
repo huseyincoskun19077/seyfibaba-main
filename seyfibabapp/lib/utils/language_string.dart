@@ -74,6 +74,8 @@ class Language {
   static String get sellerInfo => _s('Seller_Info', 'Satıcı Bilgisi');
   static String get quantity => _s('quantity', 'Adet');
   static String get home => _s('home', 'Ana Sayfa');
+  static String get addressTypeHome => _s('address_type_home', 'Ev');
+  static String get addressTypeOffice => _s('address_type_office', 'Ofis');
   static String get order => _s('Order', 'Siparişler');
   static String get profile => _s('profile', 'Profilim');
   static String get shopNow => _s('Shop_Now', 'Hemen Al');

@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../widgets/custom_text.dart';
 import '../../widgets/loading_widget.dart';
-import '../../widgets/translate_form_text.dart';
 import '../profile/controllers/map/map_cubit.dart';
 import '../profile/controllers/map/map_state_model.dart';
 import '/utils/language_string.dart';
@@ -20,10 +19,14 @@ import '../profile/model/city_model.dart';
 import '../profile/model/country_model.dart';
 import '../profile/model/country_state_model.dart';
 import '../profile/component/buyer_invoice_form.dart';
+import '../second_hand/widgets/turkey_address_selects.dart';
 import 'component/map_address.dart';
 
 class AddAddressScreen extends StatefulWidget {
-  const AddAddressScreen({super.key});
+  const AddAddressScreen({super.key, this.showInvoice = true});
+
+  /// Fatura adresi sekmesinde true; teslimat sekmesinde false.
+  final bool showInvoice;
 
   @override
   State<AddAddressScreen> createState() => _AddAddressScreenState();
@@ -54,6 +57,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   String _companyName = '';
   bool _isEInvoice = false;
   String _postalCode = '';
+  bool _isHome = true;
+  String _neighborhood = '';
+  String _locality = '';
 
   @override
   void initState() {
@@ -67,6 +73,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     _countryModel = countryModel;
     _countryStateModel = null;
     _cityModel = null;
+    _neighborhood = '';
+    _locality = '';
 
     final stateLoadIdCountryId =
         context.read<CountryStateByIdCubit>().stateLoadIdCountryId;
@@ -77,6 +85,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   void _loadCity(CountryStateModel countryStateModel) {
     _countryStateModel = countryStateModel;
     _cityModel = null;
+    _neighborhood = '';
+    _locality = '';
 
     final cityLoadIdStateId =
         context.read<CountryStateByIdCubit>().cityLoadIdStateId;
@@ -129,40 +139,48 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                         height: 1.5),
-                    const SizedBox(height: 12),
-                    BuyerInvoiceForm(
-                      invoiceType: _invoiceType,
-                      tcIdentity: _tcIdentity,
-                      taxNumber: _taxNumber,
-                      taxOffice: _taxOffice,
-                      companyName: _companyName,
-                      isEInvoice: _isEInvoice,
-                      postalCode: _postalCode,
-                      showIntro: false,
-                      onChanged: ({
-                        required invoiceType,
-                        required tcIdentity,
-                        required taxNumber,
-                        required taxOffice,
-                        required companyName,
-                        required isEInvoice,
-                        required postalCode,
-                      }) {
-                        setState(() {
-                          _invoiceType = invoiceType;
-                          _tcIdentity = tcIdentity;
-                          _taxNumber = taxNumber;
-                          _taxOffice = taxOffice;
-                          _companyName = companyName;
-                          _isEInvoice = isEInvoice;
-                          _postalCode = postalCode;
-                          if (postalCode.isNotEmpty) {
-                            zipCtr.text = postalCode;
-                          }
-                        });
-                      },
+                    const SizedBox(height: 16),
+                    if (widget.showInvoice) ...[
+                      BuyerInvoiceForm(
+                        invoiceType: _invoiceType,
+                        tcIdentity: _tcIdentity,
+                        taxNumber: _taxNumber,
+                        taxOffice: _taxOffice,
+                        companyName: _companyName,
+                        isEInvoice: _isEInvoice,
+                        postalCode: _postalCode,
+                        showIntro: false,
+                        embedded: true,
+                        onChanged: ({
+                          required invoiceType,
+                          required tcIdentity,
+                          required taxNumber,
+                          required taxOffice,
+                          required companyName,
+                          required isEInvoice,
+                          required postalCode,
+                        }) {
+                          setState(() {
+                            _invoiceType = invoiceType;
+                            _tcIdentity = tcIdentity;
+                            _taxNumber = taxNumber;
+                            _taxOffice = taxOffice;
+                            _companyName = companyName;
+                            _isEInvoice = isEInvoice;
+                            _postalCode = postalCode;
+                            if (postalCode.isNotEmpty) {
+                              zipCtr.text = postalCode;
+                            }
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    AddressPlaceTypeSelector(
+                      isHome: _isHome,
+                      onChanged: (isHome) => setState(() => _isHome = isHome),
                     ),
-                    const SizedBox(height: 9),
+                    const SizedBox(height: 16),
                     BlocBuilder<MapCubit, MapStateModel>(
                       builder: (context, state) {
                         if (Utils.isMapEnable(context)) {
@@ -212,52 +230,39 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TranslateWidget(
-                      future: Utils.hintText(context, Language.name),
-                      hintText: Language.name,
-                      builder: (context, snap) {
-                        return TextFormField(
-                          controller: nameCtr,
-                          keyboardType: TextInputType.name,
-                          decoration: InputDecoration(hintText: snap),
-                        );
-                      },
+                    TextFormField(
+                      controller: nameCtr,
+                      keyboardType: TextInputType.name,
+                      decoration: const InputDecoration(
+                        labelText: 'Ad Soyad *',
+                        hintText: 'Ad Soyad',
+                      ),
                     ),
                     if (addressState is AddressStateInvalidDataError) ...[
                       if (addressState.errorMsg.name.isNotEmpty)
                         ErrorText(text: addressState.errorMsg.name.first),
                     ],
                     const SizedBox(height: 16),
-                    TranslateWidget(
-                      future: Utils.hintText(context, Language.emailAddress),
-                      hintText: Language.emailAddress,
-                      builder: (context, snap) {
-                        return TextFormField(
-                          controller: emailCtr,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            hintText: snap,
-                          ),
-                        );
-                      },
+                    TextFormField(
+                      controller: emailCtr,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'E-posta *',
+                        hintText: 'ornek@mail.com',
+                      ),
                     ),
                     if (addressState is AddressStateInvalidDataError) ...[
                       if (addressState.errorMsg.email.isNotEmpty)
                         ErrorText(text: addressState.errorMsg.email.first),
                     ],
                     const SizedBox(height: 16),
-                    TranslateWidget(
-                      future: Utils.hintText(context, Language.phoneNumber),
-                      hintText: Language.phoneNumber,
-                      builder: (context, snap) {
-                        return TextFormField(
-                          controller: phoneCtr,
-                          keyboardType: TextInputType.phone,
-                          decoration: InputDecoration(
-                            hintText: snap,
-                          ),
-                        );
-                      },
+                    TextFormField(
+                      controller: phoneCtr,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Telefon *',
+                        hintText: '5xx xxx xx xx',
+                      ),
                     ),
                     if (addressState is AddressStateInvalidDataError) ...[
                       if (addressState.errorMsg.phone.isNotEmpty)
@@ -282,18 +287,31 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         ErrorText(text: addressState.errorMsg.city.first),
                     ],
                     const SizedBox(height: 16),
-                    TranslateWidget(
-                      future: Utils.hintText(context, Language.address),
-                      hintText: Language.address,
-                      builder: (context, snap) {
-                        return TextFormField(
-                          controller: addressCtr,
-                          keyboardType: TextInputType.streetAddress,
-                          decoration: InputDecoration(
-                            hintText: snap,
-                          ),
-                        );
+                    TurkeyAddressSelects(
+                      onlyNeighborhood: true,
+                      value: TurkeyAddressValue(
+                        province: _countryStateModel?.name ?? '',
+                        district: _cityModel?.name ?? '',
+                        locality: _locality,
+                        neighborhood: _neighborhood,
+                      ),
+                      onChanged: (next) {
+                        setState(() {
+                          _neighborhood = next.neighborhood;
+                          _locality = next.locality;
+                        });
                       },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: addressCtr,
+                      keyboardType: TextInputType.streetAddress,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Açık Adres *',
+                        hintText: 'Cadde, sokak, bina no, daire',
+                        alignLabelWithHint: true,
+                      ),
                     ),
                     if (addressState is AddressStateInvalidDataError) ...[
                       if (addressState.errorMsg.address.isNotEmpty)
@@ -322,27 +340,30 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             return;
                           }
 
-                          final invoiceError = validateBuyerInvoice(
-                            invoiceType: _invoiceType,
-                            tcIdentity: _tcIdentity,
-                            taxNumber: _taxNumber,
-                            taxOffice: _taxOffice,
-                            companyName: _companyName,
-                            postalCode: _postalCode.isNotEmpty
-                                ? _postalCode
-                                : zipCtr.text.trim(),
-                          );
-                          if (invoiceError != null) {
-                            Utils.errorSnackBar(context, invoiceError);
-                            return;
+                          if (widget.showInvoice) {
+                            final invoiceError = validateBuyerInvoice(
+                              invoiceType: _invoiceType,
+                              tcIdentity: _tcIdentity,
+                              taxNumber: _taxNumber,
+                              taxOffice: _taxOffice,
+                              companyName: _companyName,
+                              postalCode: _postalCode.isNotEmpty
+                                  ? _postalCode
+                                  : zipCtr.text.trim(),
+                            );
+                            if (invoiceError != null) {
+                              Utils.errorSnackBar(context, invoiceError);
+                              return;
+                            }
                           }
 
-                          final dataMap = {
+                          final dataMap = <String, String>{
                             'name': nameCtr.text.trim(),
                             'email': emailValue,
                             'phone': phoneCtr.text.trim(),
-                            'type': 'home',
+                            'type': addressTypeValue(_isHome),
                             'address': addressCtr.text.trim(),
+                            'neighborhood': _neighborhood.trim(),
                             'latitude': aCubit.state.latitude.toString(),
                             'longitude': aCubit.state.longitude.toString(),
                             'country': _countryModel != null
@@ -354,30 +375,32 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             'city': _cityModel != null
                                 ? _cityModel!.id.toString()
                                 : "",
-                            'zip_code': _postalCode.isNotEmpty
-                                ? _postalCode
-                                : zipCtr.text.trim(),
-                            'postal_code': _postalCode.isNotEmpty
-                                ? _postalCode
-                                : zipCtr.text.trim(),
-                            'invoice_type': _invoiceType,
-                            if (_invoiceType == 'corporate') ...{
-                              'tax_number': _taxNumber,
-                              'tax_office': _taxOffice,
-                              'company_name': _companyName,
-                              'is_e_invoice': _isEInvoice ? '1' : '0',
-                            } else ...{
-                              'tc_identity': _tcIdentity,
-                            },
                           };
+
+                          if (widget.showInvoice) {
+                            dataMap['zip_code'] = _postalCode.isNotEmpty
+                                ? _postalCode
+                                : zipCtr.text.trim();
+                            dataMap['postal_code'] = dataMap['zip_code']!;
+                            dataMap['invoice_type'] = _invoiceType;
+                            if (_invoiceType == 'corporate') {
+                              dataMap['tax_number'] = _taxNumber;
+                              dataMap['tax_office'] = _taxOffice;
+                              dataMap['company_name'] = _companyName;
+                              dataMap['is_e_invoice'] =
+                                  _isEInvoice ? '1' : '0';
+                            } else {
+                              dataMap['tc_identity'] = _tcIdentity;
+                            }
+                          }
 
                           if (_countryModel == null) {
                             Utils.errorSnackBar(
-                                context, 'Please select country');
+                                context, 'Lütfen ülke seçin');
                           } else if (_countryStateModel == null) {
-                            Utils.errorSnackBar(context, 'Please select state');
+                            Utils.errorSnackBar(context, 'Lütfen il seçin');
                           } else if (_cityModel == null) {
-                            Utils.errorSnackBar(context, 'Please select city');
+                            Utils.errorSnackBar(context, 'Lütfen ilçe seçin');
                           } else {
                             if (Utils.isMapEnable(context)) {
                               if (aCubit.state.latitude != 0.0 &&
@@ -387,7 +410,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                     .addAddress(dataMap);
                               } else {
                                 Utils.showSnackBar(
-                                    context, 'Location is required');
+                                    context, 'Konum seçimi zorunludur');
                               }
                             } else {
                               context.read<AddressCubit>().addAddress(dataMap);
@@ -456,6 +479,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       onChanged: (value) {
         if (value == null) return;
         _countryStateModel = value;
+        _neighborhood = '';
+        _locality = '';
         _loadCity(value);
         addressBl.cityStateChangeCityFilter(value);
       },
@@ -487,7 +512,11 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         Utils.closeKeyBoard(context);
       },
       onChanged: (value) {
-        _cityModel = value;
+        setState(() {
+          _cityModel = value;
+          _neighborhood = '';
+          _locality = '';
+        });
         if (value == null) return;
       },
       isDense: true,

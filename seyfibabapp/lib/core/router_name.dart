@@ -632,11 +632,15 @@ class RouteNames {
             settings: settings, builder: (_) => const AddressScreen());
 
       case RouteNames.addAddressScreen:
+        final addArgs = settings.arguments as Map<String, dynamic>? ?? const {};
         return MaterialPageRoute(
-            settings: settings, builder: (_) => const AddAddressScreen());
+            settings: settings,
+            builder: (_) => AddAddressScreen(
+                  showInvoice: addArgs['show_invoice'] != false,
+                ));
 
       case RouteNames.editAddressScreen:
-        final map = settings.arguments as Map<String, dynamic>;
+        final map = settings.arguments as Map<String, dynamic>? ?? const {};
         return MaterialPageRoute(
             settings: settings, builder: (_) => EditAddressScreen(map: map));
 

@@ -34,6 +34,7 @@ import {
   defaultInvoiceState,
   validateInvoiceForm,
 } from "@/components/CheckoutPage/components/InvoiceCheckoutSection";
+import TurkeyAddressSelects from "@/components/SecondHand/TurkeyAddressSelects";
 
 // Dynamically import MapComponent to prevent loading on the server
 const MapComponent = dynamic(
@@ -65,6 +66,8 @@ export default function AddressesTab({ countryLists }) {
     country: null,
     state: null,
     city: null,
+    neighborhood: "",
+    locality: "",
   });
   const [invoice, setInvoice] = useState(defaultInvoiceState());
 
@@ -109,6 +112,8 @@ export default function AddressesTab({ countryLists }) {
       country: null,
       state: null,
       city: null,
+      neighborhood: "",
+      locality: "",
     });
     setInvoice(defaultInvoiceState());
     setCountryDropdown(null);
@@ -132,6 +137,7 @@ export default function AddressesTab({ countryLists }) {
       country: formData.country,
       state: formData.state,
       city: formData.city,
+      neighborhood: formData.neighborhood || "",
       invoice_type: invoice.invoice_type,
       tc_identity: invoice.tc_identity,
       tax_number: invoice.tax_number,
@@ -169,7 +175,12 @@ export default function AddressesTab({ countryLists }) {
 
   const getState = async (value) => {
     if (value?.id) {
-      setFormData((prev) => ({ ...prev, country: value.id }));
+      setFormData((prev) => ({
+        ...prev,
+        country: value.id,
+        neighborhood: "",
+        locality: "",
+      }));
       const response = await getStateListApi({
         countryId: Number(value.id),
         token: auth()?.access_token,
@@ -197,7 +208,12 @@ export default function AddressesTab({ countryLists }) {
   const getcity = async (value) => {
     if (value) {
       if (value?.id) {
-        setFormData((prev) => ({ ...prev, state: value.id }));
+        setFormData((prev) => ({
+          ...prev,
+          state: value.id,
+          neighborhood: "",
+          locality: "",
+        }));
         const response = await getCityListApi({
           stateId: Number(value.id),
           token: auth()?.access_token,
@@ -219,7 +235,12 @@ export default function AddressesTab({ countryLists }) {
   const selectCity = (value) => {
     if (value) {
       if (value?.id) {
-        setFormData((prev) => ({ ...prev, city: value.id }));
+        setFormData((prev) => ({
+          ...prev,
+          city: value.id,
+          neighborhood: "",
+          locality: "",
+        }));
       } else {
         console.error(
           `Argument is not valid. Argument should be object with id Ex: "{ id: 1 }"`
@@ -249,6 +270,8 @@ export default function AddressesTab({ countryLists }) {
       country: null,
       state: null,
       city: null,
+      neighborhood: "",
+      locality: "",
     });
     setNewAddress(true);
   };
@@ -337,6 +360,8 @@ export default function AddressesTab({ countryLists }) {
         country: parseInt(addressData.country_id),
         state: parseInt(addressData.state_id),
         city: parseInt(addressData.city_id),
+        neighborhood: addressData.neighborhood || "",
+        locality: "",
       });
       setInvoice(
         defaultInvoiceState({
@@ -761,6 +786,32 @@ export default function AddressesTab({ countryLists }) {
                 </div>
               </div>
 
+              {/* Mahalle */}
+              <div className="mb-6">
+                <TurkeyAddressSelects
+                  onlyNeighborhood
+                  value={{
+                    province:
+                      (stateDropdown || []).find(
+                        (s) => Number(s.id) === Number(formData.state)
+                      )?.name || "",
+                    district:
+                      (cityDropdown || []).find(
+                        (c) => Number(c.id) === Number(formData.city)
+                      )?.name || "",
+                    locality: formData.locality || "",
+                    neighborhood: formData.neighborhood || "",
+                  }}
+                  onChange={(next) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      neighborhood: next.neighborhood || "",
+                      locality: next.locality || "",
+                    }))
+                  }
+                />
+              </div>
+
               {/* Map Component for Location Selection */}
               <div className=" mb-6">
                 <div>
@@ -967,6 +1018,16 @@ export default function AddressesTab({ countryLists }) {
                               {item.city?.name || "-"}
                             </td>
                           </tr>
+                          {item.neighborhood ? (
+                            <tr className="flex mb-3">
+                              <td className="text-base text-qgraytwo w-[70px] block line-clamp-1 capitalize">
+                                <p>Mahalle:</p>
+                              </td>
+                              <td className="text-base text-qblack line-clamp-1 font-medium">
+                                {item.neighborhood}
+                              </td>
+                            </tr>
+                          ) : null}
                           {item.address && (
                             <tr className="flex mb-3">
                               <td className="text-base text-qgraytwo w-[70px] block line-clamp-1 capitalize">
