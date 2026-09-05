@@ -10,6 +10,7 @@ import '../../../widgets/capitalized_word.dart';
 import '../../home/widgets/home_theme.dart';
 import '../controllers/order/order_cubit.dart';
 import '../model/order_model.dart';
+import '../utils/order_display_status.dart';
 import '../widgets/order_product_thumb.dart';
 
 class OrderedListComponent extends StatelessWidget {
@@ -18,38 +19,13 @@ class OrderedListComponent extends StatelessWidget {
   final OrderModel orderedItem;
 
   ({Color bg, Color fg, String label}) _statusStyle() {
-    switch ('${orderedItem.orderStatus}') {
-      case '0':
-        return (
-          bg: const Color(0xFFFFF6E5),
-          fg: const Color(0xFFB45309),
-          label: Language.pending.capitalizeByWord(),
-        );
-      case '1':
-        return (
-          bg: const Color(0xFFEFF6FF),
-          fg: const Color(0xFF2563EB),
-          label: Language.progress.capitalizeByWord(),
-        );
-      case '2':
-        return (
-          bg: const Color(0xFFECFDF3),
-          fg: greenColor,
-          label: Language.delivered.capitalizeByWord(),
-        );
-      case '3':
-        return (
-          bg: const Color(0xFFECFDF3),
-          fg: deepGreenColor,
-          label: Language.completed.capitalizeByWord(),
-        );
-      default:
-        return (
-          bg: redColor.withValues(alpha: 0.08),
-          fg: redColor,
-          label: Language.declined.capitalizeByWord(),
-        );
-    }
+    final display = OrderDisplayStatusHelper.resolve(orderedItem);
+    final colors = OrderDisplayStatusHelper.badgeColors(display);
+    return (
+      bg: colors.bg,
+      fg: colors.fg,
+      label: OrderDisplayStatusHelper.badgeLabel(display),
+    );
   }
 
   ({Color bg, Color fg, String label})? _paymentStyle() {

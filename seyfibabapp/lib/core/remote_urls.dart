@@ -293,8 +293,11 @@ class RemoteUrls {
       "${baseUrl}apply-coupon?coupon=$coupon&token=$token";
 
   static String removeCartItem(String id, String token) =>
-
       "${baseUrl}cart-item-remove/$id?token=$token";
+
+  static String clearCart(String token) =>
+      "${baseUrl}cart-clear?token=$token";
+
   static const String addToCart = '${baseUrl}add-to-cart?';
   static const String filterUrl = '${baseUrl}search-product?';
   static const String flashSaleUrl = '${baseUrl}flash-sale';

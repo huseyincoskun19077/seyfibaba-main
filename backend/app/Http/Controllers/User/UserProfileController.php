@@ -222,6 +222,13 @@ class UserProfileController extends Controller
             $this->attachCargoToOrderProducts($order);
             $this->attachThumbImagesToOrderProducts($order->orderProducts);
 
+            // Mevcut (eski) kargoya verilmiş siparişlerde order_status geride kalmış olabilir
+            \App\Support\OrderFulfillmentSync::sync($order);
+            $order->refresh();
+            $order->load('orderProducts.orderProductVariants', 'orderAddress', 'deliveryman', 'cargoShipment');
+            $this->attachCargoToOrderProducts($order);
+            $this->attachThumbImagesToOrderProducts($order->orderProducts);
+
             return response()->json(['order' => $order]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('orderShow failed', [
@@ -962,19 +969,32 @@ return response()->json([
         return [
             'deliveryman',
             'orderProducts' => function ($query) {
-                $query->select('id', 'order_id', 'product_id', 'product_name', 'qty');
+                $query->select(
+                    'id',
+                    'order_id',
+                    'product_id',
+                    'seller_id',
+                    'product_name',
+                    'qty',
+                    'seller_status',
+                    'shipped_at',
+                    'delivered_at',
+                    'customer_confirmed_at',
+                    'auto_confirmed_at'
+                );
             },
         ];
     }
 
     /**
-     * Liste endpoint'lerinde order_products satırlarına thumb_image ekler.
+     * Liste endpoint'lerinde order_products satırlarına thumb_image + kargo ekler.
      */
     private function hydrateOrderList($orders): void
     {
         foreach ($orders as $order) {
             if ($order->relationLoaded('orderProducts')) {
                 $this->attachThumbImagesToOrderProducts($order->orderProducts);
+                $this->attachCargoToOrderProducts($order);
             }
         }
     }
@@ -1027,9 +1047,15 @@ return response()->json([
             }
         }
 
-        $order->orderProducts->each(function ($orderProduct) use ($shipmentBySeller) {
+        $order->orderProducts->each(function ($orderProduct) use ($shipmentBySeller, $shipments) {
             $sellerId = (int) ($orderProduct->seller_id ?? 0);
             $shipment = $shipmentBySeller[$sellerId] ?? null;
+
+            // Tek kargo / seller_id eşleşmezse siparişteki ilk kargoyu kullan
+            if (! $shipment && $shipments->isNotEmpty()) {
+                $shipment = $shipmentBySeller[0] ?? $shipments->first();
+            }
+
             $orderProduct->cargo = $shipment ? [
                 'carrier_name' => $shipment->carrier_name,
                 'tracking_number' => $shipment->tracking_number,

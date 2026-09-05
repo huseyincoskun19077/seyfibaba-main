@@ -346,5 +346,7 @@ class SellerOrderController extends Controller
         $orderProduct->seller_status = 2;
         $orderProduct->shipped_at = $orderProduct->shipped_at ?: now();
         $orderProduct->save();
+
+        \App\Support\OrderFulfillmentSync::sync(Order::find($orderId) ?? $orderProduct->order);
     }
 }

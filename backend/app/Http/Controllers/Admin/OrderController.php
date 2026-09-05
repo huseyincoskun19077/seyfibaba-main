@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Models\OrderProduct;
 use App\Models\OrderProductVariant;
 use App\Models\OrderAddress;
+use App\Models\Product;
 use App\Services\CommissionService;
 use App\Services\SellerPayoutService;
 use Illuminate\Support\Facades\Log;
@@ -103,16 +104,8 @@ class OrderController extends Controller
         $order->payment_status = 1;
         $order->payment_approval_date = date('Y-m-d H:i:s');
         $order->save();
-        
-        // Reduce stock after payment approved
-        $orderProducts = $order->orderProducts;
-        foreach ($orderProducts as $orderProduct) {
-            $product = Product::find($orderProduct->product_id);
-            if ($product) {
-                $product->qty -= $orderProduct->qty;
-                $product->save();
-            }
-        }
+
+        // Stok sipariş oluşturulurken rezerve edildi; onayda tekrar düşülmez.
         
         // Send email to customer
         try {
@@ -140,6 +133,7 @@ class OrderController extends Controller
         $this->validate($request, $rules);
 
         $order = Order::find($id);
+        $previousOrderStatus = (int) $order->order_status;
         if($request->order_status == 0){
             $order->order_status = 0;
             $order->save();
@@ -161,6 +155,17 @@ class OrderController extends Controller
             $order->order_status = 4;
             $order->order_declined_date = date('Y-m-d');
             $order->save();
+
+            if ($previousOrderStatus !== 4) {
+                $order->loadMissing('orderProducts');
+                foreach ($order->orderProducts as $orderProduct) {
+                    $product = Product::find($orderProduct->product_id);
+                    if ($product) {
+                        $product->qty = (int) $product->qty + (int) $orderProduct->qty;
+                        $product->save();
+                    }
+                }
+            }
 
             try {
                 \App\Helpers\MailHelper::setMailConfig();

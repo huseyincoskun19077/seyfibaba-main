@@ -158,6 +158,8 @@ abstract class RemoteDataSource {
 
   Future<String> removerCartItem(String productId, String token);
 
+  Future<String> clearCart(String token);
+
   Future<String> decrementQuantity(String productId, String token);
 
   Future<String> addToCart(AddToCartModel dataModel);
@@ -167,7 +169,7 @@ abstract class RemoteDataSource {
 
   Future<String> cashOnDeliveryPayment(Map<String, dynamic> body, Uri uri);
 
-  Future<String> bankPay(Uri uri, Map<String, dynamic> body);
+  Future<Map<String, String>> bankPay(Uri uri, Map<String, dynamic> body);
 
   Future<Map<String, dynamic>> payWithIyzico(
       Uri uri, Map<String, dynamic> body);
@@ -204,11 +206,13 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
   final postHeader = {
     'Accept': 'application/json',
+    'Accept-Language': 'tr',
     'X-Requested-With': 'XMLHttpRequest',
     'X-Client-Platform': 'mobile',
   };
   final defaultHeader = {
     'Accept': 'application/json',
+    'Accept-Language': 'tr',
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
     'X-Client-Platform': 'mobile',
@@ -318,6 +322,16 @@ class RemoteDataSourceImpl implements RemoteDataSource {
         await NetworkParser.callClientWithCatchException(() => clientMethod);
 
     return responseJsonBody['message'];
+  }
+
+  @override
+  Future<String> clearCart(String token) async {
+    final uri = Uri.parse(RemoteUrls.clearCart(token));
+    final clientMethod = client.get(uri, headers: defaultHeader);
+    final responseJsonBody =
+        await NetworkParser.callClientWithCatchException(() => clientMethod);
+
+    return responseJsonBody['message']?.toString() ?? 'Sepet başarıyla temizlendi';
   }
 
   @override
@@ -1022,12 +1036,12 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   }
 
   @override
-  Future<String> bankPay(Uri uri, Map<String, dynamic> body) async {
-    // final uri = Uri.parse(RemoteUrls.payWithBankUrl(token));//jsonEncode(body)
+  Future<Map<String, String>> bankPay(Uri uri, Map<String, dynamic> body) async {
     final clientMethod = client.post(
       uri,
       headers: {
         'Accept': 'application/json',
+        'Accept-Language': 'tr',
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
       },
@@ -1036,7 +1050,11 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     final responseJsonBody =
         await NetworkParser.callClientWithCatchException(() => clientMethod);
 
-    return responseJsonBody['message'] as String;
+    return {
+      'message': responseJsonBody['message']?.toString() ??
+          'Sipariş başarıyla gönderildi.',
+      'order_id': responseJsonBody['order_id']?.toString() ?? '',
+    };
   }
 
   @override

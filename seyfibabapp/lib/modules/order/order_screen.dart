@@ -52,6 +52,8 @@ class _OrderScreenState extends State<OrderScreen> {
     orderCubit = context.read<OrderCubit>();
     trackingCubit = context.read<OrderTrackingCubit>();
     orderCubit.isFromPayment(widget.isFromPayment);
+    // Sayfa resetlenmezse remount'ta addAll ile siparişler çiftlenir
+    orderCubit.initPage();
     Future.microtask(() => orderCubit.getOrderList());
     _scrollController.addListener(_onScroll);
   }

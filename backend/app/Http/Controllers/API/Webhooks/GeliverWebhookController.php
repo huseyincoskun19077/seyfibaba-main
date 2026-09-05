@@ -87,6 +87,7 @@ class GeliverWebhookController extends Controller
                         $op->shipped_at = $op->shipped_at ?: now();
                         $op->save();
                     }
+                    \App\Support\OrderFulfillmentSync::sync($cargoShipment->order);
                 }
 
                 if ($newStatus === 'delivered') {

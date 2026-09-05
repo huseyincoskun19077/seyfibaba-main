@@ -6,6 +6,44 @@ import CurrencyConvert from "../Shared/CurrencyConvert";
 import { getProductImageProps } from "@/utils/productImage";
 import auth from "@/utils/auth";
 
+function lineStatusLabel(item) {
+  if (item?.customer_confirmed_at || item?.auto_confirmed_at) return "Teslim";
+  if (item?.delivered_at) return "Teslim";
+  const shipped =
+    item?.shipped_at ||
+    (item?.seller_status != null && Number(item.seller_status) >= 2) ||
+    !!item?.cargo?.tracking_number;
+  if (shipped) return "Kargoda";
+  if (item?.seller_status != null && Number(item.seller_status) >= 1) {
+    return "Hazırlanıyor";
+  }
+  return "Sipariş alındı";
+}
+
+function lineStatusClass(label) {
+  switch (label) {
+    case "Hazırlanıyor":
+      return "bg-blue-50 text-blue-700 ring-blue-200";
+    case "Kargoda":
+      return "bg-indigo-50 text-indigo-700 ring-indigo-200";
+    case "Teslim":
+      return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    default:
+      return "bg-amber-50 text-amber-800 ring-amber-200";
+  }
+}
+
+function ProductLineStatus({ item }) {
+  const label = lineStatusLabel(item);
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset ${lineStatusClass(label)}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 function ProductActions({
   item,
   returnableItems,
@@ -18,7 +56,8 @@ function ProductActions({
   const isShippedOrDelivered =
     item?.delivered_at ||
     item?.shipped_at ||
-    (item?.seller_status != null && Number(item.seller_status) >= 2);
+    (item?.seller_status != null && Number(item.seller_status) >= 2) ||
+    !!item?.cargo?.tracking_number;
   const isDelivered =
     item?.customer_confirmed_at || item?.auto_confirmed_at || item?.delivered_at;
   const canConfirm =
@@ -132,9 +171,12 @@ export default function OrderProductList({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold leading-snug text-qblack notranslate">
-                    {item.product_name}
-                  </h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-semibold leading-snug text-qblack notranslate">
+                      {item.product_name}
+                    </h3>
+                    <ProductLineStatus item={item} />
+                  </div>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
                     <span>
                       {ServeLangItem()?.quantity}: <strong>{item.qty}</strong>
@@ -198,7 +240,10 @@ export default function OrderProductList({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-qblack notranslate">{item.product_name}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-qblack notranslate">{item.product_name}</p>
+                          <ProductLineStatus item={item} />
+                        </div>
                         <CargoInfo cargo={item.cargo} />
                       </div>
                     </div>

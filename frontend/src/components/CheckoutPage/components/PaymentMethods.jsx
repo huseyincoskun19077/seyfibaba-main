@@ -1,8 +1,75 @@
-import LegalConsentCheckboxes, { allRequiredChecked } from "@/components/Legal/LegalConsentCheckboxes";
+import LegalConsentCheckboxes from "@/components/Legal/LegalConsentCheckboxes";
 import { CHECKOUT_REQUIRED_CONSENTS } from "@/config/legalDocuments";
 import CheckoutTickIco from "@/components/Helpers/icons/CheckoutTickIco";
 import CurrencyConvert from "@/components/Shared/CurrencyConvert";
 import { getWebSettings } from "../utils/checkoutUtils";
+import { useMemo } from "react";
+import { toast } from "react-toastify";
+
+const DEFAULT_BANK_INFO =
+  "Hesap Sahibi: Seyfibaba Tic. Ltd. Şti.\nBanka: Ziraat Bankası\nIBAN: TR00 0000 0000 0000 0000 0000 00\n\nHavale/EFT yaparken sipariş numaranızı açıklama kısmına yazınız.";
+
+function parseBankAccountFields(raw) {
+  const text = String(raw || "").trim();
+  let accountName = "";
+  let ibanDisplay = "";
+
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    const ibanMatch = trimmed.match(/(?:IBAN\s*[:：]?\s*)?(TR[\d\s]{10,})/i);
+    if (ibanMatch && !ibanDisplay) {
+      ibanDisplay = ibanMatch[1].replace(/\s+/g, " ").trim();
+      continue;
+    }
+
+    const nameMatch = trimmed.match(
+      /^(?:Hesap\s*Sahibi|Hesap\s*Ad[ıi]|Ad\s*Soyad|Account\s*Holder|Account\s*Name)\s*[:：]\s*(.+)$/i
+    );
+    if (nameMatch && !accountName) {
+      accountName = nameMatch[1].trim();
+    }
+  }
+
+  if (!ibanDisplay) {
+    const loose = text.match(/TR[\d\s]{10,}/i);
+    if (loose) ibanDisplay = loose[0].replace(/\s+/g, " ").trim();
+  }
+
+  return {
+    accountName,
+    iban: ibanDisplay.replace(/\s+/g, "").toUpperCase(),
+    ibanDisplay: ibanDisplay.toUpperCase(),
+  };
+}
+
+async function copyText(value, label) {
+  const text = String(value || "").trim();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} panoya kopyalandı`);
+  } catch {
+    toast.error("Kopyalama başarısız");
+  }
+}
+
+const CopyableField = ({ label, value, copyValue }) => (
+  <div className="flex items-center justify-between gap-3 rounded border border-amber-300 bg-white px-3 py-2 mb-2">
+    <div className="min-w-0">
+      <p className="text-xs font-semibold text-amber-700">{label}</p>
+      <p className="text-sm font-bold text-qblack break-all">{value}</p>
+    </div>
+    <button
+      type="button"
+      onClick={() => copyText(copyValue || value, label)}
+      className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded bg-qyellow text-qblack"
+    >
+      Kopyala
+    </button>
+  </div>
+);
 
 const PaymentMethods = ({
   // Payment state
@@ -19,11 +86,10 @@ const PaymentMethods = ({
   placeOrderHandler,
   legalConsentValues = {},
   setLegalConsentValues = () => {},
-  
+
   // Total price from parent
   totalPrice = 0,
 }) => {
-  // Total price from parent - may arrive as string; normalize
   const totalPriceNumRaw =
     typeof totalPrice === "number"
       ? totalPrice
@@ -32,8 +98,7 @@ const PaymentMethods = ({
         : 0;
   const totalPriceNum = Number.isFinite(totalPriceNumRaw) ? totalPriceNumRaw : 0;
   const displayTotal = totalPriceNum > 0 ? totalPriceNum : 0;
-  
-  // Get discount percent from settings, default to 3%
+
   const webSettings = getWebSettings();
   const rawPercent = webSettings?.bankTransferDiscountPercent;
   const bankTransferDiscountPercent =
@@ -42,28 +107,28 @@ const PaymentMethods = ({
       : typeof rawPercent === "string"
         ? parseFloat(rawPercent)
         : 3;
-  
-  // Calculate bank transfer discount
-  const bankDiscount = displayTotal > 0 ? (displayTotal * bankTransferDiscountPercent / 100) : 0;
+
+  const bankDiscount =
+    displayTotal > 0 ? (displayTotal * bankTransferDiscountPercent) / 100 : 0;
   const bankTotal = displayTotal - bankDiscount;
 
-  /**
-   * Handle payment method selection
-   * @param {string} method - Payment method name
-   */
+  const accountInfoText = bankInfo?.account_info || DEFAULT_BANK_INFO;
+  const bankFields = useMemo(
+    () => parseBankAccountFields(accountInfoText),
+    [accountInfoText]
+  );
+
   const handlePaymentMethodSelect = (method) => {
     setPaymentMethod(method);
   };
 
-  /**
-   * Render payment method button
-   * @param {string} method - Payment method key
-   * @param {string} label - Payment method label
-   * @param {boolean} isEnabled - Whether payment method is enabled
-   * @param {JSX.Element} icon - Payment method icon
-   * @returns {JSX.Element} Payment method button
-   */
-  const renderPaymentMethod = (method, label, isEnabled, icon = null, discountLabel = null) => {
+  const renderPaymentMethod = (
+    method,
+    label,
+    isEnabled,
+    icon = null,
+    discountLabel = null
+  ) => {
     if (!isEnabled) return null;
 
     const isSelected = selectPayment === method;
@@ -104,7 +169,6 @@ const PaymentMethods = ({
     <div className="mt-[30px] mb-5 relative">
       <div className="w-full">
         <div className="flex flex-col space-y-3">
-          {/* Bank Payment with discount label */}
           {renderPaymentMethod(
             "bankpayment",
             "Banka Havalesi",
@@ -113,7 +177,6 @@ const PaymentMethods = ({
             `-%${bankTransferDiscountPercent} İndirim`
           )}
 
-          {/* Kredi Kartı (Iyzico) */}
           {renderPaymentMethod(
             "iyzico",
             "Kredi Kartı ile Öde",
@@ -122,10 +185,8 @@ const PaymentMethods = ({
         </div>
       </div>
 
-      {/* Bank Payment Form */}
       {selectPayment === "bankpayment" && (
         <div className="w-full bank-inputs mt-5">
-          {/* Discount Info Box - detailed */}
           {displayTotal > 0 && (
             <div className="bank-info-alert w-full p-4 bg-green-50 rounded mb-4 border border-green-200">
               <div className="space-y-1">
@@ -134,8 +195,9 @@ const PaymentMethods = ({
                   <CurrencyConvert price={displayTotal} />
                 </p>
                 <p className="text-sm text-green-700">
-                  <span className="font-semibold">Havale İndirimi:</span>{" "}
-                  -<CurrencyConvert price={bankDiscount} /> (%{bankTransferDiscountPercent})
+                  <span className="font-semibold">Havale İndirimi:</span> -
+                  <CurrencyConvert price={bankDiscount} /> (%
+                  {bankTransferDiscountPercent})
                 </p>
                 <p className="text-lg font-bold text-green-900 border-t border-green-200 pt-1 mt-1">
                   <span className="font-semibold">Toplam:</span>{" "}
@@ -145,23 +207,46 @@ const PaymentMethods = ({
             </div>
           )}
 
-          {/* Terms and Conditions */}
           <div className="mb-4 p-4 bg-amber-50 rounded border border-amber-200">
-            <p className="text-sm font-semibold text-amber-900 mb-2">📋 Ödeme Şartları:</p>
+            <p className="text-sm font-semibold text-amber-900 mb-2">
+              Ödeme Şartları:
+            </p>
             <ul className="text-xs text-amber-800 space-y-1">
-              <li>• Havale/EFT yaparken sipariş numaranızı açıklama kısmına yazınız.</li>
+              <li>
+                • Havale/EFT yaparken sipariş numaranızı açıklama kısmına
+                yazınız.
+              </li>
               <li>• Ödeme yapıldıktan sonra dekontu buraya bildirin.</li>
-              <li>• Siparişiniz, ödeme onaylandıktan sonra işleme alınacaktır.</li>
-              <li>• %{bankTransferDiscountPercent} indirim sadece havale/EFT için geçerlidir.</li>
+              <li>
+                • Siparişiniz, ödeme onaylandıktan sonra işleme alınacaktır.
+              </li>
+              <li>
+                • %{bankTransferDiscountPercent} indirim sadece havale/EFT için
+                geçerlidir.
+              </li>
             </ul>
           </div>
 
-          {/* Bank Account Info */}
           <div className="input-item mb-5">
             <div className="bank-info-alert w-full p-5 bg-amber-100 rounded mb-4">
-              <p className="text-sm font-semibold text-amber-900 mb-2">Banka Hesap Bilgileri:</p>
-              <p className="text-sm text-amber-800 whitespace-pre-wrap break-words">
-                {bankInfo?.account_info || "Hesap Sahibi: Seyfibaba Tic. Ltd. Şti.\nBanka: Ziraat Bankası\nIBAN: TR00 0000 0000 0000 0000 0000 00\n\nHavale/EFT yaparken sipariş numaranızı açıklama kısmına yazınız."}
+              <p className="text-sm font-semibold text-amber-900 mb-2">
+                Banka Hesap Bilgileri:
+              </p>
+              {bankFields.accountName ? (
+                <CopyableField
+                  label="Hesap Adı"
+                  value={bankFields.accountName}
+                />
+              ) : null}
+              {bankFields.iban ? (
+                <CopyableField
+                  label="IBAN"
+                  value={bankFields.ibanDisplay}
+                  copyValue={bankFields.iban}
+                />
+              ) : null}
+              <p className="text-sm text-amber-800 whitespace-pre-wrap break-words mt-2">
+                {accountInfoText}
               </p>
             </div>
             <h6 className="input-label capitalize text-[13px] font-600 leading-[24px] text-qblack block mb-2">
@@ -173,7 +258,9 @@ const PaymentMethods = ({
               value={transactionInfo}
               onChange={(e) => setTransactionInfo(e.target.value)}
               className="w-full focus:ring-0 focus:outline-none py-3 px-4 border placeholder:text-sm text-sm"
-              placeholder={"Havale/EFT yaptıktan sonra dekont numarasını veya gönderici bilgisini buraya yazın."}
+              placeholder={
+                "Havale/EFT yaptıktan sonra dekont numarasını veya gönderici bilgisini buraya yazın."
+              }
             ></textarea>
           </div>
         </div>
@@ -190,12 +277,13 @@ const PaymentMethods = ({
         className="mb-5"
       />
 
-      {/* Place Order Button */}
       <button type="button" onClick={placeOrderHandler} className="w-full">
         <div className="w-full h-[50px] black-btn flex justify-center items-center">
           <span className="text-sm font-semibold">
             {selectPayment === "bankpayment" && totalPriceNum > 0
-              ? `Siparişi Ver - ${Number(bankTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL (%${bankTransferDiscountPercent} İndirimli)`
+              ? `Siparişi Ver - ${Number(bankTotal).toLocaleString("tr-TR", {
+                  minimumFractionDigits: 2,
+                })} TL (%${bankTransferDiscountPercent} İndirimli)`
               : "Siparişi Ver"}
           </span>
         </div>

@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../utils/constants.dart';
 import '../../utils/language_string.dart';
 import '../../widgets/app_bar_leading.dart';
-import '../../widgets/capitalized_word.dart';
 import '../../widgets/fetch_error_text.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/please_signin_widget.dart';
@@ -14,6 +12,7 @@ import '../home/widgets/home_theme.dart';
 import 'component/single_order_details_component.dart';
 import 'controllers/order/order_cubit.dart';
 import 'model/order_model.dart';
+import 'utils/order_display_status.dart';
 import 'widgets/order_status_timeline.dart';
 import 'widgets/order_summary_panel.dart';
 
@@ -99,38 +98,13 @@ class LoadedList extends StatelessWidget {
   final OrderModel singleOrder;
 
   ({Color bg, Color fg, String label}) _statusStyle() {
-    switch ('${singleOrder.orderStatus}') {
-      case '0':
-        return (
-          bg: const Color(0xFFFFF6E5),
-          fg: const Color(0xFFB45309),
-          label: Language.pending.capitalizeByWord(),
-        );
-      case '1':
-        return (
-          bg: const Color(0xFFEFF6FF),
-          fg: const Color(0xFF2563EB),
-          label: Language.progress.capitalizeByWord(),
-        );
-      case '2':
-        return (
-          bg: const Color(0xFFECFDF3),
-          fg: greenColor,
-          label: Language.delivered.capitalizeByWord(),
-        );
-      case '3':
-        return (
-          bg: const Color(0xFFECFDF3),
-          fg: deepGreenColor,
-          label: Language.completed.capitalizeByWord(),
-        );
-      default:
-        return (
-          bg: redColor.withValues(alpha: 0.08),
-          fg: redColor,
-          label: Language.declined.capitalizeByWord(),
-        );
-    }
+    final display = OrderDisplayStatusHelper.resolve(singleOrder);
+    final colors = OrderDisplayStatusHelper.badgeColors(display);
+    return (
+      bg: colors.bg,
+      fg: colors.fg,
+      label: OrderDisplayStatusHelper.badgeLabel(display),
+    );
   }
 
   @override

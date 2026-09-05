@@ -147,7 +147,11 @@ class _PanelComponentState extends State<PanelComponent> {
                 text: Language.discountCoupon.capitalizeByWord(),
                 fontSize: 16.0,
                 color: redColor),
-            BlocConsumer<CartCubit, CartState>(listener: (context, state) {
+            BlocConsumer<CartCubit, CartState>(
+              listenWhen: (previous, current) =>
+                  current is CartStateDecIncrementLoading ||
+                  previous is CartStateDecIncrementLoading,
+              listener: (context, state) {
               if (state is CartStateDecIncrementLoading) {
                 Utils.loadingDialog(context);
               } else {

@@ -11,6 +11,7 @@ import '../../../widgets/capitalized_word.dart';
 import '../../home/widgets/home_theme.dart';
 import '../controllers/order/order_cubit.dart';
 import '../model/product_order_model.dart';
+import '../utils/order_display_status.dart';
 import '../widgets/order_product_thumb.dart';
 
 class SingleOrderDetailsComponent extends StatefulWidget {
@@ -61,6 +62,8 @@ class _SingleOrderDetailsComponentState
   @override
   Widget build(BuildContext context) {
     final cargo = orderItem.cargo;
+    final lineStatus = OrderDisplayStatusHelper.resolveLine(orderItem);
+    final lineColors = OrderDisplayStatusHelper.badgeColors(lineStatus);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -76,16 +79,42 @@ class _SingleOrderDetailsComponentState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  orderItem.productName,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: HomeTheme.textDark,
-                    height: 1.35,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        orderItem.productName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: HomeTheme.textDark,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: lineColors.bg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        OrderDisplayStatusHelper.badgeLabel(lineStatus),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: lineColors.fg,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -104,20 +133,30 @@ class _SingleOrderDetailsComponentState
                 ],
                 const SizedBox(height: 6),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      Utils.formatPrice(orderItem.unitPrice, context),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: HomeTheme.textDark,
+                    Expanded(
+                      child: Text(
+                        Utils.formatPrice(orderItem.unitPrice, context),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: HomeTheme.textDark,
+                        ),
                       ),
                     ),
-                    _buildActionArea(context),
+                    if (!orderItem.canConfirmDelivery)
+                      Flexible(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: _buildActionArea(context),
+                        ),
+                      ),
                   ],
                 ),
+                if (orderItem.canConfirmDelivery) ...[
+                  const SizedBox(height: 8),
+                  _buildActionArea(context),
+                ],
               ],
             ),
           ),
@@ -132,7 +171,8 @@ class _SingleOrderDetailsComponentState
     if (orderItem.canConfirmDelivery) {
       actions.add(
         SizedBox(
-          height: 34,
+          width: double.infinity,
+          height: 36,
           child: ElevatedButton(
             onPressed: _confirming ? null : _handleConfirmDelivery,
             style: ElevatedButton.styleFrom(
@@ -149,6 +189,8 @@ class _SingleOrderDetailsComponentState
               _confirming
                   ? Language.confirmingDelivery
                   : Language.confirmDeliveryReceived,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -168,12 +210,16 @@ class _SingleOrderDetailsComponentState
               color: greenColor.withValues(alpha: 0.9),
             ),
             const SizedBox(width: 4),
-            Text(
-              Language.deliveryConfirmedBadge,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: greenColor.withValues(alpha: 0.95),
+            Flexible(
+              child: Text(
+                Language.deliveryConfirmedBadge,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: greenColor.withValues(alpha: 0.95),
+                ),
               ),
             ),
           ],
@@ -223,7 +269,9 @@ class _SingleOrderDetailsComponentState
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: orderItem.canConfirmDelivery
+          ? CrossAxisAlignment.stretch
+          : CrossAxisAlignment.end,
       children: [
         for (var i = 0; i < actions.length; i++) ...[
           if (i > 0) const SizedBox(height: 6),

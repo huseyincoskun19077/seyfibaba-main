@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../utils/constants.dart';
 import '../../../utils/k_images.dart';
+import '../../../utils/language_string.dart';
 import '../../../widgets/custom_image.dart';
 import '../../../widgets/primary_button.dart';
 
@@ -21,20 +22,20 @@ class EmptyChatListComponent extends StatelessWidget {
             const CustomImage(path: Kimages.emptyChatList),
             const SizedBox(height: 43),
             Text(
-              'No Message Found!',
+              Language.noMessageFound,
               style: GoogleFonts.poppins(
                   fontSize: 22, fontWeight: FontWeight.bold, height: 2),
             ),
-            const Text(
-              'Its seens, no messages in your inbox.',
+            Text(
+              Language.emptyInboxHint,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: iconGreyColor, height: 1.5),
+              style: const TextStyle(fontSize: 16, color: iconGreyColor, height: 1.5),
             ),
             const SizedBox(height: 24),
             SizedBox(
               width: 200,
               child: PrimaryButton(
-                  text: 'Start  a Conversation', onPressed: () {}),
+                  text: Language.startShopping, onPressed: () {}),
             )
           ],
         ),

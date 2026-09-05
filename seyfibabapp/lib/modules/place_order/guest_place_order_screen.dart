@@ -115,21 +115,24 @@ class _GuestPlaceOrderScreenState extends State<GuestPlaceOrderScreen> {
           listener: (context, state) {
             if (state is BankStateLoading) {
               Utils.loadingDialog(context);
-            } else {
+            } else if (state is BankLoadedState) {
+              FocusManager.instance.primaryFocus?.unfocus();
               Utils.closeDialog(context);
-              if (state is BankLoadedState) {
-                Utils.showSnackBar(context, state.message);
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  RouteNames.orderScreen,
-                  (route) => route.settings.name == RouteNames.mainPage,
-                  arguments: true,
+              Utils.showSnackBar(context, state.message);
+              final navigator = Navigator.of(context, rootNavigator: true);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                navigator.pushNamedAndRemoveUntil(
+                  RouteNames.mainPage,
+                  (route) => false,
                 );
                 Future.delayed(
                   const Duration(milliseconds: 1200),
                   detailCubit.clearGuestProduct,
                 );
-              } else if (state is BankStateError) {
+              });
+            } else {
+              Utils.closeDialog(context);
+              if (state is BankStateError) {
                 Utils.errorSnackBar(context, state.message);
               } else if (state is BankPaymentFormError) {
                 if (state.errors.tnxInfo.isNotEmpty) {

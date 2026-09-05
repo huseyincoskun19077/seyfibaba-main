@@ -15,6 +15,7 @@ import '../../cart/model/coupon_response_model.dart';
 import '../controllers/bank/bank_cubit.dart';
 import '../controllers/iyzico/iyzico_cubit.dart';
 import '../utils/payment_payload_helper.dart';
+import 'bank_account_copy_card.dart';
 
 enum _PaymentMethod { iyzico, bank }
 
@@ -319,37 +320,10 @@ class _MarketplacePaymentMethodsState extends State<MarketplacePaymentMethods> {
   }
 
   Widget _buildBankInfoCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: yellowColor.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: yellowColor.withOpacity(0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const CustomText(
-            text: 'Banka Hesap Bilgileri',
-            fontWeight: FontWeight.w700,
-          ),
-          const SizedBox(height: 8),
-          CustomText(
-            text: _bankAccountInfo,
-            isTranslate: false,
-            fontSize: 14,
-            color: paragraphColor,
-          ),
-          const SizedBox(height: 8),
-          const CustomText(
-            text:
-                'Havale/EFT sonrası açıklama alanına yazdığınız bilgiyi yukarıdaki alana girin. Sipariş admin onayından sonra işleme alınır.',
-            fontSize: 12,
-            color: textGreyColor,
-          ),
-        ],
-      ),
+    return BankAccountCopyCard(
+      accountInfo: _bankAccountInfo,
+      footer:
+          'Havale/EFT sonrası açıklama alanına yazdığınız bilgiyi yukarıdaki alana girin. Sipariş admin onayından sonra işleme alınır.',
     );
   }
 }

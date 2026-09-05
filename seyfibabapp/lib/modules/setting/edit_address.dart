@@ -58,6 +58,11 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
             final state = states.addState;
             if (state is AddressStateUpdateError) {
               Utils.errorSnackBar(context, state.message);
+            } else if (state is AddressStateInvalidDataError) {
+              final msg = state.errorMsg.message.isNotEmpty
+                  ? state.errorMsg.message.first
+                  : 'Lütfen formu kontrol edin.';
+              Utils.errorSnackBar(context, msg);
             } else if (state is AddressStateUpdated) {
               Navigator.of(context).pop(true);
             }
@@ -340,10 +345,6 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
   List<CityModel> cityList = [];
 
   String _invoiceType = 'individual';
-  String _tcIdentity = '';
-  String _taxNumber = '';
-  String _taxOffice = '';
-  String _companyName = '';
   bool _isEInvoice = false;
   String _postalCode = '';
   bool _isHome = true;
@@ -351,6 +352,11 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
   String _neighborhood = '';
   String _locality = '';
   final _invoiceFormKey = GlobalKey<BuyerInvoiceFormState>();
+  final tcCtr = TextEditingController();
+  final postalCtr = TextEditingController();
+  final taxNumberCtr = TextEditingController();
+  final taxOfficeCtr = TextEditingController();
+  final companyCtr = TextEditingController();
 
   bool get _showInvoice => widget.showInvoice;
 
@@ -369,18 +375,29 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    tcCtr.dispose();
+    postalCtr.dispose();
+    taxNumberCtr.dispose();
+    taxOfficeCtr.dispose();
+    companyCtr.dispose();
+    super.dispose();
+  }
+
   void _loadInvoiceAndType() {
     final address = addressCubit.editAddress?.address;
     if (address == null || _invoiceLoaded) return;
     _invoiceLoaded = true;
     _invoiceType =
         address.invoiceType.isNotEmpty ? address.invoiceType : 'individual';
-    _tcIdentity = address.tcIdentity;
-    _taxNumber = address.taxNumber;
-    _taxOffice = address.taxOffice;
-    _companyName = address.companyName;
+    tcCtr.text = address.tcIdentity;
+    taxNumberCtr.text = address.taxNumber;
+    taxOfficeCtr.text = address.taxOffice;
+    companyCtr.text = address.companyName;
     _isEInvoice = address.isEInvoice;
     _postalCode = address.zipCode;
+    postalCtr.text = address.zipCode;
     _isHome = addressTypeIsHome(address.type);
     _neighborhood = address.neighborhood;
     _locality = '';
@@ -501,33 +518,18 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                   BuyerInvoiceForm(
                     key: _invoiceFormKey,
                     invoiceType: _invoiceType,
-                    tcIdentity: _tcIdentity,
-                    taxNumber: _taxNumber,
-                    taxOffice: _taxOffice,
-                    companyName: _companyName,
+                    tcController: tcCtr,
+                    postalController: postalCtr,
+                    taxNumberController: taxNumberCtr,
+                    taxOfficeController: taxOfficeCtr,
+                    companyController: companyCtr,
                     isEInvoice: _isEInvoice,
-                    postalCode: _postalCode,
                     showIntro: false,
                     embedded: true,
-                    onChanged: ({
-                      required invoiceType,
-                      required tcIdentity,
-                      required taxNumber,
-                      required taxOffice,
-                      required companyName,
-                      required isEInvoice,
-                      required postalCode,
-                    }) {
-                      setState(() {
-                        _invoiceType = invoiceType;
-                        _tcIdentity = tcIdentity;
-                        _taxNumber = taxNumber;
-                        _taxOffice = taxOffice;
-                        _companyName = companyName;
-                        _isEInvoice = isEInvoice;
-                        _postalCode = postalCode;
-                      });
-                    },
+                    onInvoiceTypeChanged: (type) =>
+                        setState(() => _invoiceType = type),
+                    onEInvoiceChanged: (value) =>
+                        setState(() => _isEInvoice = value),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -694,36 +696,6 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                         );
                         return;
                       }
-                      if (_showInvoice) {
-                        final inv = _invoiceFormKey.currentState?.readValues();
-                        final invoiceType = inv?.invoiceType ?? _invoiceType;
-                        final tcIdentity = inv?.tcIdentity ?? _tcIdentity;
-                        final taxNumber = inv?.taxNumber ?? _taxNumber;
-                        final taxOffice = inv?.taxOffice ?? _taxOffice;
-                        final companyName = inv?.companyName ?? _companyName;
-                        final isEInvoice = inv?.isEInvoice ?? _isEInvoice;
-                        final postalCode = inv?.postalCode ?? _postalCode;
-
-                        final invoiceError = validateBuyerInvoice(
-                          invoiceType: invoiceType,
-                          tcIdentity: tcIdentity,
-                          taxNumber: taxNumber,
-                          taxOffice: taxOffice,
-                          companyName: companyName,
-                          postalCode: postalCode,
-                        );
-                        if (invoiceError != null) {
-                          Utils.errorSnackBar(context, invoiceError);
-                          return;
-                        }
-                        _invoiceType = invoiceType;
-                        _tcIdentity = tcIdentity;
-                        _taxNumber = taxNumber;
-                        _taxOffice = taxOffice;
-                        _companyName = companyName;
-                        _isEInvoice = isEInvoice;
-                        _postalCode = postalCode;
-                      }
                       final dataMap = <String, String>{
                         'name': addressCubit.nameCtr.text.trim(),
                         'email': emailValue,
@@ -743,16 +715,57 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                             _cityModel != null ? _cityModel!.id.toString() : "",
                       };
                       if (_showInvoice) {
-                        dataMap['zip_code'] = _postalCode;
-                        dataMap['postal_code'] = _postalCode;
-                        dataMap['invoice_type'] = _invoiceType;
-                        if (_invoiceType == 'corporate') {
-                          dataMap['tax_number'] = _taxNumber;
-                          dataMap['tax_office'] = _taxOffice;
-                          dataMap['company_name'] = _companyName;
-                          dataMap['is_e_invoice'] = _isEInvoice ? '1' : '0';
+                        final formState = _invoiceFormKey.currentState;
+                        if (formState != null &&
+                            !formState.validateAndHighlight()) {
+                          final inv = formState.readValues();
+                          final err = validateBuyerInvoice(
+                            invoiceType: inv.invoiceType,
+                            tcIdentity: inv.tcIdentity,
+                            taxNumber: inv.taxNumber,
+                            taxOffice: inv.taxOffice,
+                            companyName: inv.companyName,
+                            postalCode: inv.postalCode,
+                          );
+                          if (err != null) {
+                            Utils.errorSnackBar(context, err);
+                          }
+                          return;
+                        }
+
+                        final inv = formState?.readValues();
+                        final invoiceType = inv?.invoiceType ?? _invoiceType;
+                        final tcIdentity = inv?.tcIdentity ??
+                            BuyerInvoiceFormState.digitsOnly(tcCtr.text, 11);
+                        final taxNumber = inv?.taxNumber ??
+                            BuyerInvoiceFormState.digitsOnly(
+                                taxNumberCtr.text, 11);
+                        final taxOffice =
+                            inv?.taxOffice ?? taxOfficeCtr.text.trim();
+                        final companyName =
+                            inv?.companyName ?? companyCtr.text.trim();
+                        final isEInvoice = inv?.isEInvoice ?? _isEInvoice;
+                        final postalCode = inv?.postalCode ??
+                            BuyerInvoiceFormState.digitsOnly(
+                                postalCtr.text.isNotEmpty
+                                    ? postalCtr.text
+                                    : _postalCode,
+                                5);
+
+                        _invoiceType = invoiceType;
+                        _isEInvoice = isEInvoice;
+                        _postalCode = postalCode;
+
+                        dataMap['zip_code'] = postalCode;
+                        dataMap['postal_code'] = postalCode;
+                        dataMap['invoice_type'] = invoiceType;
+                        if (invoiceType == 'corporate') {
+                          dataMap['tax_number'] = taxNumber;
+                          dataMap['tax_office'] = taxOffice;
+                          dataMap['company_name'] = companyName;
+                          dataMap['is_e_invoice'] = isEInvoice ? '1' : '0';
                         } else {
-                          dataMap['tc_identity'] = _tcIdentity;
+                          dataMap['tc_identity'] = tcIdentity;
                         }
                       }
                       debugPrint(dataMap.toString());

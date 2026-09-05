@@ -18,6 +18,8 @@ abstract class CartRepository {
 
   Future<Either<Failure, String>> removerCartItem(String productId, String token);
 
+  Future<Either<Failure, String>> clearCart(String token);
+
   Future<Either<Failure, String>> incrementQuantity(String productId, String token);
 
   Future<Either<Failure, String>> decrementQuantity(String productId, String token);
@@ -77,6 +79,16 @@ class CartRepositoryImp extends CartRepository {
       String productId, String token) async {
     try {
       final result = await remoteDataSource.removerCartItem(productId, token);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> clearCart(String token) async {
+    try {
+      final result = await remoteDataSource.clearCart(token);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, e.statusCode));

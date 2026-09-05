@@ -676,6 +676,8 @@ class Utils {
     BuildContext context, {
     bool barrierDismissible = false,
   }) {
+    if (_loadingDialogDepth > 0) return;
+    _loadingDialogDepth++;
     showDialog(
       context: context,
       barrierDismissible: barrierDismissible,
@@ -688,7 +690,9 @@ class Utils {
           ),
         );
       },
-    );
+    ).whenComplete(() {
+      _loadingDialogDepth = 0;
+    });
   }
 
   static Future showCustomDialog(
@@ -824,13 +828,14 @@ class Utils {
 
   static void errorSnackBar(BuildContext context, String errorMsg,
       [Color textColor = redColor, int duration = 2500]) {
+    final text = Language.localizeMessage(errorMsg);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           duration: Duration(milliseconds: duration),
           content: CustomText(
-              text: errorMsg,
+              text: text,
               fontSize: 15.0,
               fontWeight: FontWeight.w500,
               color: textColor),
@@ -840,13 +845,14 @@ class Utils {
 
   static void showSnackBar(BuildContext context, String errorMsg,
       [Color textColor = whiteColor, int duration = 2500]) {
+    final text = Language.localizeMessage(errorMsg);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           duration: Duration(milliseconds: duration),
           content: CustomText(
-              text: errorMsg,
+              text: text,
               fontSize: 15.0,
               fontWeight: FontWeight.w500,
               color: textColor),
@@ -904,12 +910,26 @@ class Utils {
     return rating;
   }
 
-  static bool _isDialogShowing(BuildContext context) =>
-      ModalRoute.of(context)?.isCurrent != true;
+  /// loadingDialog ile açılan overlay sayacı.
+  /// ModalRoute.isCurrent tahmini, navigasyon sırasında yanlış pozitif verip
+  /// "Bad state: No element" / navigator lock üretiyordu.
+  static int _loadingDialogDepth = 0;
 
   static void closeDialog(BuildContext context) {
-    if (_isDialogShowing(context)) {
-      Navigator.pop(context);
+    if (_loadingDialogDepth <= 0) return;
+    if (!context.mounted) {
+      _loadingDialogDepth = 0;
+      return;
+    }
+    try {
+      final navigator = Navigator.of(context, rootNavigator: true);
+      if (navigator.canPop()) {
+        navigator.pop();
+      } else {
+        _loadingDialogDepth = 0;
+      }
+    } catch (_) {
+      _loadingDialogDepth = 0;
     }
   }
 

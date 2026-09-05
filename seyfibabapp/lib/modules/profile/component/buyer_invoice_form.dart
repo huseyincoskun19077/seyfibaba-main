@@ -10,33 +10,27 @@ class BuyerInvoiceForm extends StatefulWidget {
   const BuyerInvoiceForm({
     super.key,
     required this.invoiceType,
-    required this.tcIdentity,
-    required this.taxNumber,
-    required this.taxOffice,
-    this.companyName = '',
-    this.isEInvoice = false,
-    this.postalCode = '',
-    required this.onChanged,
+    required this.tcController,
+    required this.postalController,
+    required this.taxNumberController,
+    required this.taxOfficeController,
+    required this.companyController,
+    required this.isEInvoice,
+    required this.onInvoiceTypeChanged,
+    required this.onEInvoiceChanged,
     this.showIntro = true,
     this.embedded = false,
   });
 
   final String invoiceType;
-  final String tcIdentity;
-  final String taxNumber;
-  final String taxOffice;
-  final String companyName;
+  final TextEditingController tcController;
+  final TextEditingController postalController;
+  final TextEditingController taxNumberController;
+  final TextEditingController taxOfficeController;
+  final TextEditingController companyController;
   final bool isEInvoice;
-  final String postalCode;
-  final void Function({
-    required String invoiceType,
-    required String tcIdentity,
-    required String taxNumber,
-    required String taxOffice,
-    required String companyName,
-    required bool isEInvoice,
-    required String postalCode,
-  }) onChanged;
+  final ValueChanged<String> onInvoiceTypeChanged;
+  final ValueChanged<bool> onEInvoiceChanged;
   final bool showIntro;
   final bool embedded;
 
@@ -45,23 +39,36 @@ class BuyerInvoiceForm extends StatefulWidget {
 }
 
 class BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
-  static const _individual = 'individual';
-  static const _corporate = 'corporate';
+  static const individual = 'individual';
+  static const corporate = 'corporate';
 
-  late final TextEditingController _tcCtrl;
-  late final TextEditingController _postalCtrl;
-  late final TextEditingController _taxCtrl;
-  late final TextEditingController _taxOfficeCtrl;
-  late final TextEditingController _companyCtrl;
-  final _tcFocus = FocusNode();
-  final _postalFocus = FocusNode();
-  final _taxFocus = FocusNode();
-  final _taxOfficeFocus = FocusNode();
-  final _companyFocus = FocusNode();
+  String? _tcError;
+  String? _postalError;
+  String? _taxNumberError;
+  String? _taxOfficeError;
+  String? _companyError;
 
-  bool get _isCorporate => widget.invoiceType == _corporate;
+  bool get _isCorporate => widget.invoiceType == corporate;
 
-  /// Submit öncesi controller değerlerini döndür (parent state gecikmesinden bağımsız).
+  static String digitsOnly(String value, int max) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    return digits.substring(0, digits.length.clamp(0, max));
+  }
+
+  /// Backend BuyerInvoiceService::isValidTcKimlik ile aynı algoritma.
+  static bool isValidTcKimlik(String tc) {
+    if (!RegExp(r'^[1-9][0-9]{10}$').hasMatch(tc)) return false;
+    final d = tc.split('').map(int.parse).toList();
+    final oddSum = d[0] + d[2] + d[4] + d[6] + d[8];
+    final evenSum = d[1] + d[3] + d[5] + d[7];
+    var digit10 = ((oddSum * 7) - evenSum) % 10;
+    if (digit10 < 0) digit10 += 10;
+    if (d[9] != digit10) return false;
+    final digit11 = d.sublist(0, 10).fold<int>(0, (a, b) => a + b) % 10;
+    return d[10] == digit11;
+  }
+
+  /// Submit öncesi güncel fatura alanları (controller kaynağı).
   ({
     String invoiceType,
     String tcIdentity,
@@ -73,94 +80,98 @@ class BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
   }) readValues() {
     if (_isCorporate) {
       return (
-        invoiceType: _corporate,
+        invoiceType: corporate,
         tcIdentity: '',
-        taxNumber: _digits(_taxCtrl.text, 11),
-        taxOffice: _taxOfficeCtrl.text.trim(),
-        companyName: _companyCtrl.text.trim(),
+        taxNumber: digitsOnly(widget.taxNumberController.text, 11),
+        taxOffice: widget.taxOfficeController.text.trim(),
+        companyName: widget.companyController.text.trim(),
         isEInvoice: widget.isEInvoice,
-        postalCode: _digits(_postalCtrl.text, 5),
+        postalCode: digitsOnly(widget.postalController.text, 5),
       );
     }
     return (
-      invoiceType: _individual,
-      tcIdentity: _digits(_tcCtrl.text, 11),
+      invoiceType: individual,
+      tcIdentity: digitsOnly(widget.tcController.text, 11),
       taxNumber: '',
       taxOffice: '',
       companyName: '',
       isEInvoice: false,
-      postalCode: _digits(_postalCtrl.text, 5),
+      postalCode: digitsOnly(widget.postalController.text, 5),
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _tcCtrl = TextEditingController(text: widget.tcIdentity);
-    _postalCtrl = TextEditingController(text: widget.postalCode);
-    _taxCtrl = TextEditingController(text: widget.taxNumber);
-    _taxOfficeCtrl = TextEditingController(text: widget.taxOffice);
-    _companyCtrl = TextEditingController(text: widget.companyName);
+  /// Alanları doğrula; hatalıysa kırmızı hata göster. Geçerliyse true.
+  bool validateAndHighlight() {
+    final values = readValues();
+    final errors = buyerInvoiceFieldErrors(
+      invoiceType: values.invoiceType,
+      tcIdentity: values.tcIdentity,
+      taxNumber: values.taxNumber,
+      taxOffice: values.taxOffice,
+      companyName: values.companyName,
+      postalCode: values.postalCode,
+    );
+    setState(() {
+      _tcError = errors['tc_identity'];
+      _postalError = errors['postal_code'];
+      _taxNumberError = errors['tax_number'];
+      _taxOfficeError = errors['tax_office'];
+      _companyError = errors['company_name'];
+    });
+    return errors.isEmpty;
   }
 
-  @override
-  void didUpdateWidget(covariant BuyerInvoiceForm oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Odaktayken parent gecikmeli state controller'ı ezmesin
-    if (!_tcFocus.hasFocus) _sync(_tcCtrl, widget.tcIdentity);
-    if (!_postalFocus.hasFocus) _sync(_postalCtrl, widget.postalCode);
-    if (!_taxFocus.hasFocus) _sync(_taxCtrl, widget.taxNumber);
-    if (!_taxOfficeFocus.hasFocus) _sync(_taxOfficeCtrl, widget.taxOffice);
-    if (!_companyFocus.hasFocus) _sync(_companyCtrl, widget.companyName);
+  void applyServerErrors(Map<String, String> errors) {
+    setState(() {
+      _tcError = errors['tc_identity'];
+      _postalError = errors['postal_code'];
+      _taxNumberError = errors['tax_number'];
+      _taxOfficeError = errors['tax_office'];
+      _companyError = errors['company_name'];
+    });
   }
 
-  void _sync(TextEditingController ctrl, String value) {
-    if (ctrl.text != value) {
-      ctrl.value = TextEditingValue(
-        text: value,
-        selection: TextSelection.collapsed(offset: value.length),
-      );
-    }
+  void _clearFieldError(String key) {
+    setState(() {
+      if (key == 'tc') _tcError = null;
+      if (key == 'postal') _postalError = null;
+      if (key == 'tax') _taxNumberError = null;
+      if (key == 'office') _taxOfficeError = null;
+      if (key == 'company') _companyError = null;
+    });
   }
 
-  @override
-  void dispose() {
-    _tcFocus.dispose();
-    _postalFocus.dispose();
-    _taxFocus.dispose();
-    _taxOfficeFocus.dispose();
-    _companyFocus.dispose();
-    _tcCtrl.dispose();
-    _postalCtrl.dispose();
-    _taxCtrl.dispose();
-    _taxOfficeCtrl.dispose();
-    _companyCtrl.dispose();
-    super.dispose();
-  }
-
-  void _emit({
-    String? invoiceType,
-    String? tcIdentity,
-    String? taxNumber,
-    String? taxOffice,
-    String? companyName,
-    bool? isEInvoice,
-    String? postalCode,
+  InputDecoration _decoration({
+    required String label,
+    required String hint,
+    String? errorText,
   }) {
-    widget.onChanged(
-      invoiceType: invoiceType ?? widget.invoiceType,
-      tcIdentity: tcIdentity ?? widget.tcIdentity,
-      taxNumber: taxNumber ?? widget.taxNumber,
-      taxOffice: taxOffice ?? widget.taxOffice,
-      companyName: companyName ?? widget.companyName,
-      isEInvoice: isEInvoice ?? widget.isEInvoice,
-      postalCode: postalCode ?? widget.postalCode,
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      errorText: errorText,
+      errorMaxLines: 2,
+      enabledBorder: errorText != null
+          ? OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.red, width: 1.4),
+              borderRadius: BorderRadius.circular(5),
+            )
+          : null,
+      focusedBorder: errorText != null
+          ? OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.red, width: 1.6),
+              borderRadius: BorderRadius.circular(5),
+            )
+          : null,
+      errorBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.red, width: 1.4),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.red, width: 1.6),
+        borderRadius: BorderRadius.circular(5),
+      ),
     );
-  }
-
-  String _digits(String value, int max) {
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    return digits.substring(0, digits.length.clamp(0, max));
   }
 
   Widget _typeRadio({
@@ -232,56 +243,74 @@ class BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
               _typeRadio(
                 label: 'Bireysel',
                 selected: !_isCorporate,
-                onTap: () => _emit(
-                  invoiceType: _individual,
-                  taxNumber: '',
-                  taxOffice: '',
-                  companyName: '',
-                  isEInvoice: false,
-                ),
+                onTap: () {
+                  setState(() {
+                    _tcError = null;
+                    _postalError = null;
+                    _taxNumberError = null;
+                    _taxOfficeError = null;
+                    _companyError = null;
+                  });
+                  widget.onInvoiceTypeChanged(individual);
+                },
               ),
               _typeRadio(
                 label: 'Kurumsal / Şahıs Firması',
                 selected: _isCorporate,
-                onTap: () => _emit(
-                  invoiceType: _corporate,
-                  tcIdentity: '',
-                ),
+                onTap: () {
+                  setState(() {
+                    _tcError = null;
+                    _postalError = null;
+                    _taxNumberError = null;
+                    _taxOfficeError = null;
+                    _companyError = null;
+                  });
+                  widget.onInvoiceTypeChanged(corporate);
+                },
               ),
             ],
           ),
           const SizedBox(height: 12),
           if (!_isCorporate) ...[
             TextFormField(
-              controller: _tcCtrl,
-              focusNode: _tcFocus,
+              controller: widget.tcController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'TC Kimlik No *',
-                hintText: '11 haneli TC Kimlik No',
+              textInputAction: TextInputAction.next,
+              decoration: _decoration(
+                label: 'TC Kimlik No *',
+                hint: '11 haneli TC Kimlik No',
+                errorText: _tcError,
               ),
-              onChanged: (value) => _emit(
-                invoiceType: _individual,
-                tcIdentity: _digits(value, 11),
-                taxNumber: '',
-                taxOffice: '',
-                companyName: '',
-                isEInvoice: false,
-              ),
+              onChanged: (value) {
+                _clearFieldError('tc');
+                final digits = digitsOnly(value, 11);
+                if (digits != value) {
+                  widget.tcController.value = TextEditingValue(
+                    text: digits,
+                    selection: TextSelection.collapsed(offset: digits.length),
+                  );
+                }
+              },
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller: _postalCtrl,
-              focusNode: _postalFocus,
+              controller: widget.postalController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Posta Kodu *',
-                hintText: 'Örn: 34000',
+              decoration: _decoration(
+                label: 'Posta Kodu *',
+                hint: 'Örn: 34000',
+                errorText: _postalError,
               ),
-              onChanged: (value) => _emit(
-                invoiceType: _individual,
-                postalCode: _digits(value, 5),
-              ),
+              onChanged: (value) {
+                _clearFieldError('postal');
+                final digits = digitsOnly(value, 5);
+                if (digits != value) {
+                  widget.postalController.value = TextEditingValue(
+                    text: digits,
+                    selection: TextSelection.collapsed(offset: digits.length),
+                  );
+                }
+              },
             ),
           ] else ...[
             Container(
@@ -299,43 +328,43 @@ class BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller: _taxCtrl,
-              focusNode: _taxFocus,
+              controller: widget.taxNumberController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'VKN/TCKN *',
-                hintText: 'VKN/TCKN Giriniz',
+              decoration: _decoration(
+                label: 'VKN/TCKN *',
+                hint: 'VKN/TCKN Giriniz',
+                errorText: _taxNumberError,
               ),
-              onChanged: (value) => _emit(
-                invoiceType: _corporate,
-                taxNumber: _digits(value, 11),
-              ),
+              onChanged: (value) {
+                _clearFieldError('tax');
+                final digits = digitsOnly(value, 11);
+                if (digits != value) {
+                  widget.taxNumberController.value = TextEditingValue(
+                    text: digits,
+                    selection: TextSelection.collapsed(offset: digits.length),
+                  );
+                }
+              },
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller: _taxOfficeCtrl,
-              focusNode: _taxOfficeFocus,
-              decoration: const InputDecoration(
-                labelText: 'Vergi Dairesi *',
-                hintText: 'Vergi Dairesi Giriniz',
+              controller: widget.taxOfficeController,
+              decoration: _decoration(
+                label: 'Vergi Dairesi *',
+                hint: 'Vergi Dairesi Giriniz',
+                errorText: _taxOfficeError,
               ),
-              onChanged: (value) => _emit(
-                invoiceType: _corporate,
-                taxOffice: value,
-              ),
+              onChanged: (_) => _clearFieldError('office'),
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller: _companyCtrl,
-              focusNode: _companyFocus,
-              decoration: const InputDecoration(
-                labelText: 'Firma Adı *',
-                hintText: 'Firma Adı Giriniz',
+              controller: widget.companyController,
+              decoration: _decoration(
+                label: 'Firma Adı *',
+                hint: 'Firma Adı Giriniz',
+                errorText: _companyError,
               ),
-              onChanged: (value) => _emit(
-                invoiceType: _corporate,
-                companyName: value,
-              ),
+              onChanged: (_) => _clearFieldError('company'),
             ),
             const SizedBox(height: 4),
             CheckboxListTile(
@@ -344,16 +373,62 @@ class BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
               activeColor: HomeTheme.brandYellow,
               title: const Text('E-fatura mükellefiyim'),
               controlAffinity: ListTileControlAffinity.leading,
-              onChanged: (value) => _emit(
-                invoiceType: _corporate,
-                isEInvoice: value ?? false,
-              ),
+              onChanged: (value) =>
+                  widget.onEInvoiceChanged(value ?? false),
             ),
           ],
         ],
       ),
     );
   }
+}
+
+/// Alan bazlı hatalar (key → mesaj). Boş map = geçerli.
+Map<String, String> buyerInvoiceFieldErrors({
+  required String invoiceType,
+  required String tcIdentity,
+  required String taxNumber,
+  required String taxOffice,
+  String companyName = '',
+  String postalCode = '',
+}) {
+  final errors = <String, String>{};
+  final isCorporate = invoiceType == 'corporate';
+  if (isCorporate) {
+    final tax = BuyerInvoiceFormState.digitsOnly(taxNumber, 11);
+    if (tax.isEmpty) {
+      errors['tax_number'] = 'VKN/TCKN zorunludur.';
+    } else if (!(tax.length == 10 || tax.length == 11)) {
+      errors['tax_number'] = 'VKN 10, TCKN 11 haneli olmalıdır.';
+    } else if (tax.length == 11 &&
+        !BuyerInvoiceFormState.isValidTcKimlik(tax)) {
+      errors['tax_number'] = 'Girdiğiniz TCKN geçersiz.';
+    }
+    if (taxOffice.trim().isEmpty) {
+      errors['tax_office'] = 'Vergi dairesi zorunludur.';
+    }
+    if (companyName.trim().isEmpty) {
+      errors['company_name'] = 'Firma adı zorunludur.';
+    }
+    return errors;
+  }
+
+  final tc = BuyerInvoiceFormState.digitsOnly(tcIdentity, 11);
+  if (tc.isEmpty) {
+    errors['tc_identity'] = 'TC Kimlik No zorunludur.';
+  } else if (!RegExp(r'^[1-9][0-9]{10}$').hasMatch(tc)) {
+    errors['tc_identity'] = 'Geçerli bir 11 haneli TC Kimlik No girin.';
+  } else if (!BuyerInvoiceFormState.isValidTcKimlik(tc)) {
+    errors['tc_identity'] = 'Girdiğiniz TC Kimlik No geçersiz.';
+  }
+
+  final postal = BuyerInvoiceFormState.digitsOnly(postalCode, 5);
+  if (postal.isEmpty) {
+    errors['postal_code'] = 'Posta kodu zorunludur.';
+  } else if (!RegExp(r'^[0-9]{5}$').hasMatch(postal)) {
+    errors['postal_code'] = '5 haneli geçerli bir posta kodu girin.';
+  }
+  return errors;
 }
 
 String? validateBuyerInvoice({
@@ -364,36 +439,22 @@ String? validateBuyerInvoice({
   String companyName = '',
   String postalCode = '',
 }) {
-  final isCorporate = invoiceType == 'corporate';
-  if (isCorporate) {
-    final tax = taxNumber.trim();
-    if (tax.isEmpty) {
-      return 'Kurumsal fatura için VKN/TCKN zorunludur.';
-    }
-    if (!(tax.length == 10 || tax.length == 11)) {
-      return 'VKN 10, TCKN 11 haneli olmalıdır.';
-    }
-    if (tax.length == 11 && !RegExp(r'^[1-9][0-9]{10}$').hasMatch(tax)) {
-      return 'Geçerli bir TCKN girin.';
-    }
-    if (taxOffice.trim().isEmpty) {
-      return 'Kurumsal fatura için vergi dairesi zorunludur.';
-    }
-    if (companyName.trim().isEmpty) {
-      return 'Kurumsal fatura için firma adı zorunludur.';
-    }
-    return null;
-  }
-  if (tcIdentity.trim().isEmpty) {
-    return 'Bireysel fatura için TC Kimlik No zorunludur.';
-  }
-  if (!RegExp(r'^[1-9][0-9]{10}$').hasMatch(tcIdentity.trim())) {
-    return 'Geçerli bir 11 haneli TC Kimlik No girin.';
-  }
-  if (!RegExp(r'^[0-9]{5}$').hasMatch(postalCode.trim())) {
-    return 'Bireysel fatura için 5 haneli posta kodu zorunludur.';
-  }
-  return null;
+  final errors = buyerInvoiceFieldErrors(
+    invoiceType: invoiceType,
+    tcIdentity: tcIdentity,
+    taxNumber: taxNumber,
+    taxOffice: taxOffice,
+    companyName: companyName,
+    postalCode: postalCode,
+  );
+  if (errors.isEmpty) return null;
+  // Önce TC / vergi no hatası, sonra diğerleri
+  return errors['tc_identity'] ??
+      errors['tax_number'] ??
+      errors['postal_code'] ??
+      errors['tax_office'] ??
+      errors['company_name'] ??
+      errors.values.first;
 }
 
 bool addressTypeIsHome(String type) =>

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '/core/error/failure.dart';
 import '/modules/authentication/models/auth_error_model.dart';
 import '../../authentication/controller/login/login_bloc.dart';
+import '/utils/language_string.dart';
 import '../repository/become_seller_repository.dart';
 import 'become_seller_state_model.dart';
 
@@ -73,7 +74,7 @@ class BecomeSellerCubit extends Cubit<BecomeSellerStateModel> {
     if (state.agreeTermsAndCondition == '0') {
       emit(state.copyWith(
           sellerState:
-              const BecomeSellerAgreeError('Please Agree Terms & Condition')));
+              BecomeSellerAgreeError(Language.pleaseAgreeTerms)));
       emit(state.copyWith(sellerState: const BecomeSellerInitial()));
       return;
     }

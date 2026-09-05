@@ -332,7 +332,7 @@ class CheckoutWithoutTokenController extends Controller
         $transaction_id = $request->tnx_info;
         $addressInfo = $this->mergeGuestAddressWithInvoice($request);
         $invoiceData = app(BuyerInvoiceService::class)->validateFromAddressInfo($addressInfo, true);
-        $order_result = $this->orderStore($total_price, $cartProducts,  $totalProduct, 'bankpayment', $transaction_id, 0, $shipping, $shipping_fee, $coupon_price, 1, $addressInfo, $is_draft, $invoiceData);
+        $order_result = $this->orderStore($total_price, $cartProducts,  $totalProduct, 'bankpayment', $transaction_id, 0, $shipping, $shipping_fee, $coupon_price, 0, $addressInfo, $is_draft, $invoiceData);
 
         $this->sendOrderSuccessMail($user, $total_price, 'Bank Payment', 0, $order_result['order'], $order_result['order_details']);
 
@@ -611,11 +611,10 @@ class CheckoutWithoutTokenController extends Controller
             $orderProduct->qty = $cartProduct['qty'];
             $orderProduct->save();
 
-            // Only update stock when payment is confirmed (payment_status = 1)
-            // Bank transfer (payment_status = 0) waits for admin approval
-            if ($paymetn_status == 1) {
-                $qty = $product->qty - $totalProduct;
-                $product->qty = $qty;
+            // Stok sipariş anında rezerve edilir (havale dahil). Draft hariç.
+            if ($is_draft !== 'yes') {
+                $decrementBy = (int) ($orderProduct->qty ?? 1);
+                $product->qty = max(0, (int) $product->qty - $decrementBy);
                 $product->save();
             }
 

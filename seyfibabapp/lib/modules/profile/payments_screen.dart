@@ -31,7 +31,7 @@ class PaymentsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           PrimaryButton(
-            text: 'Add Payment Method',
+            text: Language.addPaymentMethod,
             onPressed: () {
               Navigator.pushNamed(context, RouteNames.addNewPaymentCardScreen);
             },

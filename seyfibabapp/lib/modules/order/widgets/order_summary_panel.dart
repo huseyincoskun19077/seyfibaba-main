@@ -15,14 +15,18 @@ class OrderSummaryPanel extends StatelessWidget {
 
   String _paymentMethodLabel() {
     final method = order.paymentMethod.toLowerCase();
+    // Havale siparişlerinde cash_on_delivery yanlışlıkla 1 kaydedilmiş olabilir
+    if (method.contains('bank')) return Language.bankPayment;
     if (method.contains('cash') || order.cashOnDelivery == 1) {
       return Language.cashOnDelivery;
     }
-    if (method.contains('bank')) return Language.bankPayment;
     if (method.contains('iyzico')) return 'iyzico';
     if (method.isEmpty) return '-';
     return order.paymentMethod;
   }
+
+  bool get _isBankPayment =>
+      order.paymentMethod.toLowerCase().contains('bank');
 
   ({Color bg, Color fg, String label}) _paymentBadge() {
     if (order.paymentStatus == 1) {
@@ -96,12 +100,29 @@ class OrderSummaryPanel extends StatelessWidget {
               ),
             ),
           ),
-          child: Text(
-            _paymentMethodLabel(),
-            style: const TextStyle(
-              fontSize: 14,
-              color: HomeTheme.textDark,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _paymentMethodLabel(),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: HomeTheme.textDark,
+                ),
+              ),
+              if (_isBankPayment && order.paymentStatus != 1) ...[
+                const SizedBox(height: 8),
+                Text(
+                  Language.bankPaymentPendingNote,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: HomeTheme.textMuted,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
         if (order.shippingMethod.isNotEmpty) ...[

@@ -15,7 +15,7 @@ class InternetStatusBloc extends Bloc<InternetStatusEvent, InternetStatusState> 
     on<InternetStatusBackEvent>((event, emit) =>
         emit(const InternetStatusBackState('Your internet was restored')));
     on<InternetStatusLostEvent>((event, emit) =>
-        emit(const InternetStatusLostState('No internet connection')));
+        emit(const InternetStatusLostState('İnternet bağlantısı yok')));
 
     _initialCheck();
 

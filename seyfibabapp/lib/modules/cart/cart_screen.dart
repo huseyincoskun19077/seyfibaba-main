@@ -12,8 +12,10 @@ import '/modules/animated_splash_screen/controller/app_setting_cubit/app_setting
 import '/modules/cart/model/cart_calculation_model.dart';
 import '/widgets/capitalized_word.dart';
 import '../../utils/constants.dart';
+import '../../utils/k_images.dart';
 import '../../utils/language_string.dart';
 import '../../utils/utils.dart';
+import '../../widgets/confirm_dialog.dart';
 import '../../widgets/please_signin_widget.dart';
 import '../../widgets/rounded_app_bar.dart';
 import 'component/add_to_cart_component.dart';
@@ -48,6 +50,12 @@ class _CartScreenState extends State<CartScreen> {
           context.read<CartCubit>().getCartProducts();
         },
         child: BlocConsumer<CartCubit, CartState>(
+          listenWhen: (previous, current) =>
+              current is CartStateDecIncrementLoading ||
+              previous is CartStateDecIncrementLoading ||
+              current is CartStateDecIncError ||
+              current is CartStateRemove ||
+              current is CartDecIncState,
           listener: (_, state) {
             if (state is CartStateDecIncrementLoading) {
               Utils.loadingDialog(context);
@@ -206,10 +214,27 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
               children: [
                 const Icon(Icons.shopping_cart_rounded, color: redColor),
                 const SizedBox(width: 10),
-                CustomText(
-                    text: _getText(),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600),
+                Expanded(
+                  child: CustomText(
+                      text: _getText(),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600),
+                ),
+                if (cartResponseModel != null &&
+                    cartResponseModel!.cartProducts.isNotEmpty)
+                  TextButton(
+                    onPressed: () => _confirmClearCart(context),
+                    style: TextButton.styleFrom(
+                      foregroundColor: redColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    child: CustomText(
+                      text: Language.clearAllCart,
+                      color: redColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -260,5 +285,31 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
     } else {
       return '$length ${Language.product.capitalizeByWord()}';
     }
+  }
+
+  Future<void> _confirmClearCart(BuildContext context) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => ConfirmDialog(
+        icon: Kimages.deleteIcon2,
+        message: Language.wishToClearCart,
+        confirmText: Language.yesRemove,
+        cancelText: Language.no,
+        onTap: () async {
+          Navigator.of(dialogContext).pop();
+          final result = await context.read<CartCubit>().clearCart();
+          result.fold(
+            (failure) {},
+            (success) {
+              if (!mounted) return;
+              setState(() {
+                calculate();
+              });
+            },
+          );
+        },
+      ),
+    );
   }
 }

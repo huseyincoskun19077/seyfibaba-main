@@ -46,10 +46,10 @@ class _BottomTabState extends State<BottomTab> {
       builder: (context, state) {
         final tabs = [
           'Tümü',
-          Language.pending.capitalizeByWord(),
-          Language.progress.capitalizeByWord(),
-          Language.delivered.capitalizeByWord(),
-          Language.completed.capitalizeByWord(),
+          'Sipariş alındı',
+          'Hazırlanıyor',
+          'Kargoda',
+          'Teslim',
           Language.declined.capitalizeByWord(),
         ];
         final count = [

@@ -113,6 +113,8 @@ class SellerOrderCargoController extends Controller
             $op->save();
         }
 
+        \App\Support\OrderFulfillmentSync::sync($order);
+
         return redirect()->back()->with([
             'messege' => 'Manuel kargo bilgisi kaydedildi ve kargoya verildi olarak işaretlendi.',
             'alert-type' => 'success',

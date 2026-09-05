@@ -5,6 +5,7 @@ import '../../../authentication/controller/login/login_bloc.dart';
 import '../../../home/controller/cubit/product/product_state_model.dart';
 import '../../../../utils/language_string.dart';
 import '../../model/order_model.dart';
+import '../../utils/order_display_status.dart';
 import '../repository/order_repository.dart';
 
 part 'order_state.dart';
@@ -54,7 +55,14 @@ class OrderCubit extends Cubit<ProductStateModel> {
             final loaded = OrderStateLoaded(orderList);
             emit(state.copyWith(orderState: loaded));
           } else {
-            orderList.addAll(data);
+            // Aynı order_id tekrar gelirse ekleme (çift görünüm engeli)
+            final existingIds = orderList.map((o) => o.orderId).toSet();
+            for (final order in data) {
+              if (!existingIds.contains(order.orderId)) {
+                orderList.add(order);
+                existingIds.add(order.orderId);
+              }
+            }
             final loaded = OrderStateMoreLoaded(orderList);
             emit(state.copyWith(orderState: loaded));
           }
@@ -129,16 +137,18 @@ class OrderCubit extends Cubit<ProductStateModel> {
       declined.clear();
       for (int i = 0; i < orderList.length; i++) {
         final booking = orderList[i];
-        if (booking.orderStatus == 0) {
-          pending.add(booking);
-        } else if (booking.orderStatus == 1) {
-          progress.add(booking);
-        } else if (booking.orderStatus == 2) {
-          delivered.add(booking);
-        } else if (booking.orderStatus == 3) {
-          completed.add(booking);
-        } else if (booking.orderStatus == 4) {
-          declined.add(booking);
+        switch (OrderDisplayStatusHelper.resolve(booking)) {
+          case OrderDisplayStatus.pending:
+            pending.add(booking);
+          case OrderDisplayStatus.preparing:
+            progress.add(booking);
+          case OrderDisplayStatus.inCargo:
+            delivered.add(booking);
+          case OrderDisplayStatus.delivered:
+          case OrderDisplayStatus.completed:
+            completed.add(booking);
+          case OrderDisplayStatus.declined:
+            declined.add(booking);
         }
       }
     }

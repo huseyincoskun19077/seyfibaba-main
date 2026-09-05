@@ -7,6 +7,7 @@ import '../../utils/k_images.dart';
 import '../../widgets/custom_image.dart';
 import '../../widgets/rounded_app_bar.dart';
 import 'model/order_model.dart';
+import 'utils/order_display_status.dart';
 
 class OrderTrackingScreen extends StatelessWidget {
   const OrderTrackingScreen({super.key, required this.orders});
@@ -15,57 +16,36 @@ class OrderTrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 0 - pending
-    // 1 - progress
-    // 2 - declined
-    // 3 - completed
-    // 4 - declined
-    debugPrint('STATUS ${orders.orderStatus}');
-
-    int getTrackingIndex(int status) {
-      if (status == 1) {
-        return 1;
-      } else if (status == 2) {
-        return 2;
-      } else if (status == 3) {
-        return 3;
-      }
-      // else if (status == 4) {
-      //   return 4;
-      // }
-      return 0;
-    }
+    final display = OrderDisplayStatusHelper.resolve(orders);
+    final activeIndex =
+        OrderDisplayStatusHelper.stepIndex(display).clamp(0, 3);
+    final fullyDone = OrderDisplayStatusHelper.isFullyCompleted(display);
 
     List<StepperData> steppers = [
       StepperData(
-        title: StepperText(Language.pending),
-        iconWidget: _buildDot(),
+        title: StepperText('Sipariş alındı'),
+        iconWidget: _buildDot(
+          activeColor: fullyDone || activeIndex >= 0 ? greenColor : grayColor,
+        ),
       ),
       StepperData(
-        title: StepperText(Language.progress),
+        title: StepperText('Hazırlanıyor'),
         iconWidget: _buildDot(
-            activeColor: orders.orderStatus == 0 ? grayColor : greenColor),
+          activeColor: fullyDone || activeIndex >= 1 ? greenColor : grayColor,
+        ),
       ),
       StepperData(
-        title: StepperText(Language.delivered),
+        title: StepperText('Kargoda'),
         iconWidget: _buildDot(
-            activeColor: orders.orderStatus == 0 || orders.orderStatus == 1
-                ? grayColor
-                : greenColor),
+          activeColor: fullyDone || activeIndex >= 2 ? greenColor : grayColor,
+        ),
       ),
       StepperData(
-        title: StepperText(Language.completed),
+        title: StepperText('Teslim'),
         iconWidget: _buildDot(
-            activeColor: orders.orderStatus == 0 ||
-                    orders.orderStatus == 1 ||
-                    orders.orderStatus == 2
-                ? grayColor
-                : greenColor),
+          activeColor: fullyDone || activeIndex >= 3 ? greenColor : grayColor,
+        ),
       ),
-      // StepperData(
-      //   title: StepperText('Declined'),
-      //   iconWidget: _buildDot(),
-      // ),
     ];
 
     return Scaffold(
@@ -74,7 +54,7 @@ class OrderTrackingScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         shrinkWrap: true,
         children: [
-          orders.orderStatus == 4
+          display == OrderDisplayStatus.declined
               ? declinedOrderWidget(context)
               : Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -85,7 +65,7 @@ class OrderTrackingScreen extends StatelessWidget {
                     stepperList: steppers,
                     stepperDirection: Axis.vertical,
                     verticalGap: 40.0,
-                    activeIndex: getTrackingIndex(orders.orderStatus),
+                    activeIndex: activeIndex,
                     activeBarColor: greenColor,
                     inActiveBarColor: primaryColor,
                     barThickness: 6.0,
@@ -110,7 +90,7 @@ class OrderTrackingScreen extends StatelessWidget {
             style: TextStyle(
                 fontSize: 20.0, fontWeight: FontWeight.w600, color: redColor),
           ),
-          SizedBox(height: 20.0),
+          const SizedBox(height: 20.0),
           CustomImage(path: Kimages.orderDeclined)
         ],
       ),

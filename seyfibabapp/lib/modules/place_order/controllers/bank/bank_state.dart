@@ -26,12 +26,13 @@ class BankStateError extends BankState {
 }
 
 class BankLoadedState extends BankState {
-  const BankLoadedState(this.message);
+  const BankLoadedState(this.message, {this.orderId = ''});
 
   final String message;
+  final String orderId;
 
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [message, orderId];
 }
 
 class BankPaymentFormError extends BankState {

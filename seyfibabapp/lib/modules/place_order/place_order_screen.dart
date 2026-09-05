@@ -6,8 +6,9 @@ import '../../utils/language_string.dart';
 import '../../utils/utils.dart';
 import '../../widgets/capitalized_word.dart';
 import '../../widgets/rounded_app_bar.dart';
-import '../cart/controllers/cart/cart_cubit.dart';
 import '../cart/model/checkout_response_model.dart';
+import '../main_page/main_controller.dart';
+import '../order/controllers/order/order_cubit.dart';
 import 'controllers/bank/bank_cubit.dart';
 import 'controllers/iyzico/iyzico_cubit.dart';
 import 'model/iyzico_payment_args.dart';
@@ -23,6 +24,34 @@ class PlaceOrderScreen extends StatefulWidget {
 class _PlaceOrderScreenState extends State<PlaceOrderScreen> {
   Map<String, dynamic>? _body;
   CheckoutResponseModel? _checkoutData;
+
+  void _onBankSuccess(BankLoadedState state) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    Utils.closeDialog(context);
+
+    final orderCubit = context.read<OrderCubit>();
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final orderId = state.orderId;
+
+    Utils.showSnackBar(context, state.message);
+    if (orderId.isNotEmpty) {
+      orderCubit.tempTrackOrderId(orderId);
+    }
+
+    // Navigator kilitliyken pop/push yapma; sepeti MainPage yenilesin
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigator.pushNamedAndRemoveUntil(
+        RouteNames.mainPage,
+        (route) => false,
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        MainController().naveListener.sink.add(2);
+        if (orderId.isNotEmpty) {
+          navigator.pushNamed(RouteNames.singleOrderScreen);
+        }
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,18 +99,11 @@ class _PlaceOrderScreenState extends State<PlaceOrderScreen> {
           listener: (context, state) {
             if (state is BankStateLoading) {
               Utils.loadingDialog(context);
+            } else if (state is BankLoadedState) {
+              _onBankSuccess(state);
             } else {
               Utils.closeDialog(context);
-              if (state is BankLoadedState) {
-                Utils.showSnackBar(context, state.message);
-                context.read<CartCubit>().getCartProducts();
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  RouteNames.orderScreen,
-                  (route) => route.settings.name == RouteNames.mainPage,
-                  arguments: true,
-                );
-              } else if (state is BankStateError) {
+              if (state is BankStateError) {
                 Utils.errorSnackBar(context, state.message);
               } else if (state is BankPaymentFormError) {
                 if (state.errors.tnxInfo.isNotEmpty) {

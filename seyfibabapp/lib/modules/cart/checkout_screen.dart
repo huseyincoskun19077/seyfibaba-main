@@ -249,6 +249,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
     if (addresses.isNotEmpty) {
       billingAddressId = addresses.first.id;
       shippingAddressId = addresses.first.id;
+      _applyInvoiceFromAddress(addresses.first);
 
       if (Utils.isMapEnable(context)) {
         deliveryCubit.addDistancePerKM(
@@ -258,6 +259,25 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
       } else {
         _populateShippingMethods(addresses.first);
       }
+    }
+  }
+
+  AddressModel? _billingAddress() {
+    final fromCheckout = response?.addresses ?? [];
+    for (final item in fromCheckout) {
+      if (item.id == billingAddressId) return item;
+    }
+    final fromBook = context.read<AddressCubit>().address?.addresses ?? [];
+    for (final item in fromBook) {
+      if (item.id == billingAddressId) return item;
+    }
+    return null;
+  }
+
+  void _syncInvoiceFromSelectedBilling() {
+    final billing = _billingAddress();
+    if (billing != null) {
+      _applyInvoiceFromAddress(billing);
     }
   }
 
@@ -332,6 +352,9 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
       Utils.errorSnackBar(context, Language.termAndCondition);
       return false;
     }
+
+    _syncInvoiceFromSelectedBilling();
+
     final invoiceError = validateBuyerInvoice(
       invoiceType: _invoiceType,
       tcIdentity: _tcIdentity,
@@ -343,7 +366,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
     if (invoiceError != null) {
       Utils.errorSnackBar(
         context,
-        '$invoiceError Adresi düzenleyerek fatura bilgilerini tamamlayın.',
+        '$invoiceError Fatura adresini düzenleyip eksik/hatalı alanı düzeltin.',
       );
       return false;
     }
@@ -352,14 +375,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
       return false;
     }
 
-    final addresses = context.read<AddressCubit>().address?.addresses ?? [];
-    AddressModel? billing;
-    for (final item in addresses) {
-      if (item.id == billingAddressId) {
-        billing = item;
-        break;
-      }
-    }
+    final billing = _billingAddress();
     final email = (billing?.email ?? '').trim().toLowerCase();
     if (email.isEmpty ||
         email.endsWith('.local') ||

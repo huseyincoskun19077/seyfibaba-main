@@ -6,10 +6,11 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import '../../core/router_name.dart';
 import '../../utils/constants.dart';
-import '../../utils/language_string.dart';
+import '../../utils/k_images.dart';
 import '../../utils/language_string.dart';
 import '../../utils/utils.dart';
 import '../../widgets/app_empty_state.dart';
+import '../../widgets/confirm_dialog.dart';
 import '../../widgets/fetch_error_text.dart';
 import '../../widgets/page_refresh.dart';
 import '../../widgets/rounded_app_bar.dart';
@@ -80,14 +81,16 @@ class _GuestCartScreenState extends State<GuestCartScreen> {
           listener: (context, states) {
             final state = states.detailsState;
             if (state is GuestUpdateProduct ||
-                state is GuestSaveProductDeleted) {
-              //   debugPrint('update-recall');
-              // detailCubit..initState()..getGuestSavedProduct()..cartCalculation(context);
+                state is GuestSaveProductDeleted ||
+                state is GuestSaveProductClear) {
               detailCubit
                 ..getGuestSavedProduct()
                 ..cartCalculation(context);
               if (detailCubit.couponResponse != null) {
                 detailCubit.couponCalculate();
+              }
+              if (state is GuestSaveProductClear) {
+                Utils.showSnackBar(context, state.message);
               }
             }
           },
@@ -109,7 +112,7 @@ class _GuestCartScreenState extends State<GuestCartScreen> {
               return AppEmptyState(
                 icon: Icons.shopping_cart_outlined,
                 title: Language.emptyCartTitle,
-                subtitle: Language.loginRequiredForCheckout,
+                subtitle: Language.emptyCartHint,
               );
             }
           },
@@ -189,11 +192,29 @@ class GuestCartBody extends StatelessWidget {
               children: [
                 const Icon(Icons.shopping_cart_rounded, color: redColor),
                 const SizedBox(width: 10),
-                Text(
-                  _getText(),
-                  style: GoogleFonts.inter(
-                      fontSize: 16.0, fontWeight: FontWeight.w600),
+                Expanded(
+                  child: Text(
+                    _getText(),
+                    style: GoogleFonts.inter(
+                        fontSize: 16.0, fontWeight: FontWeight.w600),
+                  ),
                 ),
+                if (product.isNotEmpty)
+                  TextButton(
+                    onPressed: () => _confirmClearGuestCart(context),
+                    style: TextButton.styleFrom(
+                      foregroundColor: redColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    child: Text(
+                      Language.clearAllCart,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: redColor,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -234,5 +255,22 @@ class GuestCartBody extends StatelessWidget {
     } else {
       return '$length ${Language.product.capitalizeByWord()}';
     }
+  }
+
+  Future<void> _confirmClearGuestCart(BuildContext context) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => ConfirmDialog(
+        icon: Kimages.deleteIcon2,
+        message: Language.wishToClearCart,
+        confirmText: Language.yesRemove,
+        cancelText: Language.no,
+        onTap: () async {
+          Navigator.of(dialogContext).pop();
+          await context.read<ProductDetailsCubit>().clearGuestProduct();
+        },
+      ),
+    );
   }
 }

@@ -11,6 +11,7 @@ import '../../widgets/rounded_app_bar.dart';
 import '../animated_splash_screen/controller/app_setting_cubit/app_setting_cubit.dart';
 import '../cart/controllers/checkout/checkout_cubit.dart';
 import 'controllers/bank/bank_cubit.dart';
+import 'widgets/bank_account_copy_card.dart';
 
 class BankPaymentScreen extends StatefulWidget {
   const BankPaymentScreen({super.key, required this.mapBody});
@@ -53,31 +54,7 @@ class _BankPaymentScreenState extends State<BankPaymentScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: yellowColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: yellowColor.withOpacity(0.5)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const CustomText(
-                    text: 'Banka Hesap Bilgileri',
-                    fontWeight: FontWeight.w700,
-                  ),
-                  const SizedBox(height: 8),
-                  CustomText(
-                    text: _accountInfo(context),
-                    isTranslate: false,
-                    fontSize: 14,
-                    color: paragraphColor,
-                  ),
-                ],
-              ),
-            ),
+            BankAccountCopyCard(accountInfo: _accountInfo(context)),
             const SizedBox(height: 20),
             const CustomText(
               text: 'Havale Açıklama / Dekont Bilgisi',

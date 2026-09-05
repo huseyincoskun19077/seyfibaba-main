@@ -49,7 +49,9 @@ class AddressCardComponent extends StatelessWidget {
         : 'Bireysel';
     final invoiceExtra = addressModel.invoiceType == 'corporate'
         ? addressModel.companyName
-        : '';
+        : (addressModel.tcIdentity.trim().length >= 4
+            ? 'TC ****${addressModel.tcIdentity.trim().substring(addressModel.tcIdentity.trim().length - 4)}'
+            : 'TC eksik');
 
     return Container(
       padding: Utils.symmetric(v: 8.0, h: 10.0),

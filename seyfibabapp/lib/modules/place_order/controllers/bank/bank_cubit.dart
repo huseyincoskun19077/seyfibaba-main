@@ -43,7 +43,10 @@ class BankCubit extends Cubit<BankState> {
         emit(BankStateError(failure.message, failure.statusCode));
       }
     }, (data) {
-      emit(BankLoadedState(data));
+      emit(BankLoadedState(
+        data['message'] ?? 'Sipariş başarıyla gönderildi.',
+        orderId: data['order_id'] ?? '',
+      ));
     });
   }
 }

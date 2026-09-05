@@ -9,7 +9,8 @@ abstract class PaymentRepository {
   Future<Either<Failure, String>> cashOnDelivery(
       Map<String, dynamic> body, Uri uri);
 
-  Future<Either<Failure, String>> bankPay(Uri uri, Map<String, dynamic> body);
+  Future<Either<Failure, Map<String, String>>> bankPay(
+      Uri uri, Map<String, dynamic> body);
 
   Future<Either<Failure, Map<String, dynamic>>> payWithIyzico(
       Uri uri, Map<String, dynamic> body);
@@ -34,7 +35,7 @@ class PaymentRepositoryImp extends PaymentRepository {
   }
 
   @override
-  Future<Either<Failure, String>> bankPay(
+  Future<Either<Failure, Map<String, String>>> bankPay(
       Uri uri, Map<String, dynamic> body) async {
     try {
       final result = await remoteDataSource.bankPay(uri, body);

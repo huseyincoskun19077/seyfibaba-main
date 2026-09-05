@@ -99,9 +99,9 @@ class _AddToCartComponentState extends State<AddToCartComponent> {
                           barrierDismissible: false,
                           builder: (context) => ConfirmDialog(
                             icon: Kimages.deleteIcon2,
-                            message: 'Do you want to Remove\nthis Product?',
-                            confirmText: 'Yes, Remove',
-                            cancelText: 'No',
+                            message: Language.wishToRemoveProduct,
+                            confirmText: Language.yesRemove,
+                            cancelText: Language.no,
                             onTap: () async {
                               final result = await context
                                   .read<CartCubit>()

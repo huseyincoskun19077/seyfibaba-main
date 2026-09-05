@@ -91,6 +91,30 @@ class CartCubit extends Cubit<CartState> {
     return result;
   }
 
+  Future<Either<Failure, String>> clearCart() async {
+    if (_loginBloc.userInfo == null) {
+      emit(CartStateError(Language.loginRequiredForCheckout, 401));
+      return left(ServerFailure(Language.loginRequiredForCheckout, 1000));
+    }
+
+    emit(const CartStateDecIncrementLoading());
+
+    final result =
+        await _cartRepository.clearCart(_loginBloc.userInfo!.accessToken);
+
+    result.fold(
+      (failure) {
+        emit(CartStateDecIncError(failure.message, failure.statusCode));
+      },
+      (successData) {
+        cartResponseModel?.cartProducts.clear();
+        cartCount = 0;
+        emit(CartStateRemove(Language.localizeMessage(successData)));
+      },
+    );
+    return result;
+  }
+
   Future<Either<Failure, String>> incrementQuantity(String productId) async {
     if (_loginBloc.userInfo == null) {
       emit(CartStateDecIncError(Language.loginRequiredForCheckout, 401));

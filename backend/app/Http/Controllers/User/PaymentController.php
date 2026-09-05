@@ -338,7 +338,7 @@ class PaymentController extends Controller
         $transaction_id = $request->tnx_info;
         $is_draft = 'no';
         $invoiceData = app(BuyerInvoiceService::class)->validateFromRequest($request, $user, true);
-        $order_result = $this->orderStore($user, $total_price, $cartProducts,  $totalProduct, 'bankpayment', $transaction_id, 0, $shipping, $shipping_fee, $coupon_price, 1, $request->billing_address_id, $request->shipping_address_id, $is_draft, $invoiceData);
+        $order_result = $this->orderStore($user, $total_price, $cartProducts,  $totalProduct, 'bankpayment', $transaction_id, 0, $shipping, $shipping_fee, $coupon_price, 0, $request->billing_address_id, $request->shipping_address_id, $is_draft, $invoiceData);
 
         try {
             $this->sendOrderSuccessMail($user, $total_price, 'Bank Payment', 0, $order_result['order'], $order_result['order_details']);
@@ -628,9 +628,10 @@ class PaymentController extends Controller
             // record commission
             $this->commissionService->recordCommission($orderProduct, $order);
 
-            // Only update stock when payment is confirmed (payment_status = 1)
-            // Bank transfer (payment_status = 0) waits for admin approval
-            if ($paymetn_status == 1) {
+            // Stok sipariş anında rezerve edilir (havale dahil).
+            // İyzico draft siparişinde düşülmez; ödeme onayında düşülür.
+            // Admin red/iptalde stok geri yüklenir.
+            if ($is_draft !== 'yes') {
                 $decrementBy = (int) ($orderProduct->qty ?? 1);
                 $product->qty = max(0, (int) $product->qty - $decrementBy);
                 $product->save();

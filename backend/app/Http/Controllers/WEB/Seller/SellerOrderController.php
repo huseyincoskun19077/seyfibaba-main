@@ -275,12 +275,16 @@ class SellerOrderController extends Controller
                 $op->save();
             }
 
+            $order = Order::find($id);
+            if ($order) {
+                \App\Support\OrderFulfillmentSync::sync($order);
+            }
+
             // Email gönder — kargo takip no dahil
             try {
                 MailHelper::setMailConfig();
-                $order = Order::find($id);
-                $user = User::find($order->user_id);
-                if ($user && $user->email) {
+                $user = $order ? User::find($order->user_id) : null;
+                if ($order && $user && $user->email) {
                     $productNames = $sellerLines->map(fn ($op) => ($op->product->name ?? 'Ürün') . ' x' . ($op->qty ?? 1))->implode("\n");
                     $trackingInfo = $latestCargo->tracking_number
                         ? "\nKargo Firması: " . ($latestCargo->carrier_name ?? $latestCargo->cargo_company ?? '-') . "\nTakip No: " . $latestCargo->tracking_number

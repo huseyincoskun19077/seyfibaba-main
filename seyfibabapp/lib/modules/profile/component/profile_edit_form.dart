@@ -38,10 +38,28 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
   List<CountryStateModel> stateList = [];
   List<CityModel> cityList = [];
 
+  final tcCtr = TextEditingController();
+  final postalCtr = TextEditingController();
+  final taxNumberCtr = TextEditingController();
+  final taxOfficeCtr = TextEditingController();
+  final companyCtr = TextEditingController();
+  String _invoiceType = 'individual';
+  bool _isEInvoice = false;
+
   @override
   void initState() {
     super.initState();
     loadRegion();
+  }
+
+  @override
+  void dispose() {
+    tcCtr.dispose();
+    postalCtr.dispose();
+    taxNumberCtr.dispose();
+    taxOfficeCtr.dispose();
+    companyCtr.dispose();
+    super.dispose();
   }
 
   loadRegion() {
@@ -63,8 +81,16 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
     profile.changeCity("${data.cityId}");
     profile.changePhone(number);
     profile.changePhoneCode(dialCode);
+    _invoiceType =
+        data.invoiceType.isNotEmpty ? data.invoiceType : 'individual';
+    tcCtr.text = data.tcIdentity;
+    taxNumberCtr.text = data.taxNumber;
+    taxOfficeCtr.text = data.taxOffice;
+    companyCtr.text = data.companyName;
+    _isEInvoice = data.isEInvoice;
+    postalCtr.text = data.postalCode;
     profile.changeInvoice(
-      invoiceType: data.invoiceType,
+      invoiceType: _invoiceType,
       tcIdentity: data.tcIdentity,
       taxNumber: data.taxNumber,
       taxOffice: data.taxOffice,
@@ -297,33 +323,18 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
             BlocBuilder<ProfileEditCubit, ProfileEditStateModel>(
               builder: (context, state) {
                 return BuyerInvoiceForm(
-                  invoiceType: state.invoiceType,
-                  tcIdentity: state.tcIdentity,
-                  taxNumber: state.taxNumber,
-                  taxOffice: state.taxOffice,
-                  companyName: state.companyName,
-                  isEInvoice: state.isEInvoice,
-                  postalCode: state.postalCode,
+                  invoiceType: _invoiceType,
+                  tcController: tcCtr,
+                  postalController: postalCtr,
+                  taxNumberController: taxNumberCtr,
+                  taxOfficeController: taxOfficeCtr,
+                  companyController: companyCtr,
+                  isEInvoice: _isEInvoice,
                   showIntro: false,
-                  onChanged: ({
-                    required invoiceType,
-                    required tcIdentity,
-                    required taxNumber,
-                    required taxOffice,
-                    required companyName,
-                    required isEInvoice,
-                    required postalCode,
-                  }) {
-                    profileEdBlc.changeInvoice(
-                      invoiceType: invoiceType,
-                      tcIdentity: tcIdentity,
-                      taxNumber: taxNumber,
-                      taxOffice: taxOffice,
-                      companyName: companyName,
-                      isEInvoice: isEInvoice,
-                      postalCode: postalCode,
-                    );
-                  },
+                  onInvoiceTypeChanged: (type) =>
+                      setState(() => _invoiceType = type),
+                  onEInvoiceChanged: (value) =>
+                      setState(() => _isEInvoice = value),
                 );
               },
             ),
@@ -376,6 +387,24 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
                 text: Language.updateProfile.capitalizeByWord(),
                 onPressed: () {
                   Utils.closeKeyBoard(context);
+                  final isCorporate = _invoiceType == 'corporate';
+                  profileEdBlc.changeInvoice(
+                    invoiceType: _invoiceType,
+                    tcIdentity: isCorporate
+                        ? ''
+                        : BuyerInvoiceFormState.digitsOnly(tcCtr.text, 11),
+                    taxNumber: isCorporate
+                        ? BuyerInvoiceFormState.digitsOnly(
+                            taxNumberCtr.text, 11)
+                        : '',
+                    taxOffice:
+                        isCorporate ? taxOfficeCtr.text.trim() : '',
+                    companyName:
+                        isCorporate ? companyCtr.text.trim() : '',
+                    isEInvoice: isCorporate ? _isEInvoice : false,
+                    postalCode: BuyerInvoiceFormState.digitsOnly(
+                        postalCtr.text, 5),
+                  );
                   context.read<ProfileEditCubit>().submitForm();
                 },
               ),

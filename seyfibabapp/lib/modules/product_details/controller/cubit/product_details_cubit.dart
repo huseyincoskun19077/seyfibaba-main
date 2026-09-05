@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../utils/language_string.dart';
 import '../../../../utils/utils.dart';
 import '../../../authentication/controller/login/login_bloc.dart';
 import '../../../cart/controllers/cart_repository.dart';
@@ -212,15 +213,15 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
          final error = GuestAddProductError(failure.message, failure.statusCode);
          emit(state.copyWith(detailsState: error));
        }, (success) {
-         const loaded = GuestSaveProduct('Successfully added');
+         final loaded = GuestSaveProduct(Language.cartItemAdded);
          emit(state.copyWith(detailsState: loaded, count: state.count + 1));
        });
      } else {
-       const error = GuestAddProductError("Multiple Seller Product isn't allowed", 402);
+       final error = GuestAddProductError(Language.multipleSellerNotAllowed, 402);
        emit(state.copyWith(detailsState: error));
      }
    }else{
-     const error = GuestAddProductError("Out of Stock", 402);
+     final error = GuestAddProductError(Language.outOfStock, 402);
      emit(state.copyWith(detailsState: error));
    }
   }
@@ -235,7 +236,7 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
       return false;
     },(success){
       savedProduct.removeWhere((e)=> e.product?.id == id);
-      const loaded = GuestSaveProductDeleted('Successfully Deleted');
+      final loaded = GuestSaveProductDeleted(Language.cartItemRemoved);
       emit(state.copyWith(detailsState: loaded));
       emit(state.copyWith(detailsState: GuestAllSavedProduct(savedProduct),count: state.count - 1));
       // debugPrint('successfully deleted');
@@ -257,7 +258,7 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
       //if(couponResponse != null){
         clearCoupon();
       //}
-      const loaded = GuestSaveProductClear('Successfully Cleared');
+      final loaded = GuestSaveProductClear(Language.cartCleared);
       emit(state.copyWith(detailsState: loaded));
       emit(state.copyWith(detailsState: const GuestAllSavedProduct([]),count: 0));
     });
@@ -322,7 +323,7 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
         emit(state.copyWith(detailsState: error));
       },(success){
         // cartCalculation(context, increase);
-        const loaded = GuestUpdateProduct('Successfully Updated');
+        final loaded = GuestUpdateProduct(Language.cartItemUpdated);
         emit(state.copyWith(detailsState: loaded));
         // debugPrint('successfully added to card');
       });
@@ -394,7 +395,7 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
           (success) {
         couponResponse = null;
         // debugPrint('coupon-clear-from-cubit');
-        const loaded  = CouponCleared('Successfully cleared');
+        final loaded = CouponCleared(Language.couponCleared);
         emit(state.copyWith(priceAfterCoupon: 0.0,couponPrice: 0.0, detailsState: loaded));
       },
     );

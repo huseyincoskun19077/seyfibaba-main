@@ -26,7 +26,7 @@ class NetworkParser {
       return _responseParser(response);
     } on SocketException {
       log('SocketException', name: _className);
-      throw const NetworkException('No internet connection', 10061);
+      throw const NetworkException('İnternet bağlantısı yok', 10061);
     } on FormatException {
       log('FormatException', name: _className);
       throw const DataFormatException('Data format exception', 422);
@@ -90,7 +90,7 @@ class NetworkParser {
 
       default:
         throw FetchDataException(
-            'Error occur while communication with Server', response.statusCode);
+            'Sunucu ile iletişim sırasında hata oluştu', response.statusCode);
     }
   }
 
@@ -98,7 +98,24 @@ class NetworkParser {
     final errorsMap = json.decode(body);
     try {
       if (errorsMap is Map && errorsMap['errors'] is Map) {
-        return errorsMap['errors'];
+        final errors = Map<String, dynamic>.from(errorsMap['errors'] as Map);
+        // Bilinmeyen alanlar (tc_identity vb.) snackbar'da görünsün
+        if (!errors.containsKey('message') ||
+            errors['message'] == null ||
+            (errors['message'] is List && (errors['message'] as List).isEmpty)) {
+          for (final entry in errors.entries) {
+            final value = entry.value;
+            if (value is List && value.isNotEmpty) {
+              errors['message'] = [value.first.toString()];
+              break;
+            }
+            if (value is String && value.isNotEmpty) {
+              errors['message'] = [value];
+              break;
+            }
+          }
+        }
+        return errors;
       }
       if (errorsMap is Map && errorsMap['message'] != null) {
         return {

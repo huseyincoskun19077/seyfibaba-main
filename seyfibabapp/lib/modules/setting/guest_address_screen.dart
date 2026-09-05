@@ -287,25 +287,25 @@ class _GuestAddressScreenState extends State<GuestAddressScreen> {
                         Utils.closeKeyBoard(context);
 
                         if(address.name.trim().isEmpty){
-                          Utils.errorSnackBar(context, 'Name is required');
+                          Utils.errorSnackBar(context, Language.nameRequired);
                         }else if(address.email.trim().isEmpty){
-                          Utils.errorSnackBar(context, 'Email is required');
+                          Utils.errorSnackBar(context, Language.emailRequired);
                         }else if(address.phone.trim().isEmpty){
-                          Utils.errorSnackBar(context, 'Phone is required');
+                          Utils.errorSnackBar(context, Language.phoneRequired);
                         }else if (_countryModel == null) {
-                          Utils.errorSnackBar(context, 'Please select country');
+                          Utils.errorSnackBar(context, Language.pleaseSelectCountry);
                         } else if (_countryStateModel == null) {
-                          Utils.errorSnackBar(context, 'Please select state');
+                          Utils.errorSnackBar(context, Language.pleaseSelectState);
                         } else if (_cityModel == null) {
-                          Utils.errorSnackBar(context, 'Please select city');
+                          Utils.errorSnackBar(context, Language.pleaseSelectCity);
                         } else if(address.address.trim().isEmpty){
-                          Utils.errorSnackBar(context, 'Address is required');
+                          Utils.errorSnackBar(context, Language.addressRequired);
                         }else if(address.userId == 0 && !Utils.isMapEnable(context)){
-                          Utils.errorSnackBar(context, 'Please select Shipping method');
+                          Utils.errorSnackBar(context, Language.selectShippingMethod);
                         }else {
                           if (Utils.isMapEnable(context)) {
                             if (aCubit.state.latitude == 0.0 && aCubit.state.longitude == 0.0) {
-                              Utils.showSnackBar(context, 'Location is required');
+                              Utils.showSnackBar(context, Language.locationRequired);
                             }else{
                               Navigator.pushNamed(context,RouteNames.guestCheckoutScreen);
                             }

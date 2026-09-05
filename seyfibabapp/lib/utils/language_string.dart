@@ -107,7 +107,12 @@ class Language {
   static String get shippingCost => _s('Shipping_Cost', 'Kargo Ücreti');
   static String get selectPaymentOption => _s('Please_Select_Your_Payment_Method', 'Ödeme Yöntemi Seçin');
   static String get cashOnDelivery => _s('Cash_On_Delivery', 'Kapıda Ödeme');
-  static String get bankPayment => _s('Bank_Payment', 'Banka Ödemesi');
+  static String get bankPayment =>
+      _s('Bank_Payment', 'Havale ile ödeme yapıldı');
+  static String get bankPaymentPendingNote => _s(
+        'Bank_Payment_Pending_Note',
+        'Seyfibaba.com sistemi kontrol ettikten sonra ödemeniz yapıldıysa onay verecektir.',
+      );
   static String get bankInfo => _s('Please_enter_bank_information', 'Banka bilgilerini girin');
   static String get pending => _s('Pending', 'Beklemede');
   static String get progress => _s('Progress', 'Hazırlanıyor');
@@ -223,13 +228,13 @@ class Language {
         'Alışverişe başlayın, siparişleriniz burada görünecek.',
       );
   static String get emptyPendingOrders =>
-      _s('Empty_pending_orders', 'Bekleyen sipariş yok');
+      _s('Empty_pending_orders', 'Sipariş alındı durumunda sipariş yok');
   static String get emptyProgressOrders =>
       _s('Empty_progress_orders', 'Hazırlanan sipariş yok');
   static String get emptyDeliveredOrders =>
-      _s('Empty_delivered_orders', 'Teslim edilen sipariş yok');
+      _s('Empty_delivered_orders', 'Kargoda sipariş yok');
   static String get emptyCompletedOrders =>
-      _s('Empty_completed_orders', 'Tamamlanan sipariş yok');
+      _s('Empty_completed_orders', 'Teslim edilmiş sipariş yok');
   static String get emptyDeclinedOrders =>
       _s('Empty_declined_orders', 'İptal edilen sipariş yok');
   static String get emptyTabOrdersHint => _s(
@@ -264,6 +269,16 @@ class Language {
         'Bu ürünü kaldırmak istiyor musunuz?',
       );
   static String get yesRemove => _s('Yes_remove', 'Evet, Kaldır');
+  static String get clearAllCart => _s('Clear_Cart', 'Tümünü Kaldır');
+  static String get wishToClearCart => _s(
+        'Wish_to_clear_cart',
+        'Sepetteki tüm ürünleri kaldırmak istiyor musunuz?',
+      );
+  static String get wishToRemoveProduct => _s(
+        'Do_you_want_to_Remove_this_Product',
+        'Bu ürünü sepetten çıkarmak istiyor musunuz?',
+      );
+  static String get no => _s('No', 'Hayır');
   static String get selectVariantItem =>
       _s('Select_variant_item', 'Varyant seçin');
   static String get emptySearchHint => _s(
@@ -444,4 +459,96 @@ class Language {
         'Empty_inbox_hint',
         'Satıcılarla yaptığınız yazışmalar burada görünecek.',
       );
+
+  static String get cartCleared =>
+      _s('Cart_cleared', 'Sepet başarıyla temizlendi');
+  static String get cartItemRemoved =>
+      _s('Cart_item_removed', 'Ürün sepetten kaldırıldı');
+  static String get cartItemAdded =>
+      _s('Cart_item_added', 'Ürün sepete eklendi');
+  static String get cartItemUpdated =>
+      _s('Cart_item_updated', 'Sepet güncellendi');
+  static String get couponCleared =>
+      _s('Coupon_cleared', 'Kupon kaldırıldı');
+  static String get outOfStock => _s('Out_of_Stock', 'Stokta yok');
+  static String get multipleSellerNotAllowed => _s(
+        'Multiple_seller_not_allowed',
+        'Sepete farklı satıcılardan ürün eklenemez',
+      );
+  static String get pleaseSelectCountry =>
+      _s('Please_select_country', 'Lütfen ülke seçin');
+  static String get pleaseSelectState =>
+      _s('Please_select_state', 'Lütfen il seçin');
+  static String get pleaseSelectCity =>
+      _s('Please_select_city', 'Lütfen ilçe seçin');
+  static String get nameRequired => _s('Name_is_required', 'Ad soyad zorunludur');
+  static String get emailRequired =>
+      _s('Email_is_required', 'E-posta zorunludur');
+  static String get phoneRequired =>
+      _s('Phone_is_required', 'Telefon zorunludur');
+  static String get addressRequired =>
+      _s('Address_is_required', 'Adres zorunludur');
+  static String get locationRequired =>
+      _s('Location_is_required', 'Konum seçimi zorunludur');
+  static String get noInternetConnection =>
+      _s('No_internet_connection', 'İnternet bağlantısı yok');
+  static String get pleaseAgreeTerms => _s(
+        'Please_agree_terms',
+        'Lütfen şartlar ve koşulları kabul edin',
+      );
+  static String get noMessageFound =>
+      _s('No_Message_Found', 'Mesaj bulunamadı');
+
+  /// Bilinen İngilizce API / hardcode mesajlarını Türkçeye çevirir.
+  static String localizeMessage(String message) {
+    final raw = message.trim();
+    if (raw.isEmpty) return raw;
+    final key = raw.toLowerCase();
+    const map = <String, String>{
+      'successfully cleared': 'Sepet başarıyla temizlendi',
+      'cart clear successfully': 'Sepet başarıyla temizlendi',
+      'your shopping cart is cleared': 'Sepet başarıyla temizlendi',
+      'clear successfully': 'Başarıyla temizlendi',
+      'successfully deleted': 'Başarıyla silindi',
+      'successfully added': 'Ürün sepete eklendi',
+      'item added successfully': 'Ürün başarıyla eklendi',
+      'successfully updated': 'Başarıyla güncellendi',
+      'update successfully': 'Başarıyla güncellendi',
+      'updated successfully': 'Başarıyla güncellendi',
+      'item updated successfully': 'Ürün başarıyla güncellendi',
+      'remove successfully': 'Ürün başarıyla kaldırıldı',
+      'removed successfully': 'Başarıyla kaldırıldı',
+      'item remmoved successfully': 'Ürün başarıyla kaldırıldı',
+      'item removed successfully': 'Ürün başarıyla kaldırıldı',
+      'out of stock': 'Stokta yok',
+      "multiple seller product isn't allowed":
+          'Sepete farklı satıcılardan ürün eklenemez',
+      'your shopping cart is empty': 'Alışveriş sepetiniz boş',
+      'name is required': 'Ad soyad zorunludur',
+      'email is required': 'E-posta zorunludur',
+      'phone is required': 'Telefon zorunludur',
+      'address is required': 'Adres zorunludur',
+      'location is required': 'Konum seçimi zorunludur',
+      'please select shipping method': 'Lütfen kargo yöntemi seçin',
+      'no internet connection': 'İnternet bağlantısı yok',
+      'please select country': 'Lütfen ülke seçin',
+      'please select state': 'Lütfen il seçin',
+      'please select city': 'Lütfen ilçe seçin',
+      'please agree terms & condition':
+          'Lütfen şartlar ve koşulları kabul edin',
+      'please agree terms and condition':
+          'Lütfen şartlar ve koşulları kabul edin',
+      'no message found!': 'Mesaj bulunamadı',
+      'add payment method': 'Ödeme Yöntemi Ekle',
+      'something went wrong': 'Bir sorun oluştu',
+      'somethings went wrong': 'Bir sorun oluştu',
+      'loading': 'Yükleniyor',
+      'error occur while communication with server':
+          'Sunucu ile iletişim sırasında hata oluştu',
+      'request timeout': 'İstek zaman aşımına uğradı',
+      'service unavailable': 'Servis kullanılamıyor',
+      'no data available': 'Gösterilecek veri yok',
+    };
+    return map[key] ?? raw;
+  }
 }

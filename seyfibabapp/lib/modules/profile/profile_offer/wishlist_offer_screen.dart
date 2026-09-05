@@ -161,9 +161,9 @@ class __LoadedWidgetState extends State<_LoadedWidget> {
                       barrierDismissible: false,
                       builder: (context) => ConfirmDialog(
                         icon: Kimages.deleteIcon2,
-                        message: 'Do you want to Remove\All Items?',
-                        confirmText: 'Yes, Remove',
-                        cancelText: 'Cancel',
+                        message: Language.removeProductConfirm,
+                        confirmText: Language.yesRemove,
+                        cancelText: Language.cancel,
                         onTap: () async {
                           final item = productList.removeAt(index);
                           setState(() {});

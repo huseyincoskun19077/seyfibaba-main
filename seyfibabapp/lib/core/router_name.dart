@@ -567,9 +567,10 @@ class RouteNames {
         return MaterialPageRoute(
             settings: settings, builder: (_) => const ChatListScreen());
       case RouteNames.orderScreen:
-      final isPayment = settings.arguments as bool;
+        final isPayment = settings.arguments as bool? ?? false;
         return MaterialPageRoute(
-            settings: settings, builder: (_) =>  OrderScreen(isFromPayment:isPayment));
+            settings: settings,
+            builder: (_) => OrderScreen(isFromPayment: isPayment));
       case RouteNames.singleOrderScreen:
         // final trackNumber = settings.arguments as String;
         return MaterialPageRoute(
