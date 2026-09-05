@@ -41,10 +41,10 @@ class BuyerInvoiceForm extends StatefulWidget {
   final bool embedded;
 
   @override
-  State<BuyerInvoiceForm> createState() => _BuyerInvoiceFormState();
+  State<BuyerInvoiceForm> createState() => BuyerInvoiceFormState();
 }
 
-class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
+class BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
   static const _individual = 'individual';
   static const _corporate = 'corporate';
 
@@ -53,8 +53,45 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
   late final TextEditingController _taxCtrl;
   late final TextEditingController _taxOfficeCtrl;
   late final TextEditingController _companyCtrl;
+  final _tcFocus = FocusNode();
+  final _postalFocus = FocusNode();
+  final _taxFocus = FocusNode();
+  final _taxOfficeFocus = FocusNode();
+  final _companyFocus = FocusNode();
 
   bool get _isCorporate => widget.invoiceType == _corporate;
+
+  /// Submit öncesi controller değerlerini döndür (parent state gecikmesinden bağımsız).
+  ({
+    String invoiceType,
+    String tcIdentity,
+    String taxNumber,
+    String taxOffice,
+    String companyName,
+    bool isEInvoice,
+    String postalCode,
+  }) readValues() {
+    if (_isCorporate) {
+      return (
+        invoiceType: _corporate,
+        tcIdentity: '',
+        taxNumber: _digits(_taxCtrl.text, 11),
+        taxOffice: _taxOfficeCtrl.text.trim(),
+        companyName: _companyCtrl.text.trim(),
+        isEInvoice: widget.isEInvoice,
+        postalCode: _digits(_postalCtrl.text, 5),
+      );
+    }
+    return (
+      invoiceType: _individual,
+      tcIdentity: _digits(_tcCtrl.text, 11),
+      taxNumber: '',
+      taxOffice: '',
+      companyName: '',
+      isEInvoice: false,
+      postalCode: _digits(_postalCtrl.text, 5),
+    );
+  }
 
   @override
   void initState() {
@@ -69,22 +106,30 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
   @override
   void didUpdateWidget(covariant BuyerInvoiceForm oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _sync(_tcCtrl, widget.tcIdentity);
-    _sync(_postalCtrl, widget.postalCode);
-    _sync(_taxCtrl, widget.taxNumber);
-    _sync(_taxOfficeCtrl, widget.taxOffice);
-    _sync(_companyCtrl, widget.companyName);
+    // Odaktayken parent gecikmeli state controller'ı ezmesin
+    if (!_tcFocus.hasFocus) _sync(_tcCtrl, widget.tcIdentity);
+    if (!_postalFocus.hasFocus) _sync(_postalCtrl, widget.postalCode);
+    if (!_taxFocus.hasFocus) _sync(_taxCtrl, widget.taxNumber);
+    if (!_taxOfficeFocus.hasFocus) _sync(_taxOfficeCtrl, widget.taxOffice);
+    if (!_companyFocus.hasFocus) _sync(_companyCtrl, widget.companyName);
   }
 
   void _sync(TextEditingController ctrl, String value) {
     if (ctrl.text != value) {
-      ctrl.text = value;
-      ctrl.selection = TextSelection.collapsed(offset: value.length);
+      ctrl.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
     }
   }
 
   @override
   void dispose() {
+    _tcFocus.dispose();
+    _postalFocus.dispose();
+    _taxFocus.dispose();
+    _taxOfficeFocus.dispose();
+    _companyFocus.dispose();
     _tcCtrl.dispose();
     _postalCtrl.dispose();
     _taxCtrl.dispose();
@@ -209,6 +254,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
           if (!_isCorporate) ...[
             TextFormField(
               controller: _tcCtrl,
+              focusNode: _tcFocus,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'TC Kimlik No *',
@@ -226,6 +272,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _postalCtrl,
+              focusNode: _postalFocus,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Posta Kodu *',
@@ -253,6 +300,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _taxCtrl,
+              focusNode: _taxFocus,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'VKN/TCKN *',
@@ -266,6 +314,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _taxOfficeCtrl,
+              focusNode: _taxOfficeFocus,
               decoration: const InputDecoration(
                 labelText: 'Vergi Dairesi *',
                 hintText: 'Vergi Dairesi Giriniz',
@@ -278,6 +327,7 @@ class _BuyerInvoiceFormState extends State<BuyerInvoiceForm> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _companyCtrl,
+              focusNode: _companyFocus,
               decoration: const InputDecoration(
                 labelText: 'Firma Adı *',
                 hintText: 'Firma Adı Giriniz',

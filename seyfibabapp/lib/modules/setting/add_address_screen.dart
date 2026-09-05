@@ -60,6 +60,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   bool _isHome = true;
   String _neighborhood = '';
   String _locality = '';
+  final _invoiceFormKey = GlobalKey<BuyerInvoiceFormState>();
 
   @override
   void initState() {
@@ -142,6 +143,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                     const SizedBox(height: 16),
                     if (widget.showInvoice) ...[
                       BuyerInvoiceForm(
+                        key: _invoiceFormKey,
                         invoiceType: _invoiceType,
                         tcIdentity: _tcIdentity,
                         taxNumber: _taxNumber,
@@ -341,20 +343,41 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           }
 
                           if (widget.showInvoice) {
+                            final inv = _invoiceFormKey.currentState?.readValues();
+                            final invoiceType =
+                                inv?.invoiceType ?? _invoiceType;
+                            final tcIdentity = inv?.tcIdentity ?? _tcIdentity;
+                            final taxNumber = inv?.taxNumber ?? _taxNumber;
+                            final taxOffice = inv?.taxOffice ?? _taxOffice;
+                            final companyName =
+                                inv?.companyName ?? _companyName;
+                            final isEInvoice = inv?.isEInvoice ?? _isEInvoice;
+                            final postalCode = (inv?.postalCode.isNotEmpty == true
+                                    ? inv!.postalCode
+                                    : (_postalCode.isNotEmpty
+                                        ? _postalCode
+                                        : zipCtr.text.trim()));
+
                             final invoiceError = validateBuyerInvoice(
-                              invoiceType: _invoiceType,
-                              tcIdentity: _tcIdentity,
-                              taxNumber: _taxNumber,
-                              taxOffice: _taxOffice,
-                              companyName: _companyName,
-                              postalCode: _postalCode.isNotEmpty
-                                  ? _postalCode
-                                  : zipCtr.text.trim(),
+                              invoiceType: invoiceType,
+                              tcIdentity: tcIdentity,
+                              taxNumber: taxNumber,
+                              taxOffice: taxOffice,
+                              companyName: companyName,
+                              postalCode: postalCode,
                             );
                             if (invoiceError != null) {
                               Utils.errorSnackBar(context, invoiceError);
                               return;
                             }
+
+                            _invoiceType = invoiceType;
+                            _tcIdentity = tcIdentity;
+                            _taxNumber = taxNumber;
+                            _taxOffice = taxOffice;
+                            _companyName = companyName;
+                            _isEInvoice = isEInvoice;
+                            _postalCode = postalCode;
                           }
 
                           final dataMap = <String, String>{
@@ -378,10 +401,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           };
 
                           if (widget.showInvoice) {
-                            dataMap['zip_code'] = _postalCode.isNotEmpty
-                                ? _postalCode
-                                : zipCtr.text.trim();
-                            dataMap['postal_code'] = dataMap['zip_code']!;
+                            dataMap['zip_code'] = _postalCode;
+                            dataMap['postal_code'] = _postalCode;
                             dataMap['invoice_type'] = _invoiceType;
                             if (_invoiceType == 'corporate') {
                               dataMap['tax_number'] = _taxNumber;

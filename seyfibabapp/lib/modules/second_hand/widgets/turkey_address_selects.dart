@@ -11,6 +11,41 @@ const _localUrl = 'https://seyfibaba.com/data/tr-turkiye-address.json';
 const _remoteUrl =
     'https://raw.githubusercontent.com/hsndmr/turkiye-city-county-district-neighborhood/main/data.json';
 
+String normalizeTrPlaceName(String value) {
+  var s = value.trim().toLowerCase();
+  const from = 'ığüşöçİI';
+  const to = 'igusocii';
+  for (var i = 0; i < from.length; i++) {
+    s = s.replaceAll(from[i], to[i]);
+  }
+  s = s.replaceAll(RegExp(r'\s+'), ' ');
+  s = s.replaceAll(RegExp(r'\s*mah\.?$', caseSensitive: false), '');
+  return s.trim();
+}
+
+String titleTrPlaceName(String value) {
+  var cleaned = value.trim().replaceAll(RegExp(r'\s*MAH\.?$', caseSensitive: false), '');
+  cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ');
+  if (cleaned.isEmpty) return '';
+  final lower = cleaned.toLowerCase();
+  final buffer = StringBuffer();
+  var capNext = true;
+  for (final rune in lower.runes) {
+    final ch = String.fromCharCode(rune);
+    if (capNext && RegExp(r'\S').hasMatch(ch)) {
+      buffer.write(ch.toUpperCase());
+      capNext = false;
+    } else {
+      buffer.write(ch);
+      if (ch == ' ' || ch == '/' || ch == '-') capNext = true;
+    }
+  }
+  return buffer.toString();
+}
+
+bool _namesMatch(String a, String b) =>
+    normalizeTrPlaceName(a) == normalizeTrPlaceName(b);
+
 class TurkeyAddressValue {
   const TurkeyAddressValue({
     this.province = '',
@@ -50,11 +85,30 @@ class TurkeyAddressTree {
     return _pending ??= _fetch();
   }
 
+  static bool _hasMahalleData(List<dynamic> tree) {
+    for (final c in tree) {
+      if (c is! Map) continue;
+      final counties = c['counties'];
+      if (counties is! List) continue;
+      for (final co in counties) {
+        if (co is! Map) continue;
+        final districts = co['districts'];
+        if (districts is! List) continue;
+        for (final d in districts) {
+          if (d is! Map) continue;
+          final neighborhoods = d['neighborhoods'];
+          if (neighborhoods is List && neighborhoods.isNotEmpty) return true;
+        }
+      }
+    }
+    return false;
+  }
+
   static Future<List<dynamic>> _fetch() async {
-    for (final url in [_localUrl, _remoteUrl]) {
+    for (final url in [_remoteUrl, _localUrl]) {
       try {
         final res = await http.get(Uri.parse(url)).timeout(
-              const Duration(seconds: 20),
+              const Duration(seconds: 25),
             );
         if (res.statusCode != 200) continue;
         final decoded = json.decode(utf8.decode(res.bodyBytes));
@@ -63,7 +117,7 @@ class TurkeyAddressTree {
             : (decoded is Map
                 ? (decoded['cities'] ?? decoded['data'] ?? [])
                 : []);
-        if (tree is List && tree.isNotEmpty) {
+        if (tree is List && tree.isNotEmpty && _hasMahalleData(tree)) {
           _cache = tree;
           return tree;
         }
@@ -86,6 +140,7 @@ class TurkeyAddressSelects extends StatefulWidget {
   final TurkeyAddressValue value;
   final ValueChanged<TurkeyAddressValue> onChanged;
   final bool showNeighborhood;
+
   /// İl/ilçe zaten seçiliyse yalnızca mahalle dropdown gösterir.
   final bool onlyNeighborhood;
 
@@ -118,31 +173,42 @@ class _TurkeyAddressSelectsState extends State<TurkeyAddressSelects> {
     });
   }
 
-  Map<String, dynamic>? _city() {
+  Map<String, dynamic>? _findCity(String province) {
     for (final c in _tree) {
-      if (c is Map && '${c['name']}' == widget.value.province) {
+      if (c is Map && _namesMatch('${c['name']}', province)) {
         return Map<String, dynamic>.from(c);
       }
     }
     return null;
   }
 
-  List<Map<String, dynamic>> _counties() {
-    final city = _city();
+  List<Map<String, dynamic>> _countiesFor(Map<String, dynamic>? city) {
     final raw = city?['counties'];
     if (raw is! List) return [];
-    return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    return raw
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 
-  Map<String, dynamic>? _county() {
-    for (final c in _counties()) {
-      if ('${c['name']}' == widget.value.district) return c;
+  Map<String, dynamic>? _findCounty(String province, String district) {
+    final city = _findCity(province);
+    final counties = _countiesFor(city);
+    for (final c in counties) {
+      if (_namesMatch('${c['name']}', district)) return c;
+    }
+    if (district.trim().isEmpty) return null;
+    for (final c in _tree) {
+      if (c is! Map) continue;
+      for (final co in _countiesFor(Map<String, dynamic>.from(c))) {
+        if (_namesMatch('${co['name']}', district)) return co;
+      }
     }
     return null;
   }
 
   List<_MahalleItem> _mahalleItems() {
-    final county = _county();
+    final county = _findCounty(widget.value.province, widget.value.district);
     final districts = county?['districts'];
     if (districts is! List) return [];
     final pairs = <_MahalleItem>[];
@@ -161,23 +227,39 @@ class _TurkeyAddressSelectsState extends State<TurkeyAddressSelects> {
     }
     final counts = <String, int>{};
     for (final p in pairs) {
-      counts[p.neighborhoodName] = (counts[p.neighborhoodName] ?? 0) + 1;
+      final key = normalizeTrPlaceName(p.neighborhoodName);
+      counts[key] = (counts[key] ?? 0) + 1;
     }
-    return pairs
-        .map(
-          (p) => p.copyWith(
-            label: (counts[p.neighborhoodName] ?? 0) > 1
-                ? '${p.neighborhoodName} (${p.localityName})'
-                : p.neighborhoodName,
-          ),
-        )
+    final items = pairs
+        .map((p) {
+          final labelBase = titleTrPlaceName(p.neighborhoodName);
+          final needsLocality =
+              (counts[normalizeTrPlaceName(p.neighborhoodName)] ?? 0) > 1;
+          return p.copyWith(
+            label: needsLocality
+                ? '$labelBase (${titleTrPlaceName(p.localityName)})'
+                : labelBase,
+          );
+        })
         .toList();
+    items.sort((a, b) => a.label.compareTo(b.label));
+    return items;
   }
 
-  bool get _hasMahalle {
-    if (!widget.showNeighborhood) return false;
-    if (widget.value.neighborhood.isNotEmpty) return true;
-    return _mahalleItems().isNotEmpty;
+  String _resolveMahalleKey(List<_MahalleItem> mahalle) {
+    final v = widget.value;
+    if (v.neighborhood.isEmpty) return '';
+    if (v.locality.isNotEmpty) {
+      final key = '${v.locality}$_mahSep${v.neighborhood}';
+      if (mahalle.any((m) => m.key == key)) return key;
+    }
+    for (final m in mahalle) {
+      if (_namesMatch(m.neighborhoodName, v.neighborhood) ||
+          _namesMatch(titleTrPlaceName(m.neighborhoodName), v.neighborhood)) {
+        return m.key;
+      }
+    }
+    return '';
   }
 
   @override
@@ -186,7 +268,7 @@ class _TurkeyAddressSelectsState extends State<TurkeyAddressSelects> {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
-          'Adres listesi yükleniyor…',
+          'Mahalle listesi yükleniyor…',
           style: TextStyle(fontSize: 13, color: ShTheme.muted),
         ),
       );
@@ -196,7 +278,7 @@ class _TurkeyAddressSelectsState extends State<TurkeyAddressSelects> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Adres listesi yüklenemedi.',
+            'Mahalle listesi yüklenemedi.',
             style: TextStyle(fontSize: 13, color: ShTheme.muted),
           ),
           TextButton(onPressed: _load, child: const Text('Tekrar dene')),
@@ -210,27 +292,109 @@ class _TurkeyAddressSelectsState extends State<TurkeyAddressSelects> {
         .map((c) => '${c['name']}')
         .where((n) => n.isNotEmpty)
         .toList();
-    final counties = _counties();
-    final mahalle = _mahalleItems();
-    final provinceValue =
-        cityNames.contains(v.province) ? v.province : '';
-    final districtNames = counties.map((c) => '${c['name']}').toList();
+    final matchedCity = _findCity(v.province);
+    final counties = _countiesFor(matchedCity);
+    final mahalle = widget.showNeighborhood ? _mahalleItems() : <_MahalleItem>[];
+    final provinceValue = matchedCity != null ? '${matchedCity['name']}' : '';
+    final matchedCounty = _findCounty(v.province, v.district);
     final districtValue =
-        districtNames.contains(v.district) ? v.district : '';
-    final mahKey = v.locality.isNotEmpty && v.neighborhood.isNotEmpty
-        ? '${v.locality}$_mahSep${v.neighborhood}'
-        : '';
+        matchedCounty != null ? '${matchedCounty['name']}' : '';
+    final mahKey = _resolveMahalleKey(mahalle);
+    final districtReady = v.district.trim().isNotEmpty;
+
+    final mahalleField = !widget.showNeighborhood
+        ? const SizedBox.shrink()
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!widget.onlyNeighborhood) const SizedBox(height: 10),
+              ShDropdownField<String>(
+                label: 'Mahalle',
+                value: mahKey,
+                enabled: districtReady,
+                items: [
+                  DropdownMenuItem(
+                    value: '',
+                    child: Text(
+                      !districtReady
+                          ? 'Önce ilçe seçin'
+                          : mahalle.isEmpty
+                              ? 'Mahalle bulunamadı'
+                              : 'Mahalle seçin',
+                    ),
+                  ),
+                  if (v.neighborhood.isNotEmpty && mahKey.isEmpty)
+                    DropdownMenuItem(
+                      value: 'legacy$_mahSep${v.neighborhood}',
+                      child: Text('${titleTrPlaceName(v.neighborhood)} (kayıtlı)'),
+                    ),
+                  ...mahalle.map(
+                    (m) => DropdownMenuItem(
+                      value: m.key,
+                      child: Text(m.label),
+                    ),
+                  ),
+                ],
+                onChanged: (raw) {
+                  if (raw == null || raw.isEmpty) {
+                    widget.onChanged(
+                      TurkeyAddressValue(
+                        province: v.province,
+                        district: v.district,
+                      ),
+                    );
+                    return;
+                  }
+                  if (raw.startsWith('legacy$_mahSep')) {
+                    widget.onChanged(
+                      TurkeyAddressValue(
+                        province: v.province,
+                        district: v.district,
+                        neighborhood: raw.substring('legacy$_mahSep'.length),
+                      ),
+                    );
+                    return;
+                  }
+                  final i = raw.indexOf(_mahSep);
+                  if (i < 0) return;
+                  final neighborhood = raw.substring(i + _mahSep.length);
+                  widget.onChanged(
+                    TurkeyAddressValue(
+                      province: v.province,
+                      district: v.district,
+                      locality: raw.substring(0, i),
+                      neighborhood: titleTrPlaceName(neighborhood),
+                    ),
+                  );
+                },
+              ),
+              if (!districtReady)
+                const Padding(
+                  padding: EdgeInsets.only(top: 6),
+                  child: Text(
+                    'Önce il ve ilçe seçin.',
+                    style: TextStyle(fontSize: 12, color: ShTheme.muted),
+                  ),
+                ),
+            ],
+          );
+
+    if (widget.onlyNeighborhood) {
+      return mahalleField;
+    }
 
     return Column(
       children: [
-        if (!widget.onlyNeighborhood) ...[
         ShDropdownField<String>(
           label: 'İl',
           value: provinceValue.isEmpty ? '' : provinceValue,
           items: [
             const DropdownMenuItem(value: '', child: Text('Seçin')),
             ...cityNames.map(
-              (n) => DropdownMenuItem(value: n, child: Text(n)),
+              (n) => DropdownMenuItem(
+                value: n,
+                child: Text(titleTrPlaceName(n)),
+              ),
             ),
           ],
           onChanged: (next) {
@@ -249,7 +413,7 @@ class _TurkeyAddressSelectsState extends State<TurkeyAddressSelects> {
             ...counties.map(
               (c) => DropdownMenuItem(
                 value: '${c['name']}',
-                child: Text('${c['name']}'),
+                child: Text(titleTrPlaceName('${c['name']}')),
               ),
             ),
           ],
@@ -262,76 +426,7 @@ class _TurkeyAddressSelectsState extends State<TurkeyAddressSelects> {
             );
           },
         ),
-        ],
-        if (_hasMahalle) ...[
-          if (!widget.onlyNeighborhood) const SizedBox(height: 10),
-          ShDropdownField<String>(
-            label: 'Mahalle',
-            value: mahKey,
-            enabled: districtValue.isNotEmpty,
-            items: [
-              const DropdownMenuItem(value: '', child: Text('Seçin')),
-              if (mahKey.isNotEmpty &&
-                  mahalle.every((m) => m.key != mahKey))
-                DropdownMenuItem(
-                  value: mahKey,
-                  child: Text('${v.neighborhood} (kayıtlı)'),
-                ),
-              ...mahalle.map(
-                (m) => DropdownMenuItem(
-                  value: m.key,
-                  child: Text(m.label),
-                ),
-              ),
-            ],
-            onChanged: (raw) {
-                    if (raw == null || raw.isEmpty) {
-                      widget.onChanged(
-                        TurkeyAddressValue(
-                          province: v.province,
-                          district: v.district,
-                        ),
-                      );
-                      return;
-                    }
-                    final i = raw.indexOf(_mahSep);
-                    if (i < 0) return;
-                    widget.onChanged(
-                      TurkeyAddressValue(
-                        province: v.province,
-                        district: v.district,
-                        locality: raw.substring(0, i),
-                        neighborhood: raw.substring(i + _mahSep.length),
-                      ),
-                    );
-            },
-          ),
-          if (widget.onlyNeighborhood && districtValue.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 6),
-              child: Text(
-                'Önce il ve ilçe seçin.',
-                style: TextStyle(fontSize: 12, color: ShTheme.muted),
-              ),
-            ),
-        ] else if (widget.onlyNeighborhood) ...[
-          TextFormField(
-            initialValue: v.neighborhood,
-            decoration: const InputDecoration(
-              labelText: 'Mahalle',
-              hintText: 'Mahalle adı',
-            ),
-            onChanged: (value) {
-              widget.onChanged(
-                TurkeyAddressValue(
-                  province: v.province,
-                  district: v.district,
-                  neighborhood: value,
-                ),
-              );
-            },
-          ),
-        ],
+        mahalleField,
       ],
     );
   }

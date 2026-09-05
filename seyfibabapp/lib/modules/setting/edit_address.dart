@@ -350,6 +350,7 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
   bool _invoiceLoaded = false;
   String _neighborhood = '';
   String _locality = '';
+  final _invoiceFormKey = GlobalKey<BuyerInvoiceFormState>();
 
   bool get _showInvoice => widget.showInvoice;
 
@@ -498,6 +499,7 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                 const SizedBox(height: 16),
                 if (_showInvoice) ...[
                   BuyerInvoiceForm(
+                    key: _invoiceFormKey,
                     invoiceType: _invoiceType,
                     tcIdentity: _tcIdentity,
                     taxNumber: _taxNumber,
@@ -693,18 +695,34 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                         return;
                       }
                       if (_showInvoice) {
+                        final inv = _invoiceFormKey.currentState?.readValues();
+                        final invoiceType = inv?.invoiceType ?? _invoiceType;
+                        final tcIdentity = inv?.tcIdentity ?? _tcIdentity;
+                        final taxNumber = inv?.taxNumber ?? _taxNumber;
+                        final taxOffice = inv?.taxOffice ?? _taxOffice;
+                        final companyName = inv?.companyName ?? _companyName;
+                        final isEInvoice = inv?.isEInvoice ?? _isEInvoice;
+                        final postalCode = inv?.postalCode ?? _postalCode;
+
                         final invoiceError = validateBuyerInvoice(
-                          invoiceType: _invoiceType,
-                          tcIdentity: _tcIdentity,
-                          taxNumber: _taxNumber,
-                          taxOffice: _taxOffice,
-                          companyName: _companyName,
-                          postalCode: _postalCode,
+                          invoiceType: invoiceType,
+                          tcIdentity: tcIdentity,
+                          taxNumber: taxNumber,
+                          taxOffice: taxOffice,
+                          companyName: companyName,
+                          postalCode: postalCode,
                         );
                         if (invoiceError != null) {
                           Utils.errorSnackBar(context, invoiceError);
                           return;
                         }
+                        _invoiceType = invoiceType;
+                        _tcIdentity = tcIdentity;
+                        _taxNumber = taxNumber;
+                        _taxOffice = taxOffice;
+                        _companyName = companyName;
+                        _isEInvoice = isEInvoice;
+                        _postalCode = postalCode;
                       }
                       final dataMap = <String, String>{
                         'name': addressCubit.nameCtr.text.trim(),

@@ -38,8 +38,8 @@ class AddressCotroller extends Controller
     public function store(Request $request)
     {
         $this->validateAddressRequest($request);
-        // Fatura alanları yalnızca gönderildiyse zorunlu (teslimat adresi TC gerektirmez)
-        if ($request->filled('invoice_type') || $request->has('tc_identity') || $request->has('tax_number')) {
+        // Fatura doğrulaması yalnızca fatura tipi gönderildiyse (boş tc_identity anahtarı tetiklemesin)
+        if ($request->filled('invoice_type')) {
             app(\App\Services\BuyerInvoiceService::class)->validateFromRequest($request, null, true);
         }
 
@@ -118,7 +118,7 @@ class AddressCotroller extends Controller
         }
 
         $this->validateAddressRequest($request);
-        if ($request->filled('invoice_type') || $request->has('tc_identity') || $request->has('tax_number')) {
+        if ($request->filled('invoice_type')) {
             app(\App\Services\BuyerInvoiceService::class)->validateFromRequest($request, null, true);
         }
 
@@ -258,7 +258,7 @@ class AddressCotroller extends Controller
             $address->zip_code = $zip !== '' ? $zip : null;
         }
 
-        if (! $request->filled('invoice_type') && ! $request->has('tc_identity') && ! $request->has('tax_number')) {
+        if (! $request->filled('invoice_type')) {
             return;
         }
 

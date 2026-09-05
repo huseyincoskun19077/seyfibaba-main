@@ -320,7 +320,7 @@ return array (
   'Other' => 'Diğer',
   'Offers' => 'Teklifler',
   'Items in Your Cart' => 'Sepetinizdeki Ürünler',
-  'swipe right to delete any item' => 'Herhangi Bir Ürünü Silmek İçin Sağa Kaydırın',
+  'swipe right to delete any item' => 'Herhangi Bir Adresi Silmek İçin Sağa Kaydırın',
   'My Offers' => 'Tekliflerim',
   'filter' => 'filtre',
   'Size' => 'Beden',

@@ -66,6 +66,8 @@ export default function AddressesTab({ countryLists }) {
     country: null,
     state: null,
     city: null,
+    stateName: "",
+    cityName: "",
     neighborhood: "",
     locality: "",
   });
@@ -112,6 +114,8 @@ export default function AddressesTab({ countryLists }) {
       country: null,
       state: null,
       city: null,
+      stateName: "",
+      cityName: "",
       neighborhood: "",
       locality: "",
     });
@@ -178,6 +182,10 @@ export default function AddressesTab({ countryLists }) {
       setFormData((prev) => ({
         ...prev,
         country: value.id,
+        state: null,
+        city: null,
+        stateName: "",
+        cityName: "",
         neighborhood: "",
         locality: "",
       }));
@@ -187,7 +195,7 @@ export default function AddressesTab({ countryLists }) {
       });
       if (response.isSuccess) {
         setCityDropdown(null);
-        setStateDropdown(response?.data?.states);
+        setStateDropdown(sortTurkeyStateOptions(response?.data?.states || []));
       }
     } else {
       console.error(
@@ -211,6 +219,9 @@ export default function AddressesTab({ countryLists }) {
         setFormData((prev) => ({
           ...prev,
           state: value.id,
+          city: null,
+          stateName: value.name || prev.stateName || "",
+          cityName: "",
           neighborhood: "",
           locality: "",
         }));
@@ -238,6 +249,7 @@ export default function AddressesTab({ countryLists }) {
         setFormData((prev) => ({
           ...prev,
           city: value.id,
+          cityName: value.name || "",
           neighborhood: "",
           locality: "",
         }));
@@ -270,6 +282,8 @@ export default function AddressesTab({ countryLists }) {
       country: null,
       state: null,
       city: null,
+      stateName: "",
+      cityName: "",
       neighborhood: "",
       locality: "",
     });
@@ -360,6 +374,8 @@ export default function AddressesTab({ countryLists }) {
         country: parseInt(addressData.country_id),
         state: parseInt(addressData.state_id),
         city: parseInt(addressData.city_id),
+        stateName: addressData.country_state?.name || "",
+        cityName: addressData.city?.name || "",
         neighborhood: addressData.neighborhood || "",
         locality: "",
       });
@@ -375,7 +391,10 @@ export default function AddressesTab({ countryLists }) {
         })
       );
       await getState({ id: addressData.country_id });
-      await getcity({ id: addressData.state_id });
+      await getcity({
+        id: addressData.state_id,
+        name: addressData.country_state?.name,
+      });
       if (
         Number(webSettings?.map_status) === 1 &&
         addressData?.latitude &&
@@ -792,13 +811,17 @@ export default function AddressesTab({ countryLists }) {
                   onlyNeighborhood
                   value={{
                     province:
+                      formData.stateName ||
                       (stateDropdown || []).find(
                         (s) => Number(s.id) === Number(formData.state)
-                      )?.name || "",
+                      )?.name ||
+                      "",
                     district:
+                      formData.cityName ||
                       (cityDropdown || []).find(
                         (c) => Number(c.id) === Number(formData.city)
-                      )?.name || "",
+                      )?.name ||
+                      "",
                     locality: formData.locality || "",
                     neighborhood: formData.neighborhood || "",
                   }}

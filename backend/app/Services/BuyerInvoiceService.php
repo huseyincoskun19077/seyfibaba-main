@@ -35,7 +35,9 @@ class BuyerInvoiceService
     {
         $input = [
             'invoice_type' => $request->input('invoice_type', $user?->invoice_type ?: self::TYPE_INDIVIDUAL),
-            'tc_identity' => $this->digitsOnly($request->input('tc_identity', $user?->tc_identity)),
+            'tc_identity' => $this->digitsOnly(
+                $request->input('tc_identity', $request->input('tcIdentity', $user?->tc_identity))
+            ),
             'tax_number' => $this->digitsOnly($request->input('tax_number', $user?->tax_number)),
             'tax_office' => trim((string) $request->input('tax_office', $user?->tax_office ?? '')),
             'company_name' => trim((string) $request->input('company_name', $user?->company_name ?? '')),
@@ -194,9 +196,15 @@ class BuyerInvoiceService
                     'tc_identity' => ['TC Kimlik No zorunludur.'],
                 ]);
             }
+            if ($tc && ! preg_match('/^[1-9][0-9]{10}$/', $tc)) {
+                throw ValidationException::withMessages([
+                    'tc_identity' => ['Geçerli bir 11 haneli TC Kimlik No girin.'],
+                ]);
+            }
+            // Algoritma kontrolü: geçersizse uyarı (zorunluluk boş TC için ayrı)
             if ($tc && ! $this->isValidTcKimlik($tc)) {
                 throw ValidationException::withMessages([
-                    'tc_identity' => ['Geçerli bir TC Kimlik No girin.'],
+                    'tc_identity' => ['Girdiğiniz TC Kimlik No geçersiz. Lütfen kontrol edin.'],
                 ]);
             }
             if ($required && (empty($postalCode) || strlen($postalCode) !== 5)) {

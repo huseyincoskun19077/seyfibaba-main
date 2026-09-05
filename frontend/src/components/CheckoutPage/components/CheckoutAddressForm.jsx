@@ -66,6 +66,8 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
     city: editingAddress ? Number(editingAddress.city_id) : null,
     neighborhood: editingAddress?.neighborhood || "",
     locality: "",
+    stateName: editingAddress?.country_state?.name || "",
+    cityName: editingAddress?.city?.name || "",
   });
   const [invoice, setInvoice] = useState(() =>
     editingAddress
@@ -159,6 +161,8 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
       city: null,
       neighborhood: "",
       locality: "",
+      stateName: "",
+      cityName: "",
     });
     setInvoice(defaultInvoiceState());
     setStateDropdown(null);
@@ -202,6 +206,8 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
       country: value.id,
       state: null,
       city: null,
+      stateName: "",
+      cityName: "",
       neighborhood: "",
       locality: "",
     }));
@@ -221,6 +227,8 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
       ...prev,
       state: value.id,
       city: null,
+      stateName: value.name || prev.stateName || "",
+      cityName: "",
       neighborhood: "",
       locality: "",
     }));
@@ -240,6 +248,7 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
       setFormData((prev) => ({
         ...prev,
         city: value.id,
+        cityName: value.name || "",
         neighborhood: "",
         locality: "",
       }));
@@ -482,12 +491,14 @@ const CheckoutAddressForm = ({ onAddressSaved, onCancel, editingAddress = null }
               onlyNeighborhood
               value={{
                 province:
+                  formData.stateName ||
                   (stateDropdown || []).find(
                     (s) => Number(s.id) === Number(formData.state)
                   )?.name ||
                   editingAddress?.country_state?.name ||
                   "",
                 district:
+                  formData.cityName ||
                   (cityDropdown || []).find(
                     (c) => Number(c.id) === Number(formData.city)
                   )?.name ||
