@@ -21,7 +21,23 @@ class ReturnRequestController extends Controller
         $vendor = $this->resolveVendor();
         $returns = ReturnRequest::with(['order', 'orderProduct.product', 'user', 'images'])
             ->where('seller_id', $vendor->id)
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $status = trim((string) $request->status);
+                if ($status === 'approved') {
+                    $query->whereIn('status', [
+                        ReturnRequest::STATUS_SELLER_APPROVED,
+                        ReturnRequest::STATUS_ADMIN_APPROVED,
+                        ReturnRequest::STATUS_ITEM_RECEIVED,
+                    ]);
+                } elseif ($status === 'rejected') {
+                    $query->whereIn('status', [
+                        ReturnRequest::STATUS_SELLER_REJECTED,
+                        ReturnRequest::STATUS_ADMIN_REJECTED,
+                    ]);
+                } else {
+                    $query->where('status', (int) $status);
+                }
+            })
             ->orderByDesc('id')
             ->paginate((int) $request->get('per_page', 20));
 
@@ -40,7 +56,33 @@ class ReturnRequestController extends Controller
             return response()->json(['message' => 'İade talebi bulunamadı'], 404);
         }
 
-        return response()->json(['return' => $return]);
+        $payload = $return->toArray();
+        $payload['status_label'] = $return->statusLabel();
+        $payload['reason_label'] = ReturnRequest::reasonLabel($return->reason);
+        $payload['refund_method_label'] = ReturnRequest::refundMethodLabel($return->refund_method);
+        $payload['return_shipping_payer_label'] = ReturnRequest::shippingPayerLabel($return->return_shipping_payer);
+        $payload['default_return_address'] = $return->return_address
+            ?: ReturnRequest::buildSellerReturnAddress($vendor);
+        $payload['default_shipping_payer'] = in_array($return->return_shipping_payer, ['seller', 'buyer'], true)
+            ? $return->return_shipping_payer
+            : ReturnRequest::defaultShippingPayerForReason($return->reason);
+        $payload['can_mark_received'] = $return->canSellerMarkReceived();
+        $payload['images'] = $return->images->map(function ($img) {
+            $path = (string) ($img->image ?? '');
+            if ($path === '') {
+                return null;
+            }
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return ['id' => $img->id, 'url' => $path];
+            }
+
+            return [
+                'id' => $img->id,
+                'url' => url(ltrim($path, '/')),
+            ];
+        })->filter()->values();
+
+        return response()->json(['return' => $payload]);
     }
 
     public function approve(Request $request, $id)

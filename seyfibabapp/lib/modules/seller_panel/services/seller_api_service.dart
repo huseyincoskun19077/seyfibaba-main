@@ -566,11 +566,11 @@ class SellerApiService {
 
   Future<List<SellerReturnRequest>> fetchReturnRequests(
     String token, {
-    int? status,
+    String? status,
     int page = 1,
   }) async {
     final params = <String, String>{'page': '$page', 'per_page': '20'};
-    if (status != null) params['status'] = '$status';
+    if (status != null && status.isNotEmpty) params['status'] = status;
     final uri = Uri.parse(RemoteUrls.sellerReturnRequests)
         .replace(queryParameters: params);
     final response = await NetworkParser.callClientWithCatchException(

@@ -17,13 +17,14 @@ class SellerReturnsScreen extends StatefulWidget {
 class _SellerReturnsScreenState extends State<SellerReturnsScreen> {
   final _service = SellerApiService();
   late Future<List<SellerReturnRequest>> _future;
-  int? _statusFilter;
+  String? _statusFilter;
 
-  static const _filters = <String, int?>{
+  static const _filters = <String, String?>{
     'Tümü': null,
-    'Bekleyen': 0,
-    'Onaylı': 1,
-    'Red': 5,
+    'Bekleyen': '0',
+    'Onaylı': 'approved',
+    'Red': 'rejected',
+    'İade edildi': '4',
   };
 
   @override
@@ -42,7 +43,7 @@ class _SellerReturnsScreenState extends State<SellerReturnsScreen> {
     await _future;
   }
 
-  void _setFilter(int? status) {
+  void _setFilter(String? status) {
     if (_statusFilter == status) return;
     setState(() {
       _statusFilter = status;
