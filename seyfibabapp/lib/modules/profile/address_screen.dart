@@ -122,7 +122,7 @@ class _AddressScreenState extends State<AddressScreen> {
           RouteNames.addAddressScreen,
           arguments: {
             "type": "new",
-            "show_invoice": _isBillingTab,
+            "show_invoice": true,
           },
         );
       },
@@ -295,7 +295,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                                 .toList()[index]
                                 .type,
                             isEditButtonShow: false,
-                            showInvoice: _isBillingTab,
+                            showInvoice: true,
                           ),
                         ),
                       ),
@@ -315,7 +315,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                 onPressed: () => Navigator.pushNamed(
                   context,
                   RouteNames.addAddressScreen,
-                  arguments: {"show_invoice": _isBillingTab},
+                  arguments: {"show_invoice": true},
                 ),
                 child: Text(Language.addNewAddress),
               ),

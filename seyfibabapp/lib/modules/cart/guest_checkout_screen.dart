@@ -753,7 +753,7 @@ class _GuestCheckoutBodyState extends State<GuestCheckoutBody> {
                 : shippingAddressId,
             addressModel: addresses[index],
             type: addresses[index].type,
-            showInvoice: addressTypeSelect == addressType[0]),
+            showInvoice: true),
       ),
     );
   }

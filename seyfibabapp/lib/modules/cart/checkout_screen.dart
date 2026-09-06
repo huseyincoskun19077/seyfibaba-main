@@ -640,6 +640,12 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
               final state = states.addState;
               if (state is AddressStateError && state.statusCode == 503) {
                 addressCubit.getAddress();
+              } else if (state is AddressStateLoaded) {
+                // Adres güncellenince TC/fatura alanlarını seçili fatura adresinden al
+                final billing = _billingAddress();
+                if (billing != null) {
+                  setState(() => _applyInvoiceFromAddress(billing));
+                }
               }
             },
             builder: (context, states) {
@@ -761,7 +767,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
               _isBillingTab ? billingAddressId : shippingAddressId,
           addressModel: addresses[index],
           type: addresses[index].type,
-          showInvoice: _isBillingTab,
+          showInvoice: true,
         ),
       ),
     );

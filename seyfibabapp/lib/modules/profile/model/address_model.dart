@@ -98,6 +98,14 @@ class AddressModel extends Equatable {
     CountryStateModel? countryState,
     AddressState? addState,
     CityModel? city,
+    String? invoiceType,
+    String? tcIdentity,
+    String? taxNumber,
+    String? taxOffice,
+    String? companyName,
+    bool? isEInvoice,
+    String? zipCode,
+    String? neighborhood,
   }) {
     return AddressModel(
       id: id ?? this.id,
@@ -123,6 +131,14 @@ class AddressModel extends Equatable {
       countryState: countryState ?? this.countryState,
       addState: addState ?? this.addState,
       city: city ?? this.city,
+      invoiceType: invoiceType ?? this.invoiceType,
+      tcIdentity: tcIdentity ?? this.tcIdentity,
+      taxNumber: taxNumber ?? this.taxNumber,
+      taxOffice: taxOffice ?? this.taxOffice,
+      companyName: companyName ?? this.companyName,
+      isEInvoice: isEInvoice ?? this.isEInvoice,
+      zipCode: zipCode ?? this.zipCode,
+      neighborhood: neighborhood ?? this.neighborhood,
     );
   }
 
@@ -143,6 +159,14 @@ class AddressModel extends Equatable {
     result.addAll({'default_billing': defaultBilling});
     result.addAll({'created_at': createdAt});
     result.addAll({'updated_at': updatedAt});
+    result.addAll({'invoice_type': invoiceType});
+    result.addAll({'tc_identity': tcIdentity});
+    result.addAll({'tax_number': taxNumber});
+    result.addAll({'tax_office': taxOffice});
+    result.addAll({'company_name': companyName});
+    result.addAll({'is_e_invoice': isEInvoice ? 1 : 0});
+    result.addAll({'zip_code': zipCode});
+    result.addAll({'neighborhood': neighborhood});
     if (country != null) {
       result.addAll({'country': country!.toMap()});
     }
@@ -293,6 +317,14 @@ class AddressModel extends Equatable {
       distance,
       priceRange,
       addState,
+      invoiceType,
+      tcIdentity,
+      taxNumber,
+      taxOffice,
+      companyName,
+      isEInvoice,
+      zipCode,
+      neighborhood,
     ];
   }
 }

@@ -54,7 +54,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
     return Scaffold(
         appBar: RoundedAppBar(titleText: Language.editAddress),
         body: BlocConsumer<AddressCubit, AddressModel>(
-          listener: (context, states) {
+          listener: (context, states) async {
             final state = states.addState;
             if (state is AddressStateUpdateError) {
               Utils.errorSnackBar(context, state.message);
@@ -64,7 +64,10 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                   : 'Lütfen formu kontrol edin.';
               Utils.errorSnackBar(context, msg);
             } else if (state is AddressStateUpdated) {
-              Navigator.of(context).pop(true);
+              await context.read<AddressCubit>().getAddress();
+              if (context.mounted) {
+                Navigator.of(context).pop(true);
+              }
             }
           },
           builder: (context, editState) {
@@ -85,7 +88,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                     addressCubit.editAddress != null) {
                   return LoadedAddressView(
                     id: widget.map['address_id'].toString(),
-                    showInvoice: widget.map['show_invoice'] != false,
+                    showInvoice: true,
                   );
                 } else {
                   return FetchErrorText(text: editState.message);
@@ -93,13 +96,13 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
               } else if (editState is EditAddressStateLoaded) {
                 return LoadedAddressView(
                   id: widget.map['address_id'].toString(),
-                  showInvoice: widget.map['show_invoice'] != false,
+                  showInvoice: true,
                 );
               }
               if (addressCubit.editAddress != null) {
                 return LoadedAddressView(
                   id: widget.map['address_id'].toString(),
-                  showInvoice: widget.map['show_invoice'] != false,
+                  showInvoice: true,
                 );
               } else {
                 return FetchErrorText(text: Language.somethingWentWrong);

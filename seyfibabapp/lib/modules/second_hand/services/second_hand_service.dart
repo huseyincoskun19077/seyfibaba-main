@@ -140,13 +140,18 @@ class SecondHandService {
   static String listingImageUrl(int imageId) =>
       RemoteUrls.secondHandListingImage(imageId);
 
+  /// Web ile aynı: her zaman admin API üzerinden servis et.
+  /// Backend `url` alanı APP_URL yüzünden yanlış host üretebiliyor.
   static String resolveListingImageUrl(SecondHandImage image) {
+    if (image.id > 0) {
+      return listingImageUrl(image.id);
+    }
     final u = image.url?.trim();
     if (u != null && u.isNotEmpty) {
       if (u.startsWith('http://') || u.startsWith('https://')) return u;
       return RemoteUrls.imageUrl(u);
     }
-    return listingImageUrl(image.id);
+    return '';
   }
 
   Future<PaginatedSecondHandListings> fetchPublicListings({

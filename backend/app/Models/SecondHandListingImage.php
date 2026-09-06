@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class SecondHandListingImage extends Model
 {
@@ -33,22 +32,11 @@ class SecondHandListingImage extends Model
 
     public function getUrlAttribute(): ?string
     {
-        $path = trim((string) $this->file_path);
-        if ($path === '') {
+        if (! $this->id) {
             return null;
         }
 
-        // public/uploads/... doğrudan web erişimi
-        if (str_starts_with($path, 'uploads/')) {
-            return url($path);
-        }
-
-        // public disk (storage/app/public)
-        if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->url($path);
-        }
-
-        // API üzerinden servis (local disk / eski kayıtlar)
+        // Mobil/web istemciler için tutarlı: her zaman API üzerinden servis
         return url('/api/second-hand/images/'.$this->id);
     }
 }

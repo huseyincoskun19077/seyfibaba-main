@@ -104,9 +104,13 @@ class AddressCardComponent extends StatelessWidget {
                                 RouteNames.editAddressScreen,
                                 arguments: {
                                   "address_id": addressModel.id,
-                                  "show_invoice": showInvoice,
+                                  "show_invoice": true,
                                 },
-                              );
+                              ).then((_) {
+                                if (context.mounted) {
+                                  context.read<AddressCubit>().getAddress();
+                                }
+                              });
                             },
                             child: CircleAvatar(
                               radius: 14.0,
