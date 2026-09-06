@@ -131,6 +131,12 @@ class _CreateReturnScreenState extends State<CreateReturnScreen> {
     final paid = widget.args.returnable.paidUnitPrice > 0
         ? widget.args.returnable.paidUnitPrice
         : widget.args.returnable.unitPrice;
+    // API suggested_refund is for maxReturnableQty and already includes
+    // bank-transfer (~3%) / coupon shares; scale by selected qty.
+    final hintQty = maxQty;
+    final estimatedRefund = widget.args.returnable.suggestedRefund > 0
+        ? (widget.args.returnable.suggestedRefund / hintQty) * _qty
+        : paid * _qty;
 
     return Scaffold(
       backgroundColor: HomeTheme.bg,
@@ -207,7 +213,7 @@ class _CreateReturnScreenState extends State<CreateReturnScreen> {
               border: Border.all(color: HomeTheme.border),
             ),
             child: Text(
-              'Tahmini iade: ${Utils.formatPrice(paid * _qty, context)}',
+              'Tahmini iade: ${Utils.formatPrice(estimatedRefund, context)}',
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 color: HomeTheme.textDark,

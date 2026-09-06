@@ -388,7 +388,11 @@ export default function ReturnRequestsTab({
                         ) : null}
                         {item.refund_info ? (
                           <span className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-md px-2 py-1 mt-1">
-                            <strong className="text-emerald-900">Para iadesi: </strong>
+                            <strong className="text-emerald-900">
+                              {Number(item.status) === 4
+                                ? "Ödeme yapıldı — "
+                                : "Para iadesi: "}
+                            </strong>
                             {item.refund_info}
                           </span>
                         ) : null}

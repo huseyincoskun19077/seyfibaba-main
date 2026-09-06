@@ -245,10 +245,10 @@ class ReturnRequest extends Model
 
         if ($status === self::STATUS_REFUNDED) {
             if ($isBankOrder || $method === 'bank_transfer') {
-                return 'Para iadeniz havale/EFT ile gönderildi veya gönderilmek üzere. İşlem tamamlandıktan sonra genellikle 1–3 iş günü içinde hesabınıza yansır. Bankanızın işlem süreleri bu süreyi uzatabilir.';
+                return 'Ödeme yapıldı. Para iadeniz havale/EFT ile gönderildi. Genellikle 1–3 iş günü içinde hesabınıza yansır. Bankanızın işlem süreleri bu süreyi uzatabilir.';
             }
 
-            return 'Para iadeniz ödeme yönteminize (kart) başlatıldı. Bankanıza göre genellikle 2–10 iş günü içinde hesabınıza yansır.';
+            return 'Ödeme yapıldı. Para iadeniz kartınıza / ödeme yönteminize iade edildi. Bankanıza göre genellikle 2–10 iş günü içinde hesabınıza yansır.';
         }
 
         if ($isBankOrder || $method === 'bank_transfer') {

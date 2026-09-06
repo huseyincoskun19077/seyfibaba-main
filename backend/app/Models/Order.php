@@ -82,8 +82,12 @@ class Order extends Model
         $bankDiscountShare = 0.0;
         $discountType = (string) ($this->discount_type ?? '');
         $discountAmount = round((float) ($this->discount_amount ?? 0), 2);
-        $paymentMethod = strtolower((string) ($this->payment_method ?? ''));
-        $isBankPayment = $paymentMethod === 'bankpayment' || $discountType === 'bank_transfer';
+        $paymentMethod = strtolower(trim((string) ($this->payment_method ?? '')));
+        $isBankPayment = $paymentMethod === 'bankpayment'
+            || $paymentMethod === 'bank_transfer'
+            || str_contains($paymentMethod, 'bank')
+            || $discountType === 'bank_transfer'
+            || ($discountAmount > 0 && $discountType !== '' && str_contains($discountType, 'bank'));
 
         $grossBeforeBank = $refund;
         if ($isBankPayment && $refund > 0) {
@@ -118,8 +122,15 @@ class Order extends Model
             ->when($excludeReturnId, fn ($query) => $query->where('id', '!=', $excludeReturnId))
             ->sum('refund_amount');
         $remainingCap = max(0, round($maxOrderRefund - $reserved, 2));
+        $preCapRefund = $refund;
         if ($refund > $remainingCap) {
             $refund = $remainingCap;
+            // Keep paid_unit_price aligned when only the order total cap applied the havale cut.
+            if ($preCapRefund > 0 && $productAfterBank > 0) {
+                $productAfterBank = max(0, round($productAfterBank * ($refund / $preCapRefund), 2));
+                $bankDiscountShare = max(0, round($bankDiscountShare + ($preCapRefund - $refund), 2));
+                $isBankPayment = $isBankPayment || ($preCapRefund - $refund) > 0.009;
+            }
         }
 
         return [

@@ -211,9 +211,9 @@ class ReturnRequestController extends Controller
                     $paymentMethod = strtolower((string) ($return->order->payment_method ?? ''));
                     $isBank = $method === 'bank_transfer' || $paymentMethod === 'bankpayment';
                     $timing = $isBank
-                        ? "Para iadeniz havale/EFT ile yapılacaktır. İşlem sonrası genellikle 1–3 iş günü içinde hesabınıza yansır."
-                        : "Tutar, ödeme yönteminize (kart) iade edilir. Bankanıza göre genellikle 2–10 iş günü sürebilir.";
-                    $content = "İade talebiniz onaylandı ve iade işlemi tamamlandı.\n\nSipariş No: {$return->order->order_id}\nÜrün: {$productName}\nİade Tutarı: {$amount}\n\n{$timing}";
+                        ? "Ödeme yapıldı. Para iadeniz havale/EFT ile gönderildi; genellikle 1–3 iş günü içinde hesabınıza yansır."
+                        : "Ödeme yapıldı. Tutar ödeme yönteminize (kart) iade edildi; bankanıza göre genellikle 2–10 iş günü sürebilir.";
+                    $content = "İade talebiniz tamamlandı — ödeme yapıldı.\n\nSipariş No: {$return->order->order_id}\nÜrün: {$productName}\nİade Tutarı: {$amount}\n\n{$timing}";
                     \Mail::to($user->email)->send(new \App\Mail\ReturnApprovedMail($content));
                 }
             } catch (\Throwable $e) {

@@ -314,6 +314,29 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
                                 ),
                               ),
                             ],
+                            if ((item.refundInfo ?? '').trim().isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFECFDF5),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFA7F3D0),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Para iadesi: ${item.refundInfo!.trim()}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    height: 1.35,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF065F46),
+                                  ),
+                                ),
+                              ),
+                            ],
                             if ((item.returnAddress ?? '').trim().isNotEmpty ||
                                 (item.returnCargoCode ?? '').trim().isNotEmpty ||
                                 item.canSubmitTracking) ...[

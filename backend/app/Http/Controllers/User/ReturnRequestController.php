@@ -54,6 +54,38 @@ class ReturnRequestController extends Controller
             ->orderByDesc('id')
             ->paginate((int) $request->get('per_page', 20));
 
+        // Recompute estimated refund so buyer list shows havale (~3%) / coupon-adjusted amounts.
+        $returns->getCollection()->transform(function (ReturnRequest $return) {
+            if ((int) $return->status === ReturnRequest::STATUS_REFUNDED) {
+                return $return;
+            }
+            $order = $return->order;
+            $orderProduct = $return->orderProduct;
+            if (! $order || ! $orderProduct) {
+                return $return;
+            }
+            $order->loadMissing('orderProducts');
+            $hint = $order->suggestedReturnRefund(
+                $orderProduct,
+                max(1, (int) $return->qty),
+                (int) $return->id
+            );
+            $computed = round((float) ($hint['refund_amount'] ?? 0), 2);
+            if ($computed > 0 && abs($computed - (float) $return->refund_amount) > 0.009) {
+                $return->refund_amount = $computed;
+                if (in_array((int) $return->status, [
+                    ReturnRequest::STATUS_PENDING,
+                    ReturnRequest::STATUS_SELLER_APPROVED,
+                    ReturnRequest::STATUS_ADMIN_APPROVED,
+                    ReturnRequest::STATUS_ITEM_RECEIVED,
+                ], true)) {
+                    $return->saveQuietly();
+                }
+            }
+
+            return $return;
+        });
+
         $statsBaseQuery = ReturnRequest::where('user_id', $user->id)
             ->when($request->filled('date_from'), fn ($builder) => $builder->whereDate('created_at', '>=', $request->date_from))
             ->when($request->filled('date_to'), fn ($builder) => $builder->whereDate('created_at', '<=', $request->date_to));
