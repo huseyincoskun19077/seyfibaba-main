@@ -258,9 +258,8 @@
                     <select name="return_shipping_payer" class="form-control" required>
                       <option value="seller" {{ $payer === 'seller' ? 'selected' : '' }}>Satıcı karşılar</option>
                       <option value="buyer" {{ $payer === 'buyer' ? 'selected' : '' }}>Alıcı karşılar</option>
-                      <option value="platform" {{ $payer === 'platform' ? 'selected' : '' }}>Platform karşılar</option>
                     </select>
-                    <small class="form-text text-muted">Kusurlu/yanlış ürünlerde genelde satıcı; pişmanlıkta alıcı (Trendyol benzeri).</small>
+                    <small class="form-text text-muted">Kusurlu/yanlış ürünlerde genelde satıcı; pişmanlıkta alıcı.</small>
                   </div>
                   <div class="form-group">
                     <label>Anlaşmalı kargo firması (opsiyonel)</label>

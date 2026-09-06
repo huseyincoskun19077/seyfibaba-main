@@ -68,13 +68,14 @@ class ReturnRequestController extends Controller
             'refund_method' => 'required|string|max:50',
             'admin_note' => 'nullable|string',
             'return_address' => 'required|string|min:10',
-            'return_shipping_payer' => 'required|in:seller,buyer,platform',
+            'return_shipping_payer' => 'required|in:seller,buyer',
             'return_carrier_name' => 'nullable|string|max:100',
             'return_cargo_code' => 'nullable|string|max:120',
             'return_shipping_instructions' => 'nullable|string|max:2000',
         ], [
             'return_address.required' => 'İade adresi zorunludur',
             'return_shipping_payer.required' => 'İade kargo ücretini kimin karşılayacağını seçin',
+            'return_shipping_payer.in' => 'Kargo ücretini yalnızca satıcı veya alıcı karşılayabilir',
         ]);
 
         $note = $request->admin_note;
@@ -90,6 +91,9 @@ class ReturnRequestController extends Controller
                 )['refund_amount'];
             }
         }
+        $payer = $request->return_shipping_payer === 'buyer'
+            ? ReturnRequest::PAYER_BUYER
+            : ReturnRequest::PAYER_SELLER;
         $return->update([
             'status' => ReturnRequest::STATUS_ADMIN_APPROVED,
             'refund_amount' => $refundAmount,
@@ -97,7 +101,7 @@ class ReturnRequestController extends Controller
             'admin_response' => $note,
             'admin_note' => $note,
             'return_address' => trim((string) $request->return_address),
-            'return_shipping_payer' => $request->return_shipping_payer,
+            'return_shipping_payer' => $payer,
             'return_carrier_name' => $request->filled('return_carrier_name') ? trim((string) $request->return_carrier_name) : ($return->return_carrier_name ?: null),
             'return_cargo_code' => $request->filled('return_cargo_code') ? trim((string) $request->return_cargo_code) : ($return->return_cargo_code ?: null),
             'return_shipping_instructions' => $request->filled('return_shipping_instructions')

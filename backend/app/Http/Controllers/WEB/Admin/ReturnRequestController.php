@@ -90,7 +90,7 @@ class ReturnRequestController extends Controller
                 'refund_method' => 'required|string',
                 'admin_note' => 'required|string|min:3',
                 'return_address' => 'required|string|min:10',
-                'return_shipping_payer' => 'required|in:seller,buyer,platform',
+                'return_shipping_payer' => 'required|in:seller,buyer',
                 'return_carrier_name' => 'nullable|string|max:100',
                 'return_cargo_code' => 'nullable|string|max:120',
                 'return_shipping_instructions' => 'nullable|string|max:2000',
@@ -98,6 +98,7 @@ class ReturnRequestController extends Controller
                 'admin_note.required' => 'Yönetici notu zorunludur.',
                 'return_address.required' => 'İade adresi zorunludur.',
                 'return_shipping_payer.required' => 'İade kargo ücretini kimin karşılayacağını seçin.',
+                'return_shipping_payer.in' => 'Kargo ücretini yalnızca satıcı veya alıcı karşılayabilir.',
             ]);
         }
 
@@ -120,7 +121,9 @@ class ReturnRequestController extends Controller
                 $return->return_address = trim((string) $request->return_address);
             }
             if ($request->filled('return_shipping_payer')) {
-                $return->return_shipping_payer = $request->return_shipping_payer;
+                $return->return_shipping_payer = $request->return_shipping_payer === 'buyer'
+                    ? ReturnRequest::PAYER_BUYER
+                    : ReturnRequest::PAYER_SELLER;
             }
             if ($request->has('return_carrier_name')) {
                 $return->return_carrier_name = $request->filled('return_carrier_name')

@@ -60,7 +60,6 @@ const STATUS_MAP = {
 const PAYER_LABEL = {
   seller: "Satıcı karşılar",
   buyer: "Alıcı karşılar",
-  platform: "Platform karşılar",
 };
 
 function getRejectionNote(item) {

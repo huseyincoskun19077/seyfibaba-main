@@ -214,9 +214,11 @@
                                             'return_address',
                                             $return->return_address ?: \App\Models\ReturnRequest::buildSellerReturnAddress($return->seller)
                                         );
-                                        $adminPayer = old(
+        $adminPayer = old(
                                             'return_shipping_payer',
-                                            $return->return_shipping_payer ?: \App\Models\ReturnRequest::defaultShippingPayerForReason($return->reason)
+                                            in_array($return->return_shipping_payer, ['seller', 'buyer'], true)
+                                                ? $return->return_shipping_payer
+                                                : \App\Models\ReturnRequest::defaultShippingPayerForReason($return->reason)
                                         );
                                     @endphp
                                     <div class="form-group">
@@ -228,7 +230,6 @@
                                         <select name="return_shipping_payer" class="form-control" required>
                                             <option value="seller" {{ $adminPayer === 'seller' ? 'selected' : '' }}>Satıcı karşılar</option>
                                             <option value="buyer" {{ $adminPayer === 'buyer' ? 'selected' : '' }}>Alıcı karşılar</option>
-                                            <option value="platform" {{ $adminPayer === 'platform' ? 'selected' : '' }}>Platform karşılar</option>
                                         </select>
                                     </div>
                                     <div class="form-group">

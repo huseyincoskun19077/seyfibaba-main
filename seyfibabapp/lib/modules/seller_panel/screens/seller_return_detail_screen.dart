@@ -81,10 +81,6 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
                       value: 'buyer',
                       child: Text('Alıcı karşılar'),
                     ),
-                    DropdownMenuItem(
-                      value: 'platform',
-                      child: Text('Platform karşılar'),
-                    ),
                   ],
                   onChanged: (v) => setDialogState(() => payer = v ?? payer),
                 ),
