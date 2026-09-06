@@ -10,7 +10,9 @@ import '../../../utils/utils.dart';
 import '../../../widgets/capitalized_word.dart';
 import '../../home/widgets/home_theme.dart';
 import '../controllers/order/order_cubit.dart';
+import '../model/buyer_return_model.dart';
 import '../model/product_order_model.dart';
+import '../screens/create_return_screen.dart';
 import '../utils/order_display_status.dart';
 import '../widgets/order_product_thumb.dart';
 
@@ -18,9 +20,15 @@ class SingleOrderDetailsComponent extends StatefulWidget {
   const SingleOrderDetailsComponent({
     super.key,
     required this.orderItem,
+    this.orderCode = '',
+    this.returnable,
+    this.onReturnCreated,
   });
 
   final OrderedProductModel orderItem;
+  final String orderCode;
+  final BuyerReturnableItem? returnable;
+  final Future<void> Function()? onReturnCreated;
 
   @override
   State<SingleOrderDetailsComponent> createState() =>
@@ -233,24 +241,34 @@ class _SingleOrderDetailsComponentState
 
     if (orderItem.userHasReviewed) {
       actions.add(
-        Text(
-          Language.reviewSubmitted,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: HomeTheme.textMuted.withValues(alpha: 0.95),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: greenColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            Language.reviewSubmitted,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: greenColor.withValues(alpha: 0.95),
+            ),
           ),
         ),
       );
     } else if (orderItem.canWriteReview) {
       actions.add(
         InkWell(
-          onTap: () {
-            Navigator.pushNamed(
+          onTap: () async {
+            final result = await Navigator.pushNamed(
               context,
               RouteNames.submitFeedBackScreen,
               arguments: orderItem,
             );
+            if (result == true && context.mounted) {
+              await context.read<OrderCubit>().showOrderTracking();
+            }
           },
           borderRadius: BorderRadius.circular(8),
           child: Padding(
@@ -262,6 +280,62 @@ class _SingleOrderDetailsComponentState
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final returnable = widget.returnable;
+    if (returnable != null && returnable.isReturnable) {
+      actions.add(
+        SizedBox(
+          height: 34,
+          child: ElevatedButton(
+            onPressed: () async {
+              final created = await Navigator.pushNamed(
+                context,
+                RouteNames.createReturnScreen,
+                arguments: CreateReturnArgs(
+                  orderItem: orderItem,
+                  orderCode: widget.orderCode,
+                  returnable: returnable,
+                ),
+              );
+              if (created == true && context.mounted) {
+                await widget.onReturnCreated?.call();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF262C),
+              foregroundColor: whiteColor,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'İade Et',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+      );
+    } else if (returnable?.existingReturnRequestId != null) {
+      actions.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEF262C).withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            'İade talebi alındı',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFEF262C),
             ),
           ),
         ),

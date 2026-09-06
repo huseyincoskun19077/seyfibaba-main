@@ -81,6 +81,15 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       ProfileMenuTile(
+                        title: 'İade Taleplerim',
+                        icon: Icons.assignment_return_outlined,
+                        iconColor: const Color(0xFFEF262C),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          RouteNames.buyerReturnsScreen,
+                        ),
+                      ),
+                      ProfileMenuTile(
                         title: Language.secondHand,
                         icon: Icons.storefront_outlined,
                         iconColor: HomeTheme.brandYellow,

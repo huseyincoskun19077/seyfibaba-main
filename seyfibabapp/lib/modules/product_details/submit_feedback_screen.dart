@@ -36,12 +36,12 @@ class _SubmitFeedBackScreenState extends State<SubmitFeedBackScreen> {
     _reviewTextController.dispose();
   }
 
-  double ratingValue = 0.0;
+  double ratingValue = 3.0;
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<SubmitReviewCubit, ReviewSubmitState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is SubmitReviewStateLoading) {
           Utils.loadingDialog(context);
         } else {
@@ -49,14 +49,11 @@ class _SubmitFeedBackScreenState extends State<SubmitFeedBackScreen> {
           if (state is SubmitReviewStateError) {
             Utils.errorSnackBar(context, state.errorMessage);
           } else if (state is SubmitReviewStateLoaded) {
-            // if (state.submitReviewResponseModel.status == 0) {
-            //   Utils.showSnackBar(
-            //       context, state.submitReviewResponseModel.message);
-            // } else {
-            //   Utils.showCustomDialog(context, child: const FeedbackSuccess());
-            // }
             _reviewTextController.clear();
-            Navigator.of(context).pop();
+            Utils.showSnackBar(context, 'Yorum Yapıldı');
+            await context.read<OrderCubit>().showOrderTracking();
+            if (!mounted) return;
+            Navigator.of(context).pop(true);
           }
         }
       },

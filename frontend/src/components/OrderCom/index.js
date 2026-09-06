@@ -23,13 +23,14 @@ function OrderComContent({ resData, orderStatus, orderId }) {
   const urlQuery = useSearchParams();
   const router = useRouter();
   const [returnableItems, setReturnableItems] = useState({});
+  const [reviewedOrderProductIds, setReviewedOrderProductIds] = useState(() => new Set());
   const [confirmingDeliveryItemId, setConfirmingDeliveryItemId] = useState(null);
 
   const [reviewModal, setReviewModal] = useState(false);
   const [productId, setProductId] = useState(null);
   const [reviewOrderProductId, setReviewOrderProductId] = useState(null);
   const reviewModalHandler = (pId, opId) => {
-    setReviewModal(!reviewModal);
+    setReviewModal(true);
     setProductId(Number(pId));
     setReviewOrderProductId(opId ? Number(opId) : null);
   };
@@ -37,47 +38,68 @@ function OrderComContent({ resData, orderStatus, orderId }) {
   const [returnModal, setReturnModal] = useState(false);
   const [orderProductId, setOrderProductId] = useState(null);
   const returnModalHandler = (id) => {
-    setReturnModal(!returnModal);
+    setReturnModal(true);
     setOrderProductId(Number(id));
   };
 
-  useEffect(() => {
-    const loadReturnableItems = async () => {
-      if (!auth() || !orderId) {
+  const loadReturnableItems = async () => {
+    if (!auth() || !orderId) {
+      setReturnableItems({});
+      return;
+    }
+
+    try {
+      const token = auth()?.access_token;
+      const response = await fetch(
+        `${appConfig.BASE_URL}api/user/orders/${orderId}/returnable-items?token=${token}`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
         setReturnableItems({});
         return;
       }
 
-      try {
-        const token = auth()?.access_token;
-        const response = await fetch(
-          `${appConfig.BASE_URL}api/user/orders/${orderId}/returnable-items?token=${token}`,
-          {
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
+      const nextItems = (data?.items || []).reduce((accumulator, item) => {
+        accumulator[item.order_product_id] = item;
+        return accumulator;
+      }, {});
 
-        const data = await response.json();
-        if (!response.ok) {
-          setReturnableItems({});
-          return;
-        }
+      setReturnableItems(nextItems);
+    } catch (error) {
+      setReturnableItems({});
+    }
+  };
 
-        const nextItems = (data?.items || []).reduce((accumulator, item) => {
-          accumulator[item.order_product_id] = item;
-          return accumulator;
-        }, {});
-
-        setReturnableItems(nextItems);
-      } catch (error) {
-        setReturnableItems({});
-      }
-    };
-
+  useEffect(() => {
     loadReturnableItems();
   }, [orderId]);
+
+  const handleReviewSuccess = (opId) => {
+    if (opId) {
+      setReviewedOrderProductIds((prev) => new Set([...prev, Number(opId)]));
+    }
+    setReviewModal(false);
+    router.refresh();
+  };
+
+  const handleReturnSuccess = () => {
+    setReturnModal(false);
+    loadReturnableItems();
+    router.refresh();
+  };
+
+  const productsWithStatus = (resData?.order_products || []).map((item) => ({
+    ...item,
+    user_has_reviewed:
+      !!item.user_has_reviewed || reviewedOrderProductIds.has(Number(item.id)),
+  }));
 
   const handleConfirmDeliveryItem = async (opId) => {
     if (!auth()) return;
@@ -223,7 +245,7 @@ function OrderComContent({ resData, orderStatus, orderId }) {
             <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
               <h2 className="mb-4 text-lg font-bold text-qblack">Sipariş Ürünleri</h2>
               <OrderProductList
-                products={resData?.order_products}
+                products={productsWithStatus}
                 returnableItems={returnableItems}
                 confirmingDeliveryItemId={confirmingDeliveryItemId}
                 onReview={reviewModalHandler}
@@ -299,6 +321,7 @@ function OrderComContent({ resData, orderStatus, orderId }) {
           orderId={orderId}
           orderProductId={reviewOrderProductId}
           setReviewModal={setReviewModal}
+          onSuccess={() => handleReviewSuccess(reviewOrderProductId)}
         />
       )}
       {auth() && returnModal && (
@@ -309,6 +332,7 @@ function OrderComContent({ resData, orderStatus, orderId }) {
           paidUnitPrice={returnableItems[orderProductId]?.paid_unit_price}
           unitPrice={returnableItems[orderProductId]?.unit_price}
           setReturnModal={setReturnModal}
+          onSuccess={handleReturnSuccess}
         />
       )}
     </div>

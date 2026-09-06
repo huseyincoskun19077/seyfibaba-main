@@ -8,8 +8,10 @@ use App\Models\OrderProduct;
 use App\Models\ReturnRequest;
 use App\Models\ReturnRequestImage;
 use App\Models\Setting;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Intervention\Image\Facades\Image;
 
 class ReturnRequestController extends Controller
@@ -129,16 +131,26 @@ class ReturnRequestController extends Controller
         }
 
         $payload = $this->buildReturnableItemPayload($orderProduct->order, $orderProduct);
-        if (!$payload['is_returnable']) {
-            return response()->json(['message' => $payload['message']], 422);
+
+        // Bekleyen kendi talebi varsa yeniden oluşturmak yerine güncelle (mobil tekrar deneme)
+        $pendingOwn = ReturnRequest::query()
+            ->where('order_product_id', $orderProduct->id)
+            ->where('user_id', $user->id)
+            ->get()
+            ->first(fn (ReturnRequest $item) => (int) $item->status === ReturnRequest::STATUS_PENDING);
+
+        if (! $payload['is_returnable'] && ! $pendingOwn) {
+            return response()->json([
+                'message' => $payload['message'] ?: 'Bu ürün için iade talebi oluşturulamaz',
+            ], 422);
         }
 
-        if ((int) $request->qty > (int) $payload['max_returnable_qty']) {
-            return response()->json(['message' => 'Quantity exceeds returnable quantity'], 422);
+        if (! $pendingOwn && (int) $request->qty > (int) $payload['max_returnable_qty']) {
+            return response()->json(['message' => 'İade adedi izin verilen miktarı aşıyor'], 422);
         }
 
-        if (in_array($request->reason, self::IMAGE_REQUIRED_REASONS, true) && !$request->hasFile('images')) {
-            return response()->json(['message' => 'At least one image is required for this reason'], 422);
+        if (in_array($request->reason, self::IMAGE_REQUIRED_REASONS, true) && ! $request->hasFile('images')) {
+            return response()->json(['message' => 'Bu iade nedeni için en az bir fotoğraf gerekli'], 422);
         }
 
         $orderProduct->order->loadMissing('orderProducts');
@@ -147,24 +159,72 @@ class ReturnRequestController extends Controller
             (int) $request->qty
         );
 
-        $return = ReturnRequest::create([
-            'order_id' => $orderProduct->order_id,
-            'user_id' => $user->id,
-            'seller_id' => $orderProduct->seller_id,
-            'order_product_id' => $orderProduct->id,
-            'reason' => $request->reason,
-            'details' => $request->details,
-            'description' => $request->details,
-            'qty' => $request->qty,
-            'status' => ReturnRequest::STATUS_PENDING,
-            'refund_amount' => $refundHint['refund_amount'],
-        ]);
+        if ($pendingOwn) {
+            $pendingOwn->update([
+                'reason' => $request->reason,
+                'details' => $request->details,
+                'description' => $request->details,
+                'qty' => $request->qty,
+                'refund_amount' => $refundHint['refund_amount'],
+            ]);
+            $return = $pendingOwn->fresh();
+            $createdNew = false;
+        } else {
+            $return = ReturnRequest::create([
+                'order_id' => $orderProduct->order_id,
+                'user_id' => $user->id,
+                'seller_id' => (int) ($orderProduct->seller_id ?? 0),
+                'order_product_id' => $orderProduct->id,
+                'reason' => $request->reason,
+                'details' => $request->details,
+                'description' => $request->details,
+                'qty' => $request->qty,
+                'status' => ReturnRequest::STATUS_PENDING,
+                'refund_amount' => $refundHint['refund_amount'],
+            ]);
+            $createdNew = true;
+        }
 
         if ($request->hasFile('images')) {
+            $uploadDir = public_path('uploads/return_images');
+            if (! File::isDirectory($uploadDir)) {
+                File::makeDirectory($uploadDir, 0755, true);
+            }
+
+            // Güncellemede eski görselleri temizle
+            if (! $createdNew) {
+                $return->loadMissing('images');
+                foreach ($return->images as $oldImage) {
+                    $oldPath = public_path((string) $oldImage->image);
+                    if (is_file($oldPath)) {
+                        @unlink($oldPath);
+                    }
+                    $oldImage->delete();
+                }
+            }
+
             foreach ($request->file('images') as $file) {
+                if (! $file || ! $file->isValid()) {
+                    continue;
+                }
+
                 $imageName = 'return-' . time() . '-' . rand(100, 999) . '.' . $file->getClientOriginalExtension();
                 $imagePath = 'uploads/return_images/' . $imageName;
-                Image::make($file)->save(public_path($imagePath));
+                $absolute = public_path($imagePath);
+
+                try {
+                    Image::make($file->getRealPath() ?: $file)->save($absolute);
+                } catch (\Throwable $e) {
+                    try {
+                        $file->move($uploadDir, $imageName);
+                    } catch (\Throwable $moveError) {
+                        \Log::warning('Return image upload failed', [
+                            'return_id' => $return->id,
+                            'error' => $moveError->getMessage(),
+                        ]);
+                        continue;
+                    }
+                }
 
                 ReturnRequestImage::create([
                     'return_request_id' => $return->id,
@@ -175,10 +235,14 @@ class ReturnRequestController extends Controller
 
         try {
             \App\Helpers\MailHelper::setMailConfig();
-            $vendor = \App\Models\Vendor::find($return->seller_id);
+            $vendor = $return->seller_id
+                ? \App\Models\Vendor::find($return->seller_id)
+                : null;
             $sellerUser = $vendor ? \App\Models\User::find($vendor->user_id) : null;
-            if ($sellerUser && $sellerUser->email) {
-                $productName = $orderProduct->product->name ?? 'Ürün';
+            if ($createdNew && $sellerUser && $sellerUser->email) {
+                $productName = $orderProduct->product?->name
+                    ?? $orderProduct->product_name
+                    ?? 'Ürün';
                 $content = "Yeni iade talebi oluşturuldu.\n\nSipariş No: {$orderProduct->order->order_id}\nÜrün: {$productName}\nAdet: {$return->qty}\nSebep: {$return->reason}\n\nSatıcı panelinizden talebi inceleyebilirsiniz.";
                 \Mail::to($sellerUser->email)->send(new \App\Mail\ReturnRequestCreatedMail($content));
             }
@@ -186,15 +250,22 @@ class ReturnRequestController extends Controller
             \Log::warning('Return request seller mail failed', ['return_id' => $return->id, 'error' => $e->getMessage()]);
         }
 
-        app(\App\Services\SellerPayoutService::class)->blockPayoutForReturn(
-            $orderProduct->order,
-            'İade talebi #'.$return->id
-        );
+        try {
+            app(\App\Services\SellerPayoutService::class)->blockPayoutForReturn(
+                $orderProduct->order,
+                'İade talebi #'.$return->id
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Return request payout block failed', [
+                'return_id' => $return->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
-            'message' => 'Return request submitted successfully',
+            'message' => 'İade talebi alındı',
             'return' => $return->load(['order', 'orderProduct', 'images']),
-        ], 201);
+        ], $createdNew ? 201 : 200);
     }
 
     public function cancel($id)
@@ -244,42 +315,56 @@ class ReturnRequestController extends Controller
         $windowDays = (int) ($setting->return_window_days ?? 14);
         $allowedStatuses = [2, 3];
 
-        if (!in_array((int) $order->order_status, $allowedStatuses, true)) {
+        $itemDelivered = $orderProduct->customer_confirmed_at
+            || $orderProduct->auto_confirmed_at
+            || $orderProduct->delivered_at
+            || in_array((int) $order->order_status, $allowedStatuses, true);
+
+        if (! $itemDelivered) {
             return [
                 'order_product_id' => $orderProduct->id,
                 'is_returnable' => false,
                 'max_returnable_qty' => 0,
-                'message' => 'Order must be delivered or completed before requesting a return',
+                'message' => 'Ürün teslim edilmeden iade talebi oluşturulamaz',
             ];
         }
 
-        $deliveredAt = $order->order_delivered_date ? now()->parse($order->order_delivered_date) : null;
+        $rawDelivered = $orderProduct->customer_confirmed_at
+            ?? $orderProduct->auto_confirmed_at
+            ?? $orderProduct->delivered_at
+            ?? $order->order_delivered_date;
+        $deliveredAt = $rawDelivered ? Carbon::parse($rawDelivered) : null;
         if ($deliveredAt && $deliveredAt->diffInDays(now()) > $windowDays) {
             return [
                 'order_product_id' => $orderProduct->id,
                 'is_returnable' => false,
                 'max_returnable_qty' => 0,
-                'message' => 'Return period has expired',
+                'message' => 'İade süresi dolmuş',
             ];
         }
 
         $activeRequest = ReturnRequest::where('order_product_id', $orderProduct->id)
-            ->whereIn('status', [
-                ReturnRequest::STATUS_PENDING,
-                ReturnRequest::STATUS_SELLER_APPROVED,
-                ReturnRequest::STATUS_ADMIN_APPROVED,
-                ReturnRequest::STATUS_ITEM_RECEIVED,
-            ])
-            ->first();
+            ->get()
+            ->first(function (ReturnRequest $item) {
+                return in_array((int) $item->status, [
+                    ReturnRequest::STATUS_PENDING,
+                    ReturnRequest::STATUS_SELLER_APPROVED,
+                    ReturnRequest::STATUS_ADMIN_APPROVED,
+                    ReturnRequest::STATUS_ITEM_RECEIVED,
+                ], true);
+            });
 
         $processedQty = (int) ReturnRequest::where('order_product_id', $orderProduct->id)
-            ->whereIn('status', [
-                ReturnRequest::STATUS_SELLER_APPROVED,
-                ReturnRequest::STATUS_ADMIN_APPROVED,
-                ReturnRequest::STATUS_ITEM_RECEIVED,
-                ReturnRequest::STATUS_REFUNDED,
-            ])
-            ->sum('qty');
+            ->get()
+            ->filter(function (ReturnRequest $item) {
+                return in_array((int) $item->status, [
+                    ReturnRequest::STATUS_SELLER_APPROVED,
+                    ReturnRequest::STATUS_ADMIN_APPROVED,
+                    ReturnRequest::STATUS_ITEM_RECEIVED,
+                    ReturnRequest::STATUS_REFUNDED,
+                ], true);
+            })
+            ->sum(fn (ReturnRequest $item) => (int) $item->qty);
 
         $maxReturnableQty = max(0, (int) $orderProduct->qty - $processedQty);
         $isReturnable = !$activeRequest && $maxReturnableQty > 0;
@@ -303,8 +388,8 @@ class ReturnRequestController extends Controller
             'message' => $isReturnable
                 ? null
                 : ($activeRequest
-                    ? 'An active return request already exists for this item'
-                    : 'This item is no longer returnable'),
+                    ? 'Bu ürün için zaten aktif bir iade talebi var'
+                    : 'Bu ürün artık iade edilemez'),
         ];
     }
 }

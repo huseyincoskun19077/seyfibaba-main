@@ -13,15 +13,16 @@ export default function ReturnModal({
   paidUnitPrice,
   unitPrice,
   setReturnModal,
+  onSuccess,
 }) {
   const reasonOptions = useMemo(
     () => [
-      { value: "defective", label: "Arizali Urun" },
-      { value: "wrong_item", label: "Yanlis Urun Geldi" },
-      { value: "not_as_described", label: "Aciklamadaki Gibi Degil" },
-      { value: "changed_mind", label: "Kararim Degisti" },
-      { value: "damaged_in_shipping", label: "Kargoda Hasar Gordu" },
-      { value: "other", label: "Diger" },
+      { value: "defective", label: "Arızalı ürün" },
+      { value: "wrong_item", label: "Yanlış ürün geldi" },
+      { value: "not_as_described", label: "Açıklamadaki gibi değil" },
+      { value: "changed_mind", label: "Kararım değişti" },
+      { value: "damaged_in_shipping", label: "Kargoda hasar gördü" },
+      { value: "other", label: "Diğer" },
     ],
     []
   );
@@ -45,48 +46,71 @@ export default function ReturnModal({
     dataToSend.append("reason", formData.reason);
     dataToSend.append("details", formData.details);
     dataToSend.append("qty", formData.qty);
-    
-    // Add images
+
     images.forEach((img) => {
       dataToSend.append("images[]", img);
     });
 
     try {
-      const res = await fetch(`${appConfig.BASE_URL}api/user/return-requests?token=${token}`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          // Content-Type should NOT be set when using FormData with files
-        },
-        body: dataToSend,
-      });
+      const res = await fetch(
+        `${appConfig.BASE_URL}api/user/return-requests?token=${token}`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: dataToSend,
+        }
+      );
 
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {
+        data = {};
+      }
 
       if (res.ok) {
-        toast.success(data.message);
-        setReturnModal(false);
+        toast.success(data.message || "İade talebi alındı");
+        if (typeof onSuccess === "function") {
+          onSuccess();
+        } else {
+          setReturnModal(false);
+        }
       } else {
-        toast.error(data.message || "Talep gonderilemedi");
+        const validationMsg = data?.errors
+          ? Object.values(data.errors).flat().join(" ")
+          : null;
+        toast.error(
+          validationMsg ||
+            data.message ||
+            "İade talebi gönderilemedi. Lütfen tekrar deneyin."
+        );
       }
     } catch (error) {
-      toast.error("Bir hata olustu");
+      toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files || []);
     setImages(files);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl transform transition-all scale-100">
-        <div className="bg-primary p-6 flex justify-between items-center text-white">
-          <h3 className="text-xl font-bold">Iade Talebi Olustur</h3>
-          <button onClick={() => setReturnModal(false)} className="hover:rotate-90 transition-transform">
+        <div className="bg-qred p-6 flex justify-between items-center text-white">
+          <h3 className="text-xl font-bold">İade Talebi Oluştur</h3>
+          <button
+            type="button"
+            onClick={() => setReturnModal(false)}
+            className="hover:rotate-90 transition-transform"
+            aria-label="Kapat"
+          >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -96,10 +120,12 @@ export default function ReturnModal({
         <form onSubmit={handleSubmit} className="p-8 space-y-5 overflow-y-auto max-h-[80vh]">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 ml-1">İade Nedeni</label>
+              <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 ml-1">
+                İade Nedeni
+              </label>
               <select
                 required
-                className="w-full bg-gray-50 border-0 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm"
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 focus:ring-2 focus:ring-qred/20 transition-all text-sm text-qblack"
                 value={formData.reason}
                 onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               >
@@ -112,15 +138,19 @@ export default function ReturnModal({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 ml-1">Adet</label>
+              <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 ml-1">
+                Adet
+              </label>
               <select
                 required
-                className="w-full bg-gray-50 border-0 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm"
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 focus:ring-2 focus:ring-qred/20 transition-all text-sm text-qblack"
                 value={formData.qty}
                 onChange={(e) => setFormData({ ...formData, qty: e.target.value })}
               >
                 {[...Array(maxQty || 1)].map((_, i) => (
-                    <option key={i+1} value={i+1}>{i+1}</option>
+                  <option key={i + 1} value={i + 1}>
+                    {i + 1}
+                  </option>
                 ))}
               </select>
             </div>
@@ -138,7 +168,8 @@ export default function ReturnModal({
                 <div className="flex justify-between gap-3 text-gray-500">
                   <span>Kupon payı</span>
                   <span>
-                    − <CurrencyConvert
+                    −{" "}
+                    <CurrencyConvert
                       price={
                         (Number(unitPrice || 0) - Number(paidUnitPrice || 0)) *
                         Number(formData.qty)
@@ -163,40 +194,57 @@ export default function ReturnModal({
           )}
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 ml-1">Ek Açıklama</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 ml-1">
+              Ek Açıklama
+            </label>
             <textarea
-              className="w-full bg-gray-50 border-0 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 transition-all resize-none text-sm"
+              className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 focus:ring-2 focus:ring-qred/20 transition-all resize-none text-sm text-qblack"
               rows="3"
               placeholder="Lütfen sorun hakkında detaylı bilgi verin..."
               value={formData.details}
               onChange={(e) => setFormData({ ...formData, details: e.target.value })}
-            ></textarea>
+            />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 ml-1">Kanıt Fotoğrafları</label>
-            <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-100 border-dashed rounded-2xl hover:border-primary/30 transition-all cursor-pointer relative group">
-                <div className="space-y-1 text-center">
-                    <svg className="mx-auto h-8 w-8 text-gray-400 group-hover:text-primary transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <div className="flex text-xs text-gray-600">
-                        <span className="relative cursor-pointer rounded-md font-bold text-primary hover:text-primary-dark">Dosya yükle</span>
-                        <p className="pl-1">veya sürükle bırak</p>
-                    </div>
-                    <p className="text-[10px] text-gray-400">PNG, JPG, JPEG up to 10MB</p>
+            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 ml-1">
+              Kanıt Fotoğrafları
+            </label>
+            <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-100 border-dashed rounded-2xl hover:border-qred/40 transition-all cursor-pointer relative group">
+              <div className="space-y-1 text-center">
+                <svg
+                  className="mx-auto h-8 w-8 text-gray-400 group-hover:text-qred transition-colors"
+                  stroke="currentColor"
+                  fill="none"
+                  viewBox="0 0 48 48"
+                >
+                  <path
+                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <div className="flex text-xs text-gray-600 justify-center">
+                  <span className="relative cursor-pointer rounded-md font-bold text-qred">
+                    Dosya yükle
+                  </span>
+                  <p className="pl-1">veya sürükle bırak</p>
                 </div>
-                <input 
-                    type="file" 
-                    multiple 
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    onChange={handleImageChange}
-                />
+                <p className="text-[10px] text-gray-400">PNG, JPG, JPEG (max 2MB)</p>
+              </div>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={handleImageChange}
+              />
             </div>
             {images.length > 0 && (
-                <div className="mt-2 text-xs text-primary font-bold">
-                    {images.length} files selected
-                </div>
+              <div className="mt-2 text-xs text-qred font-bold">
+                {images.length} dosya seçildi
+              </div>
             )}
           </div>
 
@@ -204,16 +252,16 @@ export default function ReturnModal({
             <button
               type="button"
               onClick={() => setReturnModal(false)}
-              className="flex-1 py-4 px-6 rounded-2xl font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all"
+              className="flex-1 py-4 px-6 rounded-2xl font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
             >
-              Cancel
+              Vazgeç
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-4 px-6 rounded-2xl font-bold bg-primary text-white shadow-xl shadow-primary/20 hover:bg-primary-dark transition-all disabled:opacity-50"
+              className="flex-1 py-4 px-6 rounded-2xl font-bold bg-qred text-white shadow-lg shadow-red-200 hover:opacity-90 transition-all disabled:opacity-50"
             >
-              {loading ? "Submitting..." : "Submit Request"}
+              {loading ? "Gönderiliyor..." : "Talebi Oluştur"}
             </button>
           </div>
         </form>

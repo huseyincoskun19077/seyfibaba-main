@@ -64,9 +64,20 @@ function ProductActions({
     !item?.customer_confirmed_at &&
     !item?.auto_confirmed_at;
 
+  const hasReviewed = !!item?.user_has_reviewed;
+  const returnable = returnableItems[item.id];
+  const canReturn = !!returnable?.is_returnable;
+  const hasReturnRequest =
+    !canReturn && !!returnable?.existing_return_request_id;
+
   return (
     <div className="flex flex-wrap gap-2 print:hidden">
-      {isLoggedIn && isDelivered && !item.user_has_reviewed && (
+      {isLoggedIn && isDelivered && hasReviewed && (
+        <span className="inline-flex h-9 items-center rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
+          Yorum Yapıldı
+        </span>
+      )}
+      {isLoggedIn && isDelivered && !hasReviewed && (
         <button
           onClick={() => onReview(item.product_id, item.id)}
           type="button"
@@ -75,14 +86,19 @@ function ProductActions({
           Yorum Yap
         </button>
       )}
-      {isLoggedIn && isDelivered && returnableItems[item.id]?.is_returnable && (
+      {isLoggedIn && isDelivered && canReturn && (
         <button
           onClick={() => onReturn(item.id)}
           type="button"
-          className="inline-flex h-9 items-center rounded-lg border border-red-500 px-3 text-xs font-semibold text-red-600 transition hover:bg-red-500 hover:text-white"
+          className="inline-flex h-9 items-center rounded-lg bg-qred px-3 text-xs font-semibold text-white transition hover:opacity-90"
         >
           İade Et
         </button>
+      )}
+      {isLoggedIn && isDelivered && hasReturnRequest && (
+        <span className="inline-flex h-9 items-center rounded-lg bg-red-50 px-3 text-xs font-semibold text-qred">
+          İade talebi alındı
+        </span>
       )}
       {canConfirm && (
         <button

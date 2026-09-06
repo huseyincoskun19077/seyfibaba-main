@@ -7,11 +7,14 @@ import '../../widgets/app_bar_leading.dart';
 import '../../widgets/fetch_error_text.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/please_signin_widget.dart';
+import '../authentication/controller/login/login_bloc.dart';
 import '../home/controller/cubit/product/product_state_model.dart';
 import '../home/widgets/home_theme.dart';
 import 'component/single_order_details_component.dart';
 import 'controllers/order/order_cubit.dart';
+import 'model/buyer_return_model.dart';
 import 'model/order_model.dart';
+import 'services/buyer_return_service.dart';
 import 'utils/order_display_status.dart';
 import 'widgets/order_status_timeline.dart';
 import 'widgets/order_summary_panel.dart';
@@ -92,10 +95,50 @@ class _SingleOrderDetailsState extends State<SingleOrderDetails> {
   }
 }
 
-class LoadedList extends StatelessWidget {
+class LoadedList extends StatefulWidget {
   const LoadedList({super.key, required this.singleOrder});
 
   final OrderModel singleOrder;
+
+  @override
+  State<LoadedList> createState() => _LoadedListState();
+}
+
+class _LoadedListState extends State<LoadedList> {
+  final _returnService = BuyerReturnService();
+  Map<int, BuyerReturnableItem> _returnableItems = {};
+
+  OrderModel get singleOrder => widget.singleOrder;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_loadReturnable);
+  }
+
+  @override
+  void didUpdateWidget(covariant LoadedList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.singleOrder.orderId != widget.singleOrder.orderId) {
+      Future.microtask(_loadReturnable);
+    }
+  }
+
+  Future<void> _loadReturnable() async {
+    final login = context.read<LoginBloc>().userInfo;
+    if (login == null) return;
+    try {
+      final items = await _returnService.fetchReturnableItems(
+        token: login.accessToken,
+        orderId: singleOrder.orderId,
+      );
+      if (!mounted) return;
+      setState(() => _returnableItems = items);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _returnableItems = {});
+    }
+  }
 
   ({Color bg, Color fg, String label}) _statusStyle() {
     final display = OrderDisplayStatusHelper.resolve(singleOrder);
@@ -145,7 +188,12 @@ class LoadedList extends StatelessWidget {
                   final item = singleOrder.orderProducts[index];
                   return Column(
                     children: [
-                      SingleOrderDetailsComponent(orderItem: item),
+                      SingleOrderDetailsComponent(
+                        orderItem: item,
+                        orderCode: singleOrder.orderId,
+                        returnable: _returnableItems[item.id],
+                        onReturnCreated: _loadReturnable,
+                      ),
                       if (index < singleOrder.orderProducts.length - 1)
                         Divider(
                           height: 20,

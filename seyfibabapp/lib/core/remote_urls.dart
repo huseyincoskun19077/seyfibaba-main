@@ -222,6 +222,18 @@ class RemoteUrls {
   static String confirmOrderProductDelivery(String orderProductId, String token) =>
       '${baseUrl}user/order-products/$orderProductId/confirm-delivery?token=$token';
 
+  static String userReturnableItems(String orderId, String token) =>
+      '${baseUrl}user/orders/$orderId/returnable-items?token=$token';
+
+  static String userReturnRequests(String token) =>
+      '${baseUrl}user/return-requests?token=$token';
+
+  static String userCreateReturnRequest(String token) =>
+      '${baseUrl}user/return-requests?token=$token';
+
+  static String userCancelReturnRequest(int id, String token) =>
+      '${baseUrl}user/return-requests/$id/cancel?token=$token';
+
   static String trackingOrderResponse(String trackNumber) =>
       '${baseUrl}track-order-response/$trackNumber';
 

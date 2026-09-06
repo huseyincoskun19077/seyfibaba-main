@@ -10,7 +10,7 @@ import CloseFillIco from "../Helpers/icons/CloseFillIco";
 import { useReviewActionApiMutation } from "@/redux/features/product/apiSlice";
 import { toast } from "react-toastify";
 
-function ReviewModal({ productId, orderId, orderProductId, setReviewModal }) {
+function ReviewModal({ productId, orderId, orderProductId, setReviewModal, onSuccess }) {
   // Star rating value (selected by user)
   const [rating, setRating] = useState(0);
   // Star rating value on hover (for UI feedback)
@@ -35,11 +35,15 @@ function ReviewModal({ productId, orderId, orderProductId, setReviewModal }) {
 
   const reviewActionSuccessHandler = (data, statusCode) => {
     if (statusCode === 200 || statusCode === 201) {
-      toast.success(data?.message);
+      toast.success(data?.message || "Yorum Yapıldı");
       setForm({ message: "" });
       setRating(0);
       setHover(0);
-      setReviewModal(false);
+      if (typeof onSuccess === "function") {
+        onSuccess();
+      } else {
+        setReviewModal(false);
+      }
     } else {
       toast.error(data?.message);
     }

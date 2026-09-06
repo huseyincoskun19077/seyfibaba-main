@@ -92,7 +92,7 @@ class OrderedProductModel extends Equatable {
   bool get canConfirmDelivery => isShippedOrDelivered && !isCustomerConfirmed;
 
   bool get canWriteReview =>
-      (isShippedOrDelivered || isCustomerConfirmed) && !userHasReviewed;
+      (isDelivered || isCustomerConfirmed) && !userHasReviewed;
 
   static int parseQty(Map<String, dynamic> map) {
     final raw = map['qty'] ?? map['quantity'] ?? map['product_qty'];

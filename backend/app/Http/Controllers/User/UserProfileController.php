@@ -208,17 +208,27 @@ class UserProfileController extends Controller
                 return response()->json(['message' => 'Order not found'], 404);
             }
 
-            $userReviews = ProductReview::where('user_id', $user->id)->get();
-            $reviewedKeys = [];
-            foreach ($userReviews as $review) {
-                $reviewedKeys[$review->order_id . '_' . $review->product_id] = true;
-            }
+            $userReviews = ProductReview::where('user_id', $user->id)
+                ->get(['product_id', 'order_id']);
 
-            $order->orderProducts->each(function ($orderProduct) use ($reviewedKeys, $order) {
-                $key = $order->order_id . '_' . $orderProduct->product_id;
-                $orderProduct->user_has_reviewed = isset($reviewedKeys[$key]);
-            });
+            $markReviewed = function ($orderProducts) use ($userReviews, $order) {
+                $orderProducts->each(function ($orderProduct) use ($userReviews, $order) {
+                    $orderProduct->user_has_reviewed = $userReviews->contains(function ($review) use ($orderProduct, $order) {
+                        if ((int) $review->product_id !== (int) $orderProduct->product_id) {
+                            return false;
+                        }
+                        $reviewOrderId = trim((string) $review->order_id);
+                        if ($reviewOrderId === '') {
+                            return false;
+                        }
 
+                        return $reviewOrderId === (string) $order->order_id
+                            || $reviewOrderId === (string) $order->id;
+                    });
+                });
+            };
+
+            $markReviewed($order->orderProducts);
             $this->attachCargoToOrderProducts($order);
             $this->attachThumbImagesToOrderProducts($order->orderProducts);
 
@@ -226,6 +236,8 @@ class UserProfileController extends Controller
             \App\Support\OrderFulfillmentSync::sync($order);
             $order->refresh();
             $order->load('orderProducts.orderProductVariants', 'orderAddress', 'deliveryman', 'cargoShipment');
+            // load() sonrası attribute kaybolur — tekrar işaretle
+            $markReviewed($order->orderProducts);
             $this->attachCargoToOrderProducts($order);
             $this->attachThumbImagesToOrderProducts($order->orderProducts);
 
@@ -734,13 +746,15 @@ class UserProfileController extends Controller
             );
 
         if($isDeliveredOrder){
-            // 1 sipariş = 1 yorum kontrolü (order_id + product_id + user_id)
             $publicOrderId = (string) $order->order_id;
-            $isReview = ProductReview::where([
-                'product_id' => $request->product_id, 
-                'user_id' => $user->id,
-                'order_id' => $publicOrderId
-            ])->count();
+            $isReview = ProductReview::where('product_id', $request->product_id)
+                ->where('user_id', $user->id)
+                ->where(function ($query) use ($publicOrderId, $order) {
+                    $query->where('order_id', $publicOrderId)
+                        ->orWhere('order_id', (string) $order->id)
+                        ->orWhere('order_id', $order->id);
+                })
+                ->count();
             if($isReview > 0){
                 $message = 'Bu sipariş için zaten yorum yaptınız.';
                 return response()->json(['message' => $message],403);
