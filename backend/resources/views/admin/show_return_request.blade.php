@@ -189,10 +189,13 @@
                                         <label>İade Tutarı</label>
                                         <input type="number" step="0.01" min="0" name="refund_amount" class="form-control" value="{{ old('refund_amount', $return->refund_amount) }}" required>
                                         @if(!empty($suggestedRefund))
-                                            <small class="form-text text-muted">
+                                            <small class="form-text text-muted d-block">
                                                 Önerilen tutar: {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['refund_amount'], 2) }}
                                                 (ürün {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['line_gross'], 2) }}
                                                 − kupon payı {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['coupon_share'], 2) }}
+                                                @if(!empty($suggestedRefund['bank_discount_share']) && (float) $suggestedRefund['bank_discount_share'] > 0)
+                                                    − havale indirimi {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['bank_discount_share'], 2) }}
+                                                @endif
                                                 @if(!empty($suggestedRefund['shipping_included']))
                                                     + kargo {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['shipping'], 2) }}
                                                 @endif
@@ -202,12 +205,23 @@
                                     </div>
                                     <div class="form-group">
                                         <label>İade Yöntemi</label>
+                                        @php
+                                            $defaultRefundMethod = old(
+                                                'refund_method',
+                                                $return->refund_method
+                                                    ?: ($suggestedRefund['refund_method_hint'] ?? 'original_gateway')
+                                            );
+                                        @endphp
                                         <select name="refund_method" class="form-control" required>
-                                            @php $currentMethod = old('refund_method', $return->refund_method ?: 'original_gateway'); @endphp
-                                            <option value="original_gateway" {{ $currentMethod === 'original_gateway' ? 'selected' : '' }}>Ödeme yöntemine iade</option>
-                                            <option value="bank_transfer" {{ $currentMethod === 'bank_transfer' ? 'selected' : '' }}>Havale / EFT</option>
-                                            <option value="manual" {{ $currentMethod === 'manual' ? 'selected' : '' }}>Manuel iade</option>
+                                            <option value="original_gateway" {{ $defaultRefundMethod === 'original_gateway' ? 'selected' : '' }}>Ödeme yöntemine iade (kart)</option>
+                                            <option value="bank_transfer" {{ $defaultRefundMethod === 'bank_transfer' ? 'selected' : '' }}>Havale / EFT</option>
+                                            <option value="manual" {{ $defaultRefundMethod === 'manual' ? 'selected' : '' }}>Manuel iade</option>
                                         </select>
+                                        <div class="alert alert-info mt-2 mb-0 py-2 small">
+                                            <strong>Havale ile iade nasıl işler?</strong><br>
+                                            Sipariş havale/EFT ile ödendiyse alışverişte uygulanan indirim (genelde %3) iade tutarından düşülür; alıcıya yalnızca ödediği tutar kadar para iadesi yapılır.
+                                            İade yöntemi “Havale / EFT” seçildiğinde tutar, müşterinin kayıtlı banka hesabına manuel EFT ile gönderilir (kart otomatik iadesi yoktur).
+                                        </div>
                                     </div>
                                     @php
                                         $adminReturnAddress = old(

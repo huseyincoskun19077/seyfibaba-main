@@ -398,52 +398,24 @@ class _SingleOrderDetailsComponentState
               ),
             ),
             if ((returnable?.returnAddress ?? '').trim().isNotEmpty ||
-                (returnable?.returnCargoCode ?? '').trim().isNotEmpty) ...[
+                (returnable?.returnCargoCode ?? '').trim().isNotEmpty ||
+                returnable?.canSubmitTracking == true) ...[
               const SizedBox(height: 6),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 240),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFFBEB),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFFDE68A)),
-                  ),
-                  child: Text(
-                    [
-                      if ((returnable?.returnAddress ?? '').trim().isNotEmpty)
-                        'İade adresi:\n${returnable!.returnAddress!.trim()}',
-                      if ((returnable?.returnShippingPayerLabel ?? '')
-                          .trim()
-                          .isNotEmpty)
-                        'Kargo ücreti: ${returnable!.returnShippingPayerLabel}',
-                      if ((returnable?.returnCarrierName ?? '')
-                          .trim()
-                          .isNotEmpty)
-                        'Kargo: ${returnable!.returnCarrierName}',
-                      if ((returnable?.returnCargoCode ?? '')
-                          .trim()
-                          .isNotEmpty)
-                        'İade kodu: ${returnable!.returnCargoCode}',
-                      if ((returnable?.returnShippingInstructions ?? '')
-                          .trim()
-                          .isNotEmpty)
-                        returnable!.returnShippingInstructions!.trim(),
-                      if ((returnable?.buyerReturnTrackingNumber ?? '')
-                          .trim()
-                          .isNotEmpty)
-                        'Takip no: ${returnable!.buyerReturnTrackingNumber}'
-                      else if (returnable?.canSubmitTracking == true)
-                        'Kargoya verdikten sonra İade Taleplerim’den takip no girin.',
-                    ].whereType<String>().join('\n'),
-                    style: const TextStyle(
+              SizedBox(
+                height: 32,
+                child: OutlinedButton(
+                  onPressed: () => _showReturnLogisticsDialog(context, returnable!),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF92400E),
+                    side: const BorderSide(color: Color(0xFFFDE68A)),
+                    backgroundColor: const Color(0xFFFFFBEB),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    textStyle: const TextStyle(
                       fontSize: 11,
-                      height: 1.35,
-                      color: Color(0xFF78350F),
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                  child: const Text('İade kargo bilgilerini gör'),
                 ),
               ),
             ],
@@ -466,6 +438,47 @@ class _SingleOrderDetailsComponentState
           actions[i],
         ],
       ],
+    );
+  }
+
+  Future<void> _showReturnLogisticsDialog(
+    BuildContext context,
+    BuyerReturnableItem returnable,
+  ) async {
+    final lines = <String>[
+      if ((returnable.returnAddress ?? '').trim().isNotEmpty)
+        'İade adresi:\n${returnable.returnAddress!.trim()}',
+      if ((returnable.returnShippingPayerLabel ?? '').trim().isNotEmpty)
+        'Kargo ücreti: ${returnable.returnShippingPayerLabel}',
+      if ((returnable.returnCarrierName ?? '').trim().isNotEmpty)
+        'Kargo: ${returnable.returnCarrierName}',
+      if ((returnable.returnCargoCode ?? '').trim().isNotEmpty)
+        'İade kodu: ${returnable.returnCargoCode}',
+      if ((returnable.returnShippingInstructions ?? '').trim().isNotEmpty)
+        'Talimat:\n${returnable.returnShippingInstructions!.trim()}',
+      if ((returnable.buyerReturnTrackingNumber ?? '').trim().isNotEmpty)
+        'Takip no: ${returnable.buyerReturnTrackingNumber}'
+      else if (returnable.canSubmitTracking)
+        'Kargoya verdikten sonra İade Taleplerim ekranından takip numarası girin.',
+    ];
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('İade kargo bilgileri'),
+        content: SingleChildScrollView(
+          child: Text(
+            lines.isEmpty ? 'Henüz kargo talimatı yok.' : lines.join('\n\n'),
+            style: const TextStyle(fontSize: 13, height: 1.4),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
     );
   }
 }

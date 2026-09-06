@@ -314,40 +314,17 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
                                 ),
                               ),
                             ],
-                            if ((item.returnAddress ?? '').trim().isNotEmpty) ...[
+                            if ((item.returnAddress ?? '').trim().isNotEmpty ||
+                                (item.returnCargoCode ?? '').trim().isNotEmpty ||
+                                item.canSubmitTracking) ...[
                               const SizedBox(height: 8),
-                              Text(
-                                'İade adresi:\n${item.returnAddress}',
-                                style: const TextStyle(fontSize: 12, height: 1.35),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: OutlinedButton(
+                                  onPressed: () => _showLogistics(item),
+                                  child: const Text('İade kargo bilgilerini gör'),
+                                ),
                               ),
-                              Text(
-                                'Kargo ücreti: ${item.shippingPayerLabel}',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              if ((item.returnCarrierName ?? '')
-                                  .trim()
-                                  .isNotEmpty)
-                                Text(
-                                  'Kargo: ${item.returnCarrierName}',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              if ((item.returnCargoCode ?? '')
-                                  .trim()
-                                  .isNotEmpty)
-                                Text(
-                                  'İade kodu: ${item.returnCargoCode}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              if ((item.returnShippingInstructions ?? '')
-                                  .trim()
-                                  .isNotEmpty)
-                                Text(
-                                  item.returnShippingInstructions!,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
                             ],
                             if (item.isPending) ...[
                               const SizedBox(height: 10),
@@ -383,6 +360,44 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showLogistics(BuyerReturnRequest item) async {
+    final lines = <String>[
+      if ((item.returnAddress ?? '').trim().isNotEmpty)
+        'İade adresi:\n${item.returnAddress!.trim()}',
+      'Kargo ücreti: ${item.shippingPayerLabel}',
+      if ((item.returnCarrierName ?? '').trim().isNotEmpty)
+        'Kargo: ${item.returnCarrierName}',
+      if ((item.returnCargoCode ?? '').trim().isNotEmpty)
+        'İade kodu: ${item.returnCargoCode}',
+      if ((item.returnShippingInstructions ?? '').trim().isNotEmpty)
+        'Talimat:\n${item.returnShippingInstructions!.trim()}',
+      if ((item.buyerReturnTrackingNumber ?? '').trim().isNotEmpty)
+        'Takip no: ${item.buyerReturnTrackingNumber}'
+      else if (item.canSubmitTracking)
+        'Kargoya verdikten sonra buradan takip numarası girebilirsiniz.',
+    ];
+
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('İade kargo bilgileri'),
+        content: SingleChildScrollView(
+          child: Text(
+            lines.join('\n\n'),
+            style: const TextStyle(fontSize: 13, height: 1.4),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Kapat'),
           ),
         ],
       ),

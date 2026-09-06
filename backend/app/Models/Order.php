@@ -57,6 +57,7 @@ class Order extends Model
 
     /**
      * Kupon sipariş geneline yayılır. İade, ürünün ödenen payıdır (liste fiyatı − kupon payı).
+     * Havale ile ödenen siparişlerde alışveriş indirimi (%3 vb.) iade tutarından düşülür.
      * Kısmi iadede kargo iade edilmez; siparişteki son ürün(ler) dönünce kargo da eklenir.
      */
     public function suggestedReturnRefund(OrderProduct $orderProduct, int $qty, ?int $excludeReturnId = null): array
@@ -78,7 +79,33 @@ class Order extends Model
         $refund = $includeShipping ? round($productRefund + $shipping, 2) : $productRefund;
 
         $paidProducts = max(0, round($subtotal - $coupon, 2));
-        $maxOrderRefund = $paidProducts + ($includeShipping ? $shipping : 0);
+        $bankDiscountShare = 0.0;
+        $discountType = (string) ($this->discount_type ?? '');
+        $discountAmount = round((float) ($this->discount_amount ?? 0), 2);
+        $paymentMethod = strtolower((string) ($this->payment_method ?? ''));
+        $isBankPayment = $paymentMethod === 'bankpayment' || $discountType === 'bank_transfer';
+
+        $grossBeforeBank = $refund;
+        if ($isBankPayment && $refund > 0) {
+            $discountedBase = max(0.01, round($paidProducts + $shipping, 2));
+            if ($discountAmount > 0) {
+                $bankDiscountShare = round(($refund / $discountedBase) * $discountAmount, 2);
+            } else {
+                $percent = (float) (Setting::query()->value('bank_transfer_discount_percent') ?? 3);
+                $bankDiscountShare = round(($refund * max(0, $percent)) / 100, 2);
+            }
+            $refund = max(0, round($refund - $bankDiscountShare, 2));
+        }
+
+        $productAfterBank = $productRefund;
+        if ($bankDiscountShare > 0 && $grossBeforeBank > 0) {
+            $productAfterBank = max(0, round($productRefund - ($productRefund / $grossBeforeBank) * $bankDiscountShare, 2));
+        }
+
+        $maxOrderRefund = max(0, round((float) ($this->total_amount ?? 0), 2));
+        if ($maxOrderRefund <= 0) {
+            $maxOrderRefund = max(0, round($paidProducts + ($includeShipping ? $shipping : 0) - ($isBankPayment ? $discountAmount : 0), 2));
+        }
         $reserved = (float) ReturnRequest::query()
             ->where('order_id', $this->id)
             ->whereIn('status', [
@@ -99,12 +126,15 @@ class Order extends Model
             'line_gross' => $lineGross,
             'coupon_share' => $couponShare,
             'product_refund' => $productRefund,
+            'bank_discount_share' => $bankDiscountShare,
+            'is_bank_payment' => $isBankPayment,
             'shipping_included' => $includeShipping,
             'shipping' => $includeShipping ? $shipping : 0.0,
             'refund_amount' => $refund,
             'paid_unit_price' => $qty > 0
-                ? round($productRefund / $qty, 2)
+                ? round($productAfterBank / $qty, 2)
                 : round((float) $orderProduct->unit_price, 2),
+            'refund_method_hint' => $isBankPayment ? 'bank_transfer' : 'original_gateway',
         ];
     }
 
