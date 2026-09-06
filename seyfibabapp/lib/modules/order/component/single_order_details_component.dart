@@ -124,7 +124,11 @@ class _SingleOrderDetailsComponentState
                     color: HomeTheme.textMuted,
                   ),
                 ),
-                if (cargo != null && cargo.hasTracking) ...[
+                if (cargo != null &&
+                    cargo.hasTracking &&
+                    (orderItem.sellerStatus >= 2 ||
+                        (orderItem.shippedAt != null &&
+                            orderItem.shippedAt!.trim().isNotEmpty))) ...[
                   const SizedBox(height: 8),
                   _CargoInfo(
                     cargo: cargo,

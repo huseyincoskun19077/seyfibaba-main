@@ -28,22 +28,15 @@
             @endif
         </div>
     </div>
+    @if ($ctx !== 'seller')
     <div class="invoice-detail-item">
         <div class="invoice-detail-name">{{ __('admin.Shipping') }} :
-            @if ($ctx === 'seller' && $multiSeller)
-                <span class="text-muted">—</span>
-            @else
-                {{ $setting->currency_icon }}{{ round($order->shipping_cost, 2) }}
-            @endif
+            {{ $setting->currency_icon }}{{ round($order->shipping_cost, 2) }}
         </div>
     </div>
     <div class="invoice-detail-item">
         <div class="invoice-detail-name">{{ __('admin.Tax') }} : {{ $setting->tax }}%</div>
     </div>
-    @if ($ctx === 'seller' && $multiSeller)
-        <div class="invoice-detail-item small text-muted text-right">
-            <div class="invoice-detail-name">Bu siparişte birden fazla satıcı var; üstteki ara toplam yalnızca sizin ürünlerinizdir.</div>
-        </div>
     @endif
 
     <hr class="mt-2 mb-2">

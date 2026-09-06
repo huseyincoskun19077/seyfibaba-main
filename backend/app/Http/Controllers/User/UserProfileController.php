@@ -706,7 +706,10 @@ class UserProfileController extends Controller
         // Ürün bazlı teslim/onar kontrolü (pazaryeri uyumu)
         $order = Order::query()
             ->where('user_id', $user->id)
-            ->where('order_id', $request->order_id)
+            ->where(function ($query) use ($request) {
+                $query->where('order_id', $request->order_id)
+                    ->orWhere('id', $request->order_id);
+            })
             ->first();
 
         if (! $order) {
@@ -732,10 +735,11 @@ class UserProfileController extends Controller
 
         if($isDeliveredOrder){
             // 1 sipariş = 1 yorum kontrolü (order_id + product_id + user_id)
+            $publicOrderId = (string) $order->order_id;
             $isReview = ProductReview::where([
                 'product_id' => $request->product_id, 
                 'user_id' => $user->id,
-                'order_id' => $request->order_id
+                'order_id' => $publicOrderId
             ])->count();
             if($isReview > 0){
                 $message = 'Bu sipariş için zaten yorum yaptınız.';
@@ -745,7 +749,7 @@ class UserProfileController extends Controller
             $product = Product::find($request->product_id);
             $review = new ProductReview();
             $review->user_id = $user->id;
-            $review->order_id = $request->order_id;
+            $review->order_id = $publicOrderId;
             $review->rating = $request->rating;
             $review->review = $request->review;
             $review->product_vendor_id = $product->vendor_id;
@@ -1047,21 +1051,26 @@ return response()->json([
             }
         }
 
-        $order->orderProducts->each(function ($orderProduct) use ($shipmentBySeller, $shipments) {
+        $order->orderProducts->each(function ($orderProduct) use ($shipmentBySeller) {
             $sellerId = (int) ($orderProduct->seller_id ?? 0);
-            $shipment = $shipmentBySeller[$sellerId] ?? null;
+            $shipment = $sellerId > 0 ? ($shipmentBySeller[$sellerId] ?? null) : null;
 
-            // Tek kargo / seller_id eşleşmezse siparişteki ilk kargoyu kullan
-            if (! $shipment && $shipments->isNotEmpty()) {
-                $shipment = $shipmentBySeller[0] ?? $shipments->first();
+            // Yalnızca bu satıcının kargosu + ürün gerçekten kargoya verilmişse göster
+            $lineShipped = ! empty($orderProduct->shipped_at)
+                || (int) ($orderProduct->seller_status ?? 0) >= 2;
+
+            if (! $shipment || ! $lineShipped) {
+                $orderProduct->cargo = null;
+
+                return;
             }
 
-            $orderProduct->cargo = $shipment ? [
+            $orderProduct->cargo = [
                 'carrier_name' => $shipment->carrier_name,
                 'tracking_number' => $shipment->tracking_number,
                 'tracking_url' => $shipment->tracking_url,
                 'status' => $shipment->status,
-            ] : null;
+            ];
         });
     }
 

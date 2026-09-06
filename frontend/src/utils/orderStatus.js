@@ -35,7 +35,6 @@ export function getOrderStatusBadgeClass(status) {
 function lineIsShipped(line) {
   if (line?.shipped_at) return true;
   if (Number(line?.seller_status) >= 2) return true;
-  if (line?.cargo?.tracking_number || line?.cargo?.trackingNumber) return true;
   return false;
 }
 

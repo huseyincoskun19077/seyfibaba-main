@@ -83,7 +83,12 @@ class WithdrawController extends Controller
         }
 
         $method = WithdrawMethod::whereId($request->method_id)->first();
-        if($request->withdraw_amount >= $method->min_amount && $request->withdraw_amount <= $method->max_amount){
+        if (! $method) {
+            return response()->json(['notification' => 'Para çekme yöntemi bulunamadı'], 400);
+        }
+
+        // Üst sınır yöntem max'ı değil, çekilebilir bakiye (komisyon zaten satışta kesildi)
+        if ($request->withdraw_amount >= $method->min_amount && $request->withdraw_amount <= $currentAmount) {
             $user = Auth::guard('api')->user();
             $seller = $user->seller;
             $widthdraw = new SellerWithdraw();

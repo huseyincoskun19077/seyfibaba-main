@@ -11,8 +11,7 @@ function lineStatusLabel(item) {
   if (item?.delivered_at) return "Teslim";
   const shipped =
     item?.shipped_at ||
-    (item?.seller_status != null && Number(item.seller_status) >= 2) ||
-    !!item?.cargo?.tracking_number;
+    (item?.seller_status != null && Number(item.seller_status) >= 2);
   if (shipped) return "Kargoda";
   if (item?.seller_status != null && Number(item.seller_status) >= 1) {
     return "Hazırlanıyor";
@@ -56,8 +55,7 @@ function ProductActions({
   const isShippedOrDelivered =
     item?.delivered_at ||
     item?.shipped_at ||
-    (item?.seller_status != null && Number(item.seller_status) >= 2) ||
-    !!item?.cargo?.tracking_number;
+    (item?.seller_status != null && Number(item.seller_status) >= 2);
   const isDelivered =
     item?.customer_confirmed_at || item?.auto_confirmed_at || item?.delivered_at;
   const canConfirm =
@@ -193,7 +191,11 @@ export default function OrderProductList({
                   </div>
                 </div>
               </div>
-              <CargoInfo cargo={item.cargo} />
+              {(item?.shipped_at ||
+                (item?.seller_status != null &&
+                  Number(item.seller_status) >= 2)) && (
+                <CargoInfo cargo={item.cargo} />
+              )}
               <div className="mt-3 border-t border-slate-100 pt-3">
                 <ProductActions
                   item={item}
@@ -244,7 +246,11 @@ export default function OrderProductList({
                           <p className="font-medium text-qblack notranslate">{item.product_name}</p>
                           <ProductLineStatus item={item} />
                         </div>
-                        <CargoInfo cargo={item.cargo} />
+                        {(item?.shipped_at ||
+                          (item?.seller_status != null &&
+                            Number(item.seller_status) >= 2)) && (
+                          <CargoInfo cargo={item.cargo} />
+                        )}
                       </div>
                     </div>
                   </td>

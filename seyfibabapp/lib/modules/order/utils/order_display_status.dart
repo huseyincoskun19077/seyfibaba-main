@@ -84,9 +84,7 @@ class OrderDisplayStatusHelper {
     if (line.sellerStatus >= 2) {
       return true;
     }
-    if (line.cargo?.hasTracking ?? false) {
-      return true;
-    }
+    // Kargo bilgisi tek başına yeterli değil (başka satıcının kargosu yanlış yapışmış olabilir)
     return false;
   }
 

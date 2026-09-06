@@ -15,6 +15,7 @@ import '../../utils/constants.dart';
 import '../../utils/utils.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/rounded_app_bar.dart';
+import '../order/controllers/order/order_cubit.dart';
 import '../order/model/product_order_model.dart';
 
 class SubmitFeedBackScreen extends StatefulWidget {
@@ -230,6 +231,16 @@ class _SubmitFeedBackScreenState extends State<SubmitFeedBackScreen> {
     map['review'] = _reviewTextController.text;
     map['product_id'] = widget.orderItem.productId.toString();
     map['seller_id'] = widget.orderItem.sellerId.toString();
+    map['order_product_id'] = widget.orderItem.id.toString();
+
+    // Backend public order_id (sipariş no) ister; satırdaki order_id FK olabilir
+    final order = context.read<OrderCubit>().singleOrder;
+    final orderCode = (order?.orderId ?? '').trim();
+    if (orderCode.isNotEmpty) {
+      map['order_id'] = orderCode;
+    } else if (widget.orderItem.orderId > 0) {
+      map['order_id'] = widget.orderItem.orderId.toString();
+    }
 
     context.read<SubmitReviewCubit>().submitReview(map);
     // _reviewTextController.clear();

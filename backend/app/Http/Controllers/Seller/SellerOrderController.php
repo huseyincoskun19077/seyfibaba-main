@@ -25,6 +25,7 @@ class SellerOrderController extends Controller
         }])->whereHas('orderProducts',function($query) use ($seller){
             $query->where(['seller_id' => $seller->id]);
         })->where('payment_status', 1)->orderBy('id','desc')->paginate(15);
+        $this->attachSellerLinesSubtotal($orders, (int) $seller->id);
         $title = trans('All Orders');
 
         return response()->json(['orders' => $orders, 'title' => $title], 200);
@@ -43,6 +44,7 @@ class SellerOrderController extends Controller
         })->where('payment_status', 1)->whereHas('orderProducts', function($q) use ($seller) {
             $q->where('seller_id', $seller->id)->whereIn('seller_status', [0, 1]);
         })->paginate(15);
+        $this->attachSellerLinesSubtotal($orders, (int) $seller->id);
         $title = 'Hazırlanan Siparişler';
 
         return response()->json(['orders' => $orders, 'title' => $title], 200);
@@ -57,6 +59,7 @@ class SellerOrderController extends Controller
         })->where('payment_status', 1)->whereHas('orderProducts', function($q) use ($seller) {
             $q->where('seller_id', $seller->id)->where('seller_status', 2);
         })->paginate(15);
+        $this->attachSellerLinesSubtotal($orders, (int) $seller->id);
         $title = 'Kargoya Verilen Siparişler';
 
         return response()->json(['orders' => $orders, 'title' => $title], 200);
@@ -71,6 +74,7 @@ class SellerOrderController extends Controller
         })->where('payment_status', 1)->whereHas('orderProducts', function($q) use ($seller) {
             $q->where('seller_id', $seller->id)->whereIn('seller_status', [3]);
         })->paginate(15);
+        $this->attachSellerLinesSubtotal($orders, (int) $seller->id);
         $title = 'Tamamlanan Siparişler';
 
         return response()->json(['orders' => $orders, 'title' => $title], 200);
@@ -85,6 +89,7 @@ class SellerOrderController extends Controller
         })->where('payment_status', 1)->whereHas('orderProducts', function($q) use ($seller) {
             $q->where('seller_id', $seller->id)->where('seller_status', 4);
         })->paginate(15);
+        $this->attachSellerLinesSubtotal($orders, (int) $seller->id);
         $title = 'İptal/Red Siparişler';
 
         return response()->json(['orders' => $orders, 'title' => $title], 200);
@@ -97,6 +102,7 @@ class SellerOrderController extends Controller
         }])->whereHas('orderProducts',function($query) use ($seller){
             $query->where(['seller_id' => $seller->id]);
         })->where('payment_status', 1)->where('cash_on_delivery',1)->orderBy('id','desc')->paginate(15);
+        $this->attachSellerLinesSubtotal($orders, (int) $seller->id);
 
         $title = trans('Cash On Delivery');
 
@@ -144,6 +150,12 @@ class SellerOrderController extends Controller
         $payload = $order->toArray();
         $payload['seller_lines_subtotal'] = round($sellerLinesSubtotal, 2);
         $payload['seller_cargo'] = $sellerCargo;
+        // Sipariş geneli kargo (başka satıcıya ait olabilir) göstermeyelim
+        $payload['cargo_shipment'] = $sellerCargo;
+        $payload['cargoShipment'] = $sellerCargo;
+        // Ürün listesini kesin olarak yalnızca bu satıcıya indir
+        $payload['order_products'] = $sellerProducts->toArray();
+        $payload['orderProducts'] = $payload['order_products'];
 
         return response()->json(['order' => $payload], 200);
     }
@@ -170,14 +182,16 @@ class SellerOrderController extends Controller
 
         $seller = Auth::guard('api')->user()->seller;
 
-        $orderProduct = OrderProduct::query()
+        $orderProducts = OrderProduct::query()
             ->where('order_id', $id)
             ->where('seller_id', $seller->id)
-            ->first();
+            ->get();
 
-        if (! $orderProduct) {
+        if ($orderProducts->isEmpty()) {
             return response()->json(['message' => 'Sipariş bulunamadı veya bu siparişe erişim yetkiniz yok.'], 404);
         }
+
+        $orderProduct = $orderProducts->first();
 
         if ((int) $orderProduct->seller_status !== 1) {
             return response()->json([
@@ -188,7 +202,7 @@ class SellerOrderController extends Controller
         $this->saveManualCargoAndMarkShipped(
             (int) $id,
             (int) $seller->id,
-            $orderProduct,
+            $orderProducts,
             trim($validated['carrier_name']),
             trim($validated['tracking_number']),
             isset($validated['tracking_url']) ? trim((string) $validated['tracking_url']) : null
@@ -212,16 +226,17 @@ class SellerOrderController extends Controller
 
         $seller = Auth::guard('api')->user()->seller;
 
-        // Satıcı sadece kendi order_product satırını güncelleyebilir
-        $orderProduct = OrderProduct::query()
+        // Satıcı sadece kendi order_product satırlarını güncelleyebilir
+        $orderProducts = OrderProduct::query()
             ->where('order_id', $id)
             ->where('seller_id', $seller->id)
-            ->first();
+            ->get();
 
-        if (!$orderProduct) {
+        if ($orderProducts->isEmpty()) {
             return response()->json(['message' => 'Sipariş bulunamadı veya bu siparişe erişim yetkiniz yok.'], 404);
         }
 
+        $orderProduct = $orderProducts->first();
         $newStatus = (int) $request->order_status;
         $currentStatus = (int) $orderProduct->seller_status;
 
@@ -238,7 +253,10 @@ class SellerOrderController extends Controller
         }
 
         if ($newStatus === 1) {
-            $orderProduct->seller_status = 1;
+            foreach ($orderProducts as $op) {
+                $op->seller_status = 1;
+                $op->save();
+            }
         } elseif ($newStatus === 2) {
             $trackingNumber = trim((string) $request->input('tracking_number', ''));
             $carrierName = trim((string) $request->input('carrier_name', ''));
@@ -272,19 +290,41 @@ class SellerOrderController extends Controller
             $this->saveManualCargoAndMarkShipped(
                 (int) $id,
                 (int) $seller->id,
-                $orderProduct,
+                $orderProducts,
                 $carrierName !== '' ? $carrierName : (string) ($latestCargo->carrier_name ?? 'Kargo'),
                 $trackingNumber,
                 $trackingUrl
             );
         }
 
-        $orderProduct->save();
-
         $statusLabels = [1 => 'Satıcı Onayladı', 2 => 'Kargoya Verildi'];
         return response()->json([
             'notification' => 'Sipariş durumu güncellendi: ' . $statusLabels[$newStatus],
         ], 200);
+    }
+
+    private function attachSellerLinesSubtotal($orders, int $sellerId): void
+    {
+        foreach ($orders as $order) {
+            if (! $order->relationLoaded('orderProducts')) {
+                continue;
+            }
+            $subtotal = 0.0;
+            foreach ($order->orderProducts as $orderProduct) {
+                if ((int) $orderProduct->seller_id !== $sellerId) {
+                    continue;
+                }
+                $line = (float) $orderProduct->unit_price * (int) $orderProduct->qty;
+                $variants = $orderProduct->relationLoaded('orderProductVariants')
+                    ? $orderProduct->orderProductVariants
+                    : [];
+                foreach ($variants as $variant) {
+                    $line += (float) $variant->variant_price * (int) $orderProduct->qty;
+                }
+                $subtotal += $line;
+            }
+            $order->setAttribute('seller_lines_subtotal', round($subtotal, 2));
+        }
     }
 
     private function mergeJsonBody(Request $request): void
@@ -307,11 +347,15 @@ class SellerOrderController extends Controller
     private function saveManualCargoAndMarkShipped(
         int $orderId,
         int $sellerId,
-        OrderProduct $orderProduct,
+        $orderProducts,
         string $carrierName,
         string $trackingNumber,
         ?string $trackingUrl = null
     ): void {
+        $products = $orderProducts instanceof \Illuminate\Support\Collection
+            ? $orderProducts
+            : collect([$orderProducts]);
+
         $latestCargo = CargoShipment::query()
             ->where('order_id', $orderId)
             ->where('seller_id', $sellerId)
@@ -343,10 +387,14 @@ class SellerOrderController extends Controller
             ]);
         }
 
-        $orderProduct->seller_status = 2;
-        $orderProduct->shipped_at = $orderProduct->shipped_at ?: now();
-        $orderProduct->save();
+        foreach ($products as $orderProduct) {
+            if ((int) $orderProduct->seller_status < 2) {
+                $orderProduct->seller_status = 2;
+            }
+            $orderProduct->shipped_at = $orderProduct->shipped_at ?: now();
+            $orderProduct->save();
+        }
 
-        \App\Support\OrderFulfillmentSync::sync(Order::find($orderId) ?? $orderProduct->order);
+        \App\Support\OrderFulfillmentSync::sync(Order::find($orderId));
     }
 }
