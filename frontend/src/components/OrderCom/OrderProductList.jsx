@@ -105,13 +105,13 @@ function ProductActions({
           </button>
         )}
         {isLoggedIn && isDelivered && hasActiveReturnRequest && (
-          <span className="inline-flex h-9 items-center rounded-lg bg-red-50 px-3 text-xs font-semibold text-qred">
-            İade talebi alındı
+          <span className="inline-flex h-9 max-w-full items-center rounded-lg bg-red-50 px-3 text-xs font-semibold text-qred">
+            {returnable?.return_status_label || "İade talebi alındı"}
           </span>
         )}
         {isLoggedIn && isDelivered && isRejected && (
           <span className="inline-flex h-9 items-center rounded-lg bg-slate-100 px-3 text-xs font-semibold text-slate-700">
-            İade talebi reddedildi
+            {returnable?.return_status_label || "İade talebi reddedildi"}
           </span>
         )}
         {canConfirm && (
@@ -125,6 +125,47 @@ function ProductActions({
           </button>
         )}
       </div>
+      {isLoggedIn && isDelivered && hasActiveReturnRequest && (returnable?.return_address || returnable?.return_cargo_code) ? (
+        <div className="max-w-md rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+          {returnable.return_address ? (
+            <p className="whitespace-pre-line">
+              <span className="font-semibold">İade adresi: </span>
+              {returnable.return_address}
+            </p>
+          ) : null}
+          {returnable.return_shipping_payer_label ? (
+            <p className="mt-1">
+              <span className="font-semibold">Kargo ücreti: </span>
+              {returnable.return_shipping_payer_label}
+            </p>
+          ) : null}
+          {returnable.return_carrier_name ? (
+            <p className="mt-1">
+              <span className="font-semibold">Kargo: </span>
+              {returnable.return_carrier_name}
+            </p>
+          ) : null}
+          {returnable.return_cargo_code ? (
+            <p className="mt-1">
+              <span className="font-semibold">İade kodu: </span>
+              <span className="notranslate font-mono">{returnable.return_cargo_code}</span>
+            </p>
+          ) : null}
+          {returnable.return_shipping_instructions ? (
+            <p className="mt-1 whitespace-pre-line">{returnable.return_shipping_instructions}</p>
+          ) : null}
+          {returnable.buyer_return_tracking_number ? (
+            <p className="mt-1">
+              <span className="font-semibold">Sizin takip no: </span>
+              <span className="notranslate">{returnable.buyer_return_tracking_number}</span>
+            </p>
+          ) : returnable.can_submit_tracking ? (
+            <p className="mt-1 text-amber-800">
+              Kargoya verdikten sonra profil → İade Taleplerim üzerinden takip numarasını girin.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       {isLoggedIn && isDelivered && isRejected && rejectionNote ? (
         <p className="max-w-md rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
           <span className="font-semibold text-slate-800">Ret gerekçesi: </span>

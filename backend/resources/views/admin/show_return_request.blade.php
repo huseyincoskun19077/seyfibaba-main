@@ -118,6 +118,37 @@
                                 </div>
                             @endif
 
+                            @if($return->return_address || $return->buyer_return_tracking_number)
+                                <div class="border rounded p-3 mt-4">
+                                    <h6 class="mb-3">İade kargo bilgileri</h6>
+                                    @if($return->return_address)
+                                        <p class="mb-2"><strong>İade adresi:</strong><br><span class="text-muted" style="white-space:pre-line;">{{ $return->return_address }}</span></p>
+                                    @endif
+                                    <p class="mb-2"><strong>Kargo ücreti:</strong> {{ \App\Models\ReturnRequest::shippingPayerLabel($return->return_shipping_payer) }}</p>
+                                    @if($return->return_carrier_name)
+                                        <p class="mb-2"><strong>Önerilen kargo:</strong> {{ $return->return_carrier_name }}</p>
+                                    @endif
+                                    @if($return->return_cargo_code)
+                                        <p class="mb-2"><strong>İade kodu:</strong> <code>{{ $return->return_cargo_code }}</code></p>
+                                    @endif
+                                    @if($return->return_shipping_instructions)
+                                        <p class="mb-2"><strong>Talimat:</strong><br><span class="text-muted" style="white-space:pre-line;">{{ $return->return_shipping_instructions }}</span></p>
+                                    @endif
+                                    @if($return->buyer_return_tracking_number)
+                                        <div class="alert alert-info mb-0 mt-2">
+                                            <strong>Alıcı kargo bildirimi</strong><br>
+                                            Firma: {{ $return->buyer_return_carrier ?: '-' }}<br>
+                                            Takip No: {{ $return->buyer_return_tracking_number }}
+                                            @if($return->buyer_return_tracking_url)
+                                                — <a href="{{ $return->buyer_return_tracking_url }}" target="_blank" rel="noopener">Takip et</a>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <p class="text-muted mb-0 mt-2"><em>Alıcı henüz takip numarası girmedi.</em></p>
+                                    @endif
+                                </div>
+                            @endif
+
                             @if($return->images->count() > 0)
                                 <div class="mt-4">
                                     <h5>Kanıt Görselleri</h5>
@@ -178,6 +209,40 @@
                                             <option value="manual" {{ $currentMethod === 'manual' ? 'selected' : '' }}>Manuel iade</option>
                                         </select>
                                     </div>
+                                    @php
+                                        $adminReturnAddress = old(
+                                            'return_address',
+                                            $return->return_address ?: \App\Models\ReturnRequest::buildSellerReturnAddress($return->seller)
+                                        );
+                                        $adminPayer = old(
+                                            'return_shipping_payer',
+                                            $return->return_shipping_payer ?: \App\Models\ReturnRequest::defaultShippingPayerForReason($return->reason)
+                                        );
+                                    @endphp
+                                    <div class="form-group">
+                                        <label>İade adresi <span class="text-danger">*</span></label>
+                                        <textarea name="return_address" class="form-control" rows="3" required>{{ $adminReturnAddress }}</textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>İade kargo ücretini kim karşılar? <span class="text-danger">*</span></label>
+                                        <select name="return_shipping_payer" class="form-control" required>
+                                            <option value="seller" {{ $adminPayer === 'seller' ? 'selected' : '' }}>Satıcı karşılar</option>
+                                            <option value="buyer" {{ $adminPayer === 'buyer' ? 'selected' : '' }}>Alıcı karşılar</option>
+                                            <option value="platform" {{ $adminPayer === 'platform' ? 'selected' : '' }}>Platform karşılar</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Kargo firması (opsiyonel)</label>
+                                        <input type="text" name="return_carrier_name" class="form-control" value="{{ old('return_carrier_name', $return->return_carrier_name) }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>İade / anlaşmalı kod (opsiyonel)</label>
+                                        <input type="text" name="return_cargo_code" class="form-control" value="{{ old('return_cargo_code', $return->return_cargo_code) }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Kargo talimatı (opsiyonel)</label>
+                                        <textarea name="return_shipping_instructions" class="form-control" rows="2">{{ old('return_shipping_instructions', $return->return_shipping_instructions) }}</textarea>
+                                    </div>
                                     <div class="form-group">
                                         <label>Yönetici Notu <span class="text-danger">*</span></label>
                                         <textarea name="admin_note" class="form-control" rows="3" required placeholder="Müşterinin göreceği kısa açıklama">{{ old('admin_note', $return->admin_note) }}</textarea>
@@ -200,6 +265,11 @@
                                     <button type="submit" class="btn btn-danger btn-block shadow-sm">Talebi Reddet</button>
                                 </form>
                             @elseif ($status === 2)
+                                @if(!$return->buyer_return_tracking_number)
+                                    <div class="alert alert-warning">
+                                        Alıcı henüz takip numarası girmedi. Mümkünse önce kargoyu bekleyin; yine de acil durumda iadeyi tamamlayabilirsiniz.
+                                    </div>
+                                @endif
                                 <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST" class="mb-3">
                                     @csrf
                                     @method('PUT')
@@ -219,7 +289,8 @@
                                         <label>Yönetici Notu</label>
                                         <textarea name="admin_note" class="form-control" rows="3" placeholder="Örn: Ödeme yöntemine iade başlatıldı">{{ old('admin_note', $return->admin_note) }}</textarea>
                                     </div>
-                                    <button type="submit" class="btn btn-success btn-block shadow-sm">İadeyi Tamamla (Para iadesi)</button>
+                                    <p class="text-muted small">Önerilen sıra: önce “Ürün Teslim Alındı”, sonra para iadesi.</p>
+                                    <button type="submit" class="btn btn-outline-success btn-block shadow-sm">İadeyi Tamamla (Para iadesi) — atlayarak</button>
                                 </form>
                             @elseif ($status === 3)
                                 <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST">

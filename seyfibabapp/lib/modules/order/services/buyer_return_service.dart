@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -110,5 +111,31 @@ class BuyerReturnService {
       ),
     );
     return '${response['message'] ?? 'İade talebi iptal edildi'}';
+  }
+
+  Future<String> submitReturnTracking({
+    required String token,
+    required int id,
+    required String trackingNumber,
+    String? carrier,
+    String? trackingUrl,
+  }) async {
+    final response = await NetworkParser.callClientWithCatchException(
+      () => _client.put(
+        Uri.parse(RemoteUrls.userSubmitReturnTracking(id, token)),
+        headers: {
+          ..._authHeaders(token),
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'buyer_return_tracking_number': trackingNumber,
+          if (carrier != null && carrier.trim().isNotEmpty)
+            'buyer_return_carrier': carrier.trim(),
+          if (trackingUrl != null && trackingUrl.trim().isNotEmpty)
+            'buyer_return_tracking_url': trackingUrl.trim(),
+        }),
+      ),
+    );
+    return '${response['message'] ?? 'Takip bilgisi kaydedildi'}';
   }
 }

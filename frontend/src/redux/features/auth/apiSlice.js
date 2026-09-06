@@ -267,6 +267,13 @@ export const authApis = apiSlice.injectEndpoints({
         return currentArg !== previousArg;
       },
     }),
+    submitReturnTrackingApi: builder.mutation({
+      query: ({ token, id, ...body }) => ({
+        url: `${apiRoutes.returnRequests}/${id}/tracking?token=${encodeURIComponent(token || "")}`,
+        method: "PUT",
+        body,
+      }),
+    }),
     reviewListApi: builder.query({
       query: (data) => {
         return {
@@ -698,6 +705,7 @@ export const {
   useVerifyOtpApiMutation,
   useResendOtpApiMutation,
   useReturnRequestsApiQuery,
+  useSubmitReturnTrackingApiMutation,
   useSellerKycDocumentsApiQuery,
   useSellerKycStatusApiQuery,
   useUploadSellerKycDocumentApiMutation,

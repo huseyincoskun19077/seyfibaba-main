@@ -234,6 +234,9 @@ class RemoteUrls {
   static String userCancelReturnRequest(int id, String token) =>
       '${baseUrl}user/return-requests/$id/cancel?token=$token';
 
+  static String userSubmitReturnTracking(int id, String token) =>
+      '${baseUrl}user/return-requests/$id/tracking?token=$token';
+
   static String trackingOrderResponse(String trackNumber) =>
       '${baseUrl}track-order-response/$trackNumber';
 

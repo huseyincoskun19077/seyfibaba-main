@@ -89,8 +89,15 @@ class ReturnRequestController extends Controller
                 'refund_amount' => 'required|numeric|min:0',
                 'refund_method' => 'required|string',
                 'admin_note' => 'required|string|min:3',
+                'return_address' => 'required|string|min:10',
+                'return_shipping_payer' => 'required|in:seller,buyer,platform',
+                'return_carrier_name' => 'nullable|string|max:100',
+                'return_cargo_code' => 'nullable|string|max:120',
+                'return_shipping_instructions' => 'nullable|string|max:2000',
             ], [
                 'admin_note.required' => 'Yönetici notu zorunludur.',
+                'return_address.required' => 'İade adresi zorunludur.',
+                'return_shipping_payer.required' => 'İade kargo ücretini kimin karşılayacağını seçin.',
             ]);
         }
 
@@ -106,6 +113,30 @@ class ReturnRequestController extends Controller
 
         if ($request->filled('refund_method')) {
             $return->refund_method = $request->refund_method;
+        }
+
+        if ($status === ReturnRequest::STATUS_ADMIN_APPROVED || $request->filled('return_address')) {
+            if ($request->filled('return_address')) {
+                $return->return_address = trim((string) $request->return_address);
+            }
+            if ($request->filled('return_shipping_payer')) {
+                $return->return_shipping_payer = $request->return_shipping_payer;
+            }
+            if ($request->has('return_carrier_name')) {
+                $return->return_carrier_name = $request->filled('return_carrier_name')
+                    ? trim((string) $request->return_carrier_name)
+                    : null;
+            }
+            if ($request->has('return_cargo_code')) {
+                $return->return_cargo_code = $request->filled('return_cargo_code')
+                    ? trim((string) $request->return_cargo_code)
+                    : null;
+            }
+            if ($request->has('return_shipping_instructions')) {
+                $return->return_shipping_instructions = $request->filled('return_shipping_instructions')
+                    ? trim((string) $request->return_shipping_instructions)
+                    : null;
+            }
         }
 
         if ($request->filled('rejected_reason')) {
@@ -131,8 +162,8 @@ class ReturnRequestController extends Controller
         }
 
         $messages = [
-            ReturnRequest::STATUS_ADMIN_APPROVED => 'İade talebini onayladınız. Sonraki adım: ürün teslimi veya iadeyi tamamlama.',
-            ReturnRequest::STATUS_ITEM_RECEIVED => 'Ürün teslim alındı olarak işaretlendi.',
+            ReturnRequest::STATUS_ADMIN_APPROVED => 'İade talebini onayladınız. Müşteri kargo talimatını görecek; ürün gelince “Teslim alındı” işaretleyip ardından iadeyi tamamlayın.',
+            ReturnRequest::STATUS_ITEM_RECEIVED => 'Ürün teslim alındı olarak işaretlendi. Şimdi para iadesini tamamlayabilirsiniz.',
             ReturnRequest::STATUS_ADMIN_REJECTED => 'İade talebini reddettiniz. Müşteri yönetici notunu / red gerekçesini görecek.',
         ];
 

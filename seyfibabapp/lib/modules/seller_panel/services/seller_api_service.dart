@@ -603,6 +603,11 @@ class SellerApiService {
     String token,
     int id, {
     String? sellerNote,
+    String? returnAddress,
+    String? returnShippingPayer,
+    String? returnCarrierName,
+    String? returnCargoCode,
+    String? returnShippingInstructions,
   }) async {
     final response = await NetworkParser.callClientWithCatchException(
       () => _client.put(
@@ -611,6 +616,18 @@ class SellerApiService {
         body: jsonEncode({
           if (sellerNote != null && sellerNote.trim().isNotEmpty)
             'seller_note': sellerNote.trim(),
+          if (returnAddress != null && returnAddress.trim().isNotEmpty)
+            'return_address': returnAddress.trim(),
+          if (returnShippingPayer != null &&
+              returnShippingPayer.trim().isNotEmpty)
+            'return_shipping_payer': returnShippingPayer.trim(),
+          if (returnCarrierName != null && returnCarrierName.trim().isNotEmpty)
+            'return_carrier_name': returnCarrierName.trim(),
+          if (returnCargoCode != null && returnCargoCode.trim().isNotEmpty)
+            'return_cargo_code': returnCargoCode.trim(),
+          if (returnShippingInstructions != null &&
+              returnShippingInstructions.trim().isNotEmpty)
+            'return_shipping_instructions': returnShippingInstructions.trim(),
         }),
       ),
     );

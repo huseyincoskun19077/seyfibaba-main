@@ -39,28 +39,103 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
 
   Future<void> _approve(SellerReturnRequest item) async {
     final noteCtrl = TextEditingController();
+    final addressCtrl = TextEditingController();
+    final carrierCtrl = TextEditingController();
+    final codeCtrl = TextEditingController();
+    final instructionsCtrl = TextEditingController();
+    String payer = item.reason.contains('changed_mind') ||
+            item.reason.contains('other')
+        ? 'buyer'
+        : 'seller';
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('İadeyi onayla'),
-        content: TextField(
-          controller: noteCtrl,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'Not (opsiyonel)',
-            border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('İadeyi onayla'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: addressCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'İade adresi *',
+                    border: OutlineInputBorder(),
+                    hintText: 'Boş bırakırsanız mağaza adresi kullanılır',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  value: payer,
+                  decoration: const InputDecoration(
+                    labelText: 'Kargo ücretini kim karşılar? *',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'seller',
+                      child: Text('Satıcı karşılar'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'buyer',
+                      child: Text('Alıcı karşılar'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'platform',
+                      child: Text('Platform karşılar'),
+                    ),
+                  ],
+                  onChanged: (v) => setDialogState(() => payer = v ?? payer),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: carrierCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Anlaşmalı kargo (opsiyonel)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: codeCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'İade kodu (opsiyonel)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: instructionsCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Kargo talimatı (opsiyonel)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: noteCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Not (opsiyonel)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('İptal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Onayla'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Onayla'),
-          ),
-        ],
       ),
     );
     if (ok != true || !mounted) return;
@@ -70,6 +145,12 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
         _token,
         item.id,
         sellerNote: noteCtrl.text,
+        returnAddress:
+            addressCtrl.text.trim().isEmpty ? null : addressCtrl.text.trim(),
+        returnShippingPayer: payer,
+        returnCarrierName: carrierCtrl.text,
+        returnCargoCode: codeCtrl.text,
+        returnShippingInstructions: instructionsCtrl.text,
       );
       if (!mounted) return;
       Utils.closeDialog(context);

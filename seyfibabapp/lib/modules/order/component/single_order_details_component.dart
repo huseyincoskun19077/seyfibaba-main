@@ -298,9 +298,11 @@ class _SingleOrderDetailsComponentState
                 color: const Color(0xFF64748B).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                'İade talebi reddedildi',
-                style: TextStyle(
+              child: Text(
+                (returnable?.returnStatusLabel ?? '').trim().isNotEmpty
+                    ? returnable!.returnStatusLabel!.trim()
+                    : 'İade talebi reddedildi',
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF334155),
@@ -374,20 +376,78 @@ class _SingleOrderDetailsComponentState
     } else if (returnable?.isRejected != true &&
         returnable?.existingReturnRequestId != null) {
       actions.add(
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEF262C).withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Text(
-            'İade talebi alındı',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFFEF262C),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF262C).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                (returnable?.returnStatusLabel ?? '').trim().isNotEmpty
+                    ? returnable!.returnStatusLabel!.trim()
+                    : 'İade talebi alındı',
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFEF262C),
+                ),
+              ),
             ),
-          ),
+            if ((returnable?.returnAddress ?? '').trim().isNotEmpty ||
+                (returnable?.returnCargoCode ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 240),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Text(
+                    [
+                      if ((returnable?.returnAddress ?? '').trim().isNotEmpty)
+                        'İade adresi:\n${returnable!.returnAddress!.trim()}',
+                      if ((returnable?.returnShippingPayerLabel ?? '')
+                          .trim()
+                          .isNotEmpty)
+                        'Kargo ücreti: ${returnable!.returnShippingPayerLabel}',
+                      if ((returnable?.returnCarrierName ?? '')
+                          .trim()
+                          .isNotEmpty)
+                        'Kargo: ${returnable!.returnCarrierName}',
+                      if ((returnable?.returnCargoCode ?? '')
+                          .trim()
+                          .isNotEmpty)
+                        'İade kodu: ${returnable!.returnCargoCode}',
+                      if ((returnable?.returnShippingInstructions ?? '')
+                          .trim()
+                          .isNotEmpty)
+                        returnable!.returnShippingInstructions!.trim(),
+                      if ((returnable?.buyerReturnTrackingNumber ?? '')
+                          .trim()
+                          .isNotEmpty)
+                        'Takip no: ${returnable!.buyerReturnTrackingNumber}'
+                      else if (returnable?.canSubmitTracking == true)
+                        'Kargoya verdikten sonra İade Taleplerim’den takip no girin.',
+                    ].whereType<String>().join('\n'),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      height: 1.35,
+                      color: Color(0xFF78350F),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       );
     }

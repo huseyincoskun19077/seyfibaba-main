@@ -99,7 +99,7 @@ class ReturnRequestController extends Controller
             ->first();
 
         if (!$order) {
-            return response()->json(['message' => 'Order not found'], 404);
+            return response()->json(['message' => 'Sipariş bulunamadı'], 404);
         }
 
         $items = $order->orderProducts->map(function ($orderProduct) use ($order) {
@@ -127,7 +127,7 @@ class ReturnRequestController extends Controller
         $orderProduct = OrderProduct::with(['order', 'seller'])->findOrFail($request->order_product_id);
 
         if ((int) $orderProduct->order->user_id !== (int) $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Yetkisiz işlem'], 403);
         }
 
         $payload = $this->buildReturnableItemPayload($orderProduct->order, $orderProduct);
@@ -276,11 +276,11 @@ class ReturnRequestController extends Controller
             ->first();
 
         if (!$return) {
-            return response()->json(['message' => 'Return request not found'], 404);
+            return response()->json(['message' => 'İade talebi bulunamadı'], 404);
         }
 
         if ((int) $return->status !== ReturnRequest::STATUS_PENDING) {
-            return response()->json(['message' => 'Only pending requests can be cancelled'], 422);
+            return response()->json(['message' => 'Yalnızca bekleyen talepler iptal edilebilir'], 422);
         }
 
         $return->update([
@@ -291,7 +291,7 @@ class ReturnRequestController extends Controller
 
         app(\App\Services\SellerPayoutService::class)->syncPayoutBlockFromReturns($return->order);
 
-        return response()->json(['message' => 'Return request cancelled successfully']);
+        return response()->json(['message' => 'İade talebi iptal edildi']);
     }
 
     public function show($id)
@@ -303,7 +303,7 @@ class ReturnRequestController extends Controller
             ->first();
 
         if (!$return) {
-            return response()->json(['message' => 'Return request not found'], 404);
+            return response()->json(['message' => 'İade talebi bulunamadı'], 404);
         }
 
         return response()->json(['return' => $return]);
@@ -412,6 +412,17 @@ class ReturnRequestController extends Controller
                 'rejection_note' => null,
                 'admin_note' => null,
                 'rejected_reason' => null,
+                'can_submit_tracking' => false,
+                'return_address' => null,
+                'return_shipping_payer' => null,
+                'return_shipping_payer_label' => null,
+                'return_carrier_name' => null,
+                'return_cargo_code' => null,
+                'return_shipping_instructions' => null,
+                'buyer_return_carrier' => null,
+                'buyer_return_tracking_number' => null,
+                'buyer_return_tracking_url' => null,
+                'buyer_shipped_at' => null,
             ];
         }
 
@@ -426,7 +437,6 @@ class ReturnRequestController extends Controller
         $sellerNote = trim((string) ($return->seller_note ?? $return->vendor_response ?? ''));
         $adminResponse = trim((string) ($return->admin_response ?? ''));
 
-        // Alıcıya gösterilecek not: admin notu öncelikli, yoksa ret sebebi / satıcı notu
         $rejectionNote = null;
         if ($isRejected) {
             foreach ([$adminNote, $adminResponse, $rejectedReason, $sellerNote] as $candidate) {
@@ -437,24 +447,57 @@ class ReturnRequestController extends Controller
             }
         }
 
-        $labels = [
-            ReturnRequest::STATUS_PENDING => 'Bekliyor',
-            ReturnRequest::STATUS_SELLER_APPROVED => 'Satıcı onayladı',
-            ReturnRequest::STATUS_ADMIN_APPROVED => 'Admin onayladı',
-            ReturnRequest::STATUS_ITEM_RECEIVED => 'Ürün alındı',
-            ReturnRequest::STATUS_REFUNDED => 'İade edildi',
-            ReturnRequest::STATUS_SELLER_REJECTED => 'İade talebi reddedildi',
-            ReturnRequest::STATUS_ADMIN_REJECTED => 'İade talebi reddedildi',
-            ReturnRequest::STATUS_USER_CANCELLED => 'İptal edildi',
-        ];
-
-        return [
+        return array_merge([
             'return_status' => $status,
-            'return_status_label' => $labels[$status] ?? ('Durum '.$status),
+            'return_status_label' => $return->buyerStatusLabel(),
             'is_rejected' => $isRejected,
             'rejection_note' => $rejectionNote,
             'admin_note' => $adminNote !== '' ? $adminNote : null,
             'rejected_reason' => $rejectedReason !== '' ? $rejectedReason : null,
-        ];
+        ], $return->logisticsPayload());
+    }
+
+    public function submitTracking(Request $request, $id)
+    {
+        $user = Auth::guard('api')->user();
+        $return = ReturnRequest::where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $return) {
+            return response()->json(['message' => 'İade talebi bulunamadı'], 404);
+        }
+
+        if (! $return->canBuyerSubmitTracking()) {
+            return response()->json([
+                'message' => 'Bu talep için şu an takip numarası girilemez. Önce satıcı/yönetici onayını bekleyin.',
+            ], 422);
+        }
+
+        $request->validate([
+            'buyer_return_tracking_number' => 'required|string|min:3|max:120',
+            'buyer_return_carrier' => 'nullable|string|max:100',
+            'buyer_return_tracking_url' => 'nullable|url|max:500',
+        ], [
+            'buyer_return_tracking_number.required' => 'Takip numarası zorunludur.',
+            'buyer_return_tracking_number.min' => 'Takip numarası en az 3 karakter olmalıdır.',
+        ]);
+
+        $return->update([
+            'buyer_return_tracking_number' => trim((string) $request->buyer_return_tracking_number),
+            'buyer_return_carrier' => $request->filled('buyer_return_carrier')
+                ? trim((string) $request->buyer_return_carrier)
+                : $return->buyer_return_carrier,
+            'buyer_return_tracking_url' => $request->filled('buyer_return_tracking_url')
+                ? trim((string) $request->buyer_return_tracking_url)
+                : $return->buyer_return_tracking_url,
+            'buyer_shipped_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'İade kargo takip bilgisi kaydedildi. Ürün satıcıya ulaşınca süreç devam eder.',
+            'return' => $return->fresh()->load(['order', 'orderProduct', 'images']),
+            'return_status_label' => $return->fresh()->buyerStatusLabel(),
+        ]);
     }
 }

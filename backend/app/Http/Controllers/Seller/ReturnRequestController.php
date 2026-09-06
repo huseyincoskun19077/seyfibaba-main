@@ -45,25 +45,50 @@ class ReturnRequestController extends Controller
 
     public function approve(Request $request, $id)
     {
-        $request->validate([
-            'seller_note' => 'nullable|string',
-        ]);
-
         $return = $this->findOwnedReturnRequest($id);
         if ((int) $return->status !== ReturnRequest::STATUS_PENDING) {
             return response()->json(['message' => 'Yalnızca bekleyen talepler onaylanabilir'], 422);
         }
+
+        $vendor = $this->resolveVendor();
+        $request->merge([
+            'return_address' => $request->input(
+                'return_address',
+                $return->return_address ?: ReturnRequest::buildSellerReturnAddress($vendor)
+            ),
+            'return_shipping_payer' => $request->input(
+                'return_shipping_payer',
+                $return->return_shipping_payer ?: ReturnRequest::defaultShippingPayerForReason($return->reason)
+            ),
+        ]);
+
+        $request->validate([
+            'return_address' => 'required|string|min:10',
+            'return_shipping_payer' => 'required|in:seller,buyer,platform',
+            'return_carrier_name' => 'nullable|string|max:100',
+            'return_cargo_code' => 'nullable|string|max:120',
+            'return_shipping_instructions' => 'nullable|string|max:2000',
+            'seller_note' => 'nullable|string',
+        ], [
+            'return_address.required' => 'İade adresi zorunludur',
+            'return_shipping_payer.required' => 'İade kargo ücretini kimin karşılayacağını seçin',
+        ]);
 
         $note = $request->seller_note;
         $return->update([
             'status' => ReturnRequest::STATUS_SELLER_APPROVED,
             'vendor_response' => $note,
             'seller_note' => $note,
+            'return_address' => trim((string) $request->return_address),
+            'return_shipping_payer' => $request->return_shipping_payer,
+            'return_carrier_name' => $request->filled('return_carrier_name') ? trim((string) $request->return_carrier_name) : null,
+            'return_cargo_code' => $request->filled('return_cargo_code') ? trim((string) $request->return_cargo_code) : null,
+            'return_shipping_instructions' => $request->filled('return_shipping_instructions') ? trim((string) $request->return_shipping_instructions) : null,
             'approved_at' => now(),
         ]);
 
         return response()->json([
-            'message' => 'İade talebini onayladınız. Süreç yöneticiye iletildi.',
+            'message' => 'İade talebini onayladınız. Müşteri iade adresi ve kargo talimatını görecek.',
             'return' => $return->fresh(),
         ]);
     }

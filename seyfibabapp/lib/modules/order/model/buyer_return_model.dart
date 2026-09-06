@@ -14,6 +14,13 @@ class BuyerReturnableItem {
     this.rejectionNote,
     this.adminNote,
     this.rejectedReason,
+    this.returnAddress,
+    this.returnShippingPayerLabel,
+    this.returnCarrierName,
+    this.returnCargoCode,
+    this.returnShippingInstructions,
+    this.buyerReturnTrackingNumber,
+    this.canSubmitTracking = false,
   });
 
   final int orderProductId;
@@ -30,6 +37,13 @@ class BuyerReturnableItem {
   final String? rejectionNote;
   final String? adminNote;
   final String? rejectedReason;
+  final String? returnAddress;
+  final String? returnShippingPayerLabel;
+  final String? returnCarrierName;
+  final String? returnCargoCode;
+  final String? returnShippingInstructions;
+  final String? buyerReturnTrackingNumber;
+  final bool canSubmitTracking;
 
   factory BuyerReturnableItem.fromMap(Map<String, dynamic> map) {
     return BuyerReturnableItem(
@@ -55,6 +69,17 @@ class BuyerReturnableItem {
       rejectionNote: map['rejection_note']?.toString(),
       adminNote: map['admin_note']?.toString(),
       rejectedReason: map['rejected_reason']?.toString(),
+      returnAddress: map['return_address']?.toString(),
+      returnShippingPayerLabel: map['return_shipping_payer_label']?.toString(),
+      returnCarrierName: map['return_carrier_name']?.toString(),
+      returnCargoCode: map['return_cargo_code']?.toString(),
+      returnShippingInstructions:
+          map['return_shipping_instructions']?.toString(),
+      buyerReturnTrackingNumber:
+          map['buyer_return_tracking_number']?.toString(),
+      canSubmitTracking: map['can_submit_tracking'] == true ||
+          map['can_submit_tracking'] == 1 ||
+          '${map['can_submit_tracking']}' == '1',
     );
   }
 }
@@ -75,6 +100,14 @@ class BuyerReturnRequest {
     this.sellerNote,
     this.adminResponse,
     this.vendorResponse,
+    this.returnAddress,
+    this.returnShippingPayer,
+    this.returnCarrierName,
+    this.returnCargoCode,
+    this.returnShippingInstructions,
+    this.buyerReturnCarrier,
+    this.buyerReturnTrackingNumber,
+    this.buyerReturnTrackingUrl,
   });
 
   final int id;
@@ -91,22 +124,45 @@ class BuyerReturnRequest {
   final String? sellerNote;
   final String? adminResponse;
   final String? vendorResponse;
+  final String? returnAddress;
+  final String? returnShippingPayer;
+  final String? returnCarrierName;
+  final String? returnCargoCode;
+  final String? returnShippingInstructions;
+  final String? buyerReturnCarrier;
+  final String? buyerReturnTrackingNumber;
+  final String? buyerReturnTrackingUrl;
 
   bool get isPending => status == 0;
 
   bool get isRejected => status == 5 || status == 6;
 
-  String get statusLabel => switch (status) {
-        0 => 'Bekliyor',
-        1 => 'Satıcı onayladı',
-        2 => 'Admin onayladı',
-        3 => 'Ürün alındı',
-        4 => 'İade edildi',
-        5 => 'İade talebi reddedildi',
-        6 => 'İade talebi reddedildi',
-        7 => 'İptal edildi',
-        _ => 'Durum $status',
+  bool get canSubmitTracking => status == 1 || status == 2;
+
+  String get shippingPayerLabel => switch (returnShippingPayer) {
+        'seller' => 'Satıcı karşılar',
+        'buyer' => 'Alıcı karşılar',
+        'platform' => 'Platform karşılar',
+        _ => 'Henüz belirlenmedi',
       };
+
+  String get statusLabel {
+    if (canSubmitTracking &&
+        (buyerReturnTrackingNumber ?? '').trim().isNotEmpty) {
+      return 'İade kargoda — takip: ${buyerReturnTrackingNumber!.trim()}';
+    }
+    return switch (status) {
+      0 => 'İade talebi alındı — satıcı/yönetici inceliyor',
+      1 => 'Satıcı onayladı — ürünü iade adresine kargolayın',
+      2 => 'İade onaylandı — kargo talimatını uygulayın',
+      3 => 'İade ürünü satıcıya / depoya ulaştı',
+      4 => 'İade tamamlandı — para iadesi yapıldı',
+      5 => 'İade talebi reddedildi',
+      6 => 'İade talebi reddedildi',
+      7 => 'İade talebi iptal edildi',
+      _ => 'Durum $status',
+    };
+  }
 
   String? get rejectionNote {
     for (final candidate in [
@@ -156,6 +212,16 @@ class BuyerReturnRequest {
       sellerNote: map['seller_note']?.toString(),
       adminResponse: map['admin_response']?.toString(),
       vendorResponse: map['vendor_response']?.toString(),
+      returnAddress: map['return_address']?.toString(),
+      returnShippingPayer: map['return_shipping_payer']?.toString(),
+      returnCarrierName: map['return_carrier_name']?.toString(),
+      returnCargoCode: map['return_cargo_code']?.toString(),
+      returnShippingInstructions:
+          map['return_shipping_instructions']?.toString(),
+      buyerReturnCarrier: map['buyer_return_carrier']?.toString(),
+      buyerReturnTrackingNumber:
+          map['buyer_return_tracking_number']?.toString(),
+      buyerReturnTrackingUrl: map['buyer_return_tracking_url']?.toString(),
     );
   }
 }

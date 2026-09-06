@@ -34,7 +34,7 @@ class ReturnRequestController extends Controller
         $seller = Auth::guard('web')->user()->seller;
         $setting = Setting::first();
 
-        $return = ReturnRequest::with(['order', 'orderProduct.product', 'user', 'images'])
+        $return = ReturnRequest::with(['order', 'orderProduct.product', 'user', 'images', 'seller'])
             ->where('id', $id)
             ->where('seller_id', $seller->id)
             ->first();
@@ -45,7 +45,21 @@ class ReturnRequestController extends Controller
                 ->with(['messege' => 'İade talebi bulunamadı.', 'alert-type' => 'error']);
         }
 
-        return view('seller.show_return_request', compact('return', 'setting'));
+        $defaultReturnAddress = old(
+            'return_address',
+            $return->return_address ?: ReturnRequest::buildSellerReturnAddress($seller)
+        );
+        $defaultShippingPayer = old(
+            'return_shipping_payer',
+            $return->return_shipping_payer ?: ReturnRequest::defaultShippingPayerForReason($return->reason)
+        );
+
+        return view('seller.show_return_request', compact(
+            'return',
+            'setting',
+            'defaultReturnAddress',
+            'defaultShippingPayer'
+        ));
     }
 
     public function updateStatus(Request $request, $id)
@@ -71,15 +85,33 @@ class ReturnRequestController extends Controller
         }
 
         if ($status === ReturnRequest::STATUS_SELLER_APPROVED) {
+            $request->validate([
+                'return_address' => 'required|string|min:10',
+                'return_shipping_payer' => 'required|in:seller,buyer,platform',
+                'return_carrier_name' => 'nullable|string|max:100',
+                'return_cargo_code' => 'nullable|string|max:120',
+                'return_shipping_instructions' => 'nullable|string|max:2000',
+                'seller_note' => 'nullable|string|max:2000',
+            ], [
+                'return_address.required' => 'İade adresi zorunludur.',
+                'return_address.min' => 'İade adresi en az 10 karakter olmalıdır.',
+                'return_shipping_payer.required' => 'İade kargo ücretini kimin karşılayacağını seçin.',
+            ]);
+
             $return->update([
                 'status' => ReturnRequest::STATUS_SELLER_APPROVED,
                 'vendor_response' => $request->seller_note,
                 'seller_note' => $request->seller_note,
+                'return_address' => trim((string) $request->return_address),
+                'return_shipping_payer' => $request->return_shipping_payer,
+                'return_carrier_name' => $request->filled('return_carrier_name') ? trim((string) $request->return_carrier_name) : null,
+                'return_cargo_code' => $request->filled('return_cargo_code') ? trim((string) $request->return_cargo_code) : null,
+                'return_shipping_instructions' => $request->filled('return_shipping_instructions') ? trim((string) $request->return_shipping_instructions) : null,
                 'approved_at' => now(),
             ]);
 
             return redirect()->back()->with([
-                'messege' => 'İade talebini onayladınız. Süreç yöneticiye iletildi; para iadesi yönetici tamamlayacak.',
+                'messege' => 'İade talebini onayladınız. Müşteri iade adresi ve kargo talimatını görecek; süreç yöneticiye iletildi.',
                 'alert-type' => 'success',
             ]);
         }

@@ -429,6 +429,7 @@ Route::group([], function () {
         Route::get('return-requests/{id}', [UserReturnRequestController::class, 'show']);
         Route::post('return-requests', [UserReturnRequestController::class, 'store']);
         Route::put('return-requests/{id}/cancel', [UserReturnRequestController::class, 'cancel']);
+        Route::put('return-requests/{id}/tracking', [UserReturnRequestController::class, 'submitTracking']);
 
 
     });

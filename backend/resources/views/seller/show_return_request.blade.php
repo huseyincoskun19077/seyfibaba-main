@@ -135,6 +135,38 @@
                 </div>
               @endif
 
+              @if($return->return_address || $return->buyer_return_tracking_number)
+                <div class="border rounded p-3 mt-4">
+                  <h6 class="mb-3">İade kargo bilgileri</h6>
+                  @if($return->return_address)
+                    <p class="mb-2"><strong>İade adresi:</strong><br><span class="text-muted" style="white-space:pre-line;">{{ $return->return_address }}</span></p>
+                  @endif
+                  <p class="mb-2"><strong>Kargo ücreti:</strong> {{ \App\Models\ReturnRequest::shippingPayerLabel($return->return_shipping_payer) }}</p>
+                  @if($return->return_carrier_name)
+                    <p class="mb-2"><strong>Önerilen kargo:</strong> {{ $return->return_carrier_name }}</p>
+                  @endif
+                  @if($return->return_cargo_code)
+                    <p class="mb-2"><strong>İade / anlaşmalı kod:</strong> <code>{{ $return->return_cargo_code }}</code></p>
+                  @endif
+                  @if($return->return_shipping_instructions)
+                    <p class="mb-2"><strong>Talimat:</strong><br><span class="text-muted" style="white-space:pre-line;">{{ $return->return_shipping_instructions }}</span></p>
+                  @endif
+                  @if($return->buyer_return_tracking_number)
+                    <div class="alert alert-info mb-0 mt-2">
+                      <strong>Alıcı kargoya verdi</strong><br>
+                      Firma: {{ $return->buyer_return_carrier ?: '-' }}<br>
+                      Takip No: {{ $return->buyer_return_tracking_number }}
+                      @if($return->buyer_return_tracking_url)
+                        — <a href="{{ $return->buyer_return_tracking_url }}" target="_blank" rel="noopener">Takip et</a>
+                      @endif
+                      @if($return->buyer_shipped_at)
+                        <br><small>Bildirim: {{ $return->buyer_shipped_at->format('d.m.Y H:i') }}</small>
+                      @endif
+                    </div>
+                  @endif
+                </div>
+              @endif
+
               @if($return->images->count() > 0)
                 <div class="mt-4">
                   <h5>Kanıt Görselleri</h5>
@@ -216,8 +248,35 @@
                   @method('PUT')
                   <input type="hidden" name="status" value="1">
                   <div class="form-group">
+                    <label>İade adresi <span class="text-danger">*</span></label>
+                    <textarea name="return_address" class="form-control" rows="4" required placeholder="Alıcının ürünü göndereceği adres">{{ $defaultReturnAddress ?? old('return_address') }}</textarea>
+                    <small class="form-text text-muted">Mağaza adresiniz ön dolduruldu; gerekirse düzenleyin.</small>
+                  </div>
+                  <div class="form-group">
+                    <label>İade kargo ücretini kim karşılar? <span class="text-danger">*</span></label>
+                    @php $payer = $defaultShippingPayer ?? old('return_shipping_payer', 'buyer'); @endphp
+                    <select name="return_shipping_payer" class="form-control" required>
+                      <option value="seller" {{ $payer === 'seller' ? 'selected' : '' }}>Satıcı karşılar</option>
+                      <option value="buyer" {{ $payer === 'buyer' ? 'selected' : '' }}>Alıcı karşılar</option>
+                      <option value="platform" {{ $payer === 'platform' ? 'selected' : '' }}>Platform karşılar</option>
+                    </select>
+                    <small class="form-text text-muted">Kusurlu/yanlış ürünlerde genelde satıcı; pişmanlıkta alıcı (Trendyol benzeri).</small>
+                  </div>
+                  <div class="form-group">
+                    <label>Anlaşmalı kargo firması (opsiyonel)</label>
+                    <input type="text" name="return_carrier_name" class="form-control" value="{{ old('return_carrier_name', $return->return_carrier_name) }}" placeholder="Örn: Yurtiçi, Aras, Sürat">
+                  </div>
+                  <div class="form-group">
+                    <label>İade / anlaşmalı kod (opsiyonel)</label>
+                    <input type="text" name="return_cargo_code" class="form-control" value="{{ old('return_cargo_code', $return->return_cargo_code) }}" placeholder="Alıcının şubede söyleyeceği kod">
+                  </div>
+                  <div class="form-group">
+                    <label>Kargo talimatı (opsiyonel)</label>
+                    <textarea name="return_shipping_instructions" class="form-control" rows="3" placeholder="Örn: Ürünü orijinal kutusuyla gönderin. Anlaşmalı kodu şubeye verin.">{{ old('return_shipping_instructions', $return->return_shipping_instructions) }}</textarea>
+                  </div>
+                  <div class="form-group">
                     <label>Onay notu (opsiyonel)</label>
-                    <textarea name="seller_note" class="form-control" rows="4" placeholder="Örn: Ürünü geri almayı kabul ediyoruz. Kutusu eksiksiz gelsin.">{{ old('seller_note', $return->seller_note) }}</textarea>
+                    <textarea name="seller_note" class="form-control" rows="3" placeholder="Örn: Ürünü geri almayı kabul ediyoruz.">{{ old('seller_note', $return->seller_note) }}</textarea>
                   </div>
                   <button type="submit" class="btn btn-primary btn-lg btn-block">Talebi Onayla</button>
                 </form>

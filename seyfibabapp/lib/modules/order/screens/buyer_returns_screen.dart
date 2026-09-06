@@ -85,6 +85,80 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
     }
   }
 
+  Future<void> _submitTracking(BuyerReturnRequest item) async {
+    final carrierCtrl = TextEditingController(text: item.buyerReturnCarrier ?? '');
+    final trackingCtrl =
+        TextEditingController(text: item.buyerReturnTrackingNumber ?? '');
+    final urlCtrl =
+        TextEditingController(text: item.buyerReturnTrackingUrl ?? '');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('İade kargo takibi'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: carrierCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Kargo firması',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: trackingCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Takip numarası *',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: urlCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Takip linki (opsiyonel)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Kaydet'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    if (trackingCtrl.text.trim().length < 3) {
+      Utils.errorSnackBar(context, 'Takip numarası zorunludur');
+      return;
+    }
+    try {
+      final msg = await _service.submitReturnTracking(
+        token: _token,
+        id: item.id,
+        trackingNumber: trackingCtrl.text.trim(),
+        carrier: carrierCtrl.text.trim(),
+        trackingUrl: urlCtrl.text.trim(),
+      );
+      if (!mounted) return;
+      Utils.showSnackBar(context, msg);
+      await _refresh();
+    } catch (e) {
+      if (!mounted) return;
+      Utils.errorSnackBar(context, e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -240,6 +314,41 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
                                 ),
                               ),
                             ],
+                            if ((item.returnAddress ?? '').trim().isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'İade adresi:\n${item.returnAddress}',
+                                style: const TextStyle(fontSize: 12, height: 1.35),
+                              ),
+                              Text(
+                                'Kargo ücreti: ${item.shippingPayerLabel}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              if ((item.returnCarrierName ?? '')
+                                  .trim()
+                                  .isNotEmpty)
+                                Text(
+                                  'Kargo: ${item.returnCarrierName}',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              if ((item.returnCargoCode ?? '')
+                                  .trim()
+                                  .isNotEmpty)
+                                Text(
+                                  'İade kodu: ${item.returnCargoCode}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              if ((item.returnShippingInstructions ?? '')
+                                  .trim()
+                                  .isNotEmpty)
+                                Text(
+                                  item.returnShippingInstructions!,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                            ],
                             if (item.isPending) ...[
                               const SizedBox(height: 10),
                               Align(
@@ -247,6 +356,22 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
                                 child: TextButton(
                                   onPressed: () => _cancel(item),
                                   child: const Text('İptal et'),
+                                ),
+                              ),
+                            ],
+                            if (item.canSubmitTracking) ...[
+                              const SizedBox(height: 10),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: FilledButton(
+                                  onPressed: () => _submitTracking(item),
+                                  child: Text(
+                                    (item.buyerReturnTrackingNumber ?? '')
+                                            .trim()
+                                            .isEmpty
+                                        ? 'Takip no gir'
+                                        : 'Takip bilgisini güncelle',
+                                  ),
                                 ),
                               ),
                             ],
