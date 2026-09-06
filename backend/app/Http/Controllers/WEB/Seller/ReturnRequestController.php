@@ -79,6 +79,30 @@ class ReturnRequestController extends Controller
                 ->with(['messege' => 'İade talebi bulunamadı.', 'alert-type' => 'error']);
         }
 
+        if ($status === ReturnRequest::STATUS_ITEM_RECEIVED) {
+            if (! $return->canSellerMarkReceived()) {
+                return redirect()->back()->with([
+                    'messege' => 'Bu talep için ürün teslim alındı işaretlenemez. Önce iadeyi onaylayın.',
+                    'alert-type' => 'error',
+                ]);
+            }
+
+            $note = $request->filled('seller_note')
+                ? trim((string) $request->seller_note)
+                : $return->seller_note;
+
+            $return->update([
+                'status' => ReturnRequest::STATUS_ITEM_RECEIVED,
+                'seller_note' => $note,
+                'vendor_response' => $note,
+            ]);
+
+            return redirect()->back()->with([
+                'messege' => 'Ürünü teslim aldığınız kaydedildi. Yönetici para iadesini tamamlayabilir.',
+                'alert-type' => 'success',
+            ]);
+        }
+
         if ((int) $return->status !== ReturnRequest::STATUS_PENDING) {
             return redirect()->back()->with([
                 'messege' => 'Bu talep artık bekleyen durumda değil. İşlem yapılamaz.',

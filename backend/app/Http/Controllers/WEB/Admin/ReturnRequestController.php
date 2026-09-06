@@ -185,6 +185,13 @@ class ReturnRequestController extends Controller
             ]);
         }
 
+        if ((int) $return->status !== ReturnRequest::STATUS_ITEM_RECEIVED) {
+            return redirect()->back()->with([
+                'messege' => 'Para iadesi için önce satıcı veya yönetici ürünü “teslim alındı” olarak işaretlemelidir.',
+                'alert-type' => 'error',
+            ]);
+        }
+
         DB::beginTransaction();
         try {
             $return->status = ReturnRequest::STATUS_REFUNDED;

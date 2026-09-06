@@ -32,7 +32,33 @@ class ReturnRequestController extends Controller
         $user = Auth::guard('api')->user();
         $query = ReturnRequest::with(['order', 'orderProduct.product', 'images'])
             ->where('user_id', $user->id)
-            ->when($request->filled('status'), fn ($builder) => $builder->where('status', $request->status))
+            ->when($request->filled('status'), function ($builder) use ($request) {
+                $status = trim((string) $request->status);
+                if ($status === 'approved') {
+                    $builder->whereIn('status', [
+                        ReturnRequest::STATUS_SELLER_APPROVED,
+                        ReturnRequest::STATUS_ADMIN_APPROVED,
+                        ReturnRequest::STATUS_ITEM_RECEIVED,
+                    ]);
+                } elseif ($status === 'rejected') {
+                    $builder->whereIn('status', [
+                        ReturnRequest::STATUS_SELLER_REJECTED,
+                        ReturnRequest::STATUS_ADMIN_REJECTED,
+                    ]);
+                } elseif (str_contains($status, ',')) {
+                    $ids = collect(explode(',', $status))
+                        ->map(fn ($value) => (int) trim($value))
+                        ->filter(fn ($value) => $value >= 0)
+                        ->unique()
+                        ->values()
+                        ->all();
+                    if ($ids !== []) {
+                        $builder->whereIn('status', $ids);
+                    }
+                } else {
+                    $builder->where('status', (int) $status);
+                }
+            })
             ->when($request->filled('reason'), fn ($builder) => $builder->where('reason', $request->reason))
             ->when($request->filled('date_from'), fn ($builder) => $builder->whereDate('created_at', '>=', $request->date_from))
             ->when($request->filled('date_to'), fn ($builder) => $builder->whereDate('created_at', '<=', $request->date_to))

@@ -176,11 +176,24 @@
                             @if ($status === 1 || $status === 5)
                                 <div class="alert alert-light border">
                                     @if($status === 1)
-                                        Satıcı talebi onayladı. Siz nihai onayı / red kararını verin. Yazacağınız yönetici notu müşteriye gösterilir.
+                                        Satıcı talebi onayladı. Müşteri ürünü satıcıya kargoluyor. Satıcı “Ürünü aldım” dedikten sonra (veya siz aşağıdan teslim alındı işaretledikten sonra) para iadesini tamamlayın. İsterseniz yönetici onayı da verebilirsiniz.
                                     @else
                                         Satıcı talebi reddetti. Gerekçeyi inceleyip yönetici olarak onaylayabilir veya reddi kesinleştirebilirsiniz.
                                     @endif
                                 </div>
+                                @if($status === 1)
+                                <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST" class="mb-3">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="status" value="3">
+                                    <div class="form-group">
+                                        <label>Yönetici Notu</label>
+                                        <textarea name="admin_note" class="form-control" rows="2">{{ old('admin_note', $return->admin_note) }}</textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-info btn-block shadow-sm">Ürün Teslim Alındı (satıcı yerine)</button>
+                                </form>
+                                <hr>
+                                @endif
                                 <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST" class="mb-4">
                                     @csrf
                                     @method('PUT')
@@ -280,11 +293,9 @@
                                     <button type="submit" class="btn btn-danger btn-block shadow-sm">Talebi Reddet</button>
                                 </form>
                             @elseif ($status === 2)
-                                @if(!$return->buyer_return_tracking_number)
-                                    <div class="alert alert-warning">
-                                        Alıcı henüz takip numarası girmedi. Mümkünse önce kargoyu bekleyin; yine de acil durumda iadeyi tamamlayabilirsiniz.
-                                    </div>
-                                @endif
+                                <div class="alert alert-info">
+                                    Yönetici onayı verildi. Satıcı ürünü aldığında “Ürünü aldım” diyecek; siz de gerekirse aşağıdan teslim alındı işaretleyebilirsiniz. Para iadesi yalnızca ürün teslim alındıktan sonra yapılır.
+                                </div>
                                 <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST" class="mb-3">
                                     @csrf
                                     @method('PUT')
@@ -294,18 +305,6 @@
                                         <textarea name="admin_note" class="form-control" rows="3">{{ old('admin_note', $return->admin_note) }}</textarea>
                                     </div>
                                     <button type="submit" class="btn btn-info btn-block shadow-sm">Ürün Teslim Alındı</button>
-                                </form>
-
-                                <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="status" value="4">
-                                    <div class="form-group">
-                                        <label>Yönetici Notu</label>
-                                        <textarea name="admin_note" class="form-control" rows="3" placeholder="Örn: Ödeme yöntemine iade başlatıldı">{{ old('admin_note', $return->admin_note) }}</textarea>
-                                    </div>
-                                    <p class="text-muted small">Önerilen sıra: önce “Ürün Teslim Alındı”, sonra para iadesi.</p>
-                                    <button type="submit" class="btn btn-outline-success btn-block shadow-sm">İadeyi Tamamla (Para iadesi) — atlayarak</button>
                                 </form>
                             @elseif ($status === 3)
                                 <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST">

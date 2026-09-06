@@ -43,10 +43,10 @@ class BuyerReturnService {
 
   Future<List<BuyerReturnRequest>> fetchReturnRequests({
     required String token,
-    int? status,
+    String? status,
   }) async {
     final params = <String, String>{'per_page': '30'};
-    if (status != null) params['status'] = '$status';
+    if (status != null && status.isNotEmpty) params['status'] = status;
 
     final uri = Uri.parse(RemoteUrls.userReturnRequests(token))
         .replace(queryParameters: {

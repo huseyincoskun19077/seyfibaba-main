@@ -29,11 +29,13 @@ class SellerReturnRequest {
 
   bool get isPending => status == 0;
 
+  bool get canMarkReceived => status == 1 || status == 2;
+
   String get statusLabel => switch (status) {
         0 => 'Bekliyor',
-        1 => 'Satıcı onayladı',
-        2 => 'Admin onayladı',
-        3 => 'Ürün alındı',
+        1 => 'Satıcı onayladı — ürün bekleniyor',
+        2 => 'Admin onayladı — ürün bekleniyor',
+        3 => 'Ürün alındı — admin ödeme yapacak',
         4 => 'İade edildi',
         5 => 'Satıcı reddetti',
         6 => 'Admin reddetti',

@@ -208,16 +208,20 @@
               @elseif ($status === 1)
                 <div class="alert alert-info mb-0">
                   <strong>Talebi onayladınız.</strong><br>
-                  Şimdi yönetici inceliyor. Para iadesi henüz yapılmadı; yönetici onaylayıp tamamladığında süreç biter.
+                  Müşteri ürünü iade adresinize kargolayacak. Ürün elinize geçince aşağıdan <strong>Ürünü aldım</strong> deyin; ardından yönetici para iadesini tamamlar.
                 </div>
               @elseif ($status === 5)
                 <div class="alert alert-danger mb-0">
                   <strong>Talebi reddettiniz.</strong><br>
                   Müşteri panelinde “İade talebi reddedildi” ve yazdığınız gerekçe görünür. Yönetici gerekirse ayrıca bakabilir; sizin ek işleminiz yok.
                 </div>
-              @elseif (in_array($status, [2, 3], true))
+              @elseif ($status === 2)
                 <div class="alert alert-info mb-0">
-                  Yönetici süreci devam ediyor. Ürün geri alındıysa veya ödeme iadesi hazırlanıyorsa bunu yönetici tamamlar.
+                  Yönetici de onayladı. Müşteri ürünü size kargolayacak. Ürün elinize geçince <strong>Ürünü aldım</strong> deyin.
+                </div>
+              @elseif ($status === 3)
+                <div class="alert alert-info mb-0">
+                  Ürünü teslim aldığınız kaydedildi. Yönetici para iadesini tamamlayacak.
                 </div>
               @elseif ($status === 4)
                 <div class="alert alert-success mb-0">
@@ -291,6 +295,20 @@
                     <textarea name="rejected_reason" class="form-control" rows="4" required placeholder="Örn: Ürün kullanılmış görünüyor / kanıt fotoğrafları yetersiz">{{ old('rejected_reason') }}</textarea>
                   </div>
                   <button type="submit" class="btn btn-danger btn-lg btn-block">Talebi Reddet</button>
+                </form>
+              @elseif (in_array($status, [1, 2], true))
+                <div class="alert alert-warning">
+                  Müşteri ürünü iade adresinize gönderdiğinde, kargoyu açıp kontrol ettikten sonra aşağıdaki butona basın.
+                </div>
+                <form action="{{ route('seller.return-requests.update-status', $return->id) }}" method="POST">
+                  @csrf
+                  @method('PUT')
+                  <input type="hidden" name="status" value="3">
+                  <div class="form-group">
+                    <label>Not (opsiyonel)</label>
+                    <textarea name="seller_note" class="form-control" rows="3" placeholder="Örn: Ürün kutusuyla geldi, hasar yok.">{{ old('seller_note', $return->seller_note) }}</textarea>
+                  </div>
+                  <button type="submit" class="btn btn-success btn-lg btn-block">Ürünü aldım</button>
                 </form>
               @else
                 <div class="alert alert-light border mb-0">

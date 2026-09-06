@@ -649,6 +649,23 @@ class SellerApiService {
     return '${response['message'] ?? 'İade reddedildi'}';
   }
 
+  Future<String> markReturnReceived({
+    required String token,
+    required int id,
+    String? note,
+  }) async {
+    final response = await NetworkParser.callClientWithCatchException(
+      () => _client.put(
+        Uri.parse(RemoteUrls.sellerReturnRequestMarkReceived(id)),
+        headers: _jsonHeaders(token),
+        body: jsonEncode({
+          if (note != null && note.trim().isNotEmpty) 'seller_note': note.trim(),
+        }),
+      ),
+    );
+    return '${response['message'] ?? 'Ürün teslim alındı olarak kaydedildi'}';
+  }
+
   Future<Map<String, dynamic>> fetchShopProfile(String token) async {
     final response = await NetworkParser.callClientWithCatchException(
       () => _client.get(

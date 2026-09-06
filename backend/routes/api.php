@@ -539,6 +539,7 @@ Route::group([], function () {
         Route::get('return-requests/{id}', [SellerReturnRequestController::class, 'show']);
         Route::put('return-requests/{id}/approve', [SellerReturnRequestController::class, 'approve']);
         Route::put('return-requests/{id}/reject', [SellerReturnRequestController::class, 'reject']);
+        Route::put('return-requests/{id}/mark-received', [SellerReturnRequestController::class, 'markReceived']);
         Route::put('return-requests/{id}/update-status', [SellerReturnRequestController::class, 'updateStatus']);
 
         // Seller KYC

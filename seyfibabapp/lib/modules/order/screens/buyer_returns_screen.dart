@@ -17,14 +17,14 @@ class BuyerReturnsScreen extends StatefulWidget {
 class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
   final _service = BuyerReturnService();
   late Future<List<BuyerReturnRequest>> _future;
-  int? _statusFilter;
+  String? _statusFilter;
 
-  static const _filters = <String, int?>{
+  static const _filters = <String, String?>{
     'Tümü': null,
-    'Bekleyen': 0,
-    'Onaylı': 1,
-    'İade edildi': 4,
-    'Red': 5,
+    'Bekleyen': '0',
+    'Onaylı': 'approved',
+    'İade edildi': '4',
+    'Red': 'rejected',
   };
 
   @override
@@ -43,7 +43,7 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
     await _future;
   }
 
-  void _setFilter(int? status) {
+  void _setFilter(String? status) {
     if (_statusFilter == status) return;
     setState(() {
       _statusFilter = status;
@@ -75,80 +75,6 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
       final msg = await _service.cancelReturnRequest(
         token: _token,
         id: item.id,
-      );
-      if (!mounted) return;
-      Utils.showSnackBar(context, msg);
-      await _refresh();
-    } catch (e) {
-      if (!mounted) return;
-      Utils.errorSnackBar(context, e.toString().replaceFirst('Exception: ', ''));
-    }
-  }
-
-  Future<void> _submitTracking(BuyerReturnRequest item) async {
-    final carrierCtrl = TextEditingController(text: item.buyerReturnCarrier ?? '');
-    final trackingCtrl =
-        TextEditingController(text: item.buyerReturnTrackingNumber ?? '');
-    final urlCtrl =
-        TextEditingController(text: item.buyerReturnTrackingUrl ?? '');
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('İade kargo takibi'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: carrierCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Kargo firması',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: trackingCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Takip numarası *',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: urlCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Takip linki (opsiyonel)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Vazgeç'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Kaydet'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
-    if (trackingCtrl.text.trim().length < 3) {
-      Utils.errorSnackBar(context, 'Takip numarası zorunludur');
-      return;
-    }
-    try {
-      final msg = await _service.submitReturnTracking(
-        token: _token,
-        id: item.id,
-        trackingNumber: trackingCtrl.text.trim(),
-        carrier: carrierCtrl.text.trim(),
-        trackingUrl: urlCtrl.text.trim(),
       );
       if (!mounted) return;
       Utils.showSnackBar(context, msg);
@@ -339,7 +265,8 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
                             ],
                             if ((item.returnAddress ?? '').trim().isNotEmpty ||
                                 (item.returnCargoCode ?? '').trim().isNotEmpty ||
-                                item.canSubmitTracking) ...[
+                                item.status == 1 ||
+                                item.status == 2) ...[
                               const SizedBox(height: 8),
                               Align(
                                 alignment: Alignment.centerLeft,
@@ -356,22 +283,6 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
                                 child: TextButton(
                                   onPressed: () => _cancel(item),
                                   child: const Text('İptal et'),
-                                ),
-                              ),
-                            ],
-                            if (item.canSubmitTracking) ...[
-                              const SizedBox(height: 10),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: FilledButton(
-                                  onPressed: () => _submitTracking(item),
-                                  child: Text(
-                                    (item.buyerReturnTrackingNumber ?? '')
-                                            .trim()
-                                            .isEmpty
-                                        ? 'Takip no gir'
-                                        : 'Takip bilgisini güncelle',
-                                  ),
                                 ),
                               ),
                             ],
@@ -401,11 +312,11 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
       if ((item.returnShippingInstructions ?? '').trim().isNotEmpty)
         'Talimat:\n${item.returnShippingInstructions!.trim()}',
       if ((item.buyerReturnTrackingNumber ?? '').trim().isNotEmpty)
-        'Takip no: ${item.buyerReturnTrackingNumber}'
-      else if (item.canSubmitTracking)
-        'Kargoya verdikten sonra buradan takip numarası girebilirsiniz.',
+        'Takip no: ${item.buyerReturnTrackingNumber}',
       if ((item.refundInfo ?? '').trim().isNotEmpty)
         'Para iadesi:\n${item.refundInfo!.trim()}',
+      if (item.status == 1 || item.status == 2)
+        'Ürünü iade adresine kargolayın. Satıcı ürünü aldığında süreç devam eder; takip numarası girmeniz gerekmez.',
     ];
 
     if (!mounted) return;

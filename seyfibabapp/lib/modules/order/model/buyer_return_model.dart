@@ -142,7 +142,7 @@ class BuyerReturnRequest {
 
   bool get isRejected => status == 5 || status == 6;
 
-  bool get canSubmitTracking => status == 1 || status == 2;
+  bool get canSubmitTracking => false;
 
   String get shippingPayerLabel => switch (returnShippingPayer) {
         'seller' => 'Satıcı karşılar',
@@ -152,10 +152,6 @@ class BuyerReturnRequest {
       };
 
   String get statusLabel {
-    if (canSubmitTracking &&
-        (buyerReturnTrackingNumber ?? '').trim().isNotEmpty) {
-      return 'İade kargoda — takip: ${buyerReturnTrackingNumber!.trim()}';
-    }
     return switch (status) {
       0 => 'İade talebi alındı — satıcı/yönetici inceliyor',
       1 => 'Satıcı onayladı — ürünü iade adresine kargolayın',

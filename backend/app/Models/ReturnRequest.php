@@ -205,15 +205,16 @@ class ReturnRequest extends Model
         $status = (int) $this->status;
         $labels = self::buyerStatusLabels();
 
-        if (in_array($status, [self::STATUS_SELLER_APPROVED, self::STATUS_ADMIN_APPROVED], true)
-            && filled($this->buyer_return_tracking_number)) {
-            return 'İade kargoda — takip: '.$this->buyer_return_tracking_number;
-        }
-
         return $labels[$status] ?? ('Durum '.$status);
     }
 
     public function canBuyerSubmitTracking(): bool
+    {
+        // Alıcıdan takip no istenmez; satıcı "ürünü aldım" der, admin öder.
+        return false;
+    }
+
+    public function canSellerMarkReceived(): bool
     {
         return in_array((int) $this->status, [
             self::STATUS_SELLER_APPROVED,

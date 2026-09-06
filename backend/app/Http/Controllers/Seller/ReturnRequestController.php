@@ -128,6 +128,35 @@ class ReturnRequestController extends Controller
         ]);
     }
 
+    public function markReceived(Request $request, $id)
+    {
+        $return = $this->findOwnedReturnRequest($id);
+        if (! $return->canSellerMarkReceived()) {
+            return response()->json([
+                'message' => 'Bu talep için ürün teslim alındı işaretlenemez. Önce iadeyi onaylayın.',
+            ], 422);
+        }
+
+        $request->validate([
+            'seller_note' => 'nullable|string|max:2000',
+        ]);
+
+        $note = $request->filled('seller_note')
+            ? trim((string) $request->seller_note)
+            : $return->seller_note;
+
+        $return->update([
+            'status' => ReturnRequest::STATUS_ITEM_RECEIVED,
+            'seller_note' => $note,
+            'vendor_response' => $note,
+        ]);
+
+        return response()->json([
+            'message' => 'Ürünü teslim aldığınız kaydedildi. Yönetici para iadesini tamamlayabilir.',
+            'return' => $return->fresh(),
+        ]);
+    }
+
     public function updateStatus(Request $request, $id)
     {
         if ((int) $request->status === ReturnRequest::STATUS_SELLER_APPROVED) {
@@ -140,6 +169,10 @@ class ReturnRequestController extends Controller
             ]);
 
             return $this->reject($request, $id);
+        }
+
+        if ((int) $request->status === ReturnRequest::STATUS_ITEM_RECEIVED) {
+            return $this->markReceived($request, $id);
         }
 
         return response()->json(['message' => 'Geçersiz satıcı işlem durumu'], 422);

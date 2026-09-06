@@ -150,8 +150,8 @@ class ReturnRequestController extends Controller
             return response()->json(['message' => 'İade talebi bulunamadı'], 404);
         }
 
-        if ((int) $return->status !== ReturnRequest::STATUS_ADMIN_APPROVED) {
-            return response()->json(['message' => 'Yalnızca yönetici onaylı talepler teslim alındı işaretlenebilir'], 422);
+        if (!in_array((int) $return->status, [ReturnRequest::STATUS_ADMIN_APPROVED, ReturnRequest::STATUS_SELLER_APPROVED], true)) {
+            return response()->json(['message' => 'Yalnızca onaylı talepler teslim alındı işaretlenebilir'], 422);
         }
 
         $note = $request->admin_note;
@@ -175,8 +175,10 @@ class ReturnRequestController extends Controller
             return response()->json(['message' => 'İade talebi bulunamadı'], 404);
         }
 
-        if (!in_array((int) $return->status, [ReturnRequest::STATUS_ADMIN_APPROVED, ReturnRequest::STATUS_ITEM_RECEIVED], true)) {
-            return response()->json(['message' => 'Bu talep para iadesi için hazır değil'], 422);
+        if ((int) $return->status !== ReturnRequest::STATUS_ITEM_RECEIVED) {
+            return response()->json([
+                'message' => 'Para iadesi için önce satıcı veya yönetici ürünü “teslim alındı” olarak işaretlemelidir',
+            ], 422);
         }
 
         $order = $return->order;

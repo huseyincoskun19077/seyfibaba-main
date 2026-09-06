@@ -159,9 +159,10 @@ function ProductActions({
               <span className="font-semibold">Sizin takip no: </span>
               <span className="notranslate">{returnable.buyer_return_tracking_number}</span>
             </p>
-          ) : returnable.can_submit_tracking ? (
+          ) : Number(returnable.return_status) === 1 ||
+            Number(returnable.return_status) === 2 ? (
             <p className="mt-1 text-amber-800">
-              Kargoya verdikten sonra profil → İade Taleplerim üzerinden takip numarasını girin.
+              Ürünü iade adresine kargolayın. Satıcı ürünü aldığında süreç devam eder; takip numarası girmeniz gerekmez.
             </p>
           ) : null}
           {returnable.refund_info ? (

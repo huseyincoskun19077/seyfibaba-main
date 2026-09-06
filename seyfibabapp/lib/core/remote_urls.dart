@@ -117,6 +117,8 @@ class RemoteUrls {
       '${baseUrl}seller/return-requests/$id/approve';
   static String sellerReturnRequestReject(int id) =>
       '${baseUrl}seller/return-requests/$id/reject';
+  static String sellerReturnRequestMarkReceived(int id) =>
+      '${baseUrl}seller/return-requests/$id/mark-received';
   static const String sellerBulkImports = '${baseUrl}seller/products/bulk-imports';
   static const String sellerBulkImportUpload =
       '${baseUrl}seller/products/bulk-import';

@@ -208,6 +208,53 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
     }
   }
 
+  Future<void> _markReceived(SellerReturnRequest item) async {
+    final noteCtrl = TextEditingController(text: item.sellerNote);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ürünü aldım'),
+        content: TextField(
+          controller: noteCtrl,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: 'Not (opsiyonel)',
+            border: OutlineInputBorder(),
+            hintText: 'Örn: Ürün kutusuyla geldi',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Onayla'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    Utils.loadingDialog(context);
+    try {
+      final msg = await _service.markReturnReceived(
+        token: _token,
+        id: item.id,
+        note: noteCtrl.text.trim(),
+      );
+      if (!mounted) return;
+      Utils.closeDialog(context);
+      Utils.showSnackBar(context, msg);
+      await _refresh();
+    } catch (e) {
+      if (!mounted) return;
+      Utils.closeDialog(context);
+      Utils.errorSnackBar(context, '$e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -330,6 +377,18 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
                         ),
                       ),
                     ],
+                  ),
+                ],
+                if (item.canMarkReceived) ...[
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () => _markReceived(item),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF059669),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    child: const Text('Ürünü aldım'),
                   ),
                 ],
               ],

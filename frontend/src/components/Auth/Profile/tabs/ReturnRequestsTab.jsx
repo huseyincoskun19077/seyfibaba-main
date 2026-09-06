@@ -2,12 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { toast } from "react-toastify";
 import DateFormat from "../../../../utils/DateFormat";
 import ServeLangItem from "../../../Helpers/ServeLangItem";
 import CurrencyConvert from "../../../Shared/CurrencyConvert";
-import auth from "../../../../utils/auth";
-import { useSubmitReturnTrackingApiMutation } from "../../../../redux/features/auth/apiSlice";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "Tüm Talepler" },
@@ -79,18 +76,7 @@ function getRejectionNote(item) {
 
 function buyerStatusLabel(item) {
   const status = Number(item?.status);
-  if (
-    (status === 1 || status === 2) &&
-    String(item?.buyer_return_tracking_number || "").trim()
-  ) {
-    return `İade kargoda — takip: ${item.buyer_return_tracking_number}`;
-  }
   return STATUS_MAP[status]?.label || "Bilinmiyor";
-}
-
-function canSubmitTracking(item) {
-  const status = Number(item?.status);
-  return status === 1 || status === 2;
 }
 
 function StatCard({ label, value, valueClassName = "text-qblack", tone = "bg-gray-50" }) {
@@ -99,79 +85,6 @@ function StatCard({ label, value, valueClassName = "text-qblack", tone = "bg-gra
       <p className={`text-2xl font-bold ${valueClassName}`}>{value ?? 0}</p>
       <p className="text-sm text-qgray">{label}</p>
     </div>
-  );
-}
-
-function TrackingForm({ item, onSaved }) {
-  const [carrier, setCarrier] = useState(item.buyer_return_carrier || "");
-  const [tracking, setTracking] = useState(item.buyer_return_tracking_number || "");
-  const [url, setUrl] = useState(item.buyer_return_tracking_url || "");
-  const [submitTracking, { isLoading }] = useSubmitReturnTrackingApiMutation();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const token = auth()?.access_token;
-    if (!token) {
-      toast.error("Oturum bulunamadı");
-      return;
-    }
-    try {
-      const res = await submitTracking({
-        token,
-        id: item.id,
-        buyer_return_carrier: carrier || undefined,
-        buyer_return_tracking_number: tracking,
-        buyer_return_tracking_url: url || undefined,
-      }).unwrap();
-      toast.success(res?.message || "Takip bilgisi kaydedildi");
-      onSaved?.({
-        buyer_return_carrier: carrier,
-        buyer_return_tracking_number: tracking,
-        buyer_return_tracking_url: url,
-        buyer_shipped_at: new Date().toISOString(),
-      });
-    } catch (err) {
-      const msg =
-        err?.data?.message ||
-        err?.data?.errors?.buyer_return_tracking_number?.[0] ||
-        "Takip bilgisi kaydedilemedi";
-      toast.error(msg);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="mt-2 space-y-2 rounded-md border border-indigo-100 bg-indigo-50/60 p-2 text-left">
-      <p className="text-xs font-semibold text-indigo-900">İade kargo takip bilgisi</p>
-      <input
-        type="text"
-        className="w-full rounded border border-indigo-200 px-2 py-1 text-xs"
-        placeholder="Kargo firması (örn. Yurtiçi)"
-        value={carrier}
-        onChange={(e) => setCarrier(e.target.value)}
-      />
-      <input
-        type="text"
-        className="w-full rounded border border-indigo-200 px-2 py-1 text-xs"
-        placeholder="Takip numarası *"
-        value={tracking}
-        onChange={(e) => setTracking(e.target.value)}
-        required
-      />
-      <input
-        type="url"
-        className="w-full rounded border border-indigo-200 px-2 py-1 text-xs"
-        placeholder="Takip linki (opsiyonel)"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-      />
-      <button
-        type="submit"
-        disabled={isLoading || !tracking.trim()}
-        className="w-full rounded bg-indigo-600 px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-      >
-        {isLoading ? "Kaydediliyor..." : "Takip bilgisini kaydet"}
-      </button>
-    </form>
   );
 }
 
@@ -231,13 +144,6 @@ export default function ReturnRequestsTab({
       draftFilters?.dateFrom ||
       draftFilters?.dateTo
   );
-
-  const refreshAfterTracking = (itemId, patch) => {
-    setLocalReturns((prev) =>
-      (prev || []).map((row) => (row.id === itemId ? { ...row, ...patch } : row))
-    );
-    onFiltersChange((prev) => ({ ...prev }));
-  };
 
   return (
     <div className="return-requests-wrapper w-full">
@@ -396,15 +302,9 @@ export default function ReturnRequestsTab({
                             {item.refund_info}
                           </span>
                         ) : null}
-                        {canSubmitTracking(item) ? (
-                          <TrackingForm
-                            item={item}
-                            onSaved={(patch) => refreshAfterTracking(item.id, patch)}
-                          />
-                        ) : null}
-                        {item.buyer_return_tracking_number && !canSubmitTracking(item) ? (
-                          <span className="text-xs text-indigo-700">
-                            Takip: {item.buyer_return_tracking_number}
+                        {(Number(item.status) === 1 || Number(item.status) === 2) ? (
+                          <span className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-2 py-1 mt-1">
+                            Ürünü iade adresine kargolayın. Satıcı ürünü aldığında süreç devam eder; takip numarası girmeniz gerekmez.
                           </span>
                         ) : null}
                       </div>

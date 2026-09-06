@@ -399,7 +399,8 @@ class _SingleOrderDetailsComponentState
             ),
             if ((returnable?.returnAddress ?? '').trim().isNotEmpty ||
                 (returnable?.returnCargoCode ?? '').trim().isNotEmpty ||
-                returnable?.canSubmitTracking == true) ...[
+                (returnable?.returnStatus == 1 ||
+                    returnable?.returnStatus == 2)) ...[
               const SizedBox(height: 6),
               SizedBox(
                 height: 32,
@@ -457,11 +458,11 @@ class _SingleOrderDetailsComponentState
       if ((returnable.returnShippingInstructions ?? '').trim().isNotEmpty)
         'Talimat:\n${returnable.returnShippingInstructions!.trim()}',
       if ((returnable.buyerReturnTrackingNumber ?? '').trim().isNotEmpty)
-        'Takip no: ${returnable.buyerReturnTrackingNumber}'
-      else if (returnable.canSubmitTracking)
-        'Kargoya verdikten sonra İade Taleplerim ekranından takip numarası girin.',
+        'Takip no: ${returnable.buyerReturnTrackingNumber}',
       if ((returnable.refundInfo ?? '').trim().isNotEmpty)
         'Para iadesi:\n${returnable.refundInfo!.trim()}',
+      if (returnable.returnStatus == 1 || returnable.returnStatus == 2)
+        'Ürünü iade adresine kargolayın. Satıcı ürünü aldığında süreç devam eder; takip numarası girmeniz gerekmez.',
     ];
 
     await showDialog<void>(
