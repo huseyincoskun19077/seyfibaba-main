@@ -217,6 +217,29 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
                                 style: const TextStyle(fontSize: 12),
                               ),
                             ],
+                            if (item.isRejected) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: HomeTheme.border),
+                                ),
+                                child: Text(
+                                  item.rejectionNote == null
+                                      ? 'İade talebi reddedildi'
+                                      : 'Ret gerekçesi: ${item.rejectionNote}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    height: 1.35,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF334155),
+                                  ),
+                                ),
+                              ),
+                            ],
                             if (item.isPending) ...[
                               const SizedBox(height: 10),
                               Align(

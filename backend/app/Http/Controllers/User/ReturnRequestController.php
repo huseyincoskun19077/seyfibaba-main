@@ -315,18 +315,25 @@ class ReturnRequestController extends Controller
         $windowDays = (int) ($setting->return_window_days ?? 14);
         $allowedStatuses = [2, 3];
 
+        $latestReturn = ReturnRequest::query()
+            ->where('order_product_id', $orderProduct->id)
+            ->orderByDesc('id')
+            ->first();
+
+        $returnMeta = $this->returnRequestMeta($latestReturn);
+
         $itemDelivered = $orderProduct->customer_confirmed_at
             || $orderProduct->auto_confirmed_at
             || $orderProduct->delivered_at
             || in_array((int) $order->order_status, $allowedStatuses, true);
 
         if (! $itemDelivered) {
-            return [
+            return array_merge([
                 'order_product_id' => $orderProduct->id,
                 'is_returnable' => false,
                 'max_returnable_qty' => 0,
                 'message' => 'Ürün teslim edilmeden iade talebi oluşturulamaz',
-            ];
+            ], $returnMeta);
         }
 
         $rawDelivered = $orderProduct->customer_confirmed_at
@@ -335,12 +342,12 @@ class ReturnRequestController extends Controller
             ?? $order->order_delivered_date;
         $deliveredAt = $rawDelivered ? Carbon::parse($rawDelivered) : null;
         if ($deliveredAt && $deliveredAt->diffInDays(now()) > $windowDays) {
-            return [
+            return array_merge([
                 'order_product_id' => $orderProduct->id,
                 'is_returnable' => false,
                 'max_returnable_qty' => 0,
                 'message' => 'İade süresi dolmuş',
-            ];
+            ], $returnMeta);
         }
 
         $activeRequest = ReturnRequest::where('order_product_id', $orderProduct->id)
@@ -367,14 +374,14 @@ class ReturnRequestController extends Controller
             ->sum(fn (ReturnRequest $item) => (int) $item->qty);
 
         $maxReturnableQty = max(0, (int) $orderProduct->qty - $processedQty);
-        $isReturnable = !$activeRequest && $maxReturnableQty > 0;
+        $isReturnable = ! $activeRequest && $maxReturnableQty > 0;
         $order->loadMissing('orderProducts');
         $refundHint = $order->suggestedReturnRefund(
             $orderProduct,
             $maxReturnableQty > 0 ? $maxReturnableQty : 1
         );
 
-        return [
+        return array_merge([
             'order_product_id' => $orderProduct->id,
             'product_name' => $orderProduct->product_name,
             'qty' => (int) $orderProduct->qty,
@@ -384,12 +391,70 @@ class ReturnRequestController extends Controller
             'suggested_refund' => $refundHint['refund_amount'],
             'coupon_share' => $refundHint['coupon_share'],
             'is_returnable' => $isReturnable,
-            'existing_return_request_id' => $activeRequest?->id,
+            'existing_return_request_id' => $activeRequest?->id ?? $latestReturn?->id,
             'message' => $isReturnable
                 ? null
                 : ($activeRequest
                     ? 'Bu ürün için zaten aktif bir iade talebi var'
-                    : 'Bu ürün artık iade edilemez'),
+                    : ($returnMeta['is_rejected']
+                        ? 'İade talebi reddedildi'
+                        : 'Bu ürün artık iade edilemez')),
+        ], $returnMeta);
+    }
+
+    private function returnRequestMeta(?ReturnRequest $return): array
+    {
+        if (! $return) {
+            return [
+                'return_status' => null,
+                'return_status_label' => null,
+                'is_rejected' => false,
+                'rejection_note' => null,
+                'admin_note' => null,
+                'rejected_reason' => null,
+            ];
+        }
+
+        $status = (int) $return->status;
+        $isRejected = in_array($status, [
+            ReturnRequest::STATUS_SELLER_REJECTED,
+            ReturnRequest::STATUS_ADMIN_REJECTED,
+        ], true);
+
+        $adminNote = trim((string) ($return->admin_note ?? ''));
+        $rejectedReason = trim((string) ($return->rejected_reason ?? ''));
+        $sellerNote = trim((string) ($return->seller_note ?? $return->vendor_response ?? ''));
+        $adminResponse = trim((string) ($return->admin_response ?? ''));
+
+        // Alıcıya gösterilecek not: admin notu öncelikli, yoksa ret sebebi / satıcı notu
+        $rejectionNote = null;
+        if ($isRejected) {
+            foreach ([$adminNote, $adminResponse, $rejectedReason, $sellerNote] as $candidate) {
+                if ($candidate !== '' && $candidate !== 'Cancelled by customer') {
+                    $rejectionNote = $candidate;
+                    break;
+                }
+            }
+        }
+
+        $labels = [
+            ReturnRequest::STATUS_PENDING => 'Bekliyor',
+            ReturnRequest::STATUS_SELLER_APPROVED => 'Satıcı onayladı',
+            ReturnRequest::STATUS_ADMIN_APPROVED => 'Admin onayladı',
+            ReturnRequest::STATUS_ITEM_RECEIVED => 'Ürün alındı',
+            ReturnRequest::STATUS_REFUNDED => 'İade edildi',
+            ReturnRequest::STATUS_SELLER_REJECTED => 'İade talebi reddedildi',
+            ReturnRequest::STATUS_ADMIN_REJECTED => 'İade talebi reddedildi',
+            ReturnRequest::STATUS_USER_CANCELLED => 'İptal edildi',
+        ];
+
+        return [
+            'return_status' => $status,
+            'return_status_label' => $labels[$status] ?? ('Durum '.$status),
+            'is_rejected' => $isRejected,
+            'rejection_note' => $rejectionNote,
+            'admin_note' => $adminNote !== '' ? $adminNote : null,
+            'rejected_reason' => $rejectedReason !== '' ? $rejectedReason : null,
         ];
     }
 }

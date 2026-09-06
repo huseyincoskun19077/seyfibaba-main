@@ -67,49 +67,70 @@ function ProductActions({
   const hasReviewed = !!item?.user_has_reviewed;
   const returnable = returnableItems[item.id];
   const canReturn = !!returnable?.is_returnable;
-  const hasReturnRequest =
-    !canReturn && !!returnable?.existing_return_request_id;
+  const isRejected = !!returnable?.is_rejected;
+  const rejectionNote =
+    returnable?.rejection_note ||
+    returnable?.admin_note ||
+    returnable?.rejected_reason ||
+    "";
+  const hasActiveReturnRequest =
+    !canReturn &&
+    !isRejected &&
+    !!returnable?.existing_return_request_id;
 
   return (
-    <div className="flex flex-wrap gap-2 print:hidden">
-      {isLoggedIn && isDelivered && hasReviewed && (
-        <span className="inline-flex h-9 items-center rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
-          Yorum Yapıldı
-        </span>
-      )}
-      {isLoggedIn && isDelivered && !hasReviewed && (
-        <button
-          onClick={() => onReview(item.product_id, item.id)}
-          type="button"
-          className="inline-flex h-9 items-center rounded-lg border border-emerald-600 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-600 hover:text-white"
-        >
-          Yorum Yap
-        </button>
-      )}
-      {isLoggedIn && isDelivered && canReturn && (
-        <button
-          onClick={() => onReturn(item.id)}
-          type="button"
-          className="inline-flex h-9 items-center rounded-lg bg-qred px-3 text-xs font-semibold text-white transition hover:opacity-90"
-        >
-          İade Et
-        </button>
-      )}
-      {isLoggedIn && isDelivered && hasReturnRequest && (
-        <span className="inline-flex h-9 items-center rounded-lg bg-red-50 px-3 text-xs font-semibold text-qred">
-          İade talebi alındı
-        </span>
-      )}
-      {canConfirm && (
-        <button
-          onClick={() => onConfirmDelivery(item.id)}
-          disabled={confirmingDeliveryItemId === item.id}
-          type="button"
-          className="inline-flex h-9 items-center rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50"
-        >
-          {confirmingDeliveryItemId === item.id ? "Onaylanıyor..." : "Teslim Aldım"}
-        </button>
-      )}
+    <div className="flex flex-col items-start gap-2 print:hidden">
+      <div className="flex flex-wrap gap-2">
+        {isLoggedIn && isDelivered && hasReviewed && (
+          <span className="inline-flex h-9 items-center rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
+            Yorum Yapıldı
+          </span>
+        )}
+        {isLoggedIn && isDelivered && !hasReviewed && (
+          <button
+            onClick={() => onReview(item.product_id, item.id)}
+            type="button"
+            className="inline-flex h-9 items-center rounded-lg border border-emerald-600 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-600 hover:text-white"
+          >
+            Yorum Yap
+          </button>
+        )}
+        {isLoggedIn && isDelivered && canReturn && (
+          <button
+            onClick={() => onReturn(item.id)}
+            type="button"
+            className="inline-flex h-9 items-center rounded-lg bg-qred px-3 text-xs font-semibold text-white transition hover:opacity-90"
+          >
+            İade Et
+          </button>
+        )}
+        {isLoggedIn && isDelivered && hasActiveReturnRequest && (
+          <span className="inline-flex h-9 items-center rounded-lg bg-red-50 px-3 text-xs font-semibold text-qred">
+            İade talebi alındı
+          </span>
+        )}
+        {isLoggedIn && isDelivered && isRejected && (
+          <span className="inline-flex h-9 items-center rounded-lg bg-slate-100 px-3 text-xs font-semibold text-slate-700">
+            İade talebi reddedildi
+          </span>
+        )}
+        {canConfirm && (
+          <button
+            onClick={() => onConfirmDelivery(item.id)}
+            disabled={confirmingDeliveryItemId === item.id}
+            type="button"
+            className="inline-flex h-9 items-center rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50"
+          >
+            {confirmingDeliveryItemId === item.id ? "Onaylanıyor..." : "Teslim Aldım"}
+          </button>
+        )}
+      </div>
+      {isLoggedIn && isDelivered && isRejected && rejectionNote ? (
+        <p className="max-w-md rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
+          <span className="font-semibold text-slate-800">Ret gerekçesi: </span>
+          {rejectionNote}
+        </p>
+      ) : null}
     </div>
   );
 }

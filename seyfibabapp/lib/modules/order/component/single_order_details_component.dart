@@ -287,6 +287,55 @@ class _SingleOrderDetailsComponentState
     }
 
     final returnable = widget.returnable;
+    if (returnable?.isRejected == true) {
+      actions.add(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF64748B).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'İade talebi reddedildi',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF334155),
+                ),
+              ),
+            ),
+            if ((returnable?.rejectionNote ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 220),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: HomeTheme.border),
+                  ),
+                  child: Text(
+                    'Ret gerekçesi: ${returnable!.rejectionNote!.trim()}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      height: 1.35,
+                      color: HomeTheme.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
     if (returnable != null && returnable.isReturnable) {
       actions.add(
         SizedBox(
@@ -322,7 +371,8 @@ class _SingleOrderDetailsComponentState
           ),
         ),
       );
-    } else if (returnable?.existingReturnRequestId != null) {
+    } else if (returnable?.isRejected != true &&
+        returnable?.existingReturnRequestId != null) {
       actions.add(
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

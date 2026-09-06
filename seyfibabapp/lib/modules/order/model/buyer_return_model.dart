@@ -8,6 +8,12 @@ class BuyerReturnableItem {
     required this.suggestedRefund,
     this.message,
     this.existingReturnRequestId,
+    this.returnStatus,
+    this.returnStatusLabel,
+    this.isRejected = false,
+    this.rejectionNote,
+    this.adminNote,
+    this.rejectedReason,
   });
 
   final int orderProductId;
@@ -18,6 +24,12 @@ class BuyerReturnableItem {
   final double suggestedRefund;
   final String? message;
   final int? existingReturnRequestId;
+  final int? returnStatus;
+  final String? returnStatusLabel;
+  final bool isRejected;
+  final String? rejectionNote;
+  final String? adminNote;
+  final String? rejectedReason;
 
   factory BuyerReturnableItem.fromMap(Map<String, dynamic> map) {
     return BuyerReturnableItem(
@@ -33,6 +45,16 @@ class BuyerReturnableItem {
       existingReturnRequestId: map['existing_return_request_id'] == null
           ? null
           : int.tryParse('${map['existing_return_request_id']}'),
+      returnStatus: map['return_status'] == null
+          ? null
+          : int.tryParse('${map['return_status']}'),
+      returnStatusLabel: map['return_status_label']?.toString(),
+      isRejected: map['is_rejected'] == true ||
+          map['is_rejected'] == 1 ||
+          '${map['is_rejected']}' == '1',
+      rejectionNote: map['rejection_note']?.toString(),
+      adminNote: map['admin_note']?.toString(),
+      rejectedReason: map['rejected_reason']?.toString(),
     );
   }
 }
@@ -48,6 +70,11 @@ class BuyerReturnRequest {
     required this.createdAt,
     required this.orderCode,
     required this.productName,
+    this.adminNote,
+    this.rejectedReason,
+    this.sellerNote,
+    this.adminResponse,
+    this.vendorResponse,
   });
 
   final int id;
@@ -59,8 +86,15 @@ class BuyerReturnRequest {
   final String createdAt;
   final String orderCode;
   final String productName;
+  final String? adminNote;
+  final String? rejectedReason;
+  final String? sellerNote;
+  final String? adminResponse;
+  final String? vendorResponse;
 
   bool get isPending => status == 0;
+
+  bool get isRejected => status == 5 || status == 6;
 
   String get statusLabel => switch (status) {
         0 => 'Bekliyor',
@@ -68,11 +102,27 @@ class BuyerReturnRequest {
         2 => 'Admin onayladı',
         3 => 'Ürün alındı',
         4 => 'İade edildi',
-        5 => 'Satıcı reddetti',
-        6 => 'Admin reddetti',
+        5 => 'İade talebi reddedildi',
+        6 => 'İade talebi reddedildi',
         7 => 'İptal edildi',
         _ => 'Durum $status',
       };
+
+  String? get rejectionNote {
+    for (final candidate in [
+      adminNote,
+      adminResponse,
+      rejectedReason,
+      sellerNote,
+      vendorResponse,
+    ]) {
+      final text = (candidate ?? '').trim();
+      if (text.isNotEmpty && text != 'Cancelled by customer') {
+        return text;
+      }
+    }
+    return null;
+  }
 
   factory BuyerReturnRequest.fromMap(Map<String, dynamic> map) {
     final order = map['order'];
@@ -101,6 +151,11 @@ class BuyerReturnRequest {
       createdAt: '${map['created_at'] ?? ''}',
       orderCode: orderCode,
       productName: productName,
+      adminNote: map['admin_note']?.toString(),
+      rejectedReason: map['rejected_reason']?.toString(),
+      sellerNote: map['seller_note']?.toString(),
+      adminResponse: map['admin_response']?.toString(),
+      vendorResponse: map['vendor_response']?.toString(),
     );
   }
 }

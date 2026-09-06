@@ -34,10 +34,25 @@ const STATUS_MAP = {
   2: { label: "Yönetici Onayladı", color: "bg-indigo-100 text-indigo-800" },
   3: { label: "Ürün Teslim Alındı", color: "bg-purple-100 text-purple-800" },
   4: { label: "İade Edildi", color: "bg-green-100 text-green-800" },
-  5: { label: "Satıcı Reddetti", color: "bg-red-100 text-red-800" },
-  6: { label: "Yönetici Reddetti", color: "bg-red-100 text-red-800" },
+  5: { label: "İade talebi reddedildi", color: "bg-red-100 text-red-800" },
+  6: { label: "İade talebi reddedildi", color: "bg-red-100 text-red-800" },
   7: { label: "İptal Edildi", color: "bg-gray-100 text-gray-800" },
 };
+
+function getRejectionNote(item) {
+  const candidates = [
+    item?.admin_note,
+    item?.admin_response,
+    item?.rejected_reason,
+    item?.seller_note,
+    item?.vendor_response,
+  ];
+  for (const value of candidates) {
+    const text = String(value || "").trim();
+    if (text && text !== "Cancelled by customer") return text;
+  }
+  return "";
+}
 
 function StatCard({ label, value, valueClassName = "text-qblack", tone = "bg-gray-50" }) {
   return (
@@ -249,6 +264,8 @@ export default function ReturnRequestsTab({
                   label: "Bilinmiyor",
                   color: "bg-gray-100 text-gray-800",
                 };
+                const isRejected = Number(item.status) === 5 || Number(item.status) === 6;
+                const rejectionNote = isRejected ? getRejectionNote(item) : "";
 
                 return (
                   <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
@@ -268,13 +285,19 @@ export default function ReturnRequestsTab({
                       </div>
                     </td>
                     <td className="text-center py-4 px-2">
-                      <div className="flex flex-col">
+                      <div className="flex flex-col items-center gap-1">
                         <span className="text-sm text-qblack capitalize">
                           {(item.reason || "-").replaceAll("_", " ")}
                         </span>
                         <span className="text-xs text-qgray line-clamp-2 max-w-[220px] mx-auto">
-                          {item.details || item.rejected_reason || "-"}
+                          {item.details || "-"}
                         </span>
+                        {rejectionNote ? (
+                          <span className="mt-1 max-w-[240px] rounded-md bg-red-50 px-2 py-1 text-left text-xs text-red-700">
+                            <span className="font-semibold">Ret gerekçesi: </span>
+                            {rejectionNote}
+                          </span>
+                        ) : null}
                       </div>
                     </td>
                     <td className="text-center py-4 px-2">
