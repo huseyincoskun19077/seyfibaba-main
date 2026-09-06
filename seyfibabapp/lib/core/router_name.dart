@@ -215,9 +215,10 @@ class RouteNames {
             settings: settings, builder: (_) => const BecomeSellerScreen());
 
       case RouteNames.sellerPanelScreen:
+        final tab = settings.arguments is int ? settings.arguments as int : 0;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const SellerPanelScreen(),
+          builder: (_) => SellerPanelScreen(initialTab: tab),
         );
 
       case RouteNames.sellerQuickProductScreen:

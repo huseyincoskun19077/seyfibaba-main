@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Support\NotificationAudience;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,23 +18,27 @@ class NotificationController extends Controller
     {
         $user = Auth::guard('api')->user();
 
-        $notifications = $user->notifications()
+        $notifications = NotificationAudience::sellerQuery($user->notifications())
             ->when($request->filled('unread_only'), fn ($q) => $q->whereNull('read_at'))
             ->orderByDesc('created_at')
             ->paginate((int) $request->get('per_page', 20));
 
+        $unreadCount = NotificationAudience::sellerQuery($user->unreadNotifications())->count();
+
         return response()->json([
             'notifications' => $notifications,
-            'unread_count' => $user->unreadNotifications()->count(),
+            'unread_count' => $unreadCount,
         ]);
     }
 
     public function markAsRead($id)
     {
         $user = Auth::guard('api')->user();
-        $notification = $user->notifications()->find($id);
+        $notification = NotificationAudience::sellerQuery($user->notifications())
+            ->where('id', $id)
+            ->first();
 
-        if (!$notification) {
+        if (! $notification) {
             return response()->json(['message' => 'Notification not found'], 404);
         }
 
@@ -45,7 +50,9 @@ class NotificationController extends Controller
     public function markAllAsRead()
     {
         $user = Auth::guard('api')->user();
-        $user->unreadNotifications->markAsRead();
+        NotificationAudience::sellerQuery($user->unreadNotifications())
+            ->get()
+            ->each(fn ($notification) => $notification->markAsRead());
 
         return response()->json(['message' => 'All notifications marked as read']);
     }

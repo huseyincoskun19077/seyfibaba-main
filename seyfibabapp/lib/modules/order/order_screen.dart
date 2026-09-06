@@ -237,7 +237,7 @@ class _OrderLoadedWidgetState extends State<OrderLoadedWidget> {
                   : null,
               toolbarHeight: 56,
               title: Text(
-                Language.order,
+                Language.buyerOrders,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,

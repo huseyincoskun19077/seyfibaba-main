@@ -16,7 +16,10 @@ import 'widgets/seller_ai_fab.dart';
 import 'widgets/seller_kyc_banner.dart';
 
 class SellerPanelScreen extends StatefulWidget {
-  const SellerPanelScreen({super.key});
+  const SellerPanelScreen({super.key, this.initialTab = 0});
+
+  /// 0 özet, 1 ürünler, 2 satış siparişleri, 3 daha fazla
+  final int initialTab;
 
   @override
   State<SellerPanelScreen> createState() => _SellerPanelScreenState();
@@ -24,16 +27,17 @@ class SellerPanelScreen extends StatefulWidget {
 
 class _SellerPanelScreenState extends State<SellerPanelScreen> {
   final _service = SellerApiService();
-  int _index = 0;
+  late int _index;
   String _kycStatus = 'approved';
   bool _sessionReady = false;
   String _token = '';
 
-  static const _titles = ['Özet', 'Ürünler', 'Siparişler', 'Daha fazla'];
+  static const _titles = ['Özet', 'Ürünler', 'Satış siparişleri', 'Daha fazla'];
 
   @override
   void initState() {
     super.initState();
+    _index = widget.initialTab.clamp(0, 3);
     WidgetsBinding.instance.addPostFrameCallback((_) => _prepareSession());
   }
 

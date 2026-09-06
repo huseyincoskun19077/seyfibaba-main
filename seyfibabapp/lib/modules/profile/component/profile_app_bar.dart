@@ -314,7 +314,7 @@ class _QuickActions extends StatelessWidget {
     final items = [
       (
         Icons.receipt_long_outlined,
-        Language.order.capitalizeByWord(),
+        Language.buyerOrders.capitalizeByWord(),
         onOrder,
       ),
       (

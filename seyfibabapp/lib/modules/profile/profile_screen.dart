@@ -45,16 +45,40 @@ class ProfileScreen extends StatelessWidget {
                           if (!Utils.isSeller(context)) {
                             return const SizedBox.shrink();
                           }
-                          return ProfileMenuTile(
-                            title: Language.sellerPanelEnter,
-                            icon: Icons.storefront,
-                            iconColor: HomeTheme.brandYellow,
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              RouteNames.sellerPanelScreen,
-                            ),
+                          return Column(
+                            children: [
+                              ProfileMenuTile(
+                                title: Language.sellerPanelEnter,
+                                icon: Icons.storefront,
+                                iconColor: HomeTheme.brandYellow,
+                                onTap: () => Navigator.pushNamed(
+                                  context,
+                                  RouteNames.sellerPanelScreen,
+                                ),
+                              ),
+                              ProfileMenuTile(
+                                title: Language.sellerSalesOrders,
+                                icon: Icons.local_shipping_outlined,
+                                iconColor: HomeTheme.brandYellow,
+                                onTap: () => Navigator.pushNamed(
+                                  context,
+                                  RouteNames.sellerPanelScreen,
+                                  arguments: 2,
+                                ),
+                              ),
+                            ],
                           );
                         },
+                      ),
+                      ProfileMenuTile(
+                        title: Language.buyerOrders,
+                        icon: Icons.receipt_long_outlined,
+                        iconColor: const Color(0xFF34A853),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          RouteNames.orderScreen,
+                          arguments: false,
+                        ),
                       ),
                       ProfileMenuTile(
                         title: Language.secondHand,

@@ -8,6 +8,7 @@ import '../../../utils/utils.dart';
 import '../../../widgets/rounded_app_bar.dart';
 import '../authentication/controller/login/login_bloc.dart';
 import '../home/widgets/home_theme.dart';
+import '../order/controllers/order/order_cubit.dart';
 import 'controller/notification_cubit.dart';
 import 'models/buyer_notification_model.dart';
 import 'services/buyer_notification_service.dart';
@@ -83,6 +84,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     switch (item.type) {
       case 'order':
         if (item.orderNumber.isNotEmpty) {
+          context.read<OrderCubit>().tempTrackOrderId(item.orderNumber);
           await Navigator.pushNamed(
             context,
             RouteNames.singleOrderScreen,
@@ -94,6 +96,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
             arguments: false,
           );
         }
+        break;
+      case 'seller_new_order':
+      case 'stock_alert':
+      case 'kyc_status':
+      case 'kyc_reminder':
+      case 'seller_withdraw_approved':
+        // Satış bildirimleri satıcı paneline aittir
+        await Navigator.pushNamed(
+          context,
+          RouteNames.sellerPanelScreen,
+          arguments: item.type == 'seller_new_order' ? 2 : 0,
+        );
         break;
       case 'product_view_reminder':
       case 'admin_broadcast':

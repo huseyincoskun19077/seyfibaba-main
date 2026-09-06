@@ -243,7 +243,10 @@ class PushNotificationService {
         }
         break;
       case 'seller_new_order':
-        Navigator.of(context).pushNamed(RouteNames.sellerPanelScreen);
+        Navigator.of(context).pushNamed(
+          RouteNames.sellerPanelScreen,
+          arguments: 2,
+        );
         break;
       case 'seller_withdraw_approved':
         Navigator.of(context).pushNamed(RouteNames.sellerEarningsScreen);

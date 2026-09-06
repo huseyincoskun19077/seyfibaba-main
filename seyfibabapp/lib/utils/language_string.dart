@@ -76,7 +76,10 @@ class Language {
   static String get home => _s('home', 'Ana Sayfa');
   static String get addressTypeHome => _s('address_type_home', 'Ev');
   static String get addressTypeOffice => _s('address_type_office', 'Ofis');
-  static String get order => _s('Order', 'Siparişler');
+  static String get order => _s('Order', 'Aldığım siparişler');
+  static String get buyerOrders => _s('Buyer_Orders', 'Aldığım siparişler');
+  static String get sellerSalesOrders =>
+      _s('Seller_Sales_Orders', 'Satış siparişlerim');
   static String get profile => _s('profile', 'Profilim');
   static String get shopNow => _s('Shop_Now', 'Hemen Al');
   static String get saleOver => _s('Sale_Over', 'İndirim Bitti');
@@ -347,7 +350,7 @@ class Language {
   static String get sellerPanel => _s('Seller_Panel', 'Satıcı Paneli');
   static String get sellerDashboard => _s('Seller_Dashboard', 'Özet');
   static String get sellerProducts => _s('Seller_Products', 'Ürünler');
-  static String get sellerOrders => _s('Seller_Orders', 'Siparişler');
+  static String get sellerOrders => _s('Seller_Orders', 'Satış siparişleri');
   static String get sellerMore => _s('Seller_More', 'Daha fazla');
   static String get sellerBackToShop =>
       _s('Seller_Back_To_Shop', 'Alışverişe Dön');
