@@ -65,6 +65,21 @@ class ReturnRequest extends Model
         'refund_amount' => 'decimal:2',
     ];
 
+    protected $appends = [
+        'refund_info',
+        'refund_method_label',
+    ];
+
+    public function getRefundInfoAttribute(): ?string
+    {
+        return $this->buyerRefundInfoText();
+    }
+
+    public function getRefundMethodLabelAttribute(): string
+    {
+        return self::refundMethodLabel($this->refund_method);
+    }
+
     public static function statusLabels(): array
     {
         return [
@@ -206,6 +221,43 @@ class ReturnRequest extends Model
         ], true);
     }
 
+    /**
+     * Alıcıya gösterilecek para iadesi bilgilendirmesi (Trendyol kart iadesinden farklı: havale manuel).
+     */
+    public function buyerRefundInfoText(): ?string
+    {
+        $status = (int) $this->status;
+        if (in_array($status, [
+            self::STATUS_SELLER_REJECTED,
+            self::STATUS_ADMIN_REJECTED,
+            self::STATUS_USER_CANCELLED,
+            self::STATUS_PENDING,
+        ], true)) {
+            return null;
+        }
+
+        $method = trim((string) ($this->refund_method ?? ''));
+        $this->loadMissing('order');
+        $paymentMethod = strtolower((string) ($this->order->payment_method ?? ''));
+        $isBankOrder = $paymentMethod === 'bankpayment'
+            || (string) ($this->order->discount_type ?? '') === 'bank_transfer'
+            || $method === 'bank_transfer';
+
+        if ($status === self::STATUS_REFUNDED) {
+            if ($isBankOrder || $method === 'bank_transfer') {
+                return 'Para iadeniz havale/EFT ile gönderildi veya gönderilmek üzere. İşlem tamamlandıktan sonra genellikle 1–3 iş günü içinde hesabınıza yansır. Bankanızın işlem süreleri bu süreyi uzatabilir.';
+            }
+
+            return 'Para iadeniz ödeme yönteminize (kart) başlatıldı. Bankanıza göre genellikle 2–10 iş günü içinde hesabınıza yansır.';
+        }
+
+        if ($isBankOrder || $method === 'bank_transfer') {
+            return 'Bu sipariş havale ile ödendiği için para iadesi kart gibi otomatik değil; yönetici ürünü teslim alıp iadeyi tamamladıktan sonra havale/EFT ile ödenir. Genellikle iade tamamlandıktan sonra 1–3 iş günü sürer. Alışverişteki havale indirimi (%3) iade tutarından düşülür; size ödediğiniz tutar kadar iade edilir.';
+        }
+
+        return 'Ürün satıcıya ulaşıp yönetici iadeyi tamamladıktan sonra tutar ödeme yönteminize (kart) iade edilir. Bankanıza göre 2–10 iş günü sürebilir.';
+    }
+
     public function logisticsPayload(): array
     {
         return [
@@ -220,6 +272,9 @@ class ReturnRequest extends Model
             'buyer_return_tracking_url' => $this->buyer_return_tracking_url,
             'buyer_shipped_at' => optional($this->buyer_shipped_at)?->toIso8601String(),
             'can_submit_tracking' => $this->canBuyerSubmitTracking(),
+            'refund_method' => $this->refund_method,
+            'refund_method_label' => self::refundMethodLabel($this->refund_method),
+            'refund_info' => $this->buyerRefundInfoText(),
         ];
     }
 

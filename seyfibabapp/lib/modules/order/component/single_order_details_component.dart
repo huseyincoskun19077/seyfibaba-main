@@ -460,6 +460,8 @@ class _SingleOrderDetailsComponentState
         'Takip no: ${returnable.buyerReturnTrackingNumber}'
       else if (returnable.canSubmitTracking)
         'Kargoya verdikten sonra İade Taleplerim ekranından takip numarası girin.',
+      if ((returnable.refundInfo ?? '').trim().isNotEmpty)
+        'Para iadesi:\n${returnable.refundInfo!.trim()}',
     ];
 
     await showDialog<void>(

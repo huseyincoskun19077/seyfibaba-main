@@ -423,6 +423,9 @@ class ReturnRequestController extends Controller
                 'buyer_return_tracking_number' => null,
                 'buyer_return_tracking_url' => null,
                 'buyer_shipped_at' => null,
+                'refund_method' => null,
+                'refund_method_label' => null,
+                'refund_info' => null,
             ];
         }
 

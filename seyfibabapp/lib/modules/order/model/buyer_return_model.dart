@@ -21,6 +21,7 @@ class BuyerReturnableItem {
     this.returnShippingInstructions,
     this.buyerReturnTrackingNumber,
     this.canSubmitTracking = false,
+    this.refundInfo,
   });
 
   final int orderProductId;
@@ -44,6 +45,7 @@ class BuyerReturnableItem {
   final String? returnShippingInstructions;
   final String? buyerReturnTrackingNumber;
   final bool canSubmitTracking;
+  final String? refundInfo;
 
   factory BuyerReturnableItem.fromMap(Map<String, dynamic> map) {
     return BuyerReturnableItem(
@@ -80,6 +82,7 @@ class BuyerReturnableItem {
       canSubmitTracking: map['can_submit_tracking'] == true ||
           map['can_submit_tracking'] == 1 ||
           '${map['can_submit_tracking']}' == '1',
+      refundInfo: map['refund_info']?.toString(),
     );
   }
 }
@@ -108,6 +111,7 @@ class BuyerReturnRequest {
     this.buyerReturnCarrier,
     this.buyerReturnTrackingNumber,
     this.buyerReturnTrackingUrl,
+    this.refundInfo,
   });
 
   final int id;
@@ -132,6 +136,7 @@ class BuyerReturnRequest {
   final String? buyerReturnCarrier;
   final String? buyerReturnTrackingNumber;
   final String? buyerReturnTrackingUrl;
+  final String? refundInfo;
 
   bool get isPending => status == 0;
 
@@ -222,6 +227,7 @@ class BuyerReturnRequest {
       buyerReturnTrackingNumber:
           map['buyer_return_tracking_number']?.toString(),
       buyerReturnTrackingUrl: map['buyer_return_tracking_url']?.toString(),
+      refundInfo: map['refund_info']?.toString(),
     );
   }
 }

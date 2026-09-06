@@ -164,6 +164,12 @@ function ProductActions({
               Kargoya verdikten sonra profil → İade Taleplerim üzerinden takip numarasını girin.
             </p>
           ) : null}
+          {returnable.refund_info ? (
+            <p className="mt-2 border-t border-amber-200 pt-2 text-amber-950">
+              <span className="font-semibold">Para iadesi: </span>
+              {returnable.refund_info}
+            </p>
+          ) : null}
         </div>
       ) : null}
       {isLoggedIn && isDelivered && isRejected && rejectionNote ? (

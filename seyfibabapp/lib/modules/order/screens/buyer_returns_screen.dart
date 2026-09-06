@@ -381,6 +381,8 @@ class _BuyerReturnsScreenState extends State<BuyerReturnsScreen> {
         'Takip no: ${item.buyerReturnTrackingNumber}'
       else if (item.canSubmitTracking)
         'Kargoya verdikten sonra buradan takip numarası girebilirsiniz.',
+      if ((item.refundInfo ?? '').trim().isNotEmpty)
+        'Para iadesi:\n${item.refundInfo!.trim()}',
     ];
 
     if (!mounted) return;

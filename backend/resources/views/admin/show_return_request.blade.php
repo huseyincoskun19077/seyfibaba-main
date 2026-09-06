@@ -218,9 +218,9 @@
                                             <option value="manual" {{ $defaultRefundMethod === 'manual' ? 'selected' : '' }}>Manuel iade</option>
                                         </select>
                                         <div class="alert alert-info mt-2 mb-0 py-2 small">
-                                            <strong>Havale ile iade nasıl işler?</strong><br>
-                                            Sipariş havale/EFT ile ödendiyse alışverişte uygulanan indirim (genelde %3) iade tutarından düşülür; alıcıya yalnızca ödediği tutar kadar para iadesi yapılır.
-                                            İade yöntemi “Havale / EFT” seçildiğinde tutar, müşterinin kayıtlı banka hesabına manuel EFT ile gönderilir (kart otomatik iadesi yoktur).
+                                            <strong>Para iadesi nasıl işler?</strong><br>
+                                            <strong>Kart (Iyzico):</strong> “İadeyi Tamamla” sonrası tutar karta iade edilir; bankaya yansıması genelde 2–10 iş günü.<br>
+                                            <strong>Havale/EFT sipariş:</strong> Trendyol’daki gibi otomatik kart iadesi yoktur. Ürün teslim alınıp iade tamamlanınca tutar müşteri IBAN’ına manuel havale edilir; genelde 1–3 iş günü. Alışverişteki %3 havale indirimi iade tutarından düşülür (ödediği kadar geri ödenir).
                                         </div>
                                     </div>
                                     @php
