@@ -4,18 +4,12 @@
 @endsection
 @section('admin-content')
       @php
-          $statusLabels = [
-              0 => ['label' => 'Beklemede', 'class' => 'warning text-dark'],
-              1 => ['label' => 'Satıcı Onayladı', 'class' => 'info'],
-              2 => ['label' => 'Yönetici Onayladı', 'class' => 'primary'],
-              3 => ['label' => 'Teslim Alındı', 'class' => 'info'],
-              4 => ['label' => 'İade Tamamlandı', 'class' => 'success'],
-              5 => ['label' => 'Satıcı Reddetti', 'class' => 'danger'],
-              6 => ['label' => 'Yönetici Reddetti', 'class' => 'danger'],
-              7 => ['label' => 'İptal Edildi', 'class' => 'secondary'],
-          ];
-          $statusMeta = $statusLabels[$return->status] ?? ['label' => 'Bilinmiyor', 'class' => 'secondary'];
+          $status = (int) $return->status;
+          $statusLabel = $return->statusLabel();
+          $statusClass = \App\Models\ReturnRequest::statusBadgeClass($status);
           $requestDetails = $return->description ?: $return->details;
+          $reasonLabel = \App\Models\ReturnRequest::reasonLabel($return->reason);
+          $refundMethodLabel = \App\Models\ReturnRequest::refundMethodLabel($return->refund_method);
       @endphp
       <div class="main-content">
         <section class="section">
@@ -28,12 +22,26 @@
             </div>
           </div>
           <div class="section-body">
+            @if(session('messege'))
+              <div class="alert alert-{{ session('alert-type') === 'error' ? 'danger' : (session('alert-type') === 'warning' ? 'warning' : 'success') }}">
+                {{ session('messege') }}
+              </div>
+            @endif
+            @if ($errors->any())
+              <div class="alert alert-danger">
+                <ul class="mb-0 pl-3">
+                  @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                  @endforeach
+                </ul>
+              </div>
+            @endif
             <div class="row">
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-header justify-content-between">
                             <h4 class="mb-0">Talep Özeti</h4>
-                            <span class="badge badge-{{ $statusMeta['class'] }}">{{ $statusMeta['label'] }}</span>
+                            <span class="badge badge-{{ $statusClass }}">{{ $statusLabel }}</span>
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -49,7 +57,7 @@
                                     <div class="border rounded p-3 h-100">
                                         <small class="text-muted d-block">Sipariş</small>
                                         <strong>#{{ optional($return->order)->order_id ?: 'N/A' }}</strong><br>
-                                        <span class="text-muted">{{ optional($return->created_at)->format('d M Y H:i') }}</span><br>
+                                        <span class="text-muted">{{ optional($return->created_at)->format('d.m.Y H:i') }}</span><br>
                                         <span class="text-muted">Adet: {{ $return->qty }}</span>
                                     </div>
                                 </div>
@@ -57,7 +65,7 @@
                                     <div class="border rounded p-3 h-100">
                                         <small class="text-muted d-block">İade Tutarı</small>
                                         <strong>{{ $setting->currency_icon }}{{ number_format((float) ($return->refund_amount ?? 0), 2) }}</strong><br>
-                                        <span class="text-muted">{{ $return->refund_method ?: 'Henüz atanmadı' }}</span><br>
+                                        <span class="text-muted">İade yöntemi: {{ $refundMethodLabel }}</span><br>
                                         <span class="text-muted">Talep #{{ $return->id }}</span>
                                     </div>
                                 </div>
@@ -77,7 +85,7 @@
                                         <tr>
                                             <td>
                                                 <strong>{{ optional($return->orderProduct)->product_name ?: 'Silinmiş Ürün' }}</strong><br>
-                                                <span class="text-muted text-capitalize">{{ str_replace('_', ' ', $return->reason) }}</span>
+                                                <span class="text-muted">İade nedeni: {{ $reasonLabel }}</span>
                                             </td>
                                             <td>{{ $setting->currency_icon }}{{ number_format((float) optional($return->orderProduct)->unit_price, 2) }}</td>
                                             <td>{{ $return->qty }}</td>
@@ -91,21 +99,21 @@
                                 <div class="col-md-6 mb-3">
                                     <div class="border rounded p-3 h-100">
                                         <h6 class="mb-2">Müşteri Mesajı</h6>
-                                        <p class="mb-0 text-muted">{{ $requestDetails ?: 'Ek açıklama girilmedi.' }}</p>
+                                        <p class="mb-0 text-muted">{{ $requestDetails ?: 'Müşteri ek açıklama yazmadı.' }}</p>
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <div class="border rounded p-3 h-100">
                                         <h6 class="mb-2">Notlar</h6>
-                                        <p class="mb-2"><strong>Satıcı Notu:</strong><br>{{ $return->seller_note ?: 'Henüz satıcı notu yok.' }}</p>
-                                        <p class="mb-0"><strong>Yönetici Notu:</strong><br>{{ $return->admin_note ?: 'Henüz yönetici notu yok.' }}</p>
+                                        <p class="mb-2"><strong>Satıcı notu:</strong><br>{{ $return->seller_note ?: 'Satıcı henüz not yazmadı.' }}</p>
+                                        <p class="mb-0"><strong>Yönetici notu:</strong><br>{{ $return->admin_note ?: 'Yönetici henüz not yazmadı.' }}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            @if($return->rejected_reason)
+                            @if($return->rejected_reason && in_array($status, [5, 6], true))
                                 <div class="alert alert-danger mb-0">
-                                    <strong>Red Nedeni:</strong><br>
+                                    <strong>Red gerekçesi (müşteriye görünür):</strong><br>
                                     {{ $return->rejected_reason }}
                                 </div>
                             @endif
@@ -134,7 +142,14 @@
                             <h4>Yönetici İşlemleri</h4>
                         </div>
                         <div class="card-body">
-                            @if ((int) $return->status === 1 || (int) $return->status === 5)
+                            @if ($status === 1 || $status === 5)
+                                <div class="alert alert-light border">
+                                    @if($status === 1)
+                                        Satıcı talebi onayladı. Siz nihai onayı / red kararını verin. Yazacağınız yönetici notu müşteriye gösterilir.
+                                    @else
+                                        Satıcı talebi reddetti. Gerekçeyi inceleyip yönetici olarak onaylayabilir veya reddi kesinleştirebilirsiniz.
+                                    @endif
+                                </div>
                                 <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST" class="mb-4">
                                     @csrf
                                     @method('PUT')
@@ -150,17 +165,22 @@
                                                 @if(!empty($suggestedRefund['shipping_included']))
                                                     + kargo {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['shipping'], 2) }}
                                                 @endif
-                                                ). Kupon siparişe orantılı dağıtılır; iade edilen ürüne düşen indirim payı düşülür.
+                                                ).
                                             </small>
                                         @endif
                                     </div>
                                     <div class="form-group">
                                         <label>İade Yöntemi</label>
-                                        <input type="text" name="refund_method" class="form-control" value="{{ old('refund_method', $return->refund_method ?: 'original_gateway') }}" required>
+                                        <select name="refund_method" class="form-control" required>
+                                            @php $currentMethod = old('refund_method', $return->refund_method ?: 'original_gateway'); @endphp
+                                            <option value="original_gateway" {{ $currentMethod === 'original_gateway' ? 'selected' : '' }}>Ödeme yöntemine iade</option>
+                                            <option value="bank_transfer" {{ $currentMethod === 'bank_transfer' ? 'selected' : '' }}>Havale / EFT</option>
+                                            <option value="manual" {{ $currentMethod === 'manual' ? 'selected' : '' }}>Manuel iade</option>
+                                        </select>
                                     </div>
                                     <div class="form-group">
-                                        <label>Yönetici Notu</label>
-                                        <textarea name="admin_note" class="form-control" rows="3">{{ old('admin_note', $return->admin_note) }}</textarea>
+                                        <label>Yönetici Notu <span class="text-danger">*</span></label>
+                                        <textarea name="admin_note" class="form-control" rows="3" required placeholder="Müşterinin göreceği kısa açıklama">{{ old('admin_note', $return->admin_note) }}</textarea>
                                     </div>
                                     <button type="submit" class="btn btn-primary btn-block shadow-sm">Talebi Onayla</button>
                                 </form>
@@ -170,16 +190,16 @@
                                     @method('PUT')
                                     <input type="hidden" name="status" value="6">
                                     <div class="form-group">
-                                        <label>Red Nedeni</label>
-                                        <textarea name="rejected_reason" class="form-control" rows="3" required>{{ old('rejected_reason', $return->rejected_reason) }}</textarea>
+                                        <label>Red Gerekçesi <span class="text-danger">*</span></label>
+                                        <textarea name="rejected_reason" class="form-control" rows="3" required placeholder="Müşteriye gösterilecek red gerekçesi">{{ old('rejected_reason', $return->rejected_reason) }}</textarea>
                                     </div>
                                     <div class="form-group">
-                                        <label>Yönetici Notu</label>
-                                        <textarea name="admin_note" class="form-control" rows="3">{{ old('admin_note', $return->admin_note) }}</textarea>
+                                        <label>Yönetici Notu <span class="text-danger">*</span></label>
+                                        <textarea name="admin_note" class="form-control" rows="3" required placeholder="Kararınızı kısaca yazın">{{ old('admin_note', $return->admin_note) }}</textarea>
                                     </div>
                                     <button type="submit" class="btn btn-danger btn-block shadow-sm">Talebi Reddet</button>
                                 </form>
-                            @elseif ((int) $return->status === 2)
+                            @elseif ($status === 2)
                                 <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST" class="mb-3">
                                     @csrf
                                     @method('PUT')
@@ -188,7 +208,7 @@
                                         <label>Yönetici Notu</label>
                                         <textarea name="admin_note" class="form-control" rows="3">{{ old('admin_note', $return->admin_note) }}</textarea>
                                     </div>
-                                    <button type="submit" class="btn btn-info btn-block shadow-sm">Teslim Alındı Olarak İşaretle</button>
+                                    <button type="submit" class="btn btn-info btn-block shadow-sm">Ürün Teslim Alındı</button>
                                 </form>
 
                                 <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST">
@@ -197,11 +217,11 @@
                                     <input type="hidden" name="status" value="4">
                                     <div class="form-group">
                                         <label>Yönetici Notu</label>
-                                        <textarea name="admin_note" class="form-control" rows="3">{{ old('admin_note', $return->admin_note) }}</textarea>
+                                        <textarea name="admin_note" class="form-control" rows="3" placeholder="Örn: Ödeme yöntemine iade başlatıldı">{{ old('admin_note', $return->admin_note) }}</textarea>
                                     </div>
-                                    <button type="submit" class="btn btn-success btn-block shadow-sm">İadeyi Tamamla</button>
+                                    <button type="submit" class="btn btn-success btn-block shadow-sm">İadeyi Tamamla (Para iadesi)</button>
                                 </form>
-                            @elseif ((int) $return->status === 3)
+                            @elseif ($status === 3)
                                 <form action="{{ route('admin.return-requests.update-status', $return->id) }}" method="POST">
                                     @csrf
                                     @method('PUT')
@@ -210,11 +230,11 @@
                                         <label>Yönetici Notu</label>
                                         <textarea name="admin_note" class="form-control" rows="3">{{ old('admin_note', $return->admin_note) }}</textarea>
                                     </div>
-                                    <button type="submit" class="btn btn-success btn-block shadow-sm">İadeyi Tamamla</button>
+                                    <button type="submit" class="btn btn-success btn-block shadow-sm">İadeyi Tamamla (Para iadesi)</button>
                                 </form>
                             @else
                                 <div class="alert alert-light border mb-0">
-                                    Bu talep nihai duruma ulaştı. Ek yönetici işlemi yapılamaz.
+                                    Bu talep nihai durumda: <strong>{{ $statusLabel }}</strong>. Ek yönetici işlemi yapılamaz.
                                 </div>
                             @endif
                         </div>
@@ -226,7 +246,7 @@
                         </div>
                         <div class="card-body">
                             <strong>Satıcı:</strong> <a href="{{ route('admin.seller-show', $return->seller_id) }}">{{ optional($return->seller)->shop_name ?: 'Bilinmiyor' }}</a><br>
-                            <strong>Son Satıcı Notu:</strong><br>
+                            <strong>Son satıcı notu:</strong><br>
                             <p class="mt-2 text-muted">{{ $return->seller_note ?: 'Henüz yanıt yok.' }}</p>
                         </div>
                     </div>

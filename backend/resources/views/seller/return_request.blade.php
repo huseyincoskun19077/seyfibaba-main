@@ -4,16 +4,7 @@
 @endsection
 @section('seller-content')
 @php
-  $statusLabels = [
-      0 => ['label' => 'Beklemede', 'class' => 'warning text-dark'],
-      1 => ['label' => 'Satıcı Onayladı', 'class' => 'info'],
-      2 => ['label' => 'Yönetici Onayladı', 'class' => 'primary'],
-      3 => ['label' => 'Teslim Alındı', 'class' => 'info'],
-      4 => ['label' => 'İade Tamamlandı', 'class' => 'success'],
-      5 => ['label' => 'Satıcı Reddetti', 'class' => 'danger'],
-      6 => ['label' => 'Yönetici Reddetti', 'class' => 'danger'],
-      7 => ['label' => 'İptal Edildi', 'class' => 'secondary'],
-  ];
+  $statusLabels = \App\Models\ReturnRequest::statusLabels();
   $activeStatus = request('status');
 @endphp
 <div class="main-content">
@@ -97,9 +88,9 @@
         <div class="card-body">
           <div class="d-flex flex-wrap align-items-center" style="gap:10px;">
             <a href="{{ route('seller.return-requests.index') }}" class="btn {{ $activeStatus === null ? 'btn-primary' : 'btn-outline-primary' }} btn-sm">Tümü</a>
-            @foreach($statusLabels as $statusValue => $statusMeta)
+            @foreach($statusLabels as $statusValue => $statusLabel)
               <a href="{{ route('seller.return-requests.index', ['status' => $statusValue]) }}" class="btn {{ (string) $activeStatus === (string) $statusValue ? 'btn-primary' : 'btn-outline-primary' }} btn-sm">
-                {{ $statusMeta['label'] }}
+                {{ $statusLabel }}
               </a>
             @endforeach
           </div>
@@ -134,13 +125,13 @@
                     <td>#{{ $return->order->order_id }}</td>
                     <td>
                       <strong>{{ $return->orderProduct->product_name }}</strong><br>
-                      <span class="text-muted text-capitalize">{{ str_replace('_', ' ', $return->reason) }}</span>
+                      <span class="text-muted">{{ \App\Models\ReturnRequest::reasonLabel($return->reason) }}</span>
                     </td>
                     <td>{{ $return->qty }}</td>
                     <td>{{ $setting->currency_icon }}{{ number_format((float) $return->refund_amount, 2) }}</td>
                     <td>
-                      <span class="badge badge-{{ $statusLabels[$return->status]['class'] ?? 'secondary' }}">
-                        {{ $statusLabels[$return->status]['label'] ?? 'Bilinmiyor' }}
+                      <span class="badge badge-{{ \App\Models\ReturnRequest::statusBadgeClass((int) $return->status) }}">
+                        {{ $statusLabels[(int) $return->status] ?? 'Bilinmiyor' }}
                       </span>
                     </td>
                     <td>{{ optional($return->created_at)->format('d M Y') }}</td>

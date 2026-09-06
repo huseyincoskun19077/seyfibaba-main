@@ -35,10 +35,11 @@ class ReturnRequestController extends Controller
         $return = ReturnRequest::with(['order.orderProducts', 'orderProduct.product', 'user', 'seller', 'images'])
                               ->find($id);
 
-        if (!$return) {
-            $notification = 'Request not found';
-            $notification = array('messege'=>$notification,'alert-type'=>'error');
-            return redirect()->back()->with($notification);
+        if (! $return) {
+            return redirect()->back()->with([
+                'messege' => 'İade talebi bulunamadı.',
+                'alert-type' => 'error',
+            ]);
         }
 
         $suggestedRefund = null;
@@ -59,21 +60,45 @@ class ReturnRequestController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $return = ReturnRequest::find($id);
-        if (!$return) {
-            $notification = 'Request not found';
-            $notification = array('messege'=>$notification,'alert-type'=>'error');
-            return redirect()->back()->with($notification);
+        if (! $return) {
+            return redirect()->back()->with([
+                'messege' => 'İade talebi bulunamadı.',
+                'alert-type' => 'error',
+            ]);
         }
 
-        $adminNote = $request->input('admin_note', $request->admin_response);
+        $status = (int) $request->status;
+        $adminNote = trim((string) ($request->input('admin_note', $request->admin_response) ?? ''));
 
-        if ($request->status == 4) { // Complete Refund
-             return $this->processRefund($return, $adminNote);
+        if ($status === ReturnRequest::STATUS_REFUNDED) {
+            return $this->processRefund($return, $adminNote);
         }
 
-        $return->status = $request->status;
-        $return->admin_response = $adminNote;
-        $return->admin_note = $adminNote;
+        if ($status === ReturnRequest::STATUS_ADMIN_REJECTED) {
+            $request->validate([
+                'rejected_reason' => 'required|string|min:5',
+                'admin_note' => 'required|string|min:5',
+            ], [
+                'rejected_reason.required' => 'Red gerekçesi zorunludur.',
+                'admin_note.required' => 'Yönetici notu zorunludur (müşteri bunu görür).',
+            ]);
+        }
+
+        if ($status === ReturnRequest::STATUS_ADMIN_APPROVED) {
+            $request->validate([
+                'refund_amount' => 'required|numeric|min:0',
+                'refund_method' => 'required|string',
+                'admin_note' => 'required|string|min:3',
+            ], [
+                'admin_note.required' => 'Yönetici notu zorunludur.',
+            ]);
+        }
+
+        $previousStatus = (int) $return->status;
+
+        $return->status = $status;
+        $return->admin_response = $adminNote !== '' ? $adminNote : $return->admin_response;
+        $return->admin_note = $adminNote !== '' ? $adminNote : $return->admin_note;
 
         if ($request->filled('refund_amount')) {
             $return->refund_amount = $request->refund_amount;
@@ -84,43 +109,71 @@ class ReturnRequestController extends Controller
         }
 
         if ($request->filled('rejected_reason')) {
-            $return->rejected_reason = $request->rejected_reason;
+            $return->rejected_reason = trim((string) $request->rejected_reason);
+            if ($status === ReturnRequest::STATUS_ADMIN_REJECTED) {
+                $return->rejected_at = now();
+            }
+        }
+
+        if ($status === ReturnRequest::STATUS_ADMIN_APPROVED) {
+            $return->approved_at = now();
+            // Satıcı reddini yönetici bozduysa eski red metni müşteri/satıcı ekranında kalmasın
+            if ($previousStatus === ReturnRequest::STATUS_SELLER_REJECTED) {
+                $return->rejected_reason = null;
+                $return->rejected_at = null;
+            }
         }
 
         $return->save();
 
-        $notification = 'Status updated successfully';
-        $notification = array('messege'=>$notification,'alert-type'=>'success');
-        return redirect()->back()->with($notification);
+        if (in_array($status, [ReturnRequest::STATUS_ADMIN_REJECTED, ReturnRequest::STATUS_USER_CANCELLED], true)) {
+            app(\App\Services\SellerPayoutService::class)->syncPayoutBlockFromReturns($return->order);
+        }
+
+        $messages = [
+            ReturnRequest::STATUS_ADMIN_APPROVED => 'İade talebini onayladınız. Sonraki adım: ürün teslimi veya iadeyi tamamlama.',
+            ReturnRequest::STATUS_ITEM_RECEIVED => 'Ürün teslim alındı olarak işaretlendi.',
+            ReturnRequest::STATUS_ADMIN_REJECTED => 'İade talebini reddettiniz. Müşteri yönetici notunu / red gerekçesini görecek.',
+        ];
+
+        return redirect()->back()->with([
+            'messege' => $messages[$status] ?? 'Durum güncellendi.',
+            'alert-type' => 'success',
+        ]);
     }
 
     protected function processRefund($return, $note)
     {
-        if ($return->status == 4) {
-            $notification = 'Already refunded';
-            $notification = array('messege'=>$notification,'alert-type'=>'error');
-            return redirect()->back()->with($notification);
+        if ((int) $return->status === ReturnRequest::STATUS_REFUNDED) {
+            return redirect()->back()->with([
+                'messege' => 'Bu talep için iade zaten tamamlanmış.',
+                'alert-type' => 'error',
+            ]);
         }
 
         DB::beginTransaction();
         try {
-            $return->status = 4;
-            $return->admin_response = $note;
-            $return->admin_note = $note;
+            $return->status = ReturnRequest::STATUS_REFUNDED;
+            $return->admin_response = $note !== '' ? $note : $return->admin_response;
+            $return->admin_note = $note !== '' ? $note : ($return->admin_note ?: 'İade tamamlandı.');
+            $return->refunded_at = now();
+            if (! $return->refund_method) {
+                $return->refund_method = 'original_gateway';
+            }
             $return->save();
 
-            // Record in ledger
             $this->commissionService->recordReturn($return);
 
-            // İade onay maili alıcıya
             try {
                 \App\Helpers\MailHelper::setMailConfig();
                 $user = \App\Models\User::find($return->user_id);
                 if ($user && $user->email) {
                     $return->loadMissing(['order', 'orderProduct.product']);
-                    $productName = $return->orderProduct->product->name ?? 'Ürün';
+                    $productName = $return->orderProduct->product->name
+                        ?? $return->orderProduct->product_name
+                        ?? 'Ürün';
                     $amount = number_format((float) $return->refund_amount, 2, ',', '.') . ' ₺';
-                    $content = "İade talebiniz onaylandı ve iade işlemi tamamlandı.\n\nSipariş No: {$return->order->order_id}\nÜrün: {$productName}\nİade Tutarı: {$amount}\n\nTutar ödeme yönteminize göre hesabınıza yansıyacaktır.";
+                    $content = "İade talebiniz onaylandı ve iade işlemi tamamlandı.\n\nSipariş No: {$return->order->order_id}\nÜrün: {$productName}\nİade Tutarı: {$amount}\n\nTutar, ödeme yönteminize göre hesabınıza yansıyacaktır.";
                     \Mail::to($user->email)->send(new \App\Mail\ReturnApprovedMail($content));
                 }
             } catch (\Throwable $e) {
@@ -128,14 +181,18 @@ class ReturnRequestController extends Controller
             }
 
             DB::commit();
-            $notification = 'Refund processed and completed';
-            $notification = array('messege'=>$notification,'alert-type'=>'success');
-            return redirect()->route('admin.return-requests.index')->with($notification);
+
+            return redirect()->route('admin.return-requests.index')->with([
+                'messege' => 'İade tamamlandı. Müşteri bilgilendirildi.',
+                'alert-type' => 'success',
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            $notification = 'Error: ' . $e->getMessage();
-            $notification = array('messege'=>$notification,'alert-type'=>'error');
-            return redirect()->back()->with($notification);
+
+            return redirect()->back()->with([
+                'messege' => 'İade tamamlanamadı: '.$e->getMessage(),
+                'alert-type' => 'error',
+            ]);
         }
     }
 }

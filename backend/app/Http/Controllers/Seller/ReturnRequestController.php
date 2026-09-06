@@ -36,8 +36,8 @@ class ReturnRequestController extends Controller
             ->where('seller_id', $vendor->id)
             ->first();
 
-        if (!$return) {
-            return response()->json(['message' => 'Return request not found'], 404);
+        if (! $return) {
+            return response()->json(['message' => 'İade talebi bulunamadı'], 404);
         }
 
         return response()->json(['return' => $return]);
@@ -51,7 +51,7 @@ class ReturnRequestController extends Controller
 
         $return = $this->findOwnedReturnRequest($id);
         if ((int) $return->status !== ReturnRequest::STATUS_PENDING) {
-            return response()->json(['message' => 'Only pending requests can be approved'], 422);
+            return response()->json(['message' => 'Yalnızca bekleyen talepler onaylanabilir'], 422);
         }
 
         $note = $request->seller_note;
@@ -62,29 +62,41 @@ class ReturnRequestController extends Controller
             'approved_at' => now(),
         ]);
 
-        return response()->json(['message' => 'Return request approved successfully']);
+        return response()->json([
+            'message' => 'İade talebini onayladınız. Süreç yöneticiye iletildi.',
+            'return' => $return->fresh(),
+        ]);
     }
 
     public function reject(Request $request, $id)
     {
         $request->validate([
-            'rejected_reason' => 'required|string',
+            'rejected_reason' => 'required|string|min:5',
+        ], [
+            'rejected_reason.required' => 'Red gerekçesi zorunludur',
+            'rejected_reason.min' => 'Red gerekçesi en az 5 karakter olmalıdır',
         ]);
 
         $return = $this->findOwnedReturnRequest($id);
         if ((int) $return->status !== ReturnRequest::STATUS_PENDING) {
-            return response()->json(['message' => 'Only pending requests can be rejected'], 422);
+            return response()->json(['message' => 'Yalnızca bekleyen talepler reddedilebilir'], 422);
         }
 
+        $reason = trim((string) $request->rejected_reason);
         $return->update([
             'status' => ReturnRequest::STATUS_SELLER_REJECTED,
-            'vendor_response' => $request->rejected_reason,
-            'seller_note' => $request->rejected_reason,
-            'rejected_reason' => $request->rejected_reason,
+            'vendor_response' => $reason,
+            'seller_note' => $reason,
+            'rejected_reason' => $reason,
             'rejected_at' => now(),
         ]);
 
-        return response()->json(['message' => 'Return request rejected successfully']);
+        app(\App\Services\SellerPayoutService::class)->syncPayoutBlockFromReturns($return->order);
+
+        return response()->json([
+            'message' => 'İade talebini reddettiniz. Müşteri red gerekçesini görecek.',
+            'return' => $return->fresh(),
+        ]);
     }
 
     public function updateStatus(Request $request, $id)
@@ -97,21 +109,24 @@ class ReturnRequestController extends Controller
             $request->merge([
                 'rejected_reason' => $request->vendor_response ?? $request->rejected_reason,
             ]);
+
             return $this->reject($request, $id);
         }
 
-        return response()->json(['message' => 'Unsupported seller status transition'], 422);
+        return response()->json(['message' => 'Geçersiz satıcı işlem durumu'], 422);
     }
 
     private function resolveVendor(): Vendor
     {
         $user = Auth::guard('api')->user();
+
         return Vendor::where('user_id', $user->id)->firstOrFail();
     }
 
     private function findOwnedReturnRequest($id): ReturnRequest
     {
         $vendor = $this->resolveVendor();
+
         return ReturnRequest::where('id', $id)
             ->where('seller_id', $vendor->id)
             ->firstOrFail();

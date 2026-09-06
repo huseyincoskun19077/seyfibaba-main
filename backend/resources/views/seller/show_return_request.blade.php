@@ -4,18 +4,12 @@
 @endsection
 @section('seller-content')
 @php
-  $statusLabels = [
-      0 => ['label' => 'Beklemede', 'class' => 'warning text-dark'],
-      1 => ['label' => 'Satıcı Onayladı', 'class' => 'info'],
-      2 => ['label' => 'Yönetici Onayladı', 'class' => 'primary'],
-      3 => ['label' => 'Teslim Alındı', 'class' => 'info'],
-      4 => ['label' => 'İade Tamamlandı', 'class' => 'success'],
-      5 => ['label' => 'Satıcı Reddetti', 'class' => 'danger'],
-      6 => ['label' => 'Yönetici Reddetti', 'class' => 'danger'],
-      7 => ['label' => 'İptal Edildi', 'class' => 'secondary'],
-  ];
-  $statusMeta = $statusLabels[$return->status] ?? ['label' => 'Bilinmiyor', 'class' => 'secondary'];
+  $status = (int) $return->status;
+  $statusLabel = $return->statusLabel();
+  $statusClass = \App\Models\ReturnRequest::statusBadgeClass($status);
   $requestDetails = $return->description ?: $return->details;
+  $reasonLabel = \App\Models\ReturnRequest::reasonLabel($return->reason);
+  $refundMethodLabel = \App\Models\ReturnRequest::refundMethodLabel($return->refund_method);
 @endphp
 <div class="main-content">
   <section class="section">
@@ -29,12 +23,26 @@
     </div>
 
     <div class="section-body">
+      @if(session('messege'))
+        <div class="alert alert-{{ session('alert-type') === 'error' ? 'danger' : (session('alert-type') === 'warning' ? 'warning' : 'success') }}">
+          {{ session('messege') }}
+        </div>
+      @endif
+      @if ($errors->any())
+        <div class="alert alert-danger">
+          <ul class="mb-0 pl-3">
+            @foreach ($errors->all() as $error)
+              <li>{{ $error }}</li>
+            @endforeach
+          </ul>
+        </div>
+      @endif
       <div class="row">
         <div class="col-md-8">
           <div class="card">
             <div class="card-header justify-content-between">
               <h4 class="mb-0">Talep Özeti</h4>
-              <span class="badge badge-{{ $statusMeta['class'] }}">{{ $statusMeta['label'] }}</span>
+              <span class="badge badge-{{ $statusClass }}">{{ $statusLabel }}</span>
             </div>
             <div class="card-body">
               <div class="row">
@@ -50,15 +58,15 @@
                   <div class="border rounded p-3 h-100">
                     <small class="text-muted d-block">Sipariş</small>
                     <strong>#{{ $return->order->order_id }}</strong><br>
-                    <span class="text-muted">{{ optional($return->created_at)->format('d M Y H:i') }}</span><br>
+                    <span class="text-muted">{{ optional($return->created_at)->format('d.m.Y H:i') }}</span><br>
                     <span class="text-muted">Adet: {{ $return->qty }}</span>
                   </div>
                 </div>
                 <div class="col-md-4 mb-3">
                   <div class="border rounded p-3 h-100">
-                    <small class="text-muted d-block">İade</small>
+                    <small class="text-muted d-block">Talep edilen iade tutarı</small>
                     <strong>{{ $setting->currency_icon }}{{ number_format((float) ($return->refund_amount ?? 0), 2) }}</strong><br>
-                    <span class="text-muted">{{ $return->refund_method ?: 'Yönetici kararı bekleniyor' }}</span><br>
+                    <span class="text-muted">İade yöntemi: {{ $refundMethodLabel }}</span><br>
                     <span class="text-muted">Talep No #{{ $return->id }}</span>
                   </div>
                 </div>
@@ -78,7 +86,7 @@
                     <tr>
                       <td>
                         <strong>{{ $return->orderProduct->product_name }}</strong><br>
-                        <span class="text-muted text-capitalize">{{ str_replace('_', ' ', $return->reason) }}</span>
+                        <span class="text-muted">İade nedeni: {{ $reasonLabel }}</span>
                       </td>
                       <td>{{ $setting->currency_icon }}{{ number_format((float) $return->orderProduct->unit_price, 2) }}</td>
                       <td>{{ $return->qty }}</td>
@@ -92,22 +100,38 @@
                 <div class="col-md-6 mb-3">
                   <div class="border rounded p-3 h-100">
                     <h6 class="mb-2">Müşteri Mesajı</h6>
-                    <p class="mb-0 text-muted">{{ $requestDetails ?: 'Ek bir açıklama paylaşılmadı.' }}</p>
+                    <p class="mb-0 text-muted">{{ $requestDetails ?: 'Müşteri ek açıklama yazmadı.' }}</p>
                   </div>
                 </div>
                 <div class="col-md-6 mb-3">
                   <div class="border rounded p-3 h-100">
                     <h6 class="mb-2">Karar Notları</h6>
-                    <p class="mb-2"><strong>Satıcı Notu:</strong><br>{{ $return->seller_note ?: 'Henüz satıcı notu eklenmedi.' }}</p>
-                    <p class="mb-0"><strong>Yönetici Notu:</strong><br>{{ $return->admin_note ?: 'Henüz yönetici notu eklenmedi.' }}</p>
+                    <p class="mb-2">
+                      <strong>Satıcı notu:</strong><br>
+                      {{ $return->seller_note ?: 'Henüz satıcı notu yok.' }}
+                    </p>
+                    <p class="mb-0">
+                      <strong>Yönetici notu:</strong><br>
+                      @if($return->admin_note)
+                        {{ $return->admin_note }}
+                      @else
+                        Yönetici henüz not yazmadı. Nihai karar ve ödeme iadesi yönetici tarafından yapılır.
+                      @endif
+                    </p>
+                    @if(in_array($status, [5, 6], true) && $return->rejected_reason)
+                      <p class="mb-0 mt-2 text-danger">
+                        <strong>Red gerekçesi (müşteriye görünür):</strong><br>
+                        {{ $return->rejected_reason }}
+                      </p>
+                    @endif
                   </div>
                 </div>
               </div>
 
-              @if($return->rejected_reason)
+              @if(in_array($status, [5, 6], true) && ($return->rejected_reason || $return->seller_note || $return->admin_note))
                 <div class="alert alert-danger mb-0">
-                  <strong>Red Nedeni:</strong><br>
-                  {{ $return->rejected_reason }}
+                  <strong>Alıcıya görünen red bilgisi</strong><br>
+                  {{ $return->admin_note ?: ($return->rejected_reason ?: $return->seller_note) }}
                 </div>
               @endif
 
@@ -131,43 +155,51 @@
 
         <div class="col-md-4">
           <div class="card mb-3">
-            <div class="card-header"><h4 class="mb-0">Şu an sizin adımınız</h4></div>
+            <div class="card-header"><h4 class="mb-0">Şu an süreçte neredesiniz?</h4></div>
             <div class="card-body seller-return-steps">
-              @if ((int) $return->status === 0)
+              @if ($status === 0)
                 <div class="alert alert-warning">
-                  Bu talep <strong>sizin kararınızı</strong> bekliyor. Kanıtları inceleyin, sonra onaylayın veya red nedeni yazarak reddedin.
+                  Bu talep <strong>sizin kararınızı</strong> bekliyor. Kanıtları inceleyin; sonra onaylayın veya açık bir gerekçe yazarak reddedin.
                 </div>
                 <div class="step-item">
                   <div class="step-num">1</div>
-                  <div class="small">Müşteri mesajı ve kanıt görsellerini kontrol edin.</div>
+                  <div class="small">Müşteri mesajını ve kanıt fotoğraflarını kontrol edin.</div>
                 </div>
                 <div class="step-item">
                   <div class="step-num">2</div>
-                  <div class="small">Uygunsa onaylayın; değilse net red nedeni yazın.</div>
+                  <div class="small">Uygunsa onaylayın. Değilse müşterinin anlayacağı net bir red nedeni yazın.</div>
                 </div>
                 <div class="step-item mb-0">
                   <div class="step-num">3</div>
-                  <div class="small">Onay sonrası süreç yöneticiye geçer; iade tutarı yönetici tarafından sonuçlandırılır.</div>
+                  <div class="small">Onaylarsanız sonraki adım yöneticiye geçer. Reddederseniz müşteri red gerekçesini görür.</div>
                 </div>
-              @elseif ((int) $return->status === 1)
+              @elseif ($status === 1)
                 <div class="alert alert-info mb-0">
-                  Talebi onayladınız. Şimdi <strong>yönetici incelemesi / ödeme süreci</strong> bekleniyor. Satıcı panelinden ek işlem gerekmez.
+                  <strong>Talebi onayladınız.</strong><br>
+                  Şimdi yönetici inceliyor. Para iadesi henüz yapılmadı; yönetici onaylayıp tamamladığında süreç biter.
                 </div>
-              @elseif ((int) $return->status === 5)
+              @elseif ($status === 5)
                 <div class="alert alert-danger mb-0">
-                  Talebi reddettiniz. Gerekirse yönetici ayrıca değerlendirir. Yeni bir aksiyon gerekmez.
+                  <strong>Talebi reddettiniz.</strong><br>
+                  Müşteri panelinde “İade talebi reddedildi” ve yazdığınız gerekçe görünür. Yönetici gerekirse ayrıca bakabilir; sizin ek işleminiz yok.
                 </div>
-              @elseif (in_array((int) $return->status, [2, 3], true))
+              @elseif (in_array($status, [2, 3], true))
                 <div class="alert alert-info mb-0">
-                  Yönetici süreci devam ediyor (onay / teslim). Ürün geri geldiyse depo sürecini yönetici takip eder.
+                  Yönetici süreci devam ediyor. Ürün geri alındıysa veya ödeme iadesi hazırlanıyorsa bunu yönetici tamamlar.
                 </div>
-              @elseif ((int) $return->status === 4)
+              @elseif ($status === 4)
                 <div class="alert alert-success mb-0">
-                  İade tamamlandı. Ek satıcı aksiyonu yok.
+                  <strong>İade tamamlandı.</strong><br>
+                  Müşteriye para iadesi işlenmiş kabul edilir. Satıcı panelinden ek işlem gerekmez.
+                </div>
+              @elseif ($status === 6)
+                <div class="alert alert-danger mb-0">
+                  <strong>Yönetici talebi reddetti.</strong><br>
+                  Müşteri yönetici notunu / red gerekçesini görür. Satıcı panelinden ek işlem yok.
                 </div>
               @else
                 <div class="alert alert-light border mb-0">
-                  Bu talep kapanmış veya iptal edilmiş durumda. Satıcı panelinden işlem yapılamaz.
+                  Bu talep kapanmış veya müşteri tarafından iptal edilmiş. Satıcı panelinden işlem yapılamaz.
                 </div>
               @endif
             </div>
@@ -178,38 +210,33 @@
               <h4>Satıcı İşlemleri</h4>
             </div>
             <div class="card-body">
-              @if ((int) $return->status === 0)
+              @if ($status === 0)
                 <form action="{{ route('seller.return-requests.update-status', $return->id) }}" method="POST" class="mb-4">
                   @csrf
                   @method('PUT')
                   <input type="hidden" name="status" value="1">
                   <div class="form-group">
-                    <label>Satıcı Notu (opsiyonel)</label>
-                    <textarea name="seller_note" class="form-control" rows="4" placeholder="Örn: Ürünü geri almayı kabul ediyoruz">{{ old('seller_note', $return->seller_note) }}</textarea>
+                    <label>Onay notu (opsiyonel)</label>
+                    <textarea name="seller_note" class="form-control" rows="4" placeholder="Örn: Ürünü geri almayı kabul ediyoruz. Kutusu eksiksiz gelsin.">{{ old('seller_note', $return->seller_note) }}</textarea>
                   </div>
                   <button type="submit" class="btn btn-primary btn-lg btn-block">Talebi Onayla</button>
                 </form>
 
+                <hr>
+                <p class="text-muted small">Reddederseniz yazdığınız gerekçe müşteriye gösterilir.</p>
                 <form action="{{ route('seller.return-requests.update-status', $return->id) }}" method="POST">
                   @csrf
                   @method('PUT')
                   <input type="hidden" name="status" value="5">
                   <div class="form-group">
-                    <label>Red Nedeni <span class="text-danger">*</span></label>
-                    <textarea name="rejected_reason" class="form-control" rows="4" required placeholder="Örn: Ürün kullanılmış / kanıt yetersiz">{{ old('rejected_reason', $return->rejected_reason) }}</textarea>
+                    <label>Red gerekçesi <span class="text-danger">*</span></label>
+                    <textarea name="rejected_reason" class="form-control" rows="4" required placeholder="Örn: Ürün kullanılmış görünüyor / kanıt fotoğrafları yetersiz">{{ old('rejected_reason') }}</textarea>
                   </div>
                   <button type="submit" class="btn btn-danger btn-lg btn-block">Talebi Reddet</button>
                 </form>
               @else
                 <div class="alert alert-light border mb-0">
-                  Bu talep artık satıcı panelinden işleme alınamaz.
-                </div>
-              @endif
-
-              @if ($return->admin_note)
-                <div class="alert alert-info mt-3 mb-0">
-                  <strong>Yönetici Notu:</strong><br>
-                  {{ $return->admin_note }}
+                  Bu talep artık satıcı panelinden işleme alınamaz. Güncel durum: <strong>{{ $statusLabel }}</strong>
                 </div>
               @endif
             </div>

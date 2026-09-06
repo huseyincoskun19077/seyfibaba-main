@@ -44,11 +44,78 @@ class ReturnRequest extends Model
     ];
 
     protected $casts = [
+        'status' => 'integer',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
         'refunded_at' => 'datetime',
         'refund_amount' => 'decimal:2',
     ];
+
+    public static function statusLabels(): array
+    {
+        return [
+            self::STATUS_PENDING => 'Beklemede',
+            self::STATUS_SELLER_APPROVED => 'Satıcı onayladı — yönetici bekleniyor',
+            self::STATUS_ADMIN_APPROVED => 'Yönetici onayladı',
+            self::STATUS_ITEM_RECEIVED => 'İade ürünü teslim alındı',
+            self::STATUS_REFUNDED => 'İade tamamlandı (para iadesi yapıldı)',
+            self::STATUS_SELLER_REJECTED => 'Satıcı reddetti',
+            self::STATUS_ADMIN_REJECTED => 'Yönetici reddetti',
+            self::STATUS_USER_CANCELLED => 'Müşteri iptal etti',
+        ];
+    }
+
+    public static function statusBadgeClass(int $status): string
+    {
+        return match ($status) {
+            self::STATUS_PENDING => 'warning text-dark',
+            self::STATUS_SELLER_APPROVED, self::STATUS_ITEM_RECEIVED => 'info',
+            self::STATUS_ADMIN_APPROVED => 'primary',
+            self::STATUS_REFUNDED => 'success',
+            self::STATUS_SELLER_REJECTED, self::STATUS_ADMIN_REJECTED => 'danger',
+            self::STATUS_USER_CANCELLED => 'secondary',
+            default => 'secondary',
+        };
+    }
+
+    public static function reasonLabel(?string $reason): string
+    {
+        $map = [
+            'defective' => 'Arızalı ürün',
+            'wrong_item' => 'Yanlış ürün geldi',
+            'not_as_described' => 'Açıklamadaki gibi değil',
+            'changed_mind' => 'Karar değişikliği',
+            'damaged_in_shipping' => 'Kargoda hasar gördü',
+            'other' => 'Diğer',
+        ];
+
+        $key = trim((string) $reason);
+
+        return $map[$key] ?? ($key !== '' ? str_replace('_', ' ', $key) : '-');
+    }
+
+    public static function refundMethodLabel(?string $method): string
+    {
+        $map = [
+            'original_gateway' => 'Ödeme yöntemine iade',
+            'bank_transfer' => 'Havale / EFT',
+            'manual' => 'Manuel iade',
+        ];
+
+        $key = trim((string) $method);
+        if ($key === '') {
+            return 'Henüz belirlenmedi';
+        }
+
+        return $map[$key] ?? $key;
+    }
+
+    public function statusLabel(): string
+    {
+        $status = (int) $this->status;
+
+        return self::statusLabels()[$status] ?? ('Durum '.$status);
+    }
 
     public function order()
     {
