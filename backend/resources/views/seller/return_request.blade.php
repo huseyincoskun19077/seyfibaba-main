@@ -108,7 +108,7 @@
                   <th>Sipariş No</th>
                   <th>Ürün</th>
                   <th>Adet</th>
-                  <th>İade Tutarı</th>
+                  <th>Kazanç etkisi (net)</th>
                   <th>Durum</th>
                   <th>Tarih</th>
                   <th>İşlem</th>
@@ -128,7 +128,7 @@
                       <span class="text-muted">{{ \App\Models\ReturnRequest::reasonLabel($return->reason) }}</span>
                     </td>
                     <td>{{ $return->qty }}</td>
-                    <td>{{ $setting->currency_icon }}{{ number_format((float) $return->refund_amount, 2) }}</td>
+                    <td>{{ $setting->currency_icon }}{{ number_format((float) ($return->seller_impact['seller_net'] ?? 0), 2) }}</td>
                     <td>
                       <span class="badge badge-{{ \App\Models\ReturnRequest::statusBadgeClass((int) $return->status) }}">
                         {{ $statusLabels[(int) $return->status] ?? 'Bilinmiyor' }}

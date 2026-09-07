@@ -11,6 +11,7 @@ use App\Models\ProductReport;
 use App\Models\ProductReview;
 use App\Models\OrderProduct;
 use App\Models\SellerWithdraw;
+use App\Services\CommissionService;
 use Carbon\Carbon;
 use Auth;
 class SellerDashboardController extends Controller
@@ -24,6 +25,7 @@ class SellerDashboardController extends Controller
         $user = Auth::guard('api')->user();
         $seller = $user->seller;
         $sellerId = $seller->id;
+        $commissionService = app(CommissionService::class);
 
         $todayOrders = Order::with(['user', 'orderProducts'])
             ->forSeller($sellerId)
@@ -44,6 +46,13 @@ class SellerDashboardController extends Controller
                 $todayProductSale = $todayProductSale + $orderProduct->qty;
             }
         }
+        $todayRefund = $commissionService->sellerRefundedStats(
+            $sellerId,
+            Carbon::now()->startOfDay(),
+            Carbon::now()->endOfDay()
+        );
+        $todayEarning += $todayRefund['net_adjustment'];
+        $todayProductSale = max(0, $todayProductSale - $todayRefund['qty']);
 
         $todayPendingEarning = 0;
 
@@ -68,6 +77,9 @@ class SellerDashboardController extends Controller
                 $totalProductSale = $totalProductSale + $orderProduct->qty;
             }
         }
+        $totalRefund = $commissionService->sellerRefundedStats($sellerId);
+        $totalEarning += $totalRefund['net_adjustment'];
+        $totalProductSale = max(0, $totalProductSale - $totalRefund['qty']);
 
         $monthlyOrders = Order::with(['user', 'orderProducts'])
             ->forSeller($sellerId)
@@ -87,6 +99,13 @@ class SellerDashboardController extends Controller
                 $thisMonthProductSale = $thisMonthProductSale + $orderProduct->qty;
             }
         }
+        $monthRefund = $commissionService->sellerRefundedStats(
+            $sellerId,
+            Carbon::now()->startOfMonth(),
+            Carbon::now()->endOfMonth()
+        );
+        $thisMonthEarning += $monthRefund['net_adjustment'];
+        $thisMonthProductSale = max(0, $thisMonthProductSale - $monthRefund['qty']);
 
         $yearlyOrders = Order::with(['user', 'orderProducts'])
             ->forSeller($sellerId)
@@ -106,6 +125,13 @@ class SellerDashboardController extends Controller
                 $thisYearProductSale = $thisYearProductSale + $orderProduct->qty;
             }
         }
+        $yearRefund = $commissionService->sellerRefundedStats(
+            $sellerId,
+            Carbon::now()->startOfYear(),
+            Carbon::now()->endOfYear()
+        );
+        $thisYearEarning += $yearRefund['net_adjustment'];
+        $thisYearProductSale = max(0, $thisYearProductSale - $yearRefund['qty']);
 
         $setting = Setting::first();
         $products = Product::where('vendor_id', $seller->id)->get();

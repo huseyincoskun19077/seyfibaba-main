@@ -9,6 +9,8 @@ class SellerReturnRequest {
     required this.refundAmount,
     required this.refundMethodLabel,
     required this.unitPrice,
+    required this.sellerImpactNet,
+    required this.commissionRate,
     required this.sellerNote,
     required this.adminNote,
     required this.rejectedReason,
@@ -39,6 +41,8 @@ class SellerReturnRequest {
   final double refundAmount;
   final String refundMethodLabel;
   final double unitPrice;
+  final double sellerImpactNet;
+  final double commissionRate;
   final String sellerNote;
   final String adminNote;
   final String rejectedReason;
@@ -140,6 +144,13 @@ class SellerReturnRequest {
         ? '${map['reason_label']}'
         : _fallbackReasonLabel(reason);
 
+    final sellerImpactNet = double.tryParse(
+          '${map['seller_impact_net'] ?? map['refund_amount'] ?? 0}',
+        ) ??
+        0;
+    final commissionRate =
+        double.tryParse('${map['seller_commission_rate'] ?? 0}') ?? 0;
+
     return SellerReturnRequest(
       id: int.tryParse('${map['id']}') ?? 0,
       status: int.tryParse('${map['status'] ?? 0}') ?? 0,
@@ -147,10 +158,12 @@ class SellerReturnRequest {
       reasonLabel: reasonLabel,
       details: '${map['details'] ?? map['description'] ?? ''}',
       qty: int.tryParse('${map['qty'] ?? 1}') ?? 1,
-      refundAmount: double.tryParse('${map['refund_amount'] ?? 0}') ?? 0,
+      refundAmount: sellerImpactNet,
       refundMethodLabel:
           '${map['refund_method_label'] ?? map['refund_method'] ?? 'Henüz belirlenmedi'}',
       unitPrice: unitPrice,
+      sellerImpactNet: sellerImpactNet,
+      commissionRate: commissionRate,
       sellerNote: '${map['seller_note'] ?? map['vendor_response'] ?? ''}',
       adminNote: '${map['admin_note'] ?? map['admin_response'] ?? ''}',
       rejectedReason: '${map['rejected_reason'] ?? ''}',

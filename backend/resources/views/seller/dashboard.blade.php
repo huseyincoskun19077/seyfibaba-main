@@ -182,6 +182,8 @@
                                 $todayProductSale = $todayProductSale + $orderProduct->qty;
                             }
                         }
+                        $todayEarning += (float) ($refundAdjToday['net_adjustment'] ?? 0);
+                        $todayProductSale = max(0, $todayProductSale - (int) ($refundAdjToday['qty'] ?? 0));
                       @endphp
                     {{ $setting->currency_icon }}{{ $todayEarning }}
                   </div>
@@ -260,6 +262,8 @@
                                 $thisMonthProductSale = $thisMonthProductSale + $orderProduct->qty;
                             }
                         }
+                        $thisMonthEarning += (float) ($refundAdjMonth['net_adjustment'] ?? 0);
+                        $thisMonthProductSale = max(0, $thisMonthProductSale - (int) ($refundAdjMonth['qty'] ?? 0));
                     @endphp
                     {{ $setting->currency_icon }}{{ $thisMonthEarning }}
                   </div>
@@ -291,6 +295,8 @@
                                 $thisYearProductSale = $thisYearProductSale + $orderProduct->qty;
                             }
                         }
+                        $thisYearEarning += (float) ($refundAdjYear['net_adjustment'] ?? 0);
+                        $thisYearProductSale = max(0, $thisYearProductSale - (int) ($refundAdjYear['qty'] ?? 0));
                     @endphp
                     {{ $setting->currency_icon }}{{ $thisYearEarning }}
                   </div>
@@ -320,6 +326,8 @@
                                 $totalProductSale = $totalProductSale + $orderProduct->qty;
                             }
                         }
+                        $totalEarning += (float) ($refundAdjTotal['net_adjustment'] ?? 0);
+                        $totalProductSale = max(0, $totalProductSale - (int) ($refundAdjTotal['qty'] ?? 0));
                     @endphp
                     {{ $setting->currency_icon }}{{ $totalEarning }}
                   </div>

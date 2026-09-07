@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\ReturnRequest;
 use App\Models\Vendor;
+use App\Services\CommissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -41,6 +42,10 @@ class ReturnRequestController extends Controller
             ->orderByDesc('id')
             ->paginate((int) $request->get('per_page', 20));
 
+        $returns->getCollection()->transform(
+            fn (ReturnRequest $return) => $this->presentForSeller($return, $vendor)
+        );
+
         return response()->json(['returns' => $returns]);
     }
 
@@ -56,33 +61,7 @@ class ReturnRequestController extends Controller
             return response()->json(['message' => 'İade talebi bulunamadı'], 404);
         }
 
-        $payload = $return->toArray();
-        $payload['status_label'] = $return->statusLabel();
-        $payload['reason_label'] = ReturnRequest::reasonLabel($return->reason);
-        $payload['refund_method_label'] = ReturnRequest::refundMethodLabel($return->refund_method);
-        $payload['return_shipping_payer_label'] = ReturnRequest::shippingPayerLabel($return->return_shipping_payer);
-        $payload['default_return_address'] = $return->return_address
-            ?: ReturnRequest::buildSellerReturnAddress($vendor);
-        $payload['default_shipping_payer'] = in_array($return->return_shipping_payer, ['seller', 'buyer'], true)
-            ? $return->return_shipping_payer
-            : ReturnRequest::defaultShippingPayerForReason($return->reason);
-        $payload['can_mark_received'] = $return->canSellerMarkReceived();
-        $payload['images'] = $return->images->map(function ($img) {
-            $path = (string) ($img->image ?? '');
-            if ($path === '') {
-                return null;
-            }
-            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-                return ['id' => $img->id, 'url' => $path];
-            }
-
-            return [
-                'id' => $img->id,
-                'url' => url(ltrim($path, '/')),
-            ];
-        })->filter()->values();
-
-        return response()->json(['return' => $payload]);
+        return response()->json(['return' => $this->presentForSeller($return, $vendor)]);
     }
 
     public function approve(Request $request, $id)
@@ -135,7 +114,7 @@ class ReturnRequestController extends Controller
 
         return response()->json([
             'message' => 'İade talebini onayladınız. Müşteri iade adresi ve kargo talimatını görecek.',
-            'return' => $return->fresh(),
+            'return' => $this->presentForSeller($return->fresh(['order', 'orderProduct.product', 'user', 'images']), $vendor),
         ]);
     }
 
@@ -166,7 +145,7 @@ class ReturnRequestController extends Controller
 
         return response()->json([
             'message' => 'İade talebini reddettiniz. Talebiniz yöneticiye ve alıcıya iletildi.',
-            'return' => $return->fresh(),
+            'return' => $this->presentForSeller($return->fresh(['order', 'orderProduct.product', 'user', 'images']), $this->resolveVendor()),
         ]);
     }
 
@@ -195,7 +174,7 @@ class ReturnRequestController extends Controller
 
         return response()->json([
             'message' => 'Ürünü teslim aldığınız kaydedildi. Yönetici para iadesini tamamlayabilir.',
-            'return' => $return->fresh(),
+            'return' => $this->presentForSeller($return->fresh(['order', 'orderProduct.product', 'user', 'images']), $this->resolveVendor()),
         ]);
     }
 
@@ -218,6 +197,69 @@ class ReturnRequestController extends Controller
         }
 
         return response()->json(['message' => 'Geçersiz satıcı işlem durumu'], 422);
+    }
+
+    /**
+     * Satıcıya müşteri iade tutarı / birim fiyat gösterme; komisyon sonrası net etki.
+     */
+    private function presentForSeller(ReturnRequest $return, Vendor $vendor): array
+    {
+        $impact = app(CommissionService::class)->calculateReturnImpact($return);
+        $payload = $return->toArray();
+
+        $payload['status_label'] = $return->statusLabel();
+        $payload['reason_label'] = ReturnRequest::reasonLabel($return->reason);
+        $payload['refund_method_label'] = ReturnRequest::refundMethodLabel($return->refund_method);
+        $payload['return_shipping_payer_label'] = ReturnRequest::shippingPayerLabel($return->return_shipping_payer);
+        $payload['default_return_address'] = $return->return_address
+            ?: ReturnRequest::buildSellerReturnAddress($vendor);
+        $payload['default_shipping_payer'] = in_array($return->return_shipping_payer, ['seller', 'buyer'], true)
+            ? $return->return_shipping_payer
+            : ReturnRequest::defaultShippingPayerForReason($return->reason);
+        $payload['can_mark_received'] = $return->canSellerMarkReceived();
+
+        $payload['seller_impact_gross'] = $impact['gross'];
+        $payload['seller_impact_commission'] = $impact['commission'];
+        $payload['seller_impact_net'] = $impact['seller_net'];
+        $payload['seller_commission_rate'] = $impact['commission_rate'];
+        // Geriye uyumluluk: satıcı ekranlarında refund_amount = net kazanç etkisi
+        $payload['refund_amount'] = $impact['seller_net'];
+
+        if (isset($payload['order_product']) && is_array($payload['order_product'])) {
+            unset(
+                $payload['order_product']['unit_price'],
+                $payload['order_product']['commission_amount'],
+                $payload['order_product']['seller_net_amount'],
+                $payload['order_product']['commission_rate']
+            );
+        }
+
+        if (isset($payload['order']) && is_array($payload['order'])) {
+            unset(
+                $payload['order']['total_amount'],
+                $payload['order']['amount_real'],
+                $payload['order']['discount_amount'],
+                $payload['order']['coupon_coast'],
+                $payload['order']['shipping_cost']
+            );
+        }
+
+        $payload['images'] = $return->images->map(function ($img) {
+            $path = (string) ($img->image ?? '');
+            if ($path === '') {
+                return null;
+            }
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return ['id' => $img->id, 'url' => $path];
+            }
+
+            return [
+                'id' => $img->id,
+                'url' => url(ltrim($path, '/')),
+            ];
+        })->filter()->values();
+
+        return $payload;
     }
 
     private function resolveVendor(): Vendor

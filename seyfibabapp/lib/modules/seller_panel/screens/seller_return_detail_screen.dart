@@ -303,8 +303,8 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
           ),
           const SizedBox(height: 10),
           _infoTile(
-            'Talep edilen iade',
-            '${Utils.formatPrice(item.refundAmount, context)}\n${item.refundMethodLabel}',
+            'Kazanç etkisi (net)',
+            '${Utils.formatPrice(item.sellerImpactNet > 0 ? item.sellerImpactNet : item.refundAmount, context)}\nKomisyon %${item.commissionRate.toStringAsFixed(item.commissionRate % 1 == 0 ? 0 : 1)} düşülmüş',
           ),
           const Divider(height: 24),
           Text(
@@ -316,11 +316,11 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
             'İade nedeni: ${item.reasonLabel}',
             style: const TextStyle(fontSize: 13, color: HomeTheme.textMuted),
           ),
-          if (item.unitPrice > 0)
-            Text(
-              'Birim fiyat: ${Utils.formatPrice(item.unitPrice, context)}',
-              style: const TextStyle(fontSize: 13, color: HomeTheme.textMuted),
-            ),
+          const SizedBox(height: 4),
+          const Text(
+            'Müşteriye ödenen tutar satıcıya gösterilmez. İade tamamlanınca net pay kazançtan düşülür.',
+            style: TextStyle(fontSize: 12, color: HomeTheme.textMuted),
+          ),
         ],
       ),
     );

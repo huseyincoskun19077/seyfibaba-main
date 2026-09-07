@@ -16,6 +16,7 @@ use App\Models\Category;
 use App\Models\Brand;
 use App\Models\OrderProduct;
 use App\Models\SellerWithdraw;
+use App\Services\CommissionService;
 use Carbon\Carbon;
 use Auth;
 use App\Support\SellerLoginUrl;
@@ -42,6 +43,7 @@ class SellerDashboardController extends Controller
         }
 
         $sellerId = $seller->id;
+        $commissionService = app(CommissionService::class);
 
         $todayOrders = Order::with(['user', 'orderProducts'])
             ->forSeller($sellerId)
@@ -73,6 +75,13 @@ class SellerDashboardController extends Controller
                 $weeklyProductSale += $orderProduct->qty;
             }
         }
+        $weekRefund = $commissionService->sellerRefundedStats(
+            $sellerId,
+            Carbon::now()->startOfWeek(),
+            Carbon::now()->endOfWeek()
+        );
+        $weeklyEarning += $weekRefund['net_adjustment'];
+        $weeklyProductSale = max(0, $weeklyProductSale - $weekRefund['qty']);
 
         $monthlyOrders = Order::with(['user', 'orderProducts'])
             ->forSeller($sellerId)
@@ -108,11 +117,43 @@ class SellerDashboardController extends Controller
             ->limit(10)
             ->get();
 
+        $refundedByProduct = \App\Models\ReturnRequest::query()
+            ->where('seller_id', $seller->id)
+            ->where('status', \App\Models\ReturnRequest::STATUS_REFUNDED)
+            ->whereBetween('refunded_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])
+            ->with('orderProduct:id,product_id')
+            ->get()
+            ->groupBy(fn ($r) => optional($r->orderProduct)->product_id)
+            ->map(fn ($rows) => (int) $rows->sum('qty'));
+
+        foreach ($topProducts as $topProduct) {
+            $deductQty = (int) ($refundedByProduct[$topProduct->product_id] ?? 0);
+            $topProduct->total_qty = max(0, (int) $topProduct->total_qty - $deductQty);
+        }
+        $topProducts = $topProducts->filter(fn ($p) => (int) $p->total_qty > 0)->values();
+
         $reviews = ProductReview::where('product_vendor_id', $seller->id)->get();
 
         $totalWithdraw = SellerWithdraw::where('seller_id',$seller->id)->where('status',1)->sum('withdraw_amount');
         $totalPendingWithdraw = SellerWithdraw::where('seller_id',$seller->id)->where('status',0)->sum('withdraw_amount');
         $totalDeclinedOrder = Order::forSeller($sellerId)->where('order_status', 4)->count();
+
+        $refundAdjToday = $commissionService->sellerRefundedStats(
+            $sellerId,
+            Carbon::now()->startOfDay(),
+            Carbon::now()->endOfDay()
+        );
+        $refundAdjMonth = $commissionService->sellerRefundedStats(
+            $sellerId,
+            Carbon::now()->startOfMonth(),
+            Carbon::now()->endOfMonth()
+        );
+        $refundAdjYear = $commissionService->sellerRefundedStats(
+            $sellerId,
+            Carbon::now()->startOfYear(),
+            Carbon::now()->endOfYear()
+        );
+        $refundAdjTotal = $commissionService->sellerRefundedStats($sellerId);
 
         return view('seller.dashboard', compact(
             'todayOrders', 'totalOrders', 'setting',
@@ -120,7 +161,8 @@ class SellerDashboardController extends Controller
             'weeklyOrders', 'weeklyEarning', 'weeklyProductSale',
             'products', 'publishedProductCount', 'draftProductCount', 'stockoutProductCount',
             'topProducts', 'reviews', 'seller',
-            'totalWithdraw', 'totalPendingWithdraw', 'totalDeclinedOrder'
+            'totalWithdraw', 'totalPendingWithdraw', 'totalDeclinedOrder',
+            'refundAdjToday', 'refundAdjMonth', 'refundAdjYear', 'refundAdjTotal'
         ));
     }
 }

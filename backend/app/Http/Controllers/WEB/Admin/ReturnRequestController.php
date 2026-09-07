@@ -205,6 +205,13 @@ class ReturnRequestController extends Controller
 
             $this->commissionService->recordReturn($return);
 
+            if ($return->order) {
+                $return->order->refound_status = 1;
+                $return->order->payment_refound_date = now()->toDateTimeString();
+                $return->order->save();
+                app(\App\Services\SellerPayoutService::class)->syncPayoutBlockFromReturns($return->order);
+            }
+
             try {
                 \App\Helpers\MailHelper::setMailConfig();
                 $user = \App\Models\User::find($return->user_id);

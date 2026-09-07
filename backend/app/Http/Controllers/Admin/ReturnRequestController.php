@@ -220,6 +220,10 @@ class ReturnRequestController extends Controller
 
             $this->commissionService->recordReturn($return);
 
+            if ($order) {
+                app(\App\Services\SellerPayoutService::class)->syncPayoutBlockFromReturns($order);
+            }
+
             DB::commit();
 
             $message = $iyzicoRefundResult

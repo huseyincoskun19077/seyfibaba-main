@@ -64,9 +64,9 @@
                 </div>
                 <div class="col-md-4 mb-3">
                   <div class="border rounded p-3 h-100">
-                    <small class="text-muted d-block">Talep edilen iade tutarı</small>
-                    <strong>{{ $setting->currency_icon }}{{ number_format((float) ($return->refund_amount ?? 0), 2) }}</strong><br>
-                    <span class="text-muted">İade yöntemi: {{ $refundMethodLabel }}</span><br>
+                    <small class="text-muted d-block">Kazanç etkisi (net)</small>
+                    <strong>{{ $setting->currency_icon }}{{ number_format((float) ($sellerImpact['seller_net'] ?? 0), 2) }}</strong><br>
+                    <span class="text-muted">Komisyon %{{ number_format((float) ($sellerImpact['commission_rate'] ?? 0), 1) }} düşülmüş</span><br>
                     <span class="text-muted">Talep No #{{ $return->id }}</span>
                   </div>
                 </div>
@@ -77,9 +77,8 @@
                   <thead>
                     <tr>
                       <th>Ürün</th>
-                      <th>Birim Fiyat</th>
                       <th>Talep Edilen Adet</th>
-                      <th>Talep Edilen İade</th>
+                      <th>Kazanç etkisi (net)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -88,12 +87,14 @@
                         <strong>{{ $return->orderProduct->product_name }}</strong><br>
                         <span class="text-muted">İade nedeni: {{ $reasonLabel }}</span>
                       </td>
-                      <td>{{ $setting->currency_icon }}{{ number_format((float) $return->orderProduct->unit_price, 2) }}</td>
                       <td>{{ $return->qty }}</td>
-                      <td>{{ $setting->currency_icon }}{{ number_format((float) ($return->refund_amount ?? 0), 2) }}</td>
+                      <td>{{ $setting->currency_icon }}{{ number_format((float) ($sellerImpact['seller_net'] ?? 0), 2) }}</td>
                     </tr>
                   </tbody>
                 </table>
+                <p class="text-muted small mb-0 mt-2">
+                  Müşteriye ödenen tutar satıcı panelinde gösterilmez. İade tamamlanınca kazancınızdan komisyon sonrası net pay düşülür.
+                </p>
               </div>
 
               <div class="row mt-4">

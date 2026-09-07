@@ -79,13 +79,14 @@ class CommissionService
     {
         $holdDays = app(PayoutSettingsService::class)->payoutHoldDays();
 
+        // Negatif iade satırları dahil (seller_net_amount > 0 filtresi iadeyi bakiyeden düşürmüyordu).
         $lines = CommissionLedger::query()
             ->from('commission_ledger as cl')
             ->join('orders as o', 'o.id', '=', 'cl.order_id')
             ->leftJoin('order_products as op', 'op.id', '=', 'cl.order_product_id')
             ->where('cl.seller_id', $sellerId)
             ->where('cl.status', 'settled')
-            ->where('cl.seller_net_amount', '>', 0)
+            ->where('cl.seller_net_amount', '!=', 0)
             ->select([
                 'cl.seller_net_amount',
                 'o.payment_method',
@@ -224,15 +225,29 @@ class CommissionService
     }
 
     /**
-     * Record a return in the ledger (negative amounts).
+     * Satıcıya yansıyacak iade etkisi (komisyon sonrası net).
+     * Müşteriye giden refund_amount değil; ürün brütü (kupon sonrası) üzerinden platform komisyonu düşülür.
      */
-    public function recordReturn(\App\Models\ReturnRequest $returnRequest): CommissionLedger
+    public function calculateReturnImpact(\App\Models\ReturnRequest $returnRequest): array
     {
         $orderProduct = $returnRequest->orderProduct;
-        
-        $rate = $orderProduct->commission_rate;
+        if (! $orderProduct) {
+            return [
+                'gross' => 0.0,
+                'commission_rate' => 0.0,
+                'commission' => 0.0,
+                'seller_net' => 0.0,
+            ];
+        }
+
+        $rate = (float) ($orderProduct->commission_rate ?? 0);
+        if ($rate <= 0 && $returnRequest->seller_id) {
+            $vendor = Vendor::query()->find($returnRequest->seller_id);
+            $rate = $vendor ? (float) $vendor->getEffectiveCommissionRate() : 10.0;
+        }
+
+        $productRefund = round((float) $orderProduct->unit_price * (int) $returnRequest->qty, 2);
         $order = $returnRequest->order ?: $orderProduct->order;
-        $productRefund = (float) $orderProduct->unit_price * (int) $returnRequest->qty;
         if ($order) {
             $order->loadMissing('orderProducts');
             $calc = $order->suggestedReturnRefund(
@@ -240,24 +255,95 @@ class CommissionService
                 (int) $returnRequest->qty,
                 $returnRequest->id
             );
-            $productRefund = (float) $calc['product_refund'];
+            $productRefund = round((float) $calc['product_refund'], 2);
         }
-        $refundGross = $productRefund;
-        $refundCommission = $refundGross * ($rate / 100);
-        $refundNet = $refundGross - $refundCommission;
 
-        // Create negative Ledger entry
+        $commission = round($productRefund * ($rate / 100), 2);
+        $net = round($productRefund - $commission, 2);
+
+        return [
+            'gross' => $productRefund,
+            'commission_rate' => $rate,
+            'commission' => $commission,
+            'seller_net' => $net,
+        ];
+    }
+
+    /**
+     * Tamamlanan iadelerin satıcı istatistiklerinden düşülecek net/adet özeti.
+     *
+     * @return array{net_adjustment: float, qty: int}
+     */
+    public function sellerRefundedStats(int $sellerId, $from = null, $to = null): array
+    {
+        $ledger = CommissionLedger::query()
+            ->where('seller_id', $sellerId)
+            ->where('status', 'settled')
+            ->where('seller_net_amount', '<', 0);
+
+        if ($from) {
+            $ledger->where('settled_at', '>=', $from);
+        }
+        if ($to) {
+            $ledger->where('settled_at', '<=', $to);
+        }
+
+        $netAdjustment = (float) $ledger->sum('seller_net_amount');
+
+        $returns = \App\Models\ReturnRequest::query()
+            ->where('seller_id', $sellerId)
+            ->where('status', \App\Models\ReturnRequest::STATUS_REFUNDED);
+
+        if ($from) {
+            $returns->where(function ($query) use ($from) {
+                $query->where('refunded_at', '>=', $from)
+                    ->orWhere(function ($inner) use ($from) {
+                        $inner->whereNull('refunded_at')->where('updated_at', '>=', $from);
+                    });
+            });
+        }
+        if ($to) {
+            $returns->where(function ($query) use ($to) {
+                $query->where('refunded_at', '<=', $to)
+                    ->orWhere(function ($inner) use ($to) {
+                        $inner->whereNull('refunded_at')->where('updated_at', '<=', $to);
+                    });
+            });
+        }
+
+        return [
+            'net_adjustment' => round($netAdjustment, 2),
+            'qty' => (int) $returns->sum('qty'),
+        ];
+    }
+
+    /**
+     * Record a return in the ledger (negative amounts).
+     */
+    public function recordReturn(\App\Models\ReturnRequest $returnRequest): CommissionLedger
+    {
+        $note = 'Return Refund for Request #'.$returnRequest->id;
+        $existing = CommissionLedger::query()
+            ->where('notes', $note)
+            ->where('seller_id', $returnRequest->seller_id)
+            ->first();
+        if ($existing) {
+            return $existing;
+        }
+
+        $impact = $this->calculateReturnImpact($returnRequest);
+
         return CommissionLedger::create([
             'order_id' => $returnRequest->order_id,
             'order_product_id' => $returnRequest->order_product_id,
             'seller_id' => $returnRequest->seller_id,
-            'gross_amount' => -$refundGross,
-            'commission_rate' => $rate,
-            'commission_amount' => -$refundCommission,
-            'seller_net_amount' => -$refundNet,
-            'status' => 'settled', // Settlement is immediate for returns
+            'gross_amount' => -$impact['gross'],
+            'commission_rate' => $impact['commission_rate'],
+            'commission_amount' => -$impact['commission'],
+            'seller_net_amount' => -$impact['seller_net'],
+            'status' => 'settled',
             'settled_at' => now(),
-            'notes' => 'Return Refund for Request #' . $returnRequest->id
+            'notes' => $note,
         ]);
     }
 }

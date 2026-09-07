@@ -5,6 +5,7 @@ namespace App\Http\Controllers\WEB\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\ReturnRequest;
 use App\Models\Setting;
+use App\Services\CommissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,12 +20,18 @@ class ReturnRequestController extends Controller
     {
         $seller = Auth::guard('web')->user()->seller;
         $setting = Setting::first();
+        $commissionService = app(CommissionService::class);
 
         $returns = ReturnRequest::with(['order', 'orderProduct.product', 'user', 'images'])
             ->where('seller_id', $seller->id)
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
             ->orderByDesc('id')
-            ->get();
+            ->get()
+            ->map(function (ReturnRequest $return) use ($commissionService) {
+                $return->seller_impact = $commissionService->calculateReturnImpact($return);
+
+                return $return;
+            });
 
         return view('seller.return_request', compact('returns', 'setting'));
     }
@@ -45,6 +52,8 @@ class ReturnRequestController extends Controller
                 ->with(['messege' => 'İade talebi bulunamadı.', 'alert-type' => 'error']);
         }
 
+        $sellerImpact = app(CommissionService::class)->calculateReturnImpact($return);
+
         $defaultReturnAddress = old(
             'return_address',
             $return->return_address ?: ReturnRequest::buildSellerReturnAddress($seller)
@@ -60,7 +69,8 @@ class ReturnRequestController extends Controller
             'return',
             'setting',
             'defaultReturnAddress',
-            'defaultShippingPayer'
+            'defaultShippingPayer',
+            'sellerImpact'
         ));
     }
 
