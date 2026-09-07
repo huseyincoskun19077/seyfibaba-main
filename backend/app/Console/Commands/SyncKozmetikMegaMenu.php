@@ -35,13 +35,47 @@ class SyncKozmetikMegaMenu extends Command
 
         $mega = MegaMenuCategory::query()
             ->where('category_id', $categoryId)
-            ->where('status', 1)
             ->first();
 
         if (! $mega) {
-            $this->error("Mega menüde category_id={$categoryId} kaydı yok. Admin → Mega Menu’den Kozmetik ekleyin.");
+            $category = Category::query()->find($categoryId);
+            if (! $category) {
+                $this->error("Category #{$categoryId} yok.");
 
-            return self::FAILURE;
+                return self::FAILURE;
+            }
+
+            $this->warn("Mega menüde Kozmetik yoktu — oluşturulacak (#{$categoryId} {$category->name}).");
+            $this->line('Mevcut mega menü kategorileri:');
+            foreach (MegaMenuCategory::with('category')->orderBy('serial')->get() as $row) {
+                $n = optional($row->category)->name ?? '?';
+                $this->line("  mega#{$row->id} category_id={$row->category_id} status={$row->status} serial={$row->serial} name={$n}");
+            }
+
+            $serial = (int) MegaMenuCategory::query()->max('serial') + 1;
+            if ($dry) {
+                $this->line("[dry] MegaMenuCategory create category_id={$categoryId} serial={$serial}");
+                $mega = (object) ['id' => 0, 'category_id' => $categoryId];
+            } else {
+                $mega = MegaMenuCategory::query()->create([
+                    'category_id' => $categoryId,
+                    'status' => 1,
+                    'serial' => $serial,
+                ]);
+                $this->info("MegaMenuCategory #{$mega->id} oluşturuldu.");
+            }
+        }
+
+        if ($mega && isset($mega->status) && (int) $mega->status !== 1 && ! $dry) {
+            $mega->status = 1;
+            $mega->save();
+            $this->line('Mega menü status=1 yapıldı.');
+        }
+
+        if ($dry && (int) ($mega->id ?? 0) === 0) {
+            $this->warn('Dry-run: mega kayıt yokken sub ekleme atlandı. --dry-run olmadan çalıştırın.');
+
+            return self::SUCCESS;
         }
 
         $this->info("MegaMenuCategory #{$mega->id} (category_id={$categoryId})");
