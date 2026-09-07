@@ -210,8 +210,23 @@ class OrderController extends Controller
 
         $result = $this->payoutService->processOrderPayout($order, true);
 
+        $message = (string) ($result['message'] ?? '');
+        if (! empty($result['results']) && is_array($result['results'])) {
+            $details = collect($result['results'])->map(function (array $row) {
+                $id = $row['order_product_id'] ?? '?';
+                $status = $row['status'] ?? '';
+                $msg = $row['message'] ?? '';
+                $code = $row['error_code'] ?? '';
+
+                return '#'.$id.' '.$status.($msg !== '' ? ': '.$msg : '').($code !== '' ? ' ('.$code.')' : '');
+            })->implode(' | ');
+            if ($details !== '') {
+                $message .= ' — '.$details;
+            }
+        }
+
         return redirect()->back()->with([
-            'messege' => $result['message'],
+            'messege' => $message,
             'alert-type' => $result['success'] ? 'success' : 'error',
         ]);
     }

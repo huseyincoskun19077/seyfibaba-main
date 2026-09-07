@@ -203,6 +203,21 @@ class SellerPayoutService
                 continue;
             }
 
+            $refundedQty = $this->refundedQtyForOrderProduct($orderProduct);
+            if ($refundedQty >= (int) $orderProduct->qty) {
+                $orderProduct->payout_status = 'cancelled';
+                $orderProduct->payout_block_reason = self::PAYOUT_BLOCK_FULL_RETURN;
+                $orderProduct->save();
+
+                $results[] = [
+                    'order_product_id' => $orderProduct->id,
+                    'status' => 'success',
+                    'message' => 'Satır tamamen iade edildi — Iyzico onayı atlandı',
+                    'skipped' => true,
+                ];
+                continue;
+            }
+
             $transactionId = (string) ($orderProduct->iyzico_payment_transaction_id ?? '');
             if ($transactionId === '') {
                 $results[] = [
@@ -247,6 +262,16 @@ class SellerPayoutService
                         'status' => 'success',
                         'message' => 'İyzico onayı başarılı',
                     ];
+                } elseif ($this->isAlreadyApprovedIyzicoError($approval->getErrorCode(), $approval->getErrorMessage())) {
+                    $this->markOrderProductApproved($orderProduct, $transactionId, false);
+
+                    $results[] = [
+                        'order_product_id' => $orderProduct->id,
+                        'payment_transaction_id' => $transactionId,
+                        'status' => 'success',
+                        'message' => 'Iyzico zaten onaylı',
+                        'skipped' => true,
+                    ];
                 } else {
                     $orderProduct->payout_status = 'failed';
                     $orderProduct->save();
@@ -280,6 +305,27 @@ class SellerPayoutService
         }
 
         return $results;
+    }
+
+    protected function refundedQtyForOrderProduct(OrderProduct $orderProduct): int
+    {
+        return (int) ReturnRequest::query()
+            ->where('order_product_id', $orderProduct->id)
+            ->where('status', ReturnRequest::STATUS_REFUNDED)
+            ->sum('qty');
+    }
+
+    protected function isAlreadyApprovedIyzicoError(?string $errorCode, ?string $errorMessage): bool
+    {
+        $haystack = strtolower(trim(($errorCode ?? '').' '.($errorMessage ?? '')));
+        if ($haystack === '') {
+            return false;
+        }
+
+        return str_contains($haystack, 'already')
+            || str_contains($haystack, 'approved')
+            || str_contains($haystack, 'onaylanm')
+            || str_contains($haystack, 'daha önce');
     }
 
     public function syncPaymentTransactionIds(Order $order): void
