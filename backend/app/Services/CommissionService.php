@@ -279,7 +279,18 @@ class CommissionService
         $ledger = CommissionLedger::query()
             ->where('seller_id', $sellerId)
             ->where('status', 'settled')
-            ->where('seller_net_amount', '<', 0);
+            ->where('seller_net_amount', '<', 0)
+            // Sadece daha önce hakedişe girmiş (onaylanmış) satırların iadesini düş.
+            // Onay öncesi iade zaten earned toplamına girmediği için tekrar düşülmemeli.
+            ->whereHas('orderProduct', function ($q) {
+                $q->where(function ($inner) {
+                    $inner->whereNotNull('iyzico_approved_at')
+                        ->orWhere(function ($bank) {
+                            $bank->where('payout_status', 'paid')
+                                ->whereHas('order', fn ($o) => $o->where('payment_method', 'bankpayment'));
+                        });
+                });
+            });
 
         if ($from) {
             $ledger->where('settled_at', '>=', $from);
@@ -375,6 +386,10 @@ class CommissionService
         // Gerçekleşen kazanç: İyzico item approve veya havale payout paid
         $earnedQuery = OrderProduct::query()
             ->where('seller_id', $sellerId)
+            ->where(function ($q) {
+                $q->whereNull('payout_status')
+                    ->orWhereNotIn('payout_status', ['cancelled', 'blocked']);
+            })
             ->where(function ($q) use ($from, $to) {
                 $q->where(function ($iyz) use ($from, $to) {
                     $iyz->whereNotNull('iyzico_approved_at');
