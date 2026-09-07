@@ -7,14 +7,17 @@ use Illuminate\Http\Request;
 use App\Models\ReturnRequest;
 use App\Models\Setting;
 use App\Services\CommissionService;
+use App\Services\ReturnIyzicoRefundService;
 use Illuminate\Support\Facades\DB;
 
 class ReturnRequestController extends Controller
 {
     protected $commissionService;
 
-    public function __construct(CommissionService $commissionService)
-    {
+    public function __construct(
+        CommissionService $commissionService,
+        private ReturnIyzicoRefundService $returnIyzicoRefundService,
+    ) {
         $this->middleware('auth:admin');
         $this->commissionService = $commissionService;
     }
@@ -194,19 +197,49 @@ class ReturnRequestController extends Controller
 
         DB::beginTransaction();
         try {
+            $order = $return->order;
+            $refundAmount = (float) ($return->refund_amount ?? 0);
+            $iyzicoRefundResult = null;
+            $paymentMethod = strtolower((string) ($order->payment_method ?? ''));
+
+            // Iyzico: önce ödeme sağlayıcıya iade; başarısızsa işlemi bitirme.
+            if ($order && $paymentMethod === 'iyzico' && (int) $order->payment_status === 1) {
+                $iyzicoRefundResult = $this->returnIyzicoRefundService->refund(
+                    $order,
+                    $return,
+                    $refundAmount
+                );
+                if (($iyzicoRefundResult['success'] ?? false) !== true) {
+                    DB::rollBack();
+
+                    return redirect()->back()->with([
+                        'messege' => 'Iyzico iadesi başarısız: '.($iyzicoRefundResult['error'] ?? 'Bilinmeyen hata'),
+                        'alert-type' => 'error',
+                    ]);
+                }
+            }
+
             $return->status = ReturnRequest::STATUS_REFUNDED;
             $return->admin_response = $note !== '' ? $note : $return->admin_response;
             $return->admin_note = $note !== '' ? $note : ($return->admin_note ?: 'İade tamamlandı.');
             $return->refunded_at = now();
             if (! $return->refund_method) {
-                $return->refund_method = 'original_gateway';
+                $return->refund_method = $paymentMethod === 'bankpayment'
+                    ? 'bank_transfer'
+                    : 'original_gateway';
+            }
+            if ($iyzicoRefundResult && empty($iyzicoRefundResult['skipped'])) {
+                $return->refund_transaction_id = $iyzicoRefundResult['transaction_id'] ?? null;
+                $return->refund_status = 'iyzico_refunded';
+                $return->refund_error = null;
+            } elseif ($paymentMethod === 'bankpayment') {
+                $return->refund_status = 'manual';
             }
             $return->save();
 
             $this->commissionService->recordReturn($return);
 
-            if ($return->order) {
-                $order = $return->order;
+            if ($order) {
                 $orderDirty = false;
                 if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'refound_status')) {
                     $order->refound_status = 1;
@@ -232,7 +265,6 @@ class ReturnRequestController extends Controller
                         ?? 'Ürün';
                     $amount = number_format((float) $return->refund_amount, 2, ',', '.') . ' ₺';
                     $method = (string) ($return->refund_method ?? '');
-                    $paymentMethod = strtolower((string) ($return->order->payment_method ?? ''));
                     $isBank = $method === 'bank_transfer' || $paymentMethod === 'bankpayment';
                     $timing = $isBank
                         ? "Ödeme yapıldı. Para iadeniz havale/EFT ile gönderildi; genellikle 1–3 iş günü içinde hesabınıza yansır."
@@ -246,8 +278,12 @@ class ReturnRequestController extends Controller
 
             DB::commit();
 
+            $successMsg = ($iyzicoRefundResult && empty($iyzicoRefundResult['skipped']))
+                ? 'Iyzico iadesi tamamlandı. Müşteri bilgilendirildi.'
+                : 'İade tamamlandı. Müşteri bilgilendirildi.';
+
             return redirect()->route('admin.return-requests.index')->with([
-                'messege' => 'İade tamamlandı. Müşteri bilgilendirildi.',
+                'messege' => $successMsg,
                 'alert-type' => 'success',
             ]);
         } catch (\Exception $e) {

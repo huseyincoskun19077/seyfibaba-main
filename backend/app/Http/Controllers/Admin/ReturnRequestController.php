@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ReturnRequest;
 use App\Services\CommissionService;
-use App\Services\IyzicoService;
+use App\Services\ReturnIyzicoRefundService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +14,7 @@ class ReturnRequestController extends Controller
 {
     public function __construct(
         private CommissionService $commissionService,
-        private IyzicoService $iyzicoService,
+        private ReturnIyzicoRefundService $returnIyzicoRefundService,
     ) {
         $this->middleware('auth:admin-api');
     }
@@ -191,13 +191,13 @@ class ReturnRequestController extends Controller
             // If payment was via Iyzico, process refund through Iyzico API
             $iyzicoRefundResult = null;
             if ($order && strtolower($order->payment_method) === 'iyzico' && $order->payment_status == 1) {
-                $iyzicoRefundResult = $this->processIyzicoRefund($order, $return, $refundAmount);
+                $iyzicoRefundResult = $this->returnIyzicoRefundService->refund($order, $return, $refundAmount);
 
-                if ($iyzicoRefundResult['success'] === false) {
+                if (($iyzicoRefundResult['success'] ?? false) === false) {
                     DB::rollBack();
                     return response()->json([
-                        'message' => 'Iyzico iadesi başarısız: ' . $iyzicoRefundResult['error'],
-                        'refund_error' => $iyzicoRefundResult['error'],
+                        'message' => 'Iyzico iadesi başarısız: ' . ($iyzicoRefundResult['error'] ?? 'Bilinmeyen hata'),
+                        'refund_error' => $iyzicoRefundResult['error'] ?? null,
                     ], 422);
                 }
             }
@@ -207,8 +207,13 @@ class ReturnRequestController extends Controller
                 'admin_response' => $note,
                 'admin_note' => $note,
                 'refunded_at' => now(),
-                'refund_transaction_id' => $iyzicoRefundResult['transaction_id'] ?? null,
-                'refund_status' => $iyzicoRefundResult ? 'iyzico_refunded' : 'manual',
+                'refund_transaction_id' => ($iyzicoRefundResult && empty($iyzicoRefundResult['skipped']))
+                    ? ($iyzicoRefundResult['transaction_id'] ?? null)
+                    : null,
+                'refund_status' => ($iyzicoRefundResult && empty($iyzicoRefundResult['skipped']))
+                    ? 'iyzico_refunded'
+                    : 'manual',
+                'refund_error' => null,
             ]);
 
             // Update order refund status (kolonlar eski DB'lerde olmayabilir)
@@ -235,7 +240,7 @@ class ReturnRequestController extends Controller
 
             DB::commit();
 
-            $message = $iyzicoRefundResult
+            $message = ($iyzicoRefundResult && empty($iyzicoRefundResult['skipped']))
                 ? 'Iyzico iadesi tamamlandı (İşlem: ' . ($iyzicoRefundResult['transaction_id'] ?? '-') . ')'
                 : 'Para iadesi tamamlandı (manuel)';
 
@@ -247,91 +252,6 @@ class ReturnRequestController extends Controller
                 'error' => $exception->getMessage(),
             ]);
             return response()->json(['message' => 'İade işlenirken hata: ' . $exception->getMessage()], 500);
-        }
-    }
-
-    private function processIyzicoRefund($order, ReturnRequest $return, float $refundAmount): array
-    {
-        $paymentData = $order->iyzico_payment_data
-            ? json_decode($order->iyzico_payment_data, true)
-            : null;
-
-        // Find the matching paymentTransactionId for this order product
-        $paymentTransactionId = null;
-        if ($paymentData && !empty($paymentData['items'])) {
-            $orderProduct = $return->orderProduct;
-            // Match by item_id (product ID used during checkout)
-            foreach ($paymentData['items'] as $item) {
-                // Iyzico checkout item_id formatı: genelde "PROD-{productId}"
-                $expectedIds = $orderProduct ? [
-                    (string) $orderProduct->product_id,
-                    'PROD-' . (string) $orderProduct->product_id,
-                ] : [];
-
-                if ($orderProduct && in_array((string) $item['item_id'], $expectedIds, true)) {
-                    $paymentTransactionId = $item['payment_transaction_id'];
-                    break;
-                }
-            }
-            // Fallback: use first item if single-item order or no match found
-            if (!$paymentTransactionId && count($paymentData['items']) === 1) {
-                $paymentTransactionId = $paymentData['items'][0]['payment_transaction_id'];
-            }
-        }
-
-        if (!$paymentTransactionId) {
-            // Store error but allow manual refund
-            $return->update([
-                'refund_error' => 'Iyzico payment transaction ID not found. Payment data may be missing (orders placed before refund feature).',
-            ]);
-
-            Log::warning('Iyzico refund: paymentTransactionId not found', [
-                'order_id' => $order->id,
-                'return_request_id' => $return->id,
-                'has_payment_data' => (bool) $paymentData,
-            ]);
-
-            return [
-                'success' => false,
-                'error' => 'Iyzico ödeme işlem ID\'si bulunamadı. Bu sipariş refund öncesi alınmış olabilir — manuel iade gerekebilir.',
-            ];
-        }
-
-        try {
-            $conversationId = 'refund_' . $return->id . '_' . time();
-            $result = $this->iyzicoService->refund($paymentTransactionId, $refundAmount, $conversationId);
-
-            Log::info('Iyzico refund result', [
-                'return_request_id' => $return->id,
-                'status' => $result->getStatus(),
-                'error_code' => $result->getErrorCode(),
-                'error_message' => $result->getErrorMessage(),
-            ]);
-
-            if ($result->getStatus() === 'success') {
-                return [
-                    'success' => true,
-                    'transaction_id' => $result->getPaymentId(),
-                ];
-            }
-
-            $errorMsg = $result->getErrorMessage() ?: 'Iyzico refund failed with unknown error';
-            $return->update(['refund_error' => $errorMsg]);
-
-            return [
-                'success' => false,
-                'error' => $errorMsg,
-            ];
-        } catch (\Throwable $e) {
-            Log::error('Iyzico refund exception', [
-                'return_request_id' => $return->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-            ];
         }
     }
 
