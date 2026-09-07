@@ -30,7 +30,7 @@ class SellerPayoutReleasedNotification extends Notification
             'order_id' => $this->order->id,
             'order_number' => $orderNumber,
             'seller_id' => $this->vendor->id,
-            'message' => "Sipariş #{$orderNumber} ödemeniz onaylandı. Iyzico tarafında hesabınıza paranız yatırılacaktır.",
+            'message' => "Sipariş #{$orderNumber} hakedişiniz onaylandı. Paranız Iyzico hesabınıza yatırılacaktır; bankaya geçiş Iyzico takvimine göredir.",
         ];
     }
 
@@ -39,8 +39,8 @@ class SellerPayoutReleasedNotification extends Notification
         $orderNumber = (string) ($this->order->order_id ?? $this->order->id);
 
         return [
-            'title' => 'Ödeme onaylandı',
-            'body' => "Sipariş #{$orderNumber} ödemeniz onaylandı. Iyzico tarafında hesabınıza paranız yatırılacaktır.",
+            'title' => 'Hakediş onaylandı',
+            'body' => "Sipariş #{$orderNumber} hakedişiniz onaylandı. Paranız Iyzico hesabınıza yatırılacaktır.",
             'data' => [
                 'type' => 'seller_payout_released',
                 'order_id' => (string) $this->order->id,

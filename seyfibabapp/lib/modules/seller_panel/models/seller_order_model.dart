@@ -161,7 +161,7 @@ class SellerOrderModel {
     final paid = '${order['payout_processed_at'] ?? ''}'.trim().isNotEmpty ||
         payoutStatus == 'completed' ||
         payoutStatus == 'paid';
-    if (paid) return ('paid', 'Ödendi');
+    if (paid) return ('paid', 'Onaylandı');
     if ('${order['payout_blocked_at'] ?? ''}'.trim().isNotEmpty) {
       return ('blocked', 'Bekletiliyor');
     }

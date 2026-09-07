@@ -62,7 +62,7 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="badge badge-{{ $payout['badge'] }}">{{ $payout['state'] === 'paid' ? 'Ödendi' : ($payout['state'] === 'waiting' ? 'Bekliyor' : 'Beklemede') }}</span>
+                                            <span class="badge badge-{{ $payout['badge'] }}">{{ $payout['state'] === 'paid' ? 'Onaylandı' : ($payout['state'] === 'waiting' ? 'Bekliyor' : 'Beklemede') }}</span>
                                         </td>
                                         <td>
                                             @if($order->payment_status == 1)

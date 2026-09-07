@@ -88,10 +88,9 @@ class SellerOrderFlow
 
             return [
                 'state' => 'paid',
-                'label' => 'Hakediş ödemesi yapıldı',
-                'detail' => $processedAt
-                    ? "Ödeme işlendi: {$processedAt}"
-                    : 'Satıcı hesabınıza aktarım tamamlandı.',
+                'label' => 'Hakediş onaylandı',
+                'detail' => ($processedAt ? "Onay: {$processedAt}. " : '')
+                    .'Paranız Iyzico hesabınıza yatırılacaktır; bankaya geçiş Iyzico takvimine göredir.',
                 'badge' => 'success',
             ];
         }
@@ -129,7 +128,7 @@ class SellerOrderFlow
             ['key' => 'preparing', 'title' => 'Hazırlık onayı', 'description' => 'Ürünü paketleyip kargoya vereceğinizi onaylayın.'],
             ['key' => 'shipped', 'title' => 'Kargoya verildi', 'description' => 'Kargo firması ve takip numarasını girin.'],
             ['key' => 'completed', 'title' => 'Teslim alındı', 'description' => 'Müşteri teslim aldığında sipariş tamamlanır.'],
-            ['key' => 'payout', 'title' => 'Hakediş ödemesi', 'description' => 'Tamamlanan siparişin ödemesi hesabınıza aktarılır.'],
+            ['key' => 'payout', 'title' => 'Hakediş onayı', 'description' => 'Onay sonrası paranız Iyzico hesabınıza yatırılacaktır.'],
         ];
 
         if ($sellerStatus === 4) {

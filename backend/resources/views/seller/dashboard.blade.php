@@ -167,11 +167,12 @@
                 </div>
                 <div class="card-wrap">
                   <div class="card-header">
-                    <h4>Bugün hakediş (ödendi)</h4>
+                    <h4>Bugün onaylanan hakediş</h4>
                   </div>
                   <div class="card-body">
                     {{ $setting->currency_icon }}{{ $todayEarning }}
                     <div class="small text-muted mt-1">Bekleyen: {{ $setting->currency_icon }}{{ $todayPendingEarning }}</div>
+                    <div class="small text-muted">Iyzico’ya aktarılacak — bankaya yatmış demek değildir</div>
                   </div>
                 </div>
               </div>
@@ -234,7 +235,7 @@
                 </div>
                 <div class="card-wrap">
                   <div class="card-header">
-                    <h4>Bu ay hakediş (ödendi)</h4>
+                    <h4>Bu ay onaylanan hakediş</h4>
                   </div>
                   <div class="card-body">
                     {{ $setting->currency_icon }}{{ $thisMonthEarning }}
@@ -253,7 +254,7 @@
                 </div>
                 <div class="card-wrap">
                   <div class="card-header">
-                    <h4>Bu yıl hakediş (ödendi)</h4>
+                    <h4>Bu yıl onaylanan hakediş</h4>
                   </div>
                   <div class="card-body">
                     {{ $setting->currency_icon }}{{ $thisYearEarning }}
@@ -270,12 +271,12 @@
                 </div>
                 <div class="card-wrap">
                   <div class="card-header">
-                    <h4>Toplam hakediş (ödendi)</h4>
+                    <h4>Toplam onaylanan hakediş</h4>
                   </div>
                   <div class="card-body">
                     {{ $setting->currency_icon }}{{ $totalEarning }}
                     <div class="small text-muted mt-1">Bekleyen: {{ $setting->currency_icon }}{{ $totalPendingEarning }}</div>
-                    <div class="small text-muted">Onay öncesi tutar kazanç sayılmaz. İade/iptal düşülür.</div>
+                    <div class="small text-muted">Onay = Iyzico’ya serbest bırakıldı. Bankaya yatış Iyzico takvimine göredir; “yatmış” demek değildir. İade/iptal düşülür.</div>
                   </div>
                 </div>
               </div>

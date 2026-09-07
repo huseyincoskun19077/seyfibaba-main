@@ -123,8 +123,10 @@ class SellerOrderFlowInfo {
       final at = '${order['payout_processed_at'] ?? ''}'.trim();
       return (
         'paid',
-        'Hakediş ödemesi yapıldı',
-        at.isEmpty ? 'Satıcı hesabınıza aktarım tamamlandı.' : 'Ödeme işlendi: $at',
+        'Hakediş onaylandı',
+        at.isEmpty
+            ? 'Paranız Iyzico hesabınıza yatırılacaktır; bankaya geçiş Iyzico takvimine göredir.'
+            : 'Onay: $at. Paranız Iyzico hesabınıza yatırılacaktır; bankaya geçiş Iyzico takvimine göredir.',
       );
     }
 
@@ -206,8 +208,9 @@ class SellerOrderFlowInfo {
       ),
       const _FlowStep(
         key: 'payout',
-        title: 'Hakediş ödemesi',
-        description: 'Tamamlanan siparişin ödemesi hesabınıza aktarılır.',
+        title: 'Hakediş onayı',
+        description:
+            'Onay sonrası paranız Iyzico hesabınıza yatırılacaktır.',
         state: _FlowStepState.upcoming,
       ),
     ];
@@ -560,7 +563,7 @@ String sellerStatusListLabel(int status) => switch (status) {
     };
 
 String sellerPayoutShortLabel(String payoutState) => switch (payoutState) {
-      'paid' => 'Ödendi',
+      'paid' => 'Onaylandı',
       'returned' => 'İade edildi',
       'cancelled' => 'İptal',
       'blocked' => 'Bekletiliyor',

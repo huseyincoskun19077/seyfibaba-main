@@ -66,7 +66,7 @@ class SellerNotificationItem {
             'kyc_status' => 'KYC durumu',
             'kyc_reminder' => 'KYC hatırlatma',
             'seller_withdraw_approved' => 'Para transferi',
-            'seller_payout_released' => 'Ödeme onaylandı',
+            'seller_payout_released' => 'Hakediş onaylandı',
             _ => 'Bildirim',
           };
     final initialQty = int.tryParse('${payload['initial_qty'] ?? ''}');

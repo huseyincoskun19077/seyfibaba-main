@@ -89,7 +89,7 @@ class _SellerDashboardTabState extends State<SellerDashboardTab> {
                     '${data.todayProductSale}',
                   ),
                   _StatItem(
-                    'Bugün ödenen hakediş',
+                    'Bugün onaylanan hakediş',
                     Utils.formatPrice(data.todayEarning, context),
                   ),
                   _StatItem(
@@ -98,7 +98,7 @@ class _SellerDashboardTabState extends State<SellerDashboardTab> {
                   ),
                   _StatItem('Bu ay sipariş', '${data.monthlyTotalOrder}'),
                   _StatItem(
-                    'Bu ay ödenen hakediş',
+                    'Bu ay onaylanan hakediş',
                     Utils.formatPrice(data.thisMonthEarning, context),
                   ),
                   _StatItem('Toplam sipariş', '${data.totalOrder}'),
@@ -106,7 +106,7 @@ class _SellerDashboardTabState extends State<SellerDashboardTab> {
                   _StatItem('Tamamlanan', '${data.totalCompleteOrder}'),
                   _StatItem('Ürün sayısı', '${data.totalProduct}'),
                   _StatItem(
-                    'Toplam ödenen hakediş',
+                    'Toplam onaylanan hakediş',
                     Utils.formatPrice(data.totalEarning, context),
                   ),
                   _StatItem(
@@ -123,7 +123,7 @@ class _SellerDashboardTabState extends State<SellerDashboardTab> {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Ödenen hakediş: İyzico/admin onayı sonrası. Bekleyen tutar henüz kazanç değildir. İade ve iptaller düşülür.',
+                'Onaylanan hakediş: Iyzico/admin onayından sonra. Bu tutar “bankaya yatmış” demek değildir; Iyzico hesabınıza yatırılacak / bankaya geçiş Iyzico takvimine göredir. Bekleyen tutar henüz onaylanmamıştır. İade ve iptaller düşülür.',
                 style: TextStyle(fontSize: 12, color: HomeTheme.textMuted),
               ),
             ],

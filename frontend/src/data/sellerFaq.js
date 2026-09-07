@@ -38,7 +38,7 @@ export const sellerFaqSections = [
     items: [
       {
         q: "Hangi kesintiler var?",
-        a: "Seyfibaba platform komisyonu sabit %10'dur. Ödeme Iyzico altyapısından işlenir; hakediş doğrulanmış IBAN'ınıza aktarılır. Kart işlemleri Iyzico kurallarına tabidir.",
+        a: "Seyfibaba platform komisyonu sabit %10'dur. Ödeme Iyzico altyapısından işlenir. Hakediş onayından sonra tutar Iyzico hesabınıza yatırılır; banka hesabına geçiş Iyzico takvimine göredir. Onay, paranın hemen IBAN'ınıza yatmış olduğu anlamına gelmez.",
       },
     ],
   },
