@@ -26,7 +26,7 @@ export default function Navbar({ className, isSecondHandSite = false }) {
 
   // Extract data from websiteSetup
   const categoryList = websiteSetup?.payload?.productCategories;
-  const megaMenuList = websiteSetup?.payload?.megaMenuCategories;
+  // megaMenuCategories artık kullanılmıyor; panel productCategories'ten geliyor.
   const megaMenuBanner = websiteSetup?.payload?.megaMenuBanner;
   const customPages = websiteSetup?.payload?.customPages;
 
@@ -259,28 +259,27 @@ export default function Navbar({ className, isSecondHandSite = false }) {
       >
         {/* Categories Section */}
         <div className="categories-wrapper flex-1 h-full flex justify-around -ml-[70px]">
-          {megaMenuList?.slice(0, 3).map((megaItem) => (
-            <div key={megaItem.id}>
+          {(categoryList || []).slice(0, 4).map((cat) => (
+            <div key={cat.id}>
               <div className="category">
                 <h2 className="text-[13px] font-700 text-qblack uppercase mb-[13px]">
-                  {megaItem.category.name}
+                  {cat.name}
                 </h2>
               </div>
               <div className="category-items">
                 <ul className="flex flex-col space-y-2">
-                  {megaItem.sub_categories.length > 0 &&
-                    megaItem.sub_categories.map((subItem) => (
+                  {(cat.active_sub_categories || []).slice(0, 12).map((subItem) => (
                       <li key={subItem.id}>
                         <Link
                           href={{
                             pathname: "/products",
                             query: {
-                              sub_category: subItem.sub_category?.slug,
+                              sub_category: subItem.slug,
                             },
                           }}
                         >
                           <span className="text-qgray text-sm font-400 border-b border-transparent hover:border-qyellow hover:text-qyellow cursor-pointer">
-                            {subItem.sub_category?.name}
+                            {subItem.name}
                           </span>
                         </Link>
                       </li>
