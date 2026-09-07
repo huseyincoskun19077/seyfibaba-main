@@ -5,7 +5,10 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\ReturnRequest;
+use App\Models\Vendor;
+use App\Notifications\SellerPayoutReleasedNotification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class SellerPayoutService
@@ -133,12 +136,20 @@ class SellerPayoutService
 
         $results = $this->approveIyzicoOrderItems($order);
         $allSuccess = collect($results)->every(fn (array $row) => ($row['status'] ?? '') === 'success');
+        $dryRun = $this->payoutSettings->iyzicoPayoutDryRun();
+        $wasRealApprove = collect($results)->contains(
+            fn (array $row) => ($row['status'] ?? '') === 'success' && empty($row['dry_run']) && empty($row['skipped'])
+        );
 
         if ($allSuccess) {
             $order->seller_paid_at = now();
             $order->payout_processed_at = now();
             $order->payout_status = 'completed';
             $order->save();
+
+            if (! $dryRun && $wasRealApprove) {
+                $this->notifySellersPayoutReleased($order);
+            }
 
             return [
                 'success' => true,
@@ -434,6 +445,38 @@ class SellerPayoutService
         $orderProduct->payout_status = 'paid';
         $orderProduct->payout_processed_at = now();
         $orderProduct->save();
+    }
+
+    protected function notifySellersPayoutReleased(Order $order): void
+    {
+        $sellerIds = $order->orderProducts
+            ->pluck('seller_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values();
+
+        foreach ($sellerIds as $sellerId) {
+            $cacheKey = "seller_payout_released:{$order->id}:{$sellerId}";
+            if (! Cache::add($cacheKey, 1, now()->addDays(7))) {
+                continue;
+            }
+
+            $vendor = Vendor::with('user')->find($sellerId);
+            if (! $vendor || ! $vendor->user) {
+                continue;
+            }
+
+            try {
+                $vendor->user->notify(new SellerPayoutReleasedNotification($order, $vendor));
+            } catch (\Throwable $e) {
+                Log::warning('Seller payout notification failed', [
+                    'order_id' => $order->id,
+                    'seller_id' => $sellerId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     /**

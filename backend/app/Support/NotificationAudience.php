@@ -11,6 +11,7 @@ class NotificationAudience
         'kyc_status',
         'kyc_reminder',
         'seller_withdraw_approved',
+        'seller_payout_released',
     ];
 
     /** Alıcı uygulaması bildirimleri (satış bildirimleri hariç) */

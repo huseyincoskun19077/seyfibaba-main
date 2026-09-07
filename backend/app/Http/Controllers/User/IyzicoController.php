@@ -804,7 +804,11 @@ class IyzicoController extends Controller
             }
             if ($subMerchantKey) {
                 $item['sub_merchant_key'] = $subMerchantKey;
-                $item['sub_merchant_price'] = $linePrice;
+                // Platform komisyonu düşülmüş net tutar alt üyeye; kalan marketplace'te kalır.
+                $vendorId = (int) ($product->vendor_id ?? 0);
+                $item['sub_merchant_price'] = $vendorId > 0
+                    ? $this->calculateSubMerchantPrice((float) $linePrice, $vendorId)
+                    : $linePrice;
             }
 
             $basketItems[] = $item;
@@ -854,7 +858,10 @@ class IyzicoController extends Controller
             }
             if ($subMerchantKey) {
                 $item['sub_merchant_key'] = $subMerchantKey;
-                $item['sub_merchant_price'] = $linePrice;
+                $vendorId = (int) ($product->vendor_id ?? 0);
+                $item['sub_merchant_price'] = $vendorId > 0
+                    ? $this->calculateSubMerchantPrice((float) $linePrice, $vendorId)
+                    : $linePrice;
             }
 
             $basketItems[] = $item;
