@@ -21,9 +21,8 @@ return [
     | Firebase Console → Project settings → Service accounts.
     |
     */
-    'credentials' => env(
-        'FIREBASE_CREDENTIALS',
-        storage_path('app/firebase/service-account.json')
-    ),
+    'credentials' => (($path = env('FIREBASE_CREDENTIALS')) && trim((string) $path) !== '')
+        ? $path
+        : storage_path('app/firebase/service-account.json'),
 
 ];
