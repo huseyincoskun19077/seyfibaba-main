@@ -64,8 +64,10 @@ class FcmPushService
         }
 
         $projectId = (string) config('firebase.project_id', 'seyfibabapp');
-        // FCM data must be a JSON object {}; empty PHP [] encodes as a list and returns 400.
-        $dataPayload = (object) $this->stringifyData($data);
+        $dataPayload = (object) $this->stringifyData(array_merge($data, [
+            'title' => $title,
+            'body' => $body,
+        ]));
         $payload = [
             'message' => [
                 'token' => $token,
@@ -79,6 +81,8 @@ class FcmPushService
                     'notification' => [
                         'channel_id' => 'seyfibaba_default',
                         'sound' => 'default',
+                        'default_sound' => true,
+                        'notification_priority' => 'PRIORITY_HIGH',
                     ],
                 ],
             ],

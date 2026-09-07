@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/push/push_notification_service.dart';
 import '../../../modules/authentication/controller/login/login_bloc.dart';
 import '../../../modules/home/widgets/home_theme.dart';
 import '../../../utils/language_string.dart';
@@ -38,7 +39,11 @@ class _SellerPanelScreenState extends State<SellerPanelScreen> {
   void initState() {
     super.initState();
     _index = widget.initialTab.clamp(0, 3);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _prepareSession());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      PushNotificationService.instance.registerDeviceToken(context);
+      _prepareSession();
+    });
   }
 
   Future<void> _prepareSession() async {
