@@ -30,6 +30,9 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
   final _receivedNoteCtrl = TextEditingController();
   String _payer = 'buyer';
   bool _formSeeded = false;
+  bool _busy = false;
+  /// Pending returns: show one form at a time (approve | reject).
+  String? _pendingMode;
 
   @override
   void initState() {
@@ -56,8 +59,36 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
 
   Future<void> _refresh() async {
     _formSeeded = false;
+    _pendingMode = null;
     setState(() => _future = _load());
     await _future;
+  }
+
+  String _cleanError(Object e) {
+    return e
+        .toString()
+        .replaceFirst('Exception: ', '')
+        .replaceFirst('Error: ', '')
+        .trim();
+  }
+
+  Future<bool> _ensureStillPending(SellerReturnRequest item) async {
+    try {
+      final fresh = await _service.fetchReturnRequest(_token, item.id);
+      if (!fresh.isPending) {
+        if (mounted) {
+          Utils.errorSnackBar(
+            context,
+            'Bu talep artık bekleyen durumda değil (${fresh.statusLabel}). Sayfa yenileniyor.',
+          );
+          await _refresh();
+        }
+        return false;
+      }
+      return true;
+    } catch (_) {
+      return item.isPending;
+    }
   }
 
   void _seedForm(SellerReturnRequest item) {
@@ -80,11 +111,14 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
   }
 
   Future<void> _approve(SellerReturnRequest item) async {
+    if (_busy) return;
     final address = _addressCtrl.text.trim();
     if (address.length < 10) {
       Utils.errorSnackBar(context, 'İade adresi en az 10 karakter olmalıdır');
       return;
     }
+    if (!await _ensureStillPending(item)) return;
+    setState(() => _busy = true);
     try {
       Utils.loadingDialog(context);
       final msg = await _service.approveReturnRequest(
@@ -104,16 +138,22 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       Utils.closeDialog(context);
-      Utils.errorSnackBar(context, '$e');
+      Utils.errorSnackBar(context, _cleanError(e));
+      await _refresh();
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _reject(SellerReturnRequest item) async {
+    if (_busy) return;
     final reason = _rejectCtrl.text.trim();
     if (reason.length < 5) {
       Utils.errorSnackBar(context, 'Red gerekçesi en az 5 karakter olmalıdır');
       return;
     }
+    if (!await _ensureStillPending(item)) return;
+    setState(() => _busy = true);
     try {
       Utils.loadingDialog(context);
       final msg = await _service.rejectReturnRequest(
@@ -128,11 +168,24 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       Utils.closeDialog(context);
-      Utils.errorSnackBar(context, '$e');
+      Utils.errorSnackBar(context, _cleanError(e));
+      await _refresh();
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _markReceived(SellerReturnRequest item) async {
+    if (_busy) return;
+    if (!item.canMarkReceived) {
+      Utils.errorSnackBar(
+        context,
+        'Bu talep için ürün teslim alındı işaretlenemez.',
+      );
+      await _refresh();
+      return;
+    }
+    setState(() => _busy = true);
     try {
       Utils.loadingDialog(context);
       final msg = await _service.markReturnReceived(
@@ -147,7 +200,10 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       Utils.closeDialog(context);
-      Utils.errorSnackBar(context, '$e');
+      Utils.errorSnackBar(context, _cleanError(e));
+      await _refresh();
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -501,125 +557,186 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
           ),
           const SizedBox(height: 12),
           if (item.isPending) ...[
-            const Text(
-              'Talebi Onayla',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _addressCtrl,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'İade adresi *',
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
+            if (_pendingMode == null) ...[
+              const Text(
+                'Bu talep için ne yapmak istiyorsunuz?',
+                style: TextStyle(fontSize: 13, color: HomeTheme.textMuted),
               ),
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              value: _payer,
-              decoration: const InputDecoration(
-                labelText: 'İade kargo ücretini kim karşılar? *',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(
-                  value: 'seller',
-                  child: Text('Satıcı karşılar'),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _busy
+                      ? null
+                      : () => setState(() => _pendingMode = 'approve'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: HomeTheme.brandYellow,
+                    foregroundColor: HomeTheme.textDark,
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  child: const Text('Onaylamak istiyorum'),
                 ),
-                DropdownMenuItem(
-                  value: 'buyer',
-                  child: Text('Alıcı karşılar'),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: _busy
+                      ? null
+                      : () => setState(() => _pendingMode = 'reject'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFB91C1C),
+                    side: const BorderSide(color: Color(0xFFFECACA)),
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  child: const Text('Reddetmek istiyorum'),
                 ),
-              ],
-              onChanged: (v) {
-                if (v != null) setState(() => _payer = v);
-              },
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _carrierCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Anlaşmalı kargo firması (opsiyonel)',
-                border: OutlineInputBorder(),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _codeCtrl,
-              decoration: const InputDecoration(
-                labelText: 'İade / anlaşmalı kod (opsiyonel)',
-                border: OutlineInputBorder(),
+            ] else if (_pendingMode == 'approve') ...[
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Talebi Onayla',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() => _pendingMode = null),
+                    child: const Text('Geri'),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _instructionsCtrl,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Kargo talimatı (opsiyonel)',
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _noteCtrl,
-              maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Onay notu (opsiyonel)',
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => _approve(item),
-                style: FilledButton.styleFrom(
-                  backgroundColor: HomeTheme.brandYellow,
-                  foregroundColor: HomeTheme.textDark,
-                  minimumSize: const Size.fromHeight(48),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _addressCtrl,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'İade adresi *',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
                 ),
-                child: const Text('Talebi Onayla'),
               ),
-            ),
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 8),
-            const Text(
-              'Talebi Reddet',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Reddederseniz yazdığınız gerekçe müşteriye gösterilir.',
-              style: TextStyle(fontSize: 12, color: HomeTheme.textMuted),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _rejectCtrl,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Red gerekçesi *',
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => _reject(item),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFB91C1C),
-                  side: const BorderSide(color: Color(0xFFFECACA)),
-                  minimumSize: const Size.fromHeight(48),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                value: _payer,
+                decoration: const InputDecoration(
+                  labelText: 'İade kargo ücretini kim karşılar? *',
+                  border: OutlineInputBorder(),
                 ),
-                child: const Text('Talebi Reddet'),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'seller',
+                    child: Text('Satıcı karşılar'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'buyer',
+                    child: Text('Alıcı karşılar'),
+                  ),
+                ],
+                onChanged: _busy
+                    ? null
+                    : (v) {
+                        if (v != null) setState(() => _payer = v);
+                      },
               ),
-            ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _carrierCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Anlaşmalı kargo firması (opsiyonel)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _codeCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'İade / anlaşmalı kod (opsiyonel)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _instructionsCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Kargo talimatı (opsiyonel)',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _noteCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Onay notu (opsiyonel)',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _busy ? null : () => _approve(item),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: HomeTheme.brandYellow,
+                    foregroundColor: HomeTheme.textDark,
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  child: const Text('Talebi Onayla'),
+                ),
+              ),
+            ] else ...[
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Talebi Reddet',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() => _pendingMode = null),
+                    child: const Text('Geri'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Reddederseniz yazdığınız gerekçe müşteriye gösterilir. Yalnızca bekleyen talepler reddedilebilir.',
+                style: TextStyle(fontSize: 12, color: HomeTheme.textMuted),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _rejectCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Red gerekçesi *',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: _busy ? null : () => _reject(item),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFB91C1C),
+                    side: const BorderSide(color: Color(0xFFFECACA)),
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  child: const Text('Talebi Reddet'),
+                ),
+              ),
+            ],
           ] else if (item.canMarkReceived) ...[
             Container(
               width: double.infinity,
@@ -649,7 +766,7 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: () => _markReceived(item),
+                onPressed: _busy ? null : () => _markReceived(item),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF059669),
                   foregroundColor: Colors.white,
