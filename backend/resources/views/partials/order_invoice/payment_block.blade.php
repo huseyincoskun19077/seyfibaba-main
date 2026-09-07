@@ -39,8 +39,14 @@
                         <div class="d-flex flex-wrap" style="gap:8px;">
                             <span class="badge badge-secondary">Sipariş: {{ $order->order_status == 3 ? 'Tamamlandı' : 'Bekliyor ('.$order->order_status.')' }}</span>
                             <span class="badge badge-info">Payout: {{ $order->payout_status ?? 'pending' }}</span>
+                            @if (($order->payout_status ?? '') === 'completed' || $order->seller_paid_at)
+                                <span class="badge badge-success">Iyzico onaylandı</span>
+                            @endif
                             @if ($order->payout_processed_at)
                                 <span class="badge badge-success">İşlendi: {{ \Carbon\Carbon::parse($order->payout_processed_at)->format('d.m.Y H:i') }}</span>
+                            @endif
+                            @if ($order->seller_paid_at)
+                                <span class="badge badge-success">Satıcı ödeme: {{ \Carbon\Carbon::parse($order->seller_paid_at)->format('d.m.Y H:i') }}</span>
                             @endif
                             @if ($order->payout_eligible_at)
                                 <span class="badge badge-light">Uygun tarih: {{ \Carbon\Carbon::parse($order->payout_eligible_at)->format('d.m.Y H:i') }}</span>

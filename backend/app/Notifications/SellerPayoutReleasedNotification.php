@@ -30,7 +30,7 @@ class SellerPayoutReleasedNotification extends Notification
             'order_id' => $this->order->id,
             'order_number' => $orderNumber,
             'seller_id' => $this->vendor->id,
-            'message' => "Hakedişiniz Iyzico tarafından yatırılacaktır (#{$orderNumber}).",
+            'message' => "Sipariş #{$orderNumber} ödemeniz onaylandı. Iyzico tarafında hesabınıza paranız yatırılacaktır.",
         ];
     }
 
@@ -39,8 +39,8 @@ class SellerPayoutReleasedNotification extends Notification
         $orderNumber = (string) ($this->order->order_id ?? $this->order->id);
 
         return [
-            'title' => 'Hakediş onayı',
-            'body' => "Sipariş #{$orderNumber} için hakedişiniz Iyzico tarafından yatırılacaktır.",
+            'title' => 'Ödeme onaylandı',
+            'body' => "Sipariş #{$orderNumber} ödemeniz onaylandı. Iyzico tarafında hesabınıza paranız yatırılacaktır.",
             'data' => [
                 'type' => 'seller_payout_released',
                 'order_id' => (string) $this->order->id,
