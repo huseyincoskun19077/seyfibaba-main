@@ -79,14 +79,19 @@ class Order extends Model
             || $discountType === 'bank_transfer'
             || ($discountAmount > 0 && str_contains($discountType, 'bank'));
 
-        // Havale indirimi yanlışlıkla coupon_coast'a yazılmışsa (coupon_id yok) kupon sayma.
-        if ($isBankPayment && $coupon > 0 && empty($this->coupon_id)) {
-            if ($discountAmount <= 0 || abs($coupon - $discountAmount) < 0.05) {
-                if ($discountAmount <= 0) {
-                    $discountAmount = $coupon;
-                }
-                $coupon = 0.0;
+        $settingsPercent = (float) (Setting::query()->value('bank_transfer_discount_percent') ?? 3);
+        if ($settingsPercent <= 0 || $settingsPercent > 15) {
+            $settingsPercent = 3.0;
+        }
+
+        // Havale tutarı coupon_coast'a yanlış yazılmışsa kupon uygulama.
+        if ($isBankPayment && $coupon > 0 && empty($this->coupon_id)
+            && ($discountAmount <= 0 || abs($coupon - $discountAmount) < 0.05)
+        ) {
+            if ($discountAmount <= 0) {
+                $discountAmount = $coupon;
             }
+            $coupon = 0.0;
         }
 
         $lineGross = round((float) $orderProduct->unit_price * $qty, 2);
@@ -95,52 +100,37 @@ class Order extends Model
             : 0.0;
         $productRefund = max(0, round($lineGross - $couponShare, 2));
         $includeShipping = $this->isCompletingOrderReturn($orderProduct, $qty, $excludeReturnId);
-        $refund = $includeShipping ? round($productRefund + $shipping, 2) : $productRefund;
+        $refundBeforeBank = $includeShipping ? round($productRefund + $shipping, 2) : $productRefund;
 
-        $paidProducts = max(0, round($subtotal - $coupon, 2));
         $bankDiscountShare = 0.0;
-        $settingsPercent = (float) (Setting::query()->value('bank_transfer_discount_percent') ?? 3);
-        if ($settingsPercent <= 0) {
-            $settingsPercent = 3.0;
-        }
-
-        $grossBeforeBank = $refund;
-        if ($isBankPayment && $refund > 0) {
-            $discountedBase = max(0.01, round($paidProducts + $shipping, 2));
-            $percentCapShare = round(($refund * $settingsPercent) / 100, 2);
-            $proportionalShare = 0.0;
-            if ($discountAmount > 0) {
-                $proportionalShare = round(($refund / $discountedBase) * $discountAmount, 2);
-            }
-
-            // Şişmiş discount_amount satırdan %3'ten fazla kesmesin.
-            $bankDiscountShare = $proportionalShare > 0
-                ? min($proportionalShare, $percentCapShare)
-                : $percentCapShare;
-
-            $refund = max(0, round($refund - $bankDiscountShare, 2));
+        $refund = $refundBeforeBank;
+        if ($isBankPayment && $refundBeforeBank > 0) {
+            // Her zaman satır üzerinden ayar %'si (varsayılan 3). Şişmiş discount_amount kullanma.
+            $bankDiscountShare = round(($refundBeforeBank * $settingsPercent) / 100, 2);
+            $refund = max(0, round($refundBeforeBank - $bankDiscountShare, 2));
         }
 
         $productAfterBank = $productRefund;
-        if ($bankDiscountShare > 0 && $grossBeforeBank > 0) {
-            $productAfterBank = max(0, round($productRefund - ($productRefund / $grossBeforeBank) * $bankDiscountShare, 2));
+        if ($bankDiscountShare > 0 && $refundBeforeBank > 0) {
+            $productAfterBank = max(0, round(
+                $productRefund - ($productRefund / $refundBeforeBank) * $bankDiscountShare,
+                2
+            ));
         }
 
+        // Sipariş tavanı: diğer iadeler düşülür; bozuk total_amount satırı %3 altına çekmesin.
+        $paidProducts = max(0, round($subtotal - $coupon, 2));
+        $orderBase = max(0.01, round($paidProducts + $shipping, 2));
+        $percentBasedTotal = round($orderBase * (1 - ($settingsPercent / 100)), 2);
         $maxOrderRefund = max(0, round((float) ($this->total_amount ?? 0), 2));
         if ($isBankPayment) {
-            $orderBase = max(0.01, round($paidProducts + $shipping, 2));
-            $impliedPercent = $discountAmount > 0 ? ($discountAmount / $orderBase) * 100 : 0.0;
-            $percentBasedTotal = round($orderBase * (1 - ($settingsPercent / 100)), 2);
-            // Checkout'ta hatalı/şişmiş indirim total_amount'u düşürdüyse iade tavanını %3'e göre düzelt.
-            if ($impliedPercent > ($settingsPercent + 0.51) || $maxOrderRefund <= 0) {
-                $maxOrderRefund = max($maxOrderRefund, $percentBasedTotal);
-            }
-            if ($maxOrderRefund <= 0) {
+            if ($maxOrderRefund <= 0 || ($coupon <= 0 && $maxOrderRefund + 0.05 < $percentBasedTotal)) {
                 $maxOrderRefund = $percentBasedTotal;
             }
         } elseif ($maxOrderRefund <= 0) {
-            $maxOrderRefund = max(0, round($paidProducts + ($includeShipping ? $shipping : 0), 2));
+            $maxOrderRefund = $paidProducts + ($includeShipping ? $shipping : 0);
         }
+
         $reserved = (float) ReturnRequest::query()
             ->where('order_id', $this->id)
             ->whereIn('status', [
@@ -153,17 +143,25 @@ class Order extends Model
             ->when($excludeReturnId, fn ($query) => $query->where('id', '!=', $excludeReturnId))
             ->sum('refund_amount');
         $remainingCap = max(0, round($maxOrderRefund - $reserved, 2));
-        $preCapRefund = $refund;
-        if ($refund > $remainingCap && $remainingCap > 0) {
-            // Cap yalnızca gerçekten daha düşük kalan bakiye varsa; şişmiş indirimi
-            // bank_discount gibi gösterme. Kalan sipariş bakiyesine say.
-            $refund = $remainingCap;
-            if ($preCapRefund > 0 && $productAfterBank > 0) {
-                $productAfterBank = max(0, round($productAfterBank * ($refund / $preCapRefund), 2));
+
+        if ($remainingCap > 0 && $refund > $remainingCap) {
+            // Kupon yokken adil satır (ürün-%3) altına çekme.
+            $fairLine = $isBankPayment && $couponShare <= 0
+                ? max(0, round($refundBeforeBank - round(($refundBeforeBank * $settingsPercent) / 100, 2), 2))
+                : $refund;
+            if ($isBankPayment && $couponShare <= 0 && $fairLine >= $remainingCap) {
+                $refund = $fairLine;
+            } else {
+                $preCap = $refund;
+                $refund = $remainingCap;
+                if ($preCap > 0 && $productAfterBank > 0) {
+                    $productAfterBank = max(0, round($productAfterBank * ($refund / $preCap), 2));
+                }
             }
-        } elseif ($remainingCap <= 0 && $maxOrderRefund <= 0) {
+        } elseif ($remainingCap <= 0 && $reserved > 0.009) {
             $refund = 0.0;
             $productAfterBank = 0.0;
+            $bankDiscountShare = 0.0;
         }
 
         return [

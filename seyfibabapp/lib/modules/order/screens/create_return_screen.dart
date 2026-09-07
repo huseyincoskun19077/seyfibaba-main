@@ -136,9 +136,16 @@ class _CreateReturnScreenState extends State<CreateReturnScreen> {
     final lineGross = widget.args.returnable.unitPrice * _qty;
     final couponPart = widget.args.returnable.couponShare * scale;
     final bankPart = widget.args.returnable.bankDiscountShare * scale;
-    final estimatedRefund = widget.args.returnable.suggestedRefund > 0
+    final estimatedFromParts = (lineGross - couponPart - bankPart) < 0
+        ? 0.0
+        : lineGross - couponPart - bankPart;
+    final estimatedFromApi = widget.args.returnable.suggestedRefund > 0
         ? widget.args.returnable.suggestedRefund * scale
         : paid * _qty;
+    final estimatedRefund = (bankPart > 0.009 &&
+            estimatedFromApi + 0.05 < estimatedFromParts)
+        ? estimatedFromParts
+        : estimatedFromApi;
 
     return Scaffold(
       backgroundColor: HomeTheme.bg,

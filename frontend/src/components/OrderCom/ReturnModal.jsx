@@ -45,13 +45,14 @@ export default function ReturnModal({
   const lineGross = Number(unitPrice || 0) * qty;
   const couponPart = Math.max(0, Number(couponShare || 0) * scale);
   const bankPart = Math.max(0, Number(bankDiscountShare || 0) * scale);
-  const estimated =
+  const fromParts = Math.max(0, lineGross - couponPart - bankPart);
+  const fromApi =
     Number(suggestedRefund || 0) > 0
       ? Number(suggestedRefund) * scale
-      : Math.max(
-          0,
-          Number(paidUnitPrice || unitPrice || 0) * qty
-        );
+      : Number(paidUnitPrice || unitPrice || 0) * qty;
+  // API tavanı bozulmuşsa (ör. 8860) ürün-%3 ile uyumlu tutarı göster.
+  const estimated =
+    bankPart > 0.009 && fromApi + 0.05 < fromParts ? fromParts : fromApi;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

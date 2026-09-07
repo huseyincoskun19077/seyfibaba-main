@@ -214,7 +214,8 @@ class ReturnRequestController extends Controller
         $orderProduct->order->loadMissing('orderProducts');
         $refundHint = $orderProduct->order->suggestedReturnRefund(
             $orderProduct,
-            (int) $request->qty
+            (int) $request->qty,
+            $pendingOwn?->id
         );
 
         if ($pendingOwn) {
