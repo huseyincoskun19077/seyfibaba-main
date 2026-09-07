@@ -90,6 +90,10 @@ class SellerPayoutService
     {
         $order = $order->fresh(['orderProducts']);
 
+        // Kısmi iade tamamlandıysa eski "Aktif iade" bloğunu kaldır.
+        $this->syncPayoutBlockFromReturns($order);
+        $order = $order->fresh(['orderProducts']);
+
         if ((int) $order->order_status !== 3) {
             return $this->failure('Sipariş tamamlanmış olmalıdır.');
         }
@@ -104,7 +108,13 @@ class SellerPayoutService
         }
 
         if ($order->payout_blocked_at) {
-            return $this->failure('Bu siparişin ödemesi bloklanmış.');
+            $reason = trim((string) ($order->payout_block_reason ?? ''));
+
+            return $this->failure(
+                $reason !== ''
+                    ? 'Bu siparişin ödemesi bloklanmış: '.$reason
+                    : 'Bu siparişin ödemesi bloklanmış.'
+            );
         }
 
         if (! $force && $order->payout_hold_until && now()->lt($order->payout_hold_until)) {
@@ -366,7 +376,8 @@ class SellerPayoutService
             return;
         }
 
-        if ($order->payout_block_reason === 'Aktif iade talebi') {
+        // Aktif iade yok + tam iade değil → iade kaynaklı bloğu kaldır (kısmi iade sonrası).
+        if ((string) $order->payout_block_reason === 'Aktif iade talebi') {
             $order->payout_blocked_at = null;
             $order->payout_block_reason = null;
             $order->save();
@@ -374,6 +385,10 @@ class SellerPayoutService
             OrderProduct::query()
                 ->where('order_id', $order->id)
                 ->where('payout_status', 'blocked')
+                ->where(function ($q) {
+                    $q->whereNull('payout_block_reason')
+                        ->orWhere('payout_block_reason', 'Aktif iade talebi');
+                })
                 ->update([
                     'payout_status' => 'pending',
                     'payout_block_reason' => null,
