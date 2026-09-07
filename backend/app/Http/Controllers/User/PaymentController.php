@@ -719,6 +719,12 @@ class PaymentController extends Controller
     public function sendOrderNotificationToSellers($order)
     {
         try {
+            if (strtolower((string) $order->payment_method) === 'bankpayment'
+                && (int) $order->payment_status !== 1
+            ) {
+                return;
+            }
+
             MailHelper::setMailConfig();
             $order->loadMissing(['orderProducts.product', 'user']);
             $sellerIds = $order->orderProducts->pluck('seller_id')->unique()->filter();

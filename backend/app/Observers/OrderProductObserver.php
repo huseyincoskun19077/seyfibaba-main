@@ -20,6 +20,12 @@ class OrderProductObserver
             return;
         }
 
+        if (strtolower((string) $order->payment_method) === 'bankpayment'
+            && (int) $order->payment_status !== 1
+        ) {
+            return;
+        }
+
         app(SellerPushNotifier::class)->notifyNewOrderForSeller(
             $order,
             (int) $orderProduct->seller_id

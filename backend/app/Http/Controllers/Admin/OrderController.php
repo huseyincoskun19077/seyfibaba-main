@@ -106,6 +106,15 @@ class OrderController extends Controller
         $order->save();
 
         // Stok sipariş oluşturulurken rezerve edildi; onayda tekrar düşülmez.
+        try {
+            app(\App\Http\Controllers\User\PaymentController::class)
+                ->sendOrderNotificationToSellers($order->fresh(['orderProducts.product', 'user']));
+        } catch (\Throwable $e) {
+            \Log::warning('Bank approve seller mail failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
         
         // Send email to customer
         try {
@@ -117,7 +126,7 @@ class OrderController extends Controller
             // Email gönderimi başarısız olursa sipariş yine de onaylansın
         }
         
-        return response()->json(['message' => 'Ödeme onaylandı ve müşteri bilgilendirildi'], 200);
+        return response()->json(['message' => 'Ödeme onaylandı; müşteri ve satıcı bilgilendirildi'], 200);
     }
 
     public function show($id){

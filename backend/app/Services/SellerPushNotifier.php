@@ -19,6 +19,13 @@ class SellerPushNotifier
             return;
         }
 
+        // Havale: admin ödeme onaylayana kadar satıcıya bildirim yok.
+        if (strtolower((string) $order->payment_method) === 'bankpayment'
+            && (int) $order->payment_status !== 1
+        ) {
+            return;
+        }
+
         $cacheKey = "seller_new_order_push:{$order->id}:{$sellerId}";
         if (! Cache::add($cacheKey, 1, now()->addDays(2))) {
             return;
