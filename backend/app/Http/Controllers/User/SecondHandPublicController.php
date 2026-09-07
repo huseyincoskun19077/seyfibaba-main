@@ -230,33 +230,57 @@ class SecondHandPublicController extends Controller
         }
 
         $path = trim((string) $img->file_path);
+        $path = ltrim(str_replace('\\', '/', $path), '/');
         if ($path === '') {
             abort(404);
         }
 
-        // 1) public/uploads/... (yeni kayıtlar)
-        if (str_starts_with($path, 'uploads/')) {
-            $absolute = public_path($path);
-            if (is_file($absolute)) {
+        $absoluteCandidates = [
+            // Yeni kayıtlar: public/uploads/second-hand/listings/...
+            public_path($path),
+            // storage:link → public/storage/...
+            public_path('storage/'.$path),
+            // Eski kayıtlar: storage/second_hand/listing_images/... (app/ altında değil)
+            storage_path($path),
+            // Laravel public disk kökü
+            storage_path('app/public/'.$path),
+            // Laravel local disk kökü
+            storage_path('app/'.$path),
+        ];
+
+        // Eski path bazen storage önekiyle kaydedilmiş olabilir
+        if (str_starts_with($path, 'storage/')) {
+            $absoluteCandidates[] = public_path($path);
+            $absoluteCandidates[] = storage_path('app/public/'.substr($path, strlen('storage/')));
+        }
+
+        foreach (array_unique($absoluteCandidates) as $absolute) {
+            if (is_string($absolute) && $absolute !== '' && is_file($absolute)) {
                 return response()->file($absolute);
             }
         }
 
-        // 2) public disk
-        if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->response($path);
+        // Disk facade (özel root / yetki senaryoları)
+        foreach (['public', 'local'] as $disk) {
+            try {
+                if (Storage::disk($disk)->exists($path)) {
+                    return Storage::disk($disk)->response($path);
+                }
+            } catch (Throwable $e) {
+                Log::warning('second-hand image disk check failed', [
+                    'disk' => $disk,
+                    'path' => $path,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
-        // 3) local disk (eski kayıtlar)
-        if (Storage::disk('local')->exists($path)) {
-            return Storage::disk('local')->response($path);
-        }
-
-        // 4) storage/app mutlak yol
-        $localAbsolute = storage_path('app/'.$path);
-        if (is_file($localAbsolute)) {
-            return response()->file($localAbsolute);
-        }
+        Log::warning('second-hand image file missing', [
+            'image_id' => (int) $img->id,
+            'listing_id' => (int) $img->listing_id,
+            'file_path' => $path,
+            'tried' => $absoluteCandidates,
+        ]);
 
         abort(404);
     }
