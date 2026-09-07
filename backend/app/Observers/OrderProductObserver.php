@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\OrderProduct;
 use App\Notifications\BuyerOrderStatusNotification;
 use App\Services\SellerPushNotifier;
+use Illuminate\Support\Facades\Cache;
 
 class OrderProductObserver
 {
@@ -45,6 +46,13 @@ class OrderProductObserver
         ];
 
         if (! isset($messages[$status])) {
+            return;
+        }
+
+        // Aynı satıcının birden fazla ürün satırı aynı anda güncellenince tek bildirim.
+        $sellerId = (int) ($orderProduct->seller_id ?? 0);
+        $cacheKey = "buyer_order_status_push:{$order->id}:{$sellerId}:{$status}";
+        if (! Cache::add($cacheKey, 1, now()->addHours(12))) {
             return;
         }
 

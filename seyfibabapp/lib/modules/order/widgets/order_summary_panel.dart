@@ -141,8 +141,13 @@ class OrderSummaryPanel extends StatelessWidget {
         if (address != null) ...[
           const SizedBox(height: 12),
           _SectionCard(
+            title: Language.billingAddress,
+            child: _AddressBlock(address: address, shipping: false),
+          ),
+          const SizedBox(height: 12),
+          _SectionCard(
             title: Language.shippingAddress,
-            child: _AddressBlock(address: address),
+            child: _AddressBlock(address: address, shipping: true),
           ),
         ],
       ],
@@ -261,31 +266,48 @@ class _SummaryRow extends StatelessWidget {
 }
 
 class _AddressBlock extends StatelessWidget {
-  const _AddressBlock({required this.address});
+  const _AddressBlock({
+    required this.address,
+    this.shipping = true,
+  });
 
   final OrderAddressModel address;
+  final bool shipping;
 
   @override
   Widget build(BuildContext context) {
+    final name = shipping ? address.shippingName : address.billingName;
+    final phone = shipping ? address.shippingPhone : address.billingPhone;
+    final line = shipping ? address.shippingAddress : address.billingAddress;
+    final city = shipping ? address.shippingCity : address.billingCity;
+    final state = shipping ? address.shippingState : address.billingState;
+    final country =
+        shipping ? address.shippingCountry : address.billingCountry;
+    final email = shipping ? address.shippingEmail : address.billingEmail;
+
     final lines = <String>[
-      if (address.shippingName.isNotEmpty) address.shippingName,
-      if (address.shippingPhone.isNotEmpty) address.shippingPhone,
-      if (address.shippingAddress.isNotEmpty) address.shippingAddress,
-      [
-        address.shippingCity,
-        address.shippingState,
-        address.shippingCountry,
-      ].where((e) => e.isNotEmpty).join(', '),
+      if (name.isNotEmpty) name,
+      if (phone.isNotEmpty) phone,
+      if (email.isNotEmpty) email,
+      if (line.isNotEmpty) line,
+      [city, state, country].where((e) => e.isNotEmpty).join(', '),
     ].where((e) => e.isNotEmpty).toList();
+
+    if (lines.isEmpty) {
+      return const Text(
+        'Adres bilgisi bulunamadı',
+        style: TextStyle(fontSize: 13, color: HomeTheme.textMuted),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: lines
           .map(
-            (line) => Padding(
+            (text) => Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
-                line,
+                text,
                 style: const TextStyle(
                   fontSize: 13,
                   height: 1.45,

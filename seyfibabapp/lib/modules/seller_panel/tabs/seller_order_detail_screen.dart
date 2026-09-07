@@ -203,46 +203,98 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
         oa['is_e_invoice'] == 1 ||
         '${oa['is_e_invoice']}' == '1';
 
-    if (type.isEmpty && tc.isEmpty && tax.isEmpty && company.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final lines = <String>[
+    final billingLines = <String>[
       if (type.isNotEmpty)
         'Tür: ${type == 'corporate' ? 'Kurumsal' : 'Bireysel'}',
       if (company.isNotEmpty) 'Firma: $company',
+      if ('${oa['billing_name'] ?? ''}'.trim().isNotEmpty)
+        '${oa['billing_name']}'.trim(),
+      if ('${oa['billing_phone'] ?? ''}'.trim().isNotEmpty)
+        '${oa['billing_phone']}'.trim(),
+      if ('${oa['billing_address'] ?? ''}'.trim().isNotEmpty)
+        '${oa['billing_address']}'.trim(),
+      [
+        '${oa['billing_city'] ?? ''}'.trim(),
+        '${oa['billing_state'] ?? ''}'.trim(),
+        '${oa['billing_country'] ?? ''}'.trim(),
+      ].where((e) => e.isNotEmpty).join(', '),
       if (tc.isNotEmpty) 'TC: $tc',
       if (tax.isNotEmpty) 'VKN/TCKN: $tax',
       if (office.isNotEmpty) 'Vergi Dairesi: $office',
       if (zip.isNotEmpty) 'Posta Kodu: $zip',
       if (isEInvoice) 'E-fatura mükellefi: Evet',
-    ];
+    ].where((e) => e.isNotEmpty).toList();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: HomeTheme.cardDecoration(),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Alıcı Fatura Bilgileri',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'E-fatura / e-arşiv keserken bu bilgileri kullanın.',
-            style: TextStyle(fontSize: 12, color: HomeTheme.textMuted),
-          ),
-          const SizedBox(height: 10),
-          ...lines.map(
-            (line) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(line),
+    final shippingLines = <String>[
+      if ('${oa['shipping_name'] ?? ''}'.trim().isNotEmpty)
+        '${oa['shipping_name']}'.trim(),
+      if ('${oa['shipping_phone'] ?? ''}'.trim().isNotEmpty)
+        '${oa['shipping_phone']}'.trim(),
+      if ('${oa['shipping_address'] ?? ''}'.trim().isNotEmpty)
+        '${oa['shipping_address']}'.trim(),
+      [
+        '${oa['shipping_city'] ?? ''}'.trim(),
+        '${oa['shipping_state'] ?? ''}'.trim(),
+        '${oa['shipping_country'] ?? ''}'.trim(),
+      ].where((e) => e.isNotEmpty).join(', '),
+    ].where((e) => e.isNotEmpty).toList();
+
+    if (billingLines.isEmpty && shippingLines.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      children: [
+        if (billingLines.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: HomeTheme.cardDecoration(),
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Alıcı Fatura Bilgileri',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'E-fatura / e-arşiv keserken bu bilgileri kullanın.',
+                  style: TextStyle(fontSize: 12, color: HomeTheme.textMuted),
+                ),
+                const SizedBox(height: 10),
+                ...billingLines.map(
+                  (line) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(line),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        if (shippingLines.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: HomeTheme.cardDecoration(),
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Teslimat Adresi',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                ),
+                const SizedBox(height: 10),
+                ...shippingLines.map(
+                  (line) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(line),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 

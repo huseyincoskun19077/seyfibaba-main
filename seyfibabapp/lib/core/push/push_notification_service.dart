@@ -50,15 +50,6 @@ class PushNotificationService {
 
     _navigatorKey = navigatorKey;
 
-    // Debug/emülatörde FCM ikinci isolate açıp VM bağlantısını koparıyor.
-    if (kDebugMode) {
-      _initialized = true;
-      debugPrint('Push notifications: debug modda atlandı');
-      return;
-    }
-
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
     const initSettings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/launcher_icon'),
     );
@@ -74,6 +65,15 @@ class PushNotificationService {
         ?.createNotificationChannel(_androidChannel);
 
     await _requestPermission();
+
+    // Debug'da background isolate hot-reload'ı bozabiliyor; foreground + token açık.
+    if (!kDebugMode) {
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    } else {
+      debugPrint(
+        'Push: debug modda background handler kapalı; foreground + token aktif',
+      );
+    }
 
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
@@ -99,7 +99,6 @@ class PushNotificationService {
   }
 
   Future<void> registerDeviceToken(BuildContext context) async {
-    if (kDebugMode) return;
     try {
       final loginBloc = context.read<LoginBloc>();
       if (!loginBloc.isLogedIn) {
@@ -120,6 +119,7 @@ class PushNotificationService {
             ),
           )
           .timeout(const Duration(seconds: 8));
+      debugPrint('FCM token registered');
     } catch (e) {
       debugPrint('registerDeviceToken ignored: $e');
     }
