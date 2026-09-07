@@ -939,8 +939,12 @@ class Utils {
 
   static Future<String?> pickSingleImage() async {
     final ImagePicker picker = ImagePicker();
-    // Pick an image
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    // imageQuality: iOS HEIC → JPEG dönüşümüne yardımcı olur
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
     if (image != null) {
       return image.path;
     }

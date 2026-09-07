@@ -231,7 +231,7 @@ class SecondHandListingController extends Controller
         $this->ensureSecondHandVerified((int) $user->id);
 
         $request->validate([
-            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:5120'],
         ]);
 
         $listing = SecondHandListing::query()
@@ -255,11 +255,13 @@ class SecondHandListingController extends Controller
         $file = $request->file('image');
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
         if (! in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            // Mobil HEIC vb. → jpeg olarak kaydet (içerik yine binary; uzantı uyumu için)
             $extension = 'jpg';
         }
 
-        $dirRel = 'uploads/second-hand/listings/'.$listing->id;
-        $dirAbs = public_path($dirRel);
+        // Eski çalışan dosyalarla aynı kök: storage/second_hand/listing_images/{id}
+        $dirRel = 'second_hand/listing_images/'.$listing->id;
+        $dirAbs = storage_path($dirRel);
         if (! File::isDirectory($dirAbs)) {
             File::makeDirectory($dirAbs, 0755, true);
         }
@@ -267,6 +269,12 @@ class SecondHandListingController extends Controller
         $filename = 'img-'.date('Ymd-His').'-'.Str::lower(Str::random(6)).'.'.$extension;
         $path = $dirRel.'/'.$filename;
         $file->move($dirAbs, $filename);
+
+        if (! is_file($dirAbs.'/'.$filename)) {
+            return response()->json([
+                'message' => 'Fotoğraf diske yazılamadı. Sunucu yazma iznini kontrol edin.',
+            ], 500);
+        }
 
         $maxSort = (int) SecondHandListingImage::query()
             ->where('listing_id', $listing->id)
@@ -307,16 +315,21 @@ class SecondHandListingController extends Controller
             ->firstOrFail();
 
         if ($img->file_path) {
-            $path = (string) $img->file_path;
-            if (str_starts_with($path, 'uploads/')) {
-                $absolute = public_path($path);
+            $path = ltrim(str_replace('\\', '/', (string) $img->file_path), '/');
+            $candidates = [
+                public_path($path),
+                public_path('storage/'.$path),
+                storage_path($path),
+                storage_path('app/public/'.$path),
+                storage_path('app/'.$path),
+            ];
+            foreach (array_unique($candidates) as $absolute) {
                 if (is_file($absolute)) {
                     @unlink($absolute);
                 }
-            } else {
-                Storage::disk('public')->delete($path);
-                Storage::disk('local')->delete($path);
             }
+            Storage::disk('public')->delete($path);
+            Storage::disk('local')->delete($path);
         }
 
         $img->delete();

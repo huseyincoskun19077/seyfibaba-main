@@ -137,6 +137,18 @@ class SecondHandService {
     return headers;
   }
 
+  /// Multipart için Content-Type set edilmez (boundary bozulmasın).
+  Map<String, String> _multipartHeaders({String? token}) {
+    final headers = {
+      'Accept': 'application/json',
+      'X-Client-Platform': 'mobile',
+    };
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
   static String listingImageUrl(int imageId) =>
       RemoteUrls.secondHandListingImage(imageId);
 
@@ -254,7 +266,7 @@ class SecondHandService {
   }) async {
     final uri = Uri.parse(RemoteUrls.secondHandUserVerification);
     final request = http.MultipartRequest('POST', uri);
-    request.headers.addAll(_jsonHeaders(token: token));
+    request.headers.addAll(_multipartHeaders(token: token));
     request.fields['business_name'] = businessName;
     request.fields['tax_number'] = taxNumber;
     if (barberRegistryNumber != null && barberRegistryNumber.trim().isNotEmpty) {
@@ -350,8 +362,12 @@ class SecondHandService {
     final uri =
         Uri.parse('${RemoteUrls.secondHandUserListings}/$listingId/images');
     final request = http.MultipartRequest('POST', uri);
-    request.headers.addAll(_jsonHeaders(token: token));
-    request.files.add(await http.MultipartFile.fromPath('image', filePath));
+    request.headers.addAll(_multipartHeaders(token: token));
+    final name = filePath.replaceAll('\\', '/').split('/').last;
+    final safeName = name.contains('.') ? name : 'upload.jpg';
+    request.files.add(
+      await http.MultipartFile.fromPath('image', filePath, filename: safeName),
+    );
 
     final streamed = await request.send();
     final response = await NetworkParser.callClientWithCatchException(
