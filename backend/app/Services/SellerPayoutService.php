@@ -147,9 +147,6 @@ class SellerPayoutService
         $results = $this->approveIyzicoOrderItems($order);
         $allSuccess = collect($results)->every(fn (array $row) => ($row['status'] ?? '') === 'success');
         $dryRun = $this->payoutSettings->iyzicoPayoutDryRun();
-        $wasRealApprove = collect($results)->contains(
-            fn (array $row) => ($row['status'] ?? '') === 'success' && empty($row['dry_run']) && empty($row['skipped'])
-        );
 
         if ($allSuccess) {
             $order->seller_paid_at = now();
@@ -157,8 +154,10 @@ class SellerPayoutService
             $order->payout_status = 'completed';
             $order->save();
 
-            if (! $dryRun && $wasRealApprove) {
-                $this->notifySellersPayoutReleased($order);
+            // İlk denemede kısmi hata + sonraki denemede hepsi skipped olsa da
+            // tamamlanan hakedişte satıcıya bir kez bildirim gitsin.
+            if (! $dryRun) {
+                $this->notifySellersPayoutReleased($order->fresh(['orderProducts']));
             }
 
             return [
@@ -521,10 +520,19 @@ class SellerPayoutService
 
     protected function notifySellersPayoutReleased(Order $order): void
     {
+        $order->loadMissing('orderProducts');
+
         $sellerIds = $order->orderProducts
+            ->filter(function ($op) {
+                if ((int) $op->seller_id <= 0) {
+                    return false;
+                }
+
+                return $op->iyzico_approved_at
+                    || ($op->payout_status ?? '') === 'paid';
+            })
             ->pluck('seller_id')
             ->map(fn ($id) => (int) $id)
-            ->filter(fn ($id) => $id > 0)
             ->unique()
             ->values();
 

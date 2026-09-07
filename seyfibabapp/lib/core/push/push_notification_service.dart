@@ -249,6 +249,7 @@ class PushNotificationService {
         );
         break;
       case 'seller_withdraw_approved':
+      case 'seller_payout_released':
         Navigator.of(context).pushNamed(RouteNames.sellerEarningsScreen);
         break;
       case 'stock_alert':

@@ -68,7 +68,8 @@ class _SellerNotificationsScreenState extends State<SellerNotificationsScreen> {
       await Navigator.pushNamed(context, RouteNames.sellerKycScreen);
     } else if (item.type == 'seller_new_order') {
       await Navigator.pushNamed(context, RouteNames.sellerPanelScreen);
-    } else if (item.type == 'seller_withdraw_approved') {
+    } else if (item.type == 'seller_withdraw_approved' ||
+        item.type == 'seller_payout_released') {
       await Navigator.pushNamed(context, RouteNames.sellerEarningsScreen);
     }
 
@@ -199,8 +200,10 @@ class _SellerNotificationsScreenState extends State<SellerNotificationsScreen> {
                                             ? Icons.shopping_bag_outlined
                                             : item.type == 'stock_alert'
                                                 ? Icons.inventory_2_outlined
-                                                : item.type ==
-                                                        'seller_withdraw_approved'
+                                                : (item.type ==
+                                                            'seller_withdraw_approved' ||
+                                                        item.type ==
+                                                            'seller_payout_released')
                                                     ? Icons
                                                         .account_balance_outlined
                                                     : Icons
