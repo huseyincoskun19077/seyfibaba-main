@@ -60,8 +60,11 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
   Future<void> _refresh() async {
     _formSeeded = false;
     _pendingMode = null;
-    setState(() => _future = _load());
-    await _future;
+    final next = _load();
+    setState(() {
+      _future = next;
+    });
+    await next;
   }
 
   String _cleanError(Object e) {

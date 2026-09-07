@@ -165,7 +165,7 @@ class ReturnRequestController extends Controller
         app(\App\Services\SellerPayoutService::class)->syncPayoutBlockFromReturns($return->order);
 
         return response()->json([
-            'message' => 'İade talebini reddettiniz. Müşteri red gerekçesini görecek.',
+            'message' => 'İade talebini reddettiniz. Talebiniz yöneticiye ve alıcıya iletildi.',
             'return' => $return->fresh(),
         ]);
     }
