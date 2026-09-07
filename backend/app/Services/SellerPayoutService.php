@@ -377,7 +377,7 @@ class SellerPayoutService
         }
 
         // Aktif iade yok + tam iade değil → iade kaynaklı bloğu kaldır (kısmi iade sonrası).
-        if ((string) $order->payout_block_reason === 'Aktif iade talebi') {
+        if ($this->isReturnDrivenPayoutBlockReason($order->payout_block_reason)) {
             $order->payout_blocked_at = null;
             $order->payout_block_reason = null;
             $order->save();
@@ -387,13 +387,24 @@ class SellerPayoutService
                 ->where('payout_status', 'blocked')
                 ->where(function ($q) {
                     $q->whereNull('payout_block_reason')
-                        ->orWhere('payout_block_reason', 'Aktif iade talebi');
+                        ->orWhere('payout_block_reason', 'Aktif iade talebi')
+                        ->orWhere('payout_block_reason', 'like', 'İade talebi #%');
                 })
                 ->update([
                     'payout_status' => 'pending',
                     'payout_block_reason' => null,
                 ]);
         }
+    }
+
+    protected function isReturnDrivenPayoutBlockReason(?string $reason): bool
+    {
+        $reason = trim((string) $reason);
+        if ($reason === '' || $reason === 'Aktif iade talebi') {
+            return $reason === 'Aktif iade talebi';
+        }
+
+        return str_starts_with($reason, 'İade talebi #');
     }
 
     public function hasActiveReturnBlock(Order $order): bool
