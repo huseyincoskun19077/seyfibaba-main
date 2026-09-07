@@ -304,14 +304,12 @@ class OrderController extends Controller
 
     public function destroy($id){
         $order = Order::find($id);
-        $order->delete();
-        $orderProducts = OrderProduct::where('order_id',$id)->get();
-        $orderAddress = OrderAddress::where('order_id',$id)->first();
-        foreach($orderProducts as $orderProduct){
-            OrderProductVariant::where('order_product_id',$orderProduct->id)->delete();
-            $orderProduct->delete();
+        if (! $order) {
+            $notification = array('messege' => 'Sipariş bulunamadı', 'alert-type' => 'error');
+            return redirect()->route('admin.all-order')->with($notification);
         }
-        OrderAddress::where('order_id',$id)->delete();
+
+        app(\App\Services\OrderPurgeService::class)->purgeOrder($order);
 
         $notification = trans('admin_validation.Delete successfully');
         $notification = array('messege'=>$notification,'alert-type'=>'success');

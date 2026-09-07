@@ -195,14 +195,11 @@ class OrderController extends Controller
 
     public function destroy($id){
         $order = Order::find($id);
-        $order->delete();
-        $orderProducts = OrderProduct::where('order_id',$id)->get();
-        $orderAddress = OrderAddress::where('order_id',$id)->first();
-        foreach($orderProducts as $orderProduct){
-            OrderProductVariant::where('order_product_id',$orderProduct->id)->delete();
-            $orderProduct->delete();
+        if (! $order) {
+            return response()->json(['notification' => 'Sipariş bulunamadı'], 404);
         }
-        OrderAddress::where('order_id',$id)->delete();
+
+        app(\App\Services\OrderPurgeService::class)->purgeOrder($order);
 
         $notification = trans('Delete successfully');
         return response()->json(['notification' => $notification], 200);
