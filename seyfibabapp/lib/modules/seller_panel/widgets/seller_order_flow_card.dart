@@ -272,10 +272,15 @@ class _FlowStep {
   final String description;
   final _FlowStepState state;
 
-  _FlowStep copyWith({_FlowStepState? state}) => _FlowStep(
+  _FlowStep copyWith({
+    String? title,
+    String? description,
+    _FlowStepState? state,
+  }) =>
+      _FlowStep(
         key: key,
-        title: title,
-        description: description,
+        title: title ?? this.title,
+        description: description ?? this.description,
         state: state ?? this.state,
       );
 }
