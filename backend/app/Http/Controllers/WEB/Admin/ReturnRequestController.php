@@ -206,10 +206,20 @@ class ReturnRequestController extends Controller
             $this->commissionService->recordReturn($return);
 
             if ($return->order) {
-                $return->order->refound_status = 1;
-                $return->order->payment_refound_date = now()->toDateTimeString();
-                $return->order->save();
-                app(\App\Services\SellerPayoutService::class)->syncPayoutBlockFromReturns($return->order);
+                $order = $return->order;
+                $orderDirty = false;
+                if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'refound_status')) {
+                    $order->refound_status = 1;
+                    $orderDirty = true;
+                }
+                if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'payment_refound_date')) {
+                    $order->payment_refound_date = now()->toDateTimeString();
+                    $orderDirty = true;
+                }
+                if ($orderDirty) {
+                    $order->save();
+                }
+                app(\App\Services\SellerPayoutService::class)->syncPayoutBlockFromReturns($order);
             }
 
             try {

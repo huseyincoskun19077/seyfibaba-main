@@ -211,11 +211,20 @@ class ReturnRequestController extends Controller
                 'refund_status' => $iyzicoRefundResult ? 'iyzico_refunded' : 'manual',
             ]);
 
-            // Update order refund status
+            // Update order refund status (kolonlar eski DB'lerde olmayabilir)
             if ($order) {
-                $order->refound_status = 1;
-                $order->payment_refound_date = now()->toDateTimeString();
-                $order->save();
+                $orderDirty = false;
+                if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'refound_status')) {
+                    $order->refound_status = 1;
+                    $orderDirty = true;
+                }
+                if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'payment_refound_date')) {
+                    $order->payment_refound_date = now()->toDateTimeString();
+                    $orderDirty = true;
+                }
+                if ($orderDirty) {
+                    $order->save();
+                }
             }
 
             $this->commissionService->recordReturn($return);
