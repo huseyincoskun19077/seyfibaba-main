@@ -3,17 +3,15 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Order;
-use App\Models\Setting;
 use App\Models\Product;
 use App\Models\ProductReport;
 use App\Models\ProductReview;
-use App\Models\OrderProduct;
 use App\Models\SellerWithdraw;
 use App\Services\CommissionService;
 use Carbon\Carbon;
 use Auth;
+
 class SellerDashboardController extends Controller
 {
     public function __construct()
@@ -21,151 +19,72 @@ class SellerDashboardController extends Controller
         $this->middleware('auth:api');
     }
 
-    public function index(){
+    public function index()
+    {
         $user = Auth::guard('api')->user();
         $seller = $user->seller;
         $sellerId = $seller->id;
         $commissionService = app(CommissionService::class);
 
-        $todayOrders = Order::with(['user', 'orderProducts'])
-            ->forSeller($sellerId)
-            ->paidRealized()
-            ->orderBy('id','desc')
-            ->whereDay('created_at', now()->day)
-            ->get();
-
-        $todayTotalOrder = $todayOrders->count();
-
-        $todayEarning = 0;
-        $todayProductSale = 0;
-        foreach ($todayOrders->where('order_status', 3) as $todayOrder) {
-            $orderProducts = $todayOrder->orderProducts->where('seller_id', $sellerId);
-            foreach ($orderProducts as $orderProduct) {
-                $price = $orderProduct->seller_net_amount > 0 ? $orderProduct->seller_net_amount : ($orderProduct->unit_price * $orderProduct->qty);
-                $todayEarning = $todayEarning + $price;
-                $todayProductSale = $todayProductSale + $orderProduct->qty;
-            }
-        }
-        $todayRefund = $commissionService->sellerRefundedStats(
+        $today = $commissionService->sellerPeriodStats(
             $sellerId,
             Carbon::now()->startOfDay(),
             Carbon::now()->endOfDay()
         );
-        $todayEarning += $todayRefund['net_adjustment'];
-        $todayProductSale = max(0, $todayProductSale - $todayRefund['qty']);
-
-        $todayPendingEarning = 0;
-
-        $totalOrders = Order::with(['user', 'orderProducts'])
-            ->forSeller($sellerId)
-            ->paidRealized()
-            ->orderBy('id','desc')
-            ->get();
-
-        $totalOrder = $totalOrders->count();
-        $totalPendingOrder = 0;
-        $totalDeclinedOrder = Order::forSeller($sellerId)->where('order_status', 4)->count();
-        $totalCompleteOrder = $totalOrders->where('order_status', 3)->count();
-
-        $totalEarning = 0;
-        $totalProductSale = 0;
-        foreach ($totalOrders->where('order_status', 3) as $totalOrderItem) {
-            $orderProducts = $totalOrderItem->orderProducts->where('seller_id', $sellerId);
-            foreach ($orderProducts as $orderProduct) {
-                $price = $orderProduct->seller_net_amount > 0 ? $orderProduct->seller_net_amount : ($orderProduct->unit_price * $orderProduct->qty);
-                $totalEarning = $totalEarning + $price;
-                $totalProductSale = $totalProductSale + $orderProduct->qty;
-            }
-        }
-        $totalRefund = $commissionService->sellerRefundedStats($sellerId);
-        $totalEarning += $totalRefund['net_adjustment'];
-        $totalProductSale = max(0, $totalProductSale - $totalRefund['qty']);
-
-        $monthlyOrders = Order::with(['user', 'orderProducts'])
-            ->forSeller($sellerId)
-            ->paidRealized()
-            ->orderBy('id','desc')
-            ->whereMonth('created_at', now()->month)
-            ->get();
-
-        $monthlyTotalOrder = $monthlyOrders->count();
-        $thisMonthEarning = 0;
-        $thisMonthProductSale = 0;
-        foreach ($monthlyOrders->where('order_status', 3) as $monthlyOrder) {
-            $orderProducts = $monthlyOrder->orderProducts->where('seller_id', $sellerId);
-            foreach ($orderProducts as $orderProduct) {
-                $price = $orderProduct->seller_net_amount > 0 ? $orderProduct->seller_net_amount : ($orderProduct->unit_price * $orderProduct->qty);
-                $thisMonthEarning = $thisMonthEarning + $price;
-                $thisMonthProductSale = $thisMonthProductSale + $orderProduct->qty;
-            }
-        }
-        $monthRefund = $commissionService->sellerRefundedStats(
+        $month = $commissionService->sellerPeriodStats(
             $sellerId,
             Carbon::now()->startOfMonth(),
             Carbon::now()->endOfMonth()
         );
-        $thisMonthEarning += $monthRefund['net_adjustment'];
-        $thisMonthProductSale = max(0, $thisMonthProductSale - $monthRefund['qty']);
-
-        $yearlyOrders = Order::with(['user', 'orderProducts'])
-            ->forSeller($sellerId)
-            ->paidRealized()
-            ->orderBy('id','desc')
-            ->whereYear('created_at', now()->year)
-            ->get();
-
-        $yearlyTotalOrder = $yearlyOrders->count();
-        $thisYearEarning = 0;
-        $thisYearProductSale = 0;
-        foreach ($yearlyOrders->where('order_status', 3) as $yearlyOrder) {
-            $orderProducts = $yearlyOrder->orderProducts->where('seller_id', $sellerId);
-            foreach ($orderProducts as $orderProduct) {
-                $price = $orderProduct->seller_net_amount > 0 ? $orderProduct->seller_net_amount : ($orderProduct->unit_price * $orderProduct->qty);
-                $thisYearEarning = $thisYearEarning + $price;
-                $thisYearProductSale = $thisYearProductSale + $orderProduct->qty;
-            }
-        }
-        $yearRefund = $commissionService->sellerRefundedStats(
+        $year = $commissionService->sellerPeriodStats(
             $sellerId,
             Carbon::now()->startOfYear(),
             Carbon::now()->endOfYear()
         );
-        $thisYearEarning += $yearRefund['net_adjustment'];
-        $thisYearProductSale = max(0, $thisYearProductSale - $yearRefund['qty']);
+        $all = $commissionService->sellerPeriodStats($sellerId);
 
-        $setting = Setting::first();
+        $todayOrders = Order::with(['user', 'orderProducts'])
+            ->forSeller($sellerId)
+            ->paidRealized()
+            ->orderBy('id', 'desc')
+            ->whereDay('created_at', now()->day)
+            ->get();
+
         $products = Product::where('vendor_id', $seller->id)->get();
-
         $reviews = ProductReview::where('product_vendor_id', $seller->id)->get();
         $reports = ProductReport::where('seller_id', $seller->id)->get();
 
-        $totalWithdraw = SellerWithdraw::where('seller_id',$seller->id)->where('status',1)->sum('withdraw_amount');
-        $totalPendingWithdraw = SellerWithdraw::where('seller_id',$seller->id)->where('status',0)->sum('withdraw_amount');
+        $totalWithdraw = SellerWithdraw::where('seller_id', $seller->id)->where('status', 1)->sum('withdraw_amount');
+        $totalPendingWithdraw = SellerWithdraw::where('seller_id', $seller->id)->where('status', 0)->sum('withdraw_amount');
 
         return response()->json([
-            'todayTotalOrder' => $todayTotalOrder,
+            'todayTotalOrder' => $today['order_count'],
             'todayOrders' => $todayOrders,
-            'todayEarning' => $todayEarning,
-            'todayPendingEarning' => $todayPendingEarning,
-            'todayProductSale' => $todayProductSale,
-            'monthlyTotalOrder' => $monthlyTotalOrder,
-            'thisMonthEarning' => $thisMonthEarning,
-            'thisMonthProductSale' => $thisMonthProductSale,
-            'yearlyTotalOrder' => $yearlyTotalOrder,
-            'thisYearEarning' => $thisYearEarning,
-            'thisYearProductSale' => $thisYearProductSale,
-            'totalOrder' => $totalOrder,
-            'totalPendingOrder' => $totalPendingOrder,
-            'totalDeclinedOrder' => $totalDeclinedOrder,
-            'totalCompleteOrder' => $totalCompleteOrder,
-            'totalEarning' => $totalEarning,
-            'totalProductSale' => $totalProductSale,
+            'todayEarning' => $today['earned'],
+            'todayPendingEarning' => $today['pending_earning'],
+            'todayProductSale' => $today['sold_qty'],
+            'monthlyTotalOrder' => $month['order_count'],
+            'thisMonthEarning' => $month['earned'],
+            'thisMonthPendingEarning' => $month['pending_earning'],
+            'thisMonthProductSale' => $month['sold_qty'],
+            'yearlyTotalOrder' => $year['order_count'],
+            'thisYearEarning' => $year['earned'],
+            'thisYearPendingEarning' => $year['pending_earning'],
+            'thisYearProductSale' => $year['sold_qty'],
+            'totalOrder' => $all['order_count'],
+            'totalPendingOrder' => 0,
+            'totalDeclinedOrder' => $all['cancelled_order_count'],
+            'totalCompleteOrder' => Order::forSeller($sellerId)->paidCompleted()->count(),
+            'totalEarning' => $all['earned'],
+            'totalPendingEarning' => $all['pending_earning'],
+            'totalProductSale' => $all['sold_qty'],
             'total_product' => $products->count(),
             'reviews' => $reviews->count(),
             'reports' => $reports->count(),
             'seller' => $seller,
             'totalWithdraw' => $totalWithdraw,
-            'totalPendingWithdraw' => $totalPendingWithdraw
+            'totalPendingWithdraw' => $totalPendingWithdraw,
+            'earning_note' => 'Kazanç yalnızca İyzico/admin onayı sonrası sayılır. Bekleyen tutar henüz kazanç değildir.',
         ]);
     }
 }

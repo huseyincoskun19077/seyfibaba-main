@@ -85,20 +85,33 @@ class _SellerDashboardTabState extends State<SellerDashboardTab> {
                 items: [
                   _StatItem('Bugün sipariş', '${data.todayTotalOrder}'),
                   _StatItem(
-                    'Bugün kazanç',
+                    'Bugün satış adedi',
+                    '${data.todayProductSale}',
+                  ),
+                  _StatItem(
+                    'Bugün ödenen hakediş',
                     Utils.formatPrice(data.todayEarning, context),
+                  ),
+                  _StatItem(
+                    'Bugün bekleyen',
+                    Utils.formatPrice(data.todayPendingEarning, context),
                   ),
                   _StatItem('Bu ay sipariş', '${data.monthlyTotalOrder}'),
                   _StatItem(
-                    'Bu ay kazanç',
+                    'Bu ay ödenen hakediş',
                     Utils.formatPrice(data.thisMonthEarning, context),
                   ),
                   _StatItem('Toplam sipariş', '${data.totalOrder}'),
+                  _StatItem('İptal sipariş', '${data.totalDeclinedOrder}'),
                   _StatItem('Tamamlanan', '${data.totalCompleteOrder}'),
                   _StatItem('Ürün sayısı', '${data.totalProduct}'),
                   _StatItem(
-                    'Toplam kazanç',
+                    'Toplam ödenen hakediş',
                     Utils.formatPrice(data.totalEarning, context),
+                  ),
+                  _StatItem(
+                    'Toplam bekleyen',
+                    Utils.formatPrice(data.totalPendingEarning, context),
                   ),
                   _StatItem(
                     'Çekilen',
@@ -107,6 +120,11 @@ class _SellerDashboardTabState extends State<SellerDashboardTab> {
                   _StatItem('Yorum', '${data.reviews}'),
                   _StatItem('Rapor', '${data.reports}'),
                 ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Ödenen hakediş: İyzico/admin onayı sonrası. Bekleyen tutar henüz kazanç değildir. İade ve iptaller düşülür.',
+                style: TextStyle(fontSize: 12, color: HomeTheme.textMuted),
               ),
             ],
           ),

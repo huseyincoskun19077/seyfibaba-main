@@ -167,25 +167,11 @@
                 </div>
                 <div class="card-wrap">
                   <div class="card-header">
-                    <h4>{{__('admin.Today Earning')}}</h4>
+                    <h4>Bugün hakediş (ödendi)</h4>
                   </div>
                   <div class="card-body">
-                      @php
-                        $todayEarning = 0;
-                        $todayProductSale = 0;
-                        foreach ($todayOrders as $key => $todayOrder) {
-                            if ((int) $todayOrder->order_status !== 3) continue;
-                            $orderProducts = $todayOrder->orderProducts->where('seller_id',$seller->id);
-                            foreach ($orderProducts as $key => $orderProduct) {
-                                $price = $orderProduct->seller_net_amount > 0 ? $orderProduct->seller_net_amount : ($orderProduct->unit_price * $orderProduct->qty);
-                                $todayEarning = $todayEarning + $price;
-                                $todayProductSale = $todayProductSale + $orderProduct->qty;
-                            }
-                        }
-                        $todayEarning += (float) ($refundAdjToday['net_adjustment'] ?? 0);
-                        $todayProductSale = max(0, $todayProductSale - (int) ($refundAdjToday['qty'] ?? 0));
-                      @endphp
                     {{ $setting->currency_icon }}{{ $todayEarning }}
+                    <div class="small text-muted mt-1">Bekleyen: {{ $setting->currency_icon }}{{ $todayPendingEarning }}</div>
                   </div>
                 </div>
               </div>
@@ -219,6 +205,7 @@
                   </div>
                   <div class="card-body">
                     {{ $setting->currency_icon }}{{ $weeklyEarning }}
+                    <div class="small text-muted mt-1">Bekleyen: {{ $setting->currency_icon }}{{ $weeklyPendingEarning }}</div>
                   </div>
                 </div>
               </div>
@@ -247,25 +234,11 @@
                 </div>
                 <div class="card-wrap">
                   <div class="card-header">
-                    <h4>{{__('admin.This month Earning')}}</h4>
+                    <h4>Bu ay hakediş (ödendi)</h4>
                   </div>
                   <div class="card-body">
-                    @php
-                        $thisMonthEarning = 0;
-                        $thisMonthProductSale = 0;
-                        foreach ($monthlyOrders as $key => $monthlyOrder) {
-                            if ((int) $monthlyOrder->order_status !== 3) continue;
-                            $orderProducts = $monthlyOrder->orderProducts->where('seller_id',$seller->id);
-                            foreach ($orderProducts as $key => $orderProduct) {
-                                $price = $orderProduct->seller_net_amount > 0 ? $orderProduct->seller_net_amount : ($orderProduct->unit_price * $orderProduct->qty);
-                                $thisMonthEarning = $thisMonthEarning + $price;
-                                $thisMonthProductSale = $thisMonthProductSale + $orderProduct->qty;
-                            }
-                        }
-                        $thisMonthEarning += (float) ($refundAdjMonth['net_adjustment'] ?? 0);
-                        $thisMonthProductSale = max(0, $thisMonthProductSale - (int) ($refundAdjMonth['qty'] ?? 0));
-                    @endphp
                     {{ $setting->currency_icon }}{{ $thisMonthEarning }}
+                    <div class="small text-muted mt-1">Bekleyen: {{ $setting->currency_icon }}{{ $thisMonthPendingEarning }}</div>
                   </div>
                 </div>
               </div>
@@ -280,25 +253,11 @@
                 </div>
                 <div class="card-wrap">
                   <div class="card-header">
-                    <h4>{{__('admin.This Year Earning')}}</h4>
+                    <h4>Bu yıl hakediş (ödendi)</h4>
                   </div>
                   <div class="card-body">
-                    @php
-                        $thisYearEarning = 0;
-                        $thisYearProductSale = 0;
-                        foreach ($yearlyOrders as $key => $yearlyOrder) {
-                            if ((int) $yearlyOrder->order_status !== 3) continue;
-                            $orderProducts = $yearlyOrder->orderProducts->where('seller_id',$seller->id);
-                            foreach ($orderProducts as $key => $orderProduct) {
-                                $price = $orderProduct->seller_net_amount > 0 ? $orderProduct->seller_net_amount : ($orderProduct->unit_price * $orderProduct->qty);
-                                $thisYearEarning = $thisYearEarning + $price;
-                                $thisYearProductSale = $thisYearProductSale + $orderProduct->qty;
-                            }
-                        }
-                        $thisYearEarning += (float) ($refundAdjYear['net_adjustment'] ?? 0);
-                        $thisYearProductSale = max(0, $thisYearProductSale - (int) ($refundAdjYear['qty'] ?? 0));
-                    @endphp
                     {{ $setting->currency_icon }}{{ $thisYearEarning }}
+                    <div class="small text-muted mt-1">Bekleyen: {{ $setting->currency_icon }}{{ $thisYearPendingEarning }}</div>
                   </div>
                 </div>
               </div>
@@ -311,25 +270,12 @@
                 </div>
                 <div class="card-wrap">
                   <div class="card-header">
-                    <h4>{{__('admin.Total Earning')}}</h4>
+                    <h4>Toplam hakediş (ödendi)</h4>
                   </div>
                   <div class="card-body">
-                    @php
-                        $totalEarning = 0;
-                        $totalProductSale = 0;
-                        foreach ($totalOrders as $key => $totalOrder) {
-                            if ((int) $totalOrder->order_status !== 3) continue;
-                            $orderProducts = $totalOrder->orderProducts->where('seller_id',$seller->id);
-                            foreach ($orderProducts as $key => $orderProduct) {
-                                $price = $orderProduct->seller_net_amount > 0 ? $orderProduct->seller_net_amount : ($orderProduct->unit_price * $orderProduct->qty);
-                                $totalEarning = $totalEarning + $price;
-                                $totalProductSale = $totalProductSale + $orderProduct->qty;
-                            }
-                        }
-                        $totalEarning += (float) ($refundAdjTotal['net_adjustment'] ?? 0);
-                        $totalProductSale = max(0, $totalProductSale - (int) ($refundAdjTotal['qty'] ?? 0));
-                    @endphp
                     {{ $setting->currency_icon }}{{ $totalEarning }}
+                    <div class="small text-muted mt-1">Bekleyen: {{ $setting->currency_icon }}{{ $totalPendingEarning }}</div>
+                    <div class="small text-muted">Onay öncesi tutar kazanç sayılmaz. İade/iptal düşülür.</div>
                   </div>
                 </div>
               </div>

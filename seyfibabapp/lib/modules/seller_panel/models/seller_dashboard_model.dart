@@ -6,12 +6,14 @@ class SellerDashboardModel {
     required this.todayProductSale,
     required this.monthlyTotalOrder,
     required this.thisMonthEarning,
+    required this.thisMonthPendingEarning,
     required this.thisMonthProductSale,
     required this.totalOrder,
     required this.totalPendingOrder,
     required this.totalCompleteOrder,
     required this.totalDeclinedOrder,
     required this.totalEarning,
+    required this.totalPendingEarning,
     required this.totalProductSale,
     required this.totalProduct,
     required this.reviews,
@@ -27,12 +29,14 @@ class SellerDashboardModel {
   final int todayProductSale;
   final int monthlyTotalOrder;
   final double thisMonthEarning;
+  final double thisMonthPendingEarning;
   final int thisMonthProductSale;
   final int totalOrder;
   final int totalPendingOrder;
   final int totalCompleteOrder;
   final int totalDeclinedOrder;
   final double totalEarning;
+  final double totalPendingEarning;
   final int totalProductSale;
   final int totalProduct;
   final int reviews;
@@ -54,12 +58,16 @@ class SellerDashboardModel {
       todayProductSale: _asInt(map['todayProductSale']),
       monthlyTotalOrder: _asInt(map['monthlyTotalOrder']),
       thisMonthEarning: _asDouble(map['thisMonthEarning']),
+      thisMonthPendingEarning: _asDouble(
+        map['thisMonthPendingEarning'] ?? map['todayPendingEarning'],
+      ),
       thisMonthProductSale: _asInt(map['thisMonthProductSale']),
       totalOrder: _asInt(map['totalOrder']),
       totalPendingOrder: _asInt(map['totalPendingOrder']),
       totalCompleteOrder: _asInt(map['totalCompleteOrder']),
       totalDeclinedOrder: _asInt(map['totalDeclinedOrder']),
       totalEarning: _asDouble(map['totalEarning']),
+      totalPendingEarning: _asDouble(map['totalPendingEarning']),
       totalProductSale: _asInt(map['totalProductSale']),
       totalProduct: _asInt(map['total_product']),
       reviews: _asInt(map['reviews']),

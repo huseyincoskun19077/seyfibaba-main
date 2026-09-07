@@ -318,6 +318,147 @@ class CommissionService
     }
 
     /**
+     * Satıcı dönem özeti: satış adedi/sipariş vs gerçekleşen kazanç (İyzico/admin onayı) vs bekleyen.
+     *
+     * @return array{
+     *   order_count: int,
+     *   sold_qty: int,
+     *   earned: float,
+     *   pending_earning: float,
+     *   refunded_qty: int,
+     *   cancelled_order_count: int
+     * }
+     */
+    public function sellerPeriodStats(int $sellerId, $from = null, $to = null): array
+    {
+        $orderBase = Order::query()
+            ->forSeller($sellerId)
+            ->where('payment_status', 1);
+
+        $activeOrders = (clone $orderBase)
+            ->whereIn('order_status', [1, 2, 3]);
+        if ($from) {
+            $activeOrders->where('created_at', '>=', $from);
+        }
+        if ($to) {
+            $activeOrders->where('created_at', '<=', $to);
+        }
+        $orderCount = (int) $activeOrders->count();
+
+        $cancelledOrders = (clone $orderBase)->where('order_status', 4);
+        if ($from) {
+            $cancelledOrders->where('created_at', '>=', $from);
+        }
+        if ($to) {
+            $cancelledOrders->where('created_at', '<=', $to);
+        }
+        $cancelledOrderCount = (int) $cancelledOrders->count();
+
+        $soldQtyQuery = OrderProduct::query()
+            ->where('seller_id', $sellerId)
+            ->where('seller_status', '!=', 4)
+            ->whereHas('order', function ($q) use ($from, $to) {
+                $q->where('payment_status', 1)
+                    ->whereIn('order_status', [1, 2, 3]);
+                if ($from) {
+                    $q->where('created_at', '>=', $from);
+                }
+                if ($to) {
+                    $q->where('created_at', '<=', $to);
+                }
+            });
+        $soldQty = (int) $soldQtyQuery->sum('qty');
+
+        $refundStats = $this->sellerRefundedStats($sellerId, $from, $to);
+        $soldQty = max(0, $soldQty - (int) $refundStats['qty']);
+
+        // Gerçekleşen kazanç: İyzico item approve veya havale payout paid
+        $earnedQuery = OrderProduct::query()
+            ->where('seller_id', $sellerId)
+            ->where(function ($q) use ($from, $to) {
+                $q->where(function ($iyz) use ($from, $to) {
+                    $iyz->whereNotNull('iyzico_approved_at');
+                    if ($from) {
+                        $iyz->where('iyzico_approved_at', '>=', $from);
+                    }
+                    if ($to) {
+                        $iyz->where('iyzico_approved_at', '<=', $to);
+                    }
+                })->orWhere(function ($bank) use ($from, $to) {
+                    $bank->where('payout_status', 'paid')
+                        ->whereHas('order', fn ($o) => $o->where('payment_method', 'bankpayment'));
+                    if ($from) {
+                        $bank->where(function ($inner) use ($from) {
+                            $inner->where('payout_processed_at', '>=', $from)
+                                ->orWhere(function ($fallback) use ($from) {
+                                    $fallback->whereNull('payout_processed_at')
+                                        ->where('updated_at', '>=', $from);
+                                });
+                        });
+                    }
+                    if ($to) {
+                        $bank->where(function ($inner) use ($to) {
+                            $inner->where('payout_processed_at', '<=', $to)
+                                ->orWhere(function ($fallback) use ($to) {
+                                    $fallback->whereNull('payout_processed_at')
+                                        ->where('updated_at', '<=', $to);
+                                });
+                        });
+                    }
+                });
+            });
+        $earned = (float) $earnedQuery->sum(\DB::raw(
+            'CASE WHEN seller_net_amount > 0 THEN seller_net_amount ELSE unit_price * qty END'
+        ));
+        $earned = max(0, round($earned + (float) $refundStats['net_adjustment'], 2));
+
+        // Bekleyen: tamamlanmış, onaylanmamış, iptal/iade değil
+        $pendingLines = OrderProduct::query()
+            ->with('order')
+            ->where('seller_id', $sellerId)
+            ->where('seller_status', '!=', 4)
+            ->whereNull('iyzico_approved_at')
+            ->where(function ($q) {
+                $q->whereNull('payout_status')
+                    ->orWhereNotIn('payout_status', ['paid', 'blocked']);
+            })
+            ->whereHas('order', function ($q) {
+                $q->where('payment_status', 1)
+                    ->where('order_status', 3)
+                    ->where(function ($inner) {
+                        $inner->whereNull('payout_status')
+                            ->orWhereNotIn('payout_status', ['cancelled', 'paid', 'completed']);
+                    })
+                    ->where(function ($inner) {
+                        $inner->whereNull('payout_block_reason')
+                            ->orWhere('payout_block_reason', '!=', SellerPayoutService::PAYOUT_BLOCK_FULL_RETURN);
+                    });
+            })
+            ->get();
+
+        $pending = 0.0;
+        foreach ($pendingLines as $line) {
+            $order = $line->order;
+            if ($order && $order->isFullyRefundedForSeller($sellerId)) {
+                continue;
+            }
+            $net = $line->seller_net_amount > 0
+                ? (float) $line->seller_net_amount
+                : (float) $line->unit_price * (int) $line->qty;
+            $pending += $net;
+        }
+
+        return [
+            'order_count' => $orderCount,
+            'sold_qty' => $soldQty,
+            'earned' => round(max(0, $earned), 2),
+            'pending_earning' => round(max(0, $pending), 2),
+            'refunded_qty' => (int) $refundStats['qty'],
+            'cancelled_order_count' => $cancelledOrderCount,
+        ];
+    }
+
+    /**
      * Record a return in the ledger (negative amounts).
      */
     public function recordReturn(\App\Models\ReturnRequest $returnRequest): CommissionLedger

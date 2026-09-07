@@ -91,6 +91,15 @@ class SellerPayoutService
             return $this->failure('Sipariş tamamlanmış olmalıdır.');
         }
 
+        if ($order->isFullyRefundedForSeller()
+            || ($order->payout_status ?? '') === 'cancelled'
+            || $order->payout_block_reason === self::PAYOUT_BLOCK_FULL_RETURN
+        ) {
+            $this->markFullyRefundedNoPayout($order);
+
+            return $this->failure('Ürünler iade edildi — hakediş yok.');
+        }
+
         if ($order->payout_blocked_at) {
             return $this->failure('Bu siparişin ödemesi bloklanmış.');
         }
@@ -290,27 +299,56 @@ class SellerPayoutService
         }
     }
 
+    public const PAYOUT_BLOCK_FULL_RETURN = 'Ürünler iade edildi — hakediş yok';
+
     public function blockPayoutForReturn(Order $order, ?string $reason = null): void
     {
-        if ($order->payout_blocked_at) {
+        $reason = $reason ?: 'Aktif iade talebi';
+        $alreadyFullReturn = $order->payout_block_reason === self::PAYOUT_BLOCK_FULL_RETURN;
+
+        if ($order->payout_blocked_at && $alreadyFullReturn && $reason !== self::PAYOUT_BLOCK_FULL_RETURN) {
+            return;
+        }
+
+        if ($order->payout_blocked_at && $reason === 'Aktif iade talebi' && ! $alreadyFullReturn) {
             return;
         }
 
         $order->payout_blocked_at = now();
-        $order->payout_block_reason = $reason ?: 'Aktif iade talebi';
+        $order->payout_block_reason = $reason;
+        if ($reason === self::PAYOUT_BLOCK_FULL_RETURN) {
+            $order->payout_status = 'cancelled';
+        }
         $order->save();
 
         OrderProduct::query()
             ->where('order_id', $order->id)
-            ->where('payout_status', 'pending')
+            ->whereIn('payout_status', ['pending', 'blocked'])
             ->update([
                 'payout_status' => 'blocked',
-                'payout_block_reason' => $reason ?: 'Aktif iade talebi',
+                'payout_block_reason' => $reason,
             ]);
+    }
+
+    public function markFullyRefundedNoPayout(Order $order): void
+    {
+        $this->blockPayoutForReturn($order, self::PAYOUT_BLOCK_FULL_RETURN);
     }
 
     public function syncPayoutBlockFromReturns(Order $order): void
     {
+        $order->loadMissing('orderProducts');
+
+        if ($order->isFullyRefundedForSeller()) {
+            $this->markFullyRefundedNoPayout($order);
+
+            return;
+        }
+
+        if ($order->payout_block_reason === self::PAYOUT_BLOCK_FULL_RETURN) {
+            return;
+        }
+
         if ($this->hasActiveReturnBlock($order)) {
             $this->blockPayoutForReturn($order, 'Aktif iade talebi');
 

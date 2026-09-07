@@ -31,6 +31,30 @@ class SellerOrderFlow
         $sellerStatus = self::sellerStatus($orderProducts);
         $method = strtolower((string) $order->payment_method);
         $payoutStatus = (string) ($order->payout_status ?? 'pending');
+        $blockReason = (string) ($order->payout_block_reason ?? '');
+        $sellerId = $orderProducts->first()?->seller_id;
+        $fullyReturned = $payoutStatus === 'cancelled'
+            || $blockReason === \App\Services\SellerPayoutService::PAYOUT_BLOCK_FULL_RETURN
+            || str_contains($blockReason, 'Ürünler iade edildi')
+            || $order->isFullyRefundedForSeller($sellerId ? (int) $sellerId : null);
+
+        if ($fullyReturned || ($sellerStatus === 4 && $order->isFullyRefundedForSeller($sellerId ? (int) $sellerId : null))) {
+            return [
+                'state' => 'returned',
+                'label' => 'Ürünler iade edildi',
+                'detail' => 'Bu siparişteki ürünler iade edildi. Hakediş ödemesi yapılmaz.',
+                'badge' => 'secondary',
+            ];
+        }
+
+        if ($sellerStatus === 4) {
+            return [
+                'state' => 'cancelled',
+                'label' => 'Sipariş iptal',
+                'detail' => 'Sipariş iptal edildi. Hakediş oluşmaz.',
+                'badge' => 'danger',
+            ];
+        }
 
         if ($sellerStatus < 3) {
             return [
@@ -45,7 +69,9 @@ class SellerOrderFlow
             return [
                 'state' => 'blocked',
                 'label' => 'Hakediş bekletiliyor',
-                'detail' => (string) ($order->payout_block_reason ?: 'Bu siparişin ödemesi geçici olarak durduruldu.'),
+                'detail' => $blockReason !== ''
+                    ? $blockReason
+                    : 'Bu siparişin ödemesi geçici olarak durduruldu.',
                 'badge' => 'danger',
             ];
         }
@@ -73,8 +99,8 @@ class SellerOrderFlow
         if ($method === 'bankpayment') {
             return [
                 'state' => 'pending',
-                'label' => 'Hakediş çekilebilir değil',
-                'detail' => 'Havale siparişlerinde tutar çekim talebi ile ödenir. Bekleme süresi dolunca çekim yapabilirsiniz.',
+                'label' => 'Hakediş bekleniyor',
+                'detail' => 'Havale siparişlerinde tutar, admin onayı ve bekleme süresi sonrası çekim talebi ile ödenir. Henüz kazanç sayılmaz.',
                 'badge' => 'warning',
             ];
         }
@@ -85,10 +111,10 @@ class SellerOrderFlow
 
         return [
             'state' => 'pending',
-            'label' => 'Hakediş ödemesi bekleniyor',
+            'label' => 'Hakediş bekleniyor',
             'detail' => $eligible
-                ? "Tahmini aktarım: {$eligible} (bekleme süresi sonrası otomatik işlenir)."
-                : 'Sipariş tamamlandı. Ödeme bekleme süresi sonunda hesabınıza aktarılır.',
+                ? "Tahmini aktarım: {$eligible}. İyzico onayı olmadan kazanç sayılmaz."
+                : 'Sipariş tamamlandı. İyzico/admin onayı sonrası hesabınıza aktarılır; onay öncesi kazanç değildir.',
             'badge' => 'info',
         ];
     }
@@ -119,6 +145,15 @@ class SellerOrderFlow
 
         return array_map(function (array $step, int $index) use ($progressIndex, $sellerStatus, $payoutState) {
             if ($step['key'] === 'payout') {
+                if ($payoutState === 'returned' || $payoutState === 'cancelled') {
+                    return array_merge($step, [
+                        'state' => 'cancelled',
+                        'title' => $payoutState === 'returned' ? 'Ürünler iade edildi' : 'Sipariş iptal',
+                        'description' => $payoutState === 'returned'
+                            ? 'İade tamamlandı, hakediş yok.'
+                            : 'Sipariş iptal, hakediş yok.',
+                    ]);
+                }
                 if ($sellerStatus < 3) {
                     return array_merge($step, ['state' => 'upcoming']);
                 }

@@ -149,8 +149,15 @@ class SellerOrderModel {
   }
 
   static (String, String) _payoutFromOrder(Map<String, dynamic> order, int sellerStatus) {
-    if (sellerStatus < 3) return ('waiting', 'Bekliyor');
     final payoutStatus = '${order['payout_status'] ?? 'pending'}';
+    final blockReason = '${order['payout_block_reason'] ?? ''}';
+    if (payoutStatus == 'cancelled' ||
+        blockReason.contains('Ürünler iade edildi') ||
+        blockReason.contains('hakediş yok')) {
+      return ('returned', 'İade edildi');
+    }
+    if (sellerStatus == 4) return ('cancelled', 'İptal');
+    if (sellerStatus < 3) return ('waiting', 'Bekliyor');
     final paid = '${order['payout_processed_at'] ?? ''}'.trim().isNotEmpty ||
         payoutStatus == 'completed' ||
         payoutStatus == 'paid';

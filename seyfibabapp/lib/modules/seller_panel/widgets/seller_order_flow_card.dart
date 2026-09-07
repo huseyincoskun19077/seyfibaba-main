@@ -70,6 +70,28 @@ class SellerOrderFlowInfo {
     List<Map<String, dynamic>> products,
     int sellerStatus,
   ) {
+    final payoutStatus = '${order['payout_status'] ?? 'pending'}';
+    final blockReason = '${order['payout_block_reason'] ?? ''}'.trim();
+    final fullyReturned = payoutStatus == 'cancelled' ||
+        blockReason.contains('Ürünler iade edildi') ||
+        blockReason.contains('hakediş yok');
+
+    if (fullyReturned) {
+      return (
+        'returned',
+        'Ürünler iade edildi',
+        'Bu siparişteki ürünler iade edildi. Hakediş ödemesi yapılmaz.',
+      );
+    }
+
+    if (sellerStatus == 4) {
+      return (
+        'cancelled',
+        'Sipariş iptal',
+        'Sipariş iptal edildi. Hakediş oluşmaz.',
+      );
+    }
+
     if (sellerStatus < 3) {
       return (
         'waiting',
@@ -79,17 +101,15 @@ class SellerOrderFlowInfo {
     }
 
     if ('${order['payout_blocked_at'] ?? ''}'.trim().isNotEmpty) {
-      final reason = '${order['payout_block_reason'] ?? ''}'.trim();
       return (
         'blocked',
         'Hakediş bekletiliyor',
-        reason.isEmpty
+        blockReason.isEmpty
             ? 'Bu siparişin ödemesi geçici olarak durduruldu.'
-            : reason,
+            : blockReason,
       );
     }
 
-    final payoutStatus = '${order['payout_status'] ?? 'pending'}';
     final paid = '${order['payout_processed_at'] ?? ''}'.trim().isNotEmpty ||
         payoutStatus == 'completed' ||
         payoutStatus == 'paid' ||
@@ -112,18 +132,18 @@ class SellerOrderFlowInfo {
     if (method == 'bankpayment') {
       return (
         'pending',
-        'Hakediş çekilebilir değil',
-        'Havale siparişlerinde tutar çekim talebi ile ödenir.',
+        'Hakediş bekleniyor',
+        'Admin onayı öncesi kazanç sayılmaz. Çekim talebi ile ödenir.',
       );
     }
 
     final eligible = '${order['payout_eligible_at'] ?? ''}'.trim();
     return (
       'pending',
-      'Hakediş ödemesi bekleniyor',
+      'Hakediş bekleniyor',
       eligible.isEmpty
-          ? 'Bekleme süresi sonunda hesabınıza otomatik aktarılır.'
-          : 'Tahmini aktarım: $eligible',
+          ? 'İyzico onayı olmadan kazanç sayılmaz.'
+          : 'Tahmini aktarım: $eligible. Onay öncesi kazanç değildir.',
     );
   }
 
@@ -203,6 +223,17 @@ class SellerOrderFlowInfo {
     return List.generate(defs.length, (index) {
       final step = defs[index];
       if (step.key == 'payout') {
+        if (payoutState == 'returned' || payoutState == 'cancelled') {
+          return step.copyWith(
+            title: payoutState == 'returned'
+                ? 'Ürünler iade edildi'
+                : 'Sipariş iptal',
+            description: payoutState == 'returned'
+                ? 'İade tamamlandı, hakediş yok.'
+                : 'Sipariş iptal, hakediş yok.',
+            state: _FlowStepState.cancelled,
+          );
+        }
         if (sellerStatus < 3) {
           return step.copyWith(state: _FlowStepState.upcoming);
         }
@@ -525,6 +556,8 @@ String sellerStatusListLabel(int status) => switch (status) {
 
 String sellerPayoutShortLabel(String payoutState) => switch (payoutState) {
       'paid' => 'Ödendi',
+      'returned' => 'İade edildi',
+      'cancelled' => 'İptal',
       'blocked' => 'Bekletiliyor',
       'waiting' => 'Bekliyor',
       _ => 'Beklemede',

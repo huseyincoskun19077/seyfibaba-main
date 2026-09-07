@@ -210,6 +210,37 @@ class Order extends Model
         return $remaining <= 0;
     }
 
+    /**
+     * Satıcının bu siparişteki tüm satır adedi tamamlanmış iade (STATUS_REFUNDED) ile kapanmış mı?
+     */
+    public function isFullyRefundedForSeller(?int $sellerId = null): bool
+    {
+        $this->loadMissing('orderProducts');
+        $lines = $this->orderProducts;
+        if ($sellerId !== null) {
+            $lines = $lines->where('seller_id', $sellerId);
+        }
+        if ($lines->isEmpty()) {
+            return false;
+        }
+
+        $taken = ReturnRequest::query()
+            ->where('order_id', $this->id)
+            ->where('status', ReturnRequest::STATUS_REFUNDED)
+            ->when($sellerId !== null, fn ($q) => $q->where('seller_id', $sellerId))
+            ->selectRaw('order_product_id, SUM(qty) as taken')
+            ->groupBy('order_product_id')
+            ->pluck('taken', 'order_product_id');
+
+        foreach ($lines as $line) {
+            if ((int) ($taken[$line->id] ?? 0) < (int) $line->qty) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function scopeForSeller($query, int $sellerId)
     {
         return $query->whereHas('orderProducts', function ($q) use ($sellerId) {

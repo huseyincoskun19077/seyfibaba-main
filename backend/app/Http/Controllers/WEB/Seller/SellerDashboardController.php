@@ -45,6 +45,28 @@ class SellerDashboardController extends Controller
         $sellerId = $seller->id;
         $commissionService = app(CommissionService::class);
 
+        $statsToday = $commissionService->sellerPeriodStats(
+            $sellerId,
+            Carbon::now()->startOfDay(),
+            Carbon::now()->endOfDay()
+        );
+        $statsWeek = $commissionService->sellerPeriodStats(
+            $sellerId,
+            Carbon::now()->startOfWeek(),
+            Carbon::now()->endOfWeek()
+        );
+        $statsMonth = $commissionService->sellerPeriodStats(
+            $sellerId,
+            Carbon::now()->startOfMonth(),
+            Carbon::now()->endOfMonth()
+        );
+        $statsYear = $commissionService->sellerPeriodStats(
+            $sellerId,
+            Carbon::now()->startOfYear(),
+            Carbon::now()->endOfYear()
+        );
+        $statsTotal = $commissionService->sellerPeriodStats($sellerId);
+
         $todayOrders = Order::with(['user', 'orderProducts'])
             ->forSeller($sellerId)
             ->paidRealized()
@@ -65,23 +87,9 @@ class SellerDashboardController extends Controller
             ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
             ->get();
 
-        $weeklyEarning = 0;
-        $weeklyProductSale = 0;
-        foreach ($weeklyOrders->where('order_status', 3) as $weeklyOrder) {
-            $orderProducts = $weeklyOrder->orderProducts->where('seller_id', $sellerId);
-            foreach ($orderProducts as $orderProduct) {
-                $price = $orderProduct->seller_net_amount > 0 ? $orderProduct->seller_net_amount : ($orderProduct->unit_price * $orderProduct->qty);
-                $weeklyEarning += $price;
-                $weeklyProductSale += $orderProduct->qty;
-            }
-        }
-        $weekRefund = $commissionService->sellerRefundedStats(
-            $sellerId,
-            Carbon::now()->startOfWeek(),
-            Carbon::now()->endOfWeek()
-        );
-        $weeklyEarning += $weekRefund['net_adjustment'];
-        $weeklyProductSale = max(0, $weeklyProductSale - $weekRefund['qty']);
+        $weeklyEarning = $statsWeek['earned'];
+        $weeklyPendingEarning = $statsWeek['pending_earning'];
+        $weeklyProductSale = $statsWeek['sold_qty'];
 
         $monthlyOrders = Order::with(['user', 'orderProducts'])
             ->forSeller($sellerId)
@@ -136,33 +144,33 @@ class SellerDashboardController extends Controller
 
         $totalWithdraw = SellerWithdraw::where('seller_id',$seller->id)->where('status',1)->sum('withdraw_amount');
         $totalPendingWithdraw = SellerWithdraw::where('seller_id',$seller->id)->where('status',0)->sum('withdraw_amount');
-        $totalDeclinedOrder = Order::forSeller($sellerId)->where('order_status', 4)->count();
+        $totalDeclinedOrder = $statsTotal['cancelled_order_count'];
 
-        $refundAdjToday = $commissionService->sellerRefundedStats(
-            $sellerId,
-            Carbon::now()->startOfDay(),
-            Carbon::now()->endOfDay()
-        );
-        $refundAdjMonth = $commissionService->sellerRefundedStats(
-            $sellerId,
-            Carbon::now()->startOfMonth(),
-            Carbon::now()->endOfMonth()
-        );
-        $refundAdjYear = $commissionService->sellerRefundedStats(
-            $sellerId,
-            Carbon::now()->startOfYear(),
-            Carbon::now()->endOfYear()
-        );
-        $refundAdjTotal = $commissionService->sellerRefundedStats($sellerId);
+        $todayEarning = $statsToday['earned'];
+        $todayPendingEarning = $statsToday['pending_earning'];
+        $todayProductSale = $statsToday['sold_qty'];
+        $thisMonthEarning = $statsMonth['earned'];
+        $thisMonthPendingEarning = $statsMonth['pending_earning'];
+        $thisMonthProductSale = $statsMonth['sold_qty'];
+        $thisYearEarning = $statsYear['earned'];
+        $thisYearPendingEarning = $statsYear['pending_earning'];
+        $thisYearProductSale = $statsYear['sold_qty'];
+        $totalEarning = $statsTotal['earned'];
+        $totalPendingEarning = $statsTotal['pending_earning'];
+        $totalProductSale = $statsTotal['sold_qty'];
 
         return view('seller.dashboard', compact(
             'todayOrders', 'totalOrders', 'setting',
             'monthlyOrders', 'yearlyOrders',
-            'weeklyOrders', 'weeklyEarning', 'weeklyProductSale',
+            'weeklyOrders', 'weeklyEarning', 'weeklyPendingEarning', 'weeklyProductSale',
             'products', 'publishedProductCount', 'draftProductCount', 'stockoutProductCount',
             'topProducts', 'reviews', 'seller',
             'totalWithdraw', 'totalPendingWithdraw', 'totalDeclinedOrder',
-            'refundAdjToday', 'refundAdjMonth', 'refundAdjYear', 'refundAdjTotal'
+            'todayEarning', 'todayPendingEarning', 'todayProductSale',
+            'thisMonthEarning', 'thisMonthPendingEarning', 'thisMonthProductSale',
+            'thisYearEarning', 'thisYearPendingEarning', 'thisYearProductSale',
+            'totalEarning', 'totalPendingEarning', 'totalProductSale',
+            'statsToday', 'statsWeek', 'statsMonth', 'statsYear', 'statsTotal'
         ));
     }
 }
