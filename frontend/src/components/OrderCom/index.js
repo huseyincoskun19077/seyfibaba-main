@@ -331,6 +331,10 @@ function OrderComContent({ resData, orderStatus, orderId }) {
           maxQty={returnableItems[orderProductId]?.max_returnable_qty}
           paidUnitPrice={returnableItems[orderProductId]?.paid_unit_price}
           unitPrice={returnableItems[orderProductId]?.unit_price}
+          suggestedRefund={returnableItems[orderProductId]?.suggested_refund}
+          couponShare={returnableItems[orderProductId]?.coupon_share}
+          bankDiscountShare={returnableItems[orderProductId]?.bank_discount_share}
+          isBankPayment={returnableItems[orderProductId]?.is_bank_payment}
           setReturnModal={setReturnModal}
           onSuccess={handleReturnSuccess}
         />

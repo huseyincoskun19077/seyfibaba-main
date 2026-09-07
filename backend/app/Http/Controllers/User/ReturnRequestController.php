@@ -448,6 +448,8 @@ class ReturnRequestController extends Controller
             'paid_unit_price' => $refundHint['paid_unit_price'],
             'suggested_refund' => $refundHint['refund_amount'],
             'coupon_share' => $refundHint['coupon_share'],
+            'bank_discount_share' => $refundHint['bank_discount_share'],
+            'is_bank_payment' => (bool) ($refundHint['is_bank_payment'] ?? false),
             'is_returnable' => $isReturnable,
             'existing_return_request_id' => $activeRequest?->id ?? $latestReturn?->id,
             'message' => $isReturnable

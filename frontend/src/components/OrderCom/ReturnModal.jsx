@@ -12,6 +12,10 @@ export default function ReturnModal({
   maxQty,
   paidUnitPrice,
   unitPrice,
+  suggestedRefund,
+  couponShare = 0,
+  bankDiscountShare = 0,
+  isBankPayment = false,
   setReturnModal,
   onSuccess,
 }) {
@@ -34,6 +38,20 @@ export default function ReturnModal({
   });
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const hintQty = Math.max(1, Number(maxQty) || 1);
+  const qty = Math.max(1, Number(formData.qty) || 1);
+  const scale = qty / hintQty;
+  const lineGross = Number(unitPrice || 0) * qty;
+  const couponPart = Math.max(0, Number(couponShare || 0) * scale);
+  const bankPart = Math.max(0, Number(bankDiscountShare || 0) * scale);
+  const estimated =
+    Number(suggestedRefund || 0) > 0
+      ? Number(suggestedRefund) * scale
+      : Math.max(
+          0,
+          Number(paidUnitPrice || unitPrice || 0) * qty
+        );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -161,18 +179,27 @@ export default function ReturnModal({
               <div className="flex justify-between gap-3">
                 <span>Ürün tutarı</span>
                 <span>
-                  <CurrencyConvert price={Number(unitPrice || 0) * Number(formData.qty)} />
+                  <CurrencyConvert price={lineGross} />
                 </span>
               </div>
-              {Number(unitPrice) > Number(paidUnitPrice) && (
+              {couponPart > 0.009 && (
                 <div className="flex justify-between gap-3 text-gray-500">
                   <span>Kupon payı</span>
+                  <span>
+                    − <CurrencyConvert price={couponPart} />
+                  </span>
+                </div>
+              )}
+              {(bankPart > 0.009 || (isBankPayment && lineGross - estimated > 0.009)) && (
+                <div className="flex justify-between gap-3 text-gray-500">
+                  <span>Havale indirimi (~%3)</span>
                   <span>
                     −{" "}
                     <CurrencyConvert
                       price={
-                        (Number(unitPrice || 0) - Number(paidUnitPrice || 0)) *
-                        Number(formData.qty)
+                        bankPart > 0.009
+                          ? bankPart
+                          : Math.max(0, lineGross - couponPart - estimated)
                       }
                     />
                   </span>
@@ -181,14 +208,16 @@ export default function ReturnModal({
               <div className="mt-1 flex justify-between gap-3 font-semibold">
                 <span>Tahmini iade</span>
                 <span>
-                  <CurrencyConvert
-                    price={Number(paidUnitPrice || unitPrice || 0) * Number(formData.qty)}
-                  />
+                  <CurrencyConvert price={estimated} />
                 </span>
               </div>
               <p className="mt-2 text-xs text-gray-500">
-                Kupon siparişe orantılı dağılır. İade ettiğiniz ürüne düşen indirim payı
-                düşülür; kalan ürünlerdeki indirim durur.
+                {couponPart > 0.009
+                  ? "Kupon siparişe orantılı dağılır; iade ettiğiniz ürüne düşen pay düşülür. "
+                  : ""}
+                {isBankPayment || bankPart > 0.009
+                  ? "Havale/EFT siparişlerinde alışverişteki ~%3 indirim iade tutarından düşülür; ödediğiniz kadar iade edilir."
+                  : "İndirim yoksa ürün tutarı kadar iade edilir."}
               </p>
             </div>
           )}

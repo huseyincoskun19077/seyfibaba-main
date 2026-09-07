@@ -131,11 +131,13 @@ class _CreateReturnScreenState extends State<CreateReturnScreen> {
     final paid = widget.args.returnable.paidUnitPrice > 0
         ? widget.args.returnable.paidUnitPrice
         : widget.args.returnable.unitPrice;
-    // API suggested_refund is for maxReturnableQty and already includes
-    // bank-transfer (~3%) / coupon shares; scale by selected qty.
     final hintQty = maxQty;
+    final scale = _qty / hintQty;
+    final lineGross = widget.args.returnable.unitPrice * _qty;
+    final couponPart = widget.args.returnable.couponShare * scale;
+    final bankPart = widget.args.returnable.bankDiscountShare * scale;
     final estimatedRefund = widget.args.returnable.suggestedRefund > 0
-        ? (widget.args.returnable.suggestedRefund / hintQty) * _qty
+        ? widget.args.returnable.suggestedRefund * scale
         : paid * _qty;
 
     return Scaffold(
@@ -212,12 +214,51 @@ class _CreateReturnScreenState extends State<CreateReturnScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: HomeTheme.border),
             ),
-            child: Text(
-              'Tahmini iade: ${Utils.formatPrice(estimatedRefund, context)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                color: HomeTheme.textDark,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ürün tutarı: ${Utils.formatPrice(lineGross, context)}',
+                  style: const TextStyle(fontSize: 13),
+                ),
+                if (couponPart > 0.009) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Kupon payı: − ${Utils.formatPrice(couponPart, context)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: HomeTheme.textMuted,
+                    ),
+                  ),
+                ],
+                if (bankPart > 0.009 ||
+                    (widget.args.returnable.isBankPayment &&
+                        lineGross - estimatedRefund > 0.009)) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Havale indirimi (~%3): − ${Utils.formatPrice(bankPart > 0.009 ? bankPart : (lineGross - couponPart - estimatedRefund < 0 ? 0 : lineGross - couponPart - estimatedRefund), context)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: HomeTheme.textMuted,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Text(
+                  'Tahmini iade: ${Utils.formatPrice(estimatedRefund, context)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: HomeTheme.textDark,
+                  ),
+                ),
+                if (widget.args.returnable.isBankPayment || bankPart > 0.009) ...[
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Havale siparişlerinde ~%3 indirim iade tutarından düşülür; ödediğiniz kadar iade edilir.',
+                    style: TextStyle(fontSize: 11, color: HomeTheme.textMuted),
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: 16),

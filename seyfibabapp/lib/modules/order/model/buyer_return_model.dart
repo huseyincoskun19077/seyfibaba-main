@@ -6,6 +6,9 @@ class BuyerReturnableItem {
     required this.unitPrice,
     required this.paidUnitPrice,
     required this.suggestedRefund,
+    this.couponShare = 0,
+    this.bankDiscountShare = 0,
+    this.isBankPayment = false,
     this.message,
     this.existingReturnRequestId,
     this.returnStatus,
@@ -30,6 +33,9 @@ class BuyerReturnableItem {
   final double unitPrice;
   final double paidUnitPrice;
   final double suggestedRefund;
+  final double couponShare;
+  final double bankDiscountShare;
+  final bool isBankPayment;
   final String? message;
   final int? existingReturnRequestId;
   final int? returnStatus;
@@ -57,6 +63,12 @@ class BuyerReturnableItem {
       unitPrice: double.tryParse('${map['unit_price'] ?? 0}') ?? 0,
       paidUnitPrice: double.tryParse('${map['paid_unit_price'] ?? 0}') ?? 0,
       suggestedRefund: double.tryParse('${map['suggested_refund'] ?? 0}') ?? 0,
+      couponShare: double.tryParse('${map['coupon_share'] ?? 0}') ?? 0,
+      bankDiscountShare:
+          double.tryParse('${map['bank_discount_share'] ?? 0}') ?? 0,
+      isBankPayment: map['is_bank_payment'] == true ||
+          map['is_bank_payment'] == 1 ||
+          '${map['is_bank_payment']}' == '1',
       message: map['message']?.toString(),
       existingReturnRequestId: map['existing_return_request_id'] == null
           ? null
