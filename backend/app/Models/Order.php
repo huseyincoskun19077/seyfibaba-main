@@ -70,6 +70,25 @@ class Order extends Model
         ), 2);
         $coupon = round((float) ($this->coupon_coast ?? 0), 2);
         $shipping = round((float) ($this->shipping_cost ?? 0), 2);
+        $discountType = (string) ($this->discount_type ?? '');
+        $discountAmount = round((float) ($this->discount_amount ?? 0), 2);
+        $paymentMethod = strtolower(trim((string) ($this->payment_method ?? '')));
+        $isBankPayment = $paymentMethod === 'bankpayment'
+            || $paymentMethod === 'bank_transfer'
+            || str_contains($paymentMethod, 'bank')
+            || $discountType === 'bank_transfer'
+            || ($discountAmount > 0 && str_contains($discountType, 'bank'));
+
+        // Havale indirimi yanlışlıkla coupon_coast'a yazılmışsa (coupon_id yok) kupon sayma.
+        if ($isBankPayment && $coupon > 0 && empty($this->coupon_id)) {
+            if ($discountAmount <= 0 || abs($coupon - $discountAmount) < 0.05) {
+                if ($discountAmount <= 0) {
+                    $discountAmount = $coupon;
+                }
+                $coupon = 0.0;
+            }
+        }
+
         $lineGross = round((float) $orderProduct->unit_price * $qty, 2);
         $couponShare = ($subtotal > 0 && $coupon > 0)
             ? round(($lineGross / $subtotal) * $coupon, 2)
@@ -80,24 +99,25 @@ class Order extends Model
 
         $paidProducts = max(0, round($subtotal - $coupon, 2));
         $bankDiscountShare = 0.0;
-        $discountType = (string) ($this->discount_type ?? '');
-        $discountAmount = round((float) ($this->discount_amount ?? 0), 2);
-        $paymentMethod = strtolower(trim((string) ($this->payment_method ?? '')));
-        $isBankPayment = $paymentMethod === 'bankpayment'
-            || $paymentMethod === 'bank_transfer'
-            || str_contains($paymentMethod, 'bank')
-            || $discountType === 'bank_transfer'
-            || ($discountAmount > 0 && $discountType !== '' && str_contains($discountType, 'bank'));
+        $settingsPercent = (float) (Setting::query()->value('bank_transfer_discount_percent') ?? 3);
+        if ($settingsPercent <= 0) {
+            $settingsPercent = 3.0;
+        }
 
         $grossBeforeBank = $refund;
         if ($isBankPayment && $refund > 0) {
             $discountedBase = max(0.01, round($paidProducts + $shipping, 2));
+            $percentCapShare = round(($refund * $settingsPercent) / 100, 2);
+            $proportionalShare = 0.0;
             if ($discountAmount > 0) {
-                $bankDiscountShare = round(($refund / $discountedBase) * $discountAmount, 2);
-            } else {
-                $percent = (float) (Setting::query()->value('bank_transfer_discount_percent') ?? 3);
-                $bankDiscountShare = round(($refund * max(0, $percent)) / 100, 2);
+                $proportionalShare = round(($refund / $discountedBase) * $discountAmount, 2);
             }
+
+            // Şişmiş discount_amount satırdan %3'ten fazla kesmesin.
+            $bankDiscountShare = $proportionalShare > 0
+                ? min($proportionalShare, $percentCapShare)
+                : $percentCapShare;
+
             $refund = max(0, round($refund - $bankDiscountShare, 2));
         }
 
@@ -107,8 +127,19 @@ class Order extends Model
         }
 
         $maxOrderRefund = max(0, round((float) ($this->total_amount ?? 0), 2));
-        if ($maxOrderRefund <= 0) {
-            $maxOrderRefund = max(0, round($paidProducts + ($includeShipping ? $shipping : 0) - ($isBankPayment ? $discountAmount : 0), 2));
+        if ($isBankPayment) {
+            $orderBase = max(0.01, round($paidProducts + $shipping, 2));
+            $impliedPercent = $discountAmount > 0 ? ($discountAmount / $orderBase) * 100 : 0.0;
+            $percentBasedTotal = round($orderBase * (1 - ($settingsPercent / 100)), 2);
+            // Checkout'ta hatalı/şişmiş indirim total_amount'u düşürdüyse iade tavanını %3'e göre düzelt.
+            if ($impliedPercent > ($settingsPercent + 0.51) || $maxOrderRefund <= 0) {
+                $maxOrderRefund = max($maxOrderRefund, $percentBasedTotal);
+            }
+            if ($maxOrderRefund <= 0) {
+                $maxOrderRefund = $percentBasedTotal;
+            }
+        } elseif ($maxOrderRefund <= 0) {
+            $maxOrderRefund = max(0, round($paidProducts + ($includeShipping ? $shipping : 0), 2));
         }
         $reserved = (float) ReturnRequest::query()
             ->where('order_id', $this->id)
@@ -123,14 +154,16 @@ class Order extends Model
             ->sum('refund_amount');
         $remainingCap = max(0, round($maxOrderRefund - $reserved, 2));
         $preCapRefund = $refund;
-        if ($refund > $remainingCap) {
+        if ($refund > $remainingCap && $remainingCap > 0) {
+            // Cap yalnızca gerçekten daha düşük kalan bakiye varsa; şişmiş indirimi
+            // bank_discount gibi gösterme. Kalan sipariş bakiyesine say.
             $refund = $remainingCap;
-            // Keep paid_unit_price aligned when only the order total cap applied the havale cut.
             if ($preCapRefund > 0 && $productAfterBank > 0) {
                 $productAfterBank = max(0, round($productAfterBank * ($refund / $preCapRefund), 2));
-                $bankDiscountShare = max(0, round($bankDiscountShare + ($preCapRefund - $refund), 2));
-                $isBankPayment = $isBankPayment || ($preCapRefund - $refund) > 0.009;
             }
+        } elseif ($remainingCap <= 0 && $maxOrderRefund <= 0) {
+            $refund = 0.0;
+            $productAfterBank = 0.0;
         }
 
         return [

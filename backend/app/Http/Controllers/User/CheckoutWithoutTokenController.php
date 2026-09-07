@@ -551,7 +551,10 @@ class CheckoutWithoutTokenController extends Controller
         // Bank transfer discount
         if ($payment_method == 'bankpayment') {
             $setting = Setting::first();
-            $discountPercent = $setting->bank_transfer_discount_percent ?? 3;
+            $discountPercent = (float) ($setting->bank_transfer_discount_percent ?? 3);
+            if ($discountPercent <= 0 || $discountPercent > 15) {
+                $discountPercent = 3.0;
+            }
             $discountAmount = ($total_price * $discountPercent) / 100;
             $order->discount_amount = $discountAmount;
             $order->discount_type = 'bank_transfer';
