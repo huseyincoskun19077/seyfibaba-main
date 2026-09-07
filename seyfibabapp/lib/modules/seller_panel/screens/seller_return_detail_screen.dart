@@ -61,10 +61,16 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
     _formSeeded = false;
     _pendingMode = null;
     final next = _load();
+    if (!mounted) return;
+    // Arrow form setState(() => _future = _load()) returns a Future and crashes.
     setState(() {
       _future = next;
     });
-    await next;
+    try {
+      await next;
+    } catch (_) {
+      // FutureBuilder shows the error; do not rethrow into action handlers.
+    }
   }
 
   String _cleanError(Object e) {
@@ -121,7 +127,9 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
       return;
     }
     if (!await _ensureStillPending(item)) return;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+    });
     try {
       Utils.loadingDialog(context);
       final msg = await _service.approveReturnRequest(
@@ -136,7 +144,12 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
       );
       if (!mounted) return;
       Utils.closeDialog(context);
-      Utils.showSnackBar(context, msg);
+      Utils.showSnackBar(
+        context,
+        msg.isNotEmpty
+            ? msg
+            : 'İade onaylandı. Müşteri iade adresi ve kargo talimatını görecek.',
+      );
       await _refresh();
     } catch (e) {
       if (!mounted) return;
@@ -144,7 +157,11 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
       Utils.errorSnackBar(context, _cleanError(e));
       await _refresh();
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
     }
   }
 
@@ -156,7 +173,9 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
       return;
     }
     if (!await _ensureStillPending(item)) return;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+    });
     try {
       Utils.loadingDialog(context);
       final msg = await _service.rejectReturnRequest(
@@ -166,7 +185,12 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
       );
       if (!mounted) return;
       Utils.closeDialog(context);
-      Utils.showSnackBar(context, msg);
+      Utils.showSnackBar(
+        context,
+        msg.isNotEmpty
+            ? msg
+            : 'İade reddedildi. Talebiniz yöneticiye ve alıcıya iletildi.',
+      );
       await _refresh();
     } catch (e) {
       if (!mounted) return;
@@ -174,7 +198,11 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
       Utils.errorSnackBar(context, _cleanError(e));
       await _refresh();
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
     }
   }
 
@@ -188,7 +216,9 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
       await _refresh();
       return;
     }
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+    });
     try {
       Utils.loadingDialog(context);
       final msg = await _service.markReturnReceived(
@@ -198,7 +228,12 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
       );
       if (!mounted) return;
       Utils.closeDialog(context);
-      Utils.showSnackBar(context, msg);
+      Utils.showSnackBar(
+        context,
+        msg.isNotEmpty
+            ? msg
+            : 'Ürün teslim alındı. Yönetici para iadesini tamamlayabilir.',
+      );
       await _refresh();
     } catch (e) {
       if (!mounted) return;
@@ -206,7 +241,11 @@ class _SellerReturnDetailScreenState extends State<SellerReturnDetailScreen> {
       Utils.errorSnackBar(context, _cleanError(e));
       await _refresh();
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
     }
   }
 

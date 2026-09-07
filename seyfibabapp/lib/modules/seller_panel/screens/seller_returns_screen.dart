@@ -39,15 +39,21 @@ class _SellerReturnsScreenState extends State<SellerReturnsScreen> {
       _service.fetchReturnRequests(_token, status: _statusFilter);
 
   Future<void> _refresh() async {
-    setState(() => _future = _load());
-    await _future;
+    final next = _load();
+    if (!mounted) return;
+    setState(() {
+      _future = next;
+    });
+    try {
+      await next;
+    } catch (_) {}
   }
 
   void _setFilter(String? status) {
     if (_statusFilter == status) return;
     setState(() {
       _statusFilter = status;
-      _future = _load();
+      _future = _service.fetchReturnRequests(_token, status: status);
     });
   }
 
