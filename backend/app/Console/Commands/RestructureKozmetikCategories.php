@@ -21,7 +21,8 @@ class RestructureKozmetikCategories extends Command
 {
     protected $signature = 'categories:restructure-kozmetik
                             {--apply : Değişiklikleri veritabanına yaz (yoksa sadece rapor)}
-                            {--category-id= : Kozmetik category id (boşsa isim/slug ile bulunur)}';
+                            {--category-id= : Kozmetik category id (boşsa isim/slug ile bulunur)}
+                            {--skip-backup : --apply öncesi otomatik yedeği atla}';
 
     protected $description = 'Kozmetik alt kategorilerini md yapısına göre oluşturur ve ürünleri child/sub/kozmetik olarak atar (silmeden)';
 
@@ -169,6 +170,13 @@ class RestructureKozmetikCategories extends Command
             $this->error('Kozmetik kategorisi bulunamadı.');
 
             return self::FAILURE;
+        }
+
+        if ($apply && ! $this->option('skip-backup')) {
+            $this->call('categories:backup-kozmetik', [
+                'action' => 'backup',
+                '--category-id' => (string) $category->id,
+            ]);
         }
 
         $this->line("Kategori: #{$category->id} {$category->name}");
