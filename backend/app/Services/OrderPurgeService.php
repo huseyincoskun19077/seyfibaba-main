@@ -85,25 +85,25 @@ class OrderPurgeService
                 ->where('order_id', $orderId)
                 ->delete();
 
-            if (Schema::hasTable('cargo_shipments')) {
+            if (Schema::hasTable('cargo_shipments') && Schema::hasColumn('cargo_shipments', 'order_id')) {
                 $counts['cargo'] = CargoShipment::query()
                     ->where('order_id', $orderId)
                     ->delete();
             }
 
-            if (Schema::hasTable('delivery_messages')) {
+            if (Schema::hasTable('delivery_messages') && Schema::hasColumn('delivery_messages', 'order_id')) {
                 $counts['delivery_messages'] = DB::table('delivery_messages')
                     ->where('order_id', $orderId)
                     ->delete();
             }
 
-            if (Schema::hasTable('delivery_man_reviews')) {
+            if (Schema::hasTable('delivery_man_reviews') && Schema::hasColumn('delivery_man_reviews', 'order_id')) {
                 $counts['delivery_reviews'] = DB::table('delivery_man_reviews')
                     ->where('order_id', $orderId)
                     ->delete();
             }
 
-            if (Schema::hasTable('user_activities')) {
+            if (Schema::hasTable('user_activities') && Schema::hasColumn('user_activities', 'order_id')) {
                 $counts['user_activities'] = DB::table('user_activities')
                     ->where('order_id', $orderId)
                     ->delete();
@@ -156,10 +156,18 @@ class OrderPurgeService
 
         $query->chunkById(100, function ($orders) use (&$totals, &$deleted) {
             foreach ($orders as $order) {
-                $counts = $this->purgeOrder($order);
-                $deleted += $counts['orders'];
-                foreach ($counts as $key => $value) {
-                    $totals[$key] = ($totals[$key] ?? 0) + (int) $value;
+                try {
+                    $counts = $this->purgeOrder($order);
+                    $deleted += $counts['orders'];
+                    foreach ($counts as $key => $value) {
+                        $totals[$key] = ($totals[$key] ?? 0) + (int) $value;
+                    }
+                } catch (\Throwable $e) {
+                    \Log::error('Order purge failed', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
                 }
             }
         });
