@@ -86,6 +86,25 @@
                                             <td>
                                                 <strong>{{ optional($return->orderProduct)->product_name ?: 'Silinmiş Ürün' }}</strong><br>
                                                 <span class="text-muted">İade nedeni: {{ $reasonLabel }}</span>
+                                                @if(!empty($iyzicoInfo))
+                                                    <div class="mt-2 small">
+                                                        @if(!empty($iyzicoInfo['basket_item_id']))
+                                                            <div><strong>Iyzico ürün no:</strong> <code>{{ $iyzicoInfo['basket_item_id'] }}</code>
+                                                                @if(!empty($iyzicoInfo['product_id']))
+                                                                    <span class="text-muted">(ürün id: {{ $iyzicoInfo['product_id'] }})</span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                        @if(!empty($iyzicoInfo['payment_transaction_id']))
+                                                            <div><strong>Payment Transaction ID:</strong> <code>{{ $iyzicoInfo['payment_transaction_id'] }}</code></div>
+                                                        @else
+                                                            <div class="text-danger">Payment Transaction ID bulunamadı — Iyzico iadesi eşleşmeyebilir.</div>
+                                                        @endif
+                                                        @if(!empty($iyzicoInfo['payment_id']))
+                                                            <div><strong>Payment ID:</strong> <code>{{ $iyzicoInfo['payment_id'] }}</code></div>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </td>
                                             <td>{{ $setting->currency_icon }}{{ number_format((float) optional($return->orderProduct)->unit_price, 2) }}</td>
                                             <td>{{ $return->qty }}</td>
@@ -94,6 +113,20 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            @if(!empty($iyzicoInfo) && strtolower((string) optional($return->order)->payment_method) === 'iyzico')
+                              <div class="alert alert-secondary small mt-3">
+                                <strong>Iyzico eşleme:</strong>
+                                Paneldeki “ürün numarası” genelde <code>PROD-{ürün_id}</code> formatındadır.
+                                İade API’si bu satırın <code>payment_transaction_id</code> değeri ile çalışır.
+                                @if(!empty($return->refund_status))
+                                  <br>Kayıtlı iade durumu: <code>{{ $return->refund_status }}</code>
+                                  @if($return->refund_transaction_id)
+                                    — txn: <code>{{ $return->refund_transaction_id }}</code>
+                                  @endif
+                                @endif
+                              </div>
+                            @endif
 
                             <div class="row mt-4">
                                 <div class="col-md-6 mb-3">

@@ -46,6 +46,7 @@ class ReturnRequestController extends Controller
         }
 
         $suggestedRefund = null;
+        $iyzicoInfo = null;
         if ($return->order && $return->orderProduct) {
             $suggestedRefund = $return->order->suggestedReturnRefund(
                 $return->orderProduct,
@@ -55,9 +56,13 @@ class ReturnRequestController extends Controller
             if ((float) $return->refund_amount <= 0) {
                 $return->refund_amount = $suggestedRefund['refund_amount'];
             }
+            $iyzicoInfo = app(ReturnIyzicoRefundService::class)->resolveDisplayInfo(
+                $return->order,
+                $return
+            );
         }
 
-        return view('admin.show_return_request', compact('return', 'setting', 'suggestedRefund'));
+        return view('admin.show_return_request', compact('return', 'setting', 'suggestedRefund', 'iyzicoInfo'));
     }
 
     public function updateStatus(Request $request, $id)

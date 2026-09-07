@@ -99,6 +99,46 @@ class ReturnIyzicoRefundService
         }
     }
 
+    /**
+     * Admin ekranı için Iyzico ürün/işlem eşlemesi.
+     *
+     * @return array{
+     *   basket_item_id: string|null,
+     *   product_id: int|null,
+     *   payment_transaction_id: string|null,
+     *   payment_id: string|null,
+     *   matched_from: string|null
+     * }
+     */
+    public function resolveDisplayInfo(Order $order, ReturnRequest $return): array
+    {
+        $orderProduct = $return->orderProduct;
+        $productId = $orderProduct ? (int) $orderProduct->product_id : null;
+        $basketItemId = $productId ? 'PROD-'.$productId : null;
+        $txn = $this->resolvePaymentTransactionId($order, $return);
+        $matchedFrom = null;
+        if ($orderProduct && ! empty($orderProduct->iyzico_payment_transaction_id)) {
+            $matchedFrom = 'order_product';
+        } elseif ($txn) {
+            $matchedFrom = 'iyzico_payment_data';
+        }
+
+        $paymentData = $order->iyzico_payment_data
+            ? json_decode($order->iyzico_payment_data, true)
+            : null;
+        $paymentId = is_array($paymentData)
+            ? ($paymentData['payment_id'] ?? $paymentData['paymentId'] ?? null)
+            : null;
+
+        return [
+            'basket_item_id' => $basketItemId,
+            'product_id' => $productId,
+            'payment_transaction_id' => $txn,
+            'payment_id' => $paymentId ? (string) $paymentId : null,
+            'matched_from' => $matchedFrom,
+        ];
+    }
+
     private function resolvePaymentTransactionId(Order $order, ReturnRequest $return): ?string
     {
         $orderProduct = $return->orderProduct;
