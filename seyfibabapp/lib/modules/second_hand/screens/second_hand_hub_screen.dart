@@ -1047,23 +1047,49 @@ class SecondHandMessagesTabState extends State<SecondHandMessagesTab> {
                   children: [
                     Builder(
                       builder: (context) {
-                        final avatarUrl = SecondHandService.resolveUserAvatarUrl(
-                          conv.counterpartyAvatar,
-                        );
-                        return CircleAvatar(
-                          radius: 22,
-                          backgroundColor:
-                              ShTheme.primary.withValues(alpha: 0.2),
-                          backgroundImage: avatarUrl.isNotEmpty
-                              ? NetworkImage(avatarUrl)
-                              : null,
-                          child: avatarUrl.isEmpty
-                              ? const Icon(
-                                  Icons.store_outlined,
-                                  color: ShTheme.dark,
-                                  size: 20,
-                                )
-                              : null,
+                        final imageUrl = conv.listingImageId != null &&
+                                conv.listingImageId! > 0
+                            ? SecondHandService.listingImageUrl(
+                                conv.listingImageId!)
+                            : '';
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: SizedBox(
+                            width: 52,
+                            height: 52,
+                            child: imageUrl.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: imageUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder: (_, __) => Container(
+                                      color: ShTheme.primary
+                                          .withValues(alpha: 0.15),
+                                      child: const Icon(
+                                        Icons.image_outlined,
+                                        color: ShTheme.muted,
+                                        size: 22,
+                                      ),
+                                    ),
+                                    errorWidget: (_, __, ___) => Container(
+                                      color: ShTheme.primary
+                                          .withValues(alpha: 0.15),
+                                      child: const Icon(
+                                        Icons.inventory_2_outlined,
+                                        color: ShTheme.dark,
+                                        size: 22,
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    color: ShTheme.primary
+                                        .withValues(alpha: 0.15),
+                                    child: const Icon(
+                                      Icons.inventory_2_outlined,
+                                      color: ShTheme.dark,
+                                      size: 22,
+                                    ),
+                                  ),
+                          ),
                         );
                       },
                     ),
