@@ -364,23 +364,23 @@ class _SecondHandListScreenState extends State<SecondHandListScreen> {
       bottomNavigationBar: ShBottomNav(
         currentIndex: navIndex,
         onTap: _onNavTap,
-        items: const [
-          ShBottomNavItem(
+        items: [
+          const ShBottomNavItem(
             icon: Icons.apps_outlined,
             activeIcon: Icons.apps_rounded,
             label: 'Menü',
           ),
-          ShBottomNavItem(
+          const ShBottomNavItem(
             icon: Icons.storefront_outlined,
             activeIcon: Icons.storefront_rounded,
             label: 'Keşfet',
           ),
-          ShBottomNavItem(
+          const ShBottomNavItem(
             icon: Icons.inventory_2_outlined,
             activeIcon: Icons.inventory_2,
             label: 'İlanlarım',
           ),
-          ShBottomNavItem(
+          const ShBottomNavItem(
             icon: Icons.add_circle_outline,
             activeIcon: Icons.add_circle,
             label: 'Ekle',
