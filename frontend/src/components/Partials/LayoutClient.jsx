@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useMemo } from "react";
-import { usePathname } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import dynamic from "next/dynamic";
 const DiscountBanner = dynamic(() => import("../DiscountBanner"), { ssr: false });
@@ -73,11 +72,8 @@ export default function LayoutClient({ children, childrenClasses, websiteSetupDa
 
   // Mobile drawer management
   const { drawer, handleDrawerToggle } = useDrawer();
-  const pathname = usePathname();
-  const showSecondHandDock =
-    !isSecondHandSite &&
-    typeof pathname === "string" &&
-    pathname.startsWith("/profile");
+  // Bionluk tarzı: ikinciel.seyfibaba.com üzerinde sağda mesaj paneli
+  const showSecondHandDock = !!isSecondHandSite;
 
   const processedLanguages = useMemo(() => {
     if (!languages || languages.length === 0) return [];

@@ -363,6 +363,7 @@ class SecondHandMessagingController extends Controller
         $conversation = SecondHandConversation::query()
             ->with([
                 'listing:id,title,status,user_id,price,condition,published_at',
+                'listing.images:id,listing_id,file_path,sort_order',
             ])
             ->findOrFail((int) $conversationId);
 

@@ -16,8 +16,14 @@ import {
   useSecondHandUnblockUserMutation,
   useSecondHandReportCreateMutation,
 } from "@/redux/features/secondHand/apiSlice";
+import { marketplaceProfileUrl } from "@/utils/secondHandSite";
 
-export default function SecondHandMessagesModal({ open, onClose, initialConversationId }) {
+export default function SecondHandMessagesModal({
+  open,
+  onClose,
+  initialConversationId,
+  variant = "sheet",
+}) {
   const tokenReady = !!auth()?.access_token;
   const meId = auth()?.user?.id;
 
@@ -413,25 +419,41 @@ export default function SecondHandMessagesModal({ open, onClose, initialConversa
 
   if (!open) return null;
 
+  const isDock = variant === "dock";
+
   return (
     <div className="fixed inset-0 z-[80]">
       <button type="button" className="absolute inset-0 bg-black/40" aria-label="Kapat" onClick={onClose} />
       <div
-        className="
-          absolute bottom-0 left-0 right-0
-          bg-white shadow-2xl overflow-hidden
-          rounded-t-2xl
-          h-[75vh]
-          md:h-[70vh]
-          md:bottom-[84px] md:left-auto md:right-4 md:w-[420px] md:rounded-2xl
-        "
+        className={
+          isDock
+            ? `
+              absolute top-0 right-0 bottom-0
+              bg-white shadow-2xl overflow-hidden
+              w-full sm:w-[420px] md:w-[460px]
+              border-l border-gray-100
+            `
+            : `
+              absolute bottom-0 left-0 right-0
+              bg-white shadow-2xl overflow-hidden
+              rounded-t-2xl
+              h-[75vh]
+              md:h-[70vh]
+              md:bottom-[84px] md:left-auto md:right-4 md:w-[420px] md:rounded-2xl
+            `
+        }
       >
         <div className="flex h-full flex-col min-h-0">
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
-          <div className="font-800 text-qblack">Messages</div>
+          <div className="font-800 text-qblack">Mesajlar</div>
           <div className="flex items-center gap-2">
             <Link
-              href={`/profile${selectedConversationId ? `?c2c_conv=${encodeURIComponent(String(selectedConversationId))}` : ""}#second-hand-messages`}
+              href={marketplaceProfileUrl(
+                "second-hand-messages",
+                selectedConversationId
+                  ? `c2c_conv=${encodeURIComponent(String(selectedConversationId))}`
+                  : ""
+              )}
               className="h-9 px-3 inline-flex items-center justify-center rounded-lg bg-qyellow text-xs font-800 text-qblack ring-1 ring-amber-900/10 hover:brightness-95 transition"
               onClick={onClose}
             >

@@ -170,6 +170,9 @@ class SecondHandConversation {
     required this.lastMessagePreview,
     required this.unreadCount,
     this.counterpartyId,
+    this.listingId,
+    this.listingPrice,
+    this.listingImageId,
   });
 
   final int id;
@@ -178,16 +181,74 @@ class SecondHandConversation {
   final String lastMessagePreview;
   final int unreadCount;
   final int? counterpartyId;
+  final int? listingId;
+  final num? listingPrice;
+  final int? listingImageId;
 
   factory SecondHandConversation.fromMap(Map<String, dynamic> map) {
+    final listing = map['listing'];
+    Map<String, dynamic>? listingMap;
+    if (listing is Map) {
+      listingMap = Map<String, dynamic>.from(listing);
+    }
+
+    int? listingImageId;
+    final images = listingMap?['images'];
+    if (images is List && images.isNotEmpty) {
+      final first = images.first;
+      if (first is Map) {
+        listingImageId = int.tryParse('${first['id'] ?? ''}');
+      }
+    }
+
     return SecondHandConversation(
       id: int.tryParse('${map['id']}') ?? 0,
-      listingTitle: '${map['listing']?['title'] ?? map['listing_title'] ?? ''}',
+      listingTitle:
+          '${listingMap?['title'] ?? map['listing_title'] ?? ''}',
       counterpartyDisplay:
           '${map['counterparty_display'] ?? map['seller_business_name'] ?? ''}',
       lastMessagePreview: '${map['last_message_preview'] ?? ''}',
       unreadCount: int.tryParse('${map['unread_count'] ?? 0}') ?? 0,
       counterpartyId: int.tryParse('${map['counterparty_id'] ?? ''}'),
+      listingId: int.tryParse(
+          '${listingMap?['id'] ?? map['listing_id'] ?? ''}'),
+      listingPrice: num.tryParse('${listingMap?['price'] ?? ''}'),
+      listingImageId: listingImageId,
+    );
+  }
+}
+
+class SecondHandMessageAttachment {
+  SecondHandMessageAttachment({
+    required this.id,
+    required this.kind,
+    this.path,
+    this.url,
+    this.originalName,
+    this.mime,
+  });
+
+  final int id;
+  final String kind;
+  final String? path;
+  final String? url;
+  final String? originalName;
+  final String? mime;
+
+  bool get isImage {
+    final k = kind.toLowerCase();
+    final m = (mime ?? '').toLowerCase();
+    return k == 'image' || m.startsWith('image/');
+  }
+
+  factory SecondHandMessageAttachment.fromMap(Map<String, dynamic> map) {
+    return SecondHandMessageAttachment(
+      id: int.tryParse('${map['id'] ?? 0}') ?? 0,
+      kind: '${map['kind'] ?? 'file'}',
+      path: map['path']?.toString(),
+      url: map['url']?.toString(),
+      originalName: map['original_name']?.toString(),
+      mime: map['mime']?.toString(),
     );
   }
 }
@@ -199,6 +260,7 @@ class SecondHandMessage {
     required this.body,
     required this.createdAt,
     this.senderDisplay,
+    this.attachments = const [],
   });
 
   final int id;
@@ -206,14 +268,23 @@ class SecondHandMessage {
   final String body;
   final String createdAt;
   final String? senderDisplay;
+  final List<SecondHandMessageAttachment> attachments;
 
   factory SecondHandMessage.fromMap(Map<String, dynamic> map) {
+    final rawAtt = map['attachments'];
     return SecondHandMessage(
       id: int.tryParse('${map['id']}') ?? 0,
       senderId: int.tryParse('${map['sender_id'] ?? 0}') ?? 0,
       body: '${map['body'] ?? ''}',
       createdAt: '${map['created_at'] ?? ''}',
       senderDisplay: map['sender_display']?.toString(),
+      attachments: rawAtt is List
+          ? rawAtt
+              .whereType<Map>()
+              .map((e) => SecondHandMessageAttachment.fromMap(
+                  Map<String, dynamic>.from(e)))
+              .toList()
+          : const [],
     );
   }
 }

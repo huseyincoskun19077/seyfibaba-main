@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import Link from "next/link";
 import auth from "@/utils/auth";
 import appConfig from "@/appConfig";
 import settings from "@/utils/settings";
@@ -9,9 +9,9 @@ import Pusher from "pusher-js";
 import Echo from "laravel-echo";
 import { useSecondHandInboxQuery } from "@/redux/features/secondHand/apiSlice";
 import SecondHandMessagesModal from "@/components/SecondHand/SecondHandMessagesModal";
+import { marketplaceUrl } from "@/utils/secondHandSite";
 
 export default function SecondHandMessagesDock() {
-  const pathname = usePathname();
   const session = auth();
   const tokenReady = !!session?.access_token;
 
@@ -20,9 +20,12 @@ export default function SecondHandMessagesDock() {
   const [modalConvId, setModalConvId] = useState(null);
   const hideTimer = useRef(null);
 
-  const pusherInfo = settings()?.pusher || (typeof window !== "undefined" ? JSON.parse(localStorage.getItem("pusher") || "null") : null);
+  const pusherInfo =
+    settings()?.pusher ||
+    (typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("pusher") || "null")
+      : null);
 
-  // Kalıcı küçük buton için: polling yok, sadece ilk load + focus/reconnect.
   const { data: inboxData } = useSecondHandInboxQuery(undefined, {
     skip: !tokenReady,
     refetchOnFocus: true,
@@ -102,20 +105,41 @@ export default function SecondHandMessagesDock() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenReady, pusherInfo?.app_key, pusherInfo?.app_cluster]);
 
-  if (!tokenReady) return null;
-
-  // Form ağırlıklı sayfalarda dock içeriğin üzerine binmemesi için gizle
-  const HIDDEN_PATHS = ["/profile", "/checkout", "/payment", "/cart"];
-  if (HIDDEN_PATHS.some((p) => pathname.startsWith(p))) return null;
-
-  // Letgo benzeri: kullanıcı giriş yaptıysa "Mesajlar" her zaman erişilebilir olmalı.
-  // Inbox 403 (doğrulama yok) olsa bile modal içinde kullanıcıyı yönlendireceğiz.
-
   const openModal = (conversationId) => {
     if (conversationId) setModalConvId(conversationId);
     setModalOpen(true);
     setToast(null);
   };
+
+  const loginHref = marketplaceUrl("/login");
+
+  // Giriş yoksa sağda Bionluk tarzı sekme: tıklanınca login
+  if (!tokenReady) {
+    return (
+      <div className="fixed right-0 top-1/2 z-[60] -translate-y-1/2 pointer-events-none">
+        <Link
+          href={loginHref}
+          className="pointer-events-auto flex flex-col items-center gap-2 rounded-l-xl bg-qblack text-white px-2.5 py-4 shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:bg-neutral-800 transition"
+          aria-label="Mesajlar için giriş yap"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span
+            className="text-[11px] font-800 tracking-wide"
+            style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+          >
+            Mesajlar
+          </span>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -123,44 +147,56 @@ export default function SecondHandMessagesDock() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         initialConversationId={modalConvId || toast?.conversation_id || null}
+        variant="dock"
       />
 
       {!modalOpen ? (
-      <div className="fixed left-0 right-0 z-[60] pointer-events-none" style={{ bottom: "max(12px, env(safe-area-inset-bottom))" }}>
-        <div className="container-x mx-auto px-4">
-          <div className="pointer-events-auto flex justify-end">
+        <div className="fixed right-0 top-1/2 z-[60] -translate-y-1/2 pointer-events-none">
+          <div className="pointer-events-auto flex flex-col items-end gap-2 pr-0">
+            {toast ? (
+              <button
+                type="button"
+                onClick={() => openModal(toast.conversation_id || null)}
+                className="mr-2 max-w-[260px] rounded-xl bg-white text-left shadow-[0_10px_28px_rgba(0,0,0,0.18)] border border-gray-100 px-3 py-2 ring-2 ring-qyellow/60"
+              >
+                <span className="block text-xs font-800 text-qblack truncate">{toast.title}</span>
+                <span className="block text-[11px] text-qgray truncate">{toast.body}</span>
+              </button>
+            ) : null}
+
             <button
               type="button"
               onClick={() => openModal(toast?.conversation_id || null)}
-              className={`inline-flex items-center gap-3 rounded-2xl shadow-[0_12px_30px_rgba(0,0,0,0.22)] bg-qblack text-white px-4 py-3 w-[min(92vw,420px)] transition ${
+              className={`relative flex flex-col items-center gap-2 rounded-l-xl bg-qblack text-white px-2.5 py-4 shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:bg-neutral-800 transition ${
                 toast ? "ring-2 ring-qyellow/70" : ""
               }`}
               aria-label="İkinci el mesajları"
             >
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+              <span className="relative inline-flex">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                  <path
+                    d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                  />
                 </svg>
+                {totalUnread > 0 ? (
+                  <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] px-1 rounded-full bg-qyellow text-qblack text-[10px] font-900 inline-flex items-center justify-center">
+                    {totalUnread > 99 ? "99+" : totalUnread}
+                  </span>
+                ) : null}
               </span>
-              <span className="min-w-0 flex-1 text-left">
-                <span className="block text-sm font-800 truncate">Mesajlar</span>
-                <span className="block text-[12px] text-white/80 truncate">
-                  {toast
-                    ? `${toast.title}: ${toast.body}`
-                    : (conversations.length ? "Konuşmalarını aç" : "İkinci el mesajlarını aç")}
-                </span>
+              <span
+                className="text-[11px] font-800 tracking-wide"
+                style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+              >
+                Mesajlar
               </span>
-              {totalUnread > 0 ? (
-                <span className="min-w-[22px] h-[22px] px-1.5 rounded-full bg-qyellow text-qblack text-[11px] font-900 inline-flex items-center justify-center">
-                  {totalUnread}
-                </span>
-              ) : null}
             </button>
           </div>
         </div>
-      </div>
       ) : null}
     </>
   );
 }
-

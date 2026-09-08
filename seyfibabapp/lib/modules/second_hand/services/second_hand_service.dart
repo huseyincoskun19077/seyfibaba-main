@@ -94,15 +94,24 @@ class PaginatedMessages {
     required this.items,
     required this.currentPage,
     required this.lastPage,
+    this.conversation,
   });
 
   final List<SecondHandMessage> items;
   final int currentPage;
   final int lastPage;
+  final SecondHandConversation? conversation;
 
   bool get hasMore => currentPage < lastPage;
 
   static PaginatedMessages fromResponse(Map<String, dynamic> json) {
+    SecondHandConversation? conversation;
+    final rawConversation = json['conversation'];
+    if (rawConversation is Map) {
+      conversation = SecondHandConversation.fromMap(
+          Map<String, dynamic>.from(rawConversation));
+    }
+
     final block = json['messages'];
     if (block is Map<String, dynamic>) {
       final data = block['data'];
@@ -116,9 +125,15 @@ class PaginatedMessages {
             : [],
         currentPage: int.tryParse('${block['current_page'] ?? 1}') ?? 1,
         lastPage: int.tryParse('${block['last_page'] ?? 1}') ?? 1,
+        conversation: conversation,
       );
     }
-    return PaginatedMessages(items: const [], currentPage: 1, lastPage: 1);
+    return PaginatedMessages(
+      items: const [],
+      currentPage: 1,
+      lastPage: 1,
+      conversation: conversation,
+    );
   }
 }
 
@@ -170,6 +185,19 @@ class SecondHandService {
     final u = image.url?.trim();
     if (u != null && u.isNotEmpty) {
       if (u.startsWith('http://') || u.startsWith('https://')) return u;
+      return RemoteUrls.imageUrl(u);
+    }
+    return '';
+  }
+
+  static String resolveAttachmentUrl(SecondHandMessageAttachment attachment) {
+    final path = attachment.path?.trim();
+    if (path != null && path.isNotEmpty) {
+      final normalized = path.startsWith('storage/') ? path : 'storage/$path';
+      return RemoteUrls.imageUrl(normalized);
+    }
+    final u = attachment.url?.trim();
+    if (u != null && u.isNotEmpty) {
       return RemoteUrls.imageUrl(u);
     }
     return '';
@@ -489,19 +517,66 @@ class SecondHandService {
   Future<SecondHandMessage> sendToConversation({
     required String token,
     required int conversationId,
-    required String body,
+    String body = '',
+    List<String> attachmentPaths = const [],
   }) async {
     final uri = Uri.parse(
         '${RemoteUrls.secondHandUserMessagesConversations}$conversationId');
-    final response = await NetworkParser.callClientWithCatchException(
-      () => _client.post(uri,
-          headers: _jsonHeaders(token: token),
-          body: jsonEncode({'body': body})),
-    );
-    final message = response['message'];
-    if (message is Map) {
-      return SecondHandMessage.fromMap(Map<String, dynamic>.from(message));
+
+    if (attachmentPaths.isEmpty) {
+      final response = await NetworkParser.callClientWithCatchException(
+        () => _client.post(uri,
+            headers: _jsonHeaders(token: token),
+            body: jsonEncode({'body': body})),
+      );
+      return _parseSentMessage(response);
     }
+
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll(_multipartHeaders(token: token));
+    if (body.trim().isNotEmpty) {
+      request.fields['body'] = body.trim();
+    }
+    for (final path in attachmentPaths) {
+      final name = path.replaceAll('\\', '/').split('/').last;
+      final safeName = name.contains('.') ? name : 'upload.jpg';
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'attachments[]',
+          path,
+          filename: safeName,
+        ),
+      );
+    }
+
+    final streamed = await request.send();
+    final response = await NetworkParser.callClientWithCatchException(
+      () => http.Response.fromStream(streamed),
+    );
+    return _parseSentMessage(response);
+  }
+
+  SecondHandMessage _parseSentMessage(dynamic response) {
+    Map<String, dynamic>? messageMap;
+    if (response is Map) {
+      final sent = response['sent'];
+      final message = response['message'];
+      if (sent is Map) {
+        messageMap = Map<String, dynamic>.from(sent);
+      } else if (message is Map) {
+        messageMap = Map<String, dynamic>.from(message);
+      }
+
+      final atts = response['attachments'];
+      if (messageMap != null && atts is List) {
+        messageMap['attachments'] = atts;
+      }
+    }
+
+    if (messageMap != null) {
+      return SecondHandMessage.fromMap(messageMap);
+    }
+
     throw Exception('Mesaj gönderilemedi.');
   }
 
