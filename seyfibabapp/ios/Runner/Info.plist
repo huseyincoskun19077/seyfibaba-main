@@ -46,6 +46,14 @@
 	<false/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Doğrulama belgesi ve ürün fotoğrafları çekmek için kameraya erişim gerekir.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Galeriden doğrulama belgesi ve ürün fotoğrafı seçmek için erişim gerekir.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Çekilen fotoğrafları kaydetmek için galeri erişimi gerekir.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Video kaydı sırasında mikrofon erişimi gerekebilir.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
