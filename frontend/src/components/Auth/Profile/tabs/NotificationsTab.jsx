@@ -19,6 +19,10 @@ function extractMessage(notification) {
 function extractTitle(notification) {
   const type = notification?.data?.type || "";
   const title = notification?.data?.title || notification?.data?.subject;
+  if (type === "second_hand_message") {
+    const listing = notification?.data?.listing_title;
+    return listing ? `İkinci El: ${listing}` : "İkinci El mesaj";
+  }
   if (title) return title;
   if (type === "order") return "Sipariş bildirimi";
   if (type === "campaign") return "Kampanya";
@@ -142,6 +146,18 @@ export default function NotificationsTab() {
                     <p className="mt-1 text-sm text-qgraytwo leading-6">
                       {notification.message}
                     </p>
+                    {notification?.data?.type === "second_hand_message" && (
+                      <a
+                        href={`/profile?c2c_conv=${encodeURIComponent(
+                          String(notification?.data?.conversation_id || "")
+                        )}#second-hand-messages`}
+                        className="mt-2 inline-block text-xs font-700 text-qblack underline"
+                      >
+                        {notification?.data?.listing_title
+                          ? `Ürüne git: ${notification.data.listing_title}`
+                          : "İkinci el mesajlara git"}
+                      </a>
+                    )}
                     <p className="mt-2 text-xs text-qgray">
                       {formatDateTime(notification.created_at)}
                     </p>

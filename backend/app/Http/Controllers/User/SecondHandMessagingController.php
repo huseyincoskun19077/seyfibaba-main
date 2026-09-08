@@ -10,15 +10,18 @@ use App\Models\SecondHandMessageAttachment;
 use App\Models\SecondHandMessageModerationLog;
 use App\Models\SecondHandUserBlock;
 use App\Models\SecondHandVerification;
-use App\Mail\SecondHandFirstMessageMail;
 use App\Events\SecondHandMessageSent;
+use App\Mail\SecondHandFirstMessageMail;
+use App\Models\User;
+use App\Notifications\SecondHandNewMessageNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
 class SecondHandMessagingController extends Controller
@@ -215,6 +218,30 @@ class SecondHandMessagingController extends Controller
         abort_unless($ok, 403, 'Mesajlaşma için hesabınızı doğrulamanız gerekiyor.');
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function deliverSecondHandMessageNotice(User $receiver, array $data): void
+    {
+        try {
+            $receiver->notify(new SecondHandNewMessageNotification($data));
+        } catch (\Throwable $e) {
+            Log::warning('Second hand message notify failed', [
+                'user_id' => $receiver->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            Event::dispatch(new SecondHandMessageSent($data, $receiver));
+        } catch (\Throwable $e) {
+            Log::warning('Second hand message broadcast failed', [
+                'user_id' => $receiver->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     public function inbox(Request $request)
     {
         $user = Auth::guard('api')->user();
@@ -315,6 +342,15 @@ class SecondHandMessagingController extends Controller
 
         return response()->json([
             'conversations' => $conversations,
+            'unread_total' => (int) SecondHandMessage::query()
+                ->whereNull('read_at')
+                ->where('sender_id', '!=', $userId)
+                ->whereHas('conversation', function ($q) use ($userId) {
+                    $q->where(function ($inner) use ($userId) {
+                        $inner->where('seller_id', $userId)->orWhere('buyer_id', $userId);
+                    });
+                })
+                ->count(),
         ]);
     }
 
@@ -505,16 +541,16 @@ class SecondHandMessagingController extends Controller
             ];
         });
 
-        // Realtime bildirim (satıcıya)
+        // Bildirim + realtime (satıcıya)
         try {
-            $receiver = \App\Models\User::query()->find($sellerId);
+            $receiver = User::query()->find($sellerId);
             if ($receiver) {
                 $sellerBusinessName = (string) SecondHandVerification::query()
                     ->where('user_id', $sellerId)
                     ->where('status', SecondHandVerification::STATUS_APPROVED)
                     ->value('business_name');
                 $buyerDisplay = 'Alıcı';
-                Event::dispatch(new SecondHandMessageSent([
+                $this->deliverSecondHandMessageNotice($receiver, [
                     'conversation_id' => (int) $payload['conversation']->id,
                     'listing_id' => (int) $listing->id,
                     'listing_title' => (string) $listing->title,
@@ -534,7 +570,7 @@ class SecondHandMessagingController extends Controller
                         ];
                     })->values()->all(),
                     'type' => 'incoming',
-                ], $receiver));
+                ]);
             }
         } catch (\Throwable $e) {
             // bildirim hatası mesajlaşmayı bozmasın
@@ -628,11 +664,11 @@ class SecondHandMessagingController extends Controller
             return ['message' => $msg, 'attachments' => $attachments];
         });
 
-        // Realtime bildirim (karşı tarafa)
+        // Bildirim + realtime (karşı tarafa)
         try {
             $senderId = (int) $user->id;
             $receiverId = (int) ($senderId === (int) $conversation->seller_id ? $conversation->buyer_id : $conversation->seller_id);
-            $receiver = \App\Models\User::query()->find($receiverId);
+            $receiver = User::query()->find($receiverId);
             if ($receiver && $conversation->listing) {
                 $sellerBusinessName = (string) SecondHandVerification::query()
                     ->where('user_id', (int) $conversation->seller_id)
@@ -641,7 +677,7 @@ class SecondHandMessagingController extends Controller
                 $buyerDisplay = 'Alıcı';
                 $senderRole = $senderId === (int) $conversation->seller_id ? 'seller' : 'buyer';
                 $senderDisplay = $senderRole === 'seller' ? ($sellerBusinessName ?: 'Satıcı') : $buyerDisplay;
-                Event::dispatch(new SecondHandMessageSent([
+                $this->deliverSecondHandMessageNotice($receiver, [
                     'conversation_id' => (int) $conversation->id,
                     'listing_id' => (int) $conversation->listing->id,
                     'listing_title' => (string) ($conversation->listing->title ?? 'İlan'),
@@ -661,7 +697,7 @@ class SecondHandMessagingController extends Controller
                         ];
                     })->values()->all(),
                     'type' => 'incoming',
-                ], $receiver));
+                ]);
             }
         } catch (\Throwable $e) {
             // bildirim hatası mesajlaşmayı bozmasın

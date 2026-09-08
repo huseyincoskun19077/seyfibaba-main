@@ -52,16 +52,19 @@ class PaginatedConversations {
     required this.items,
     required this.currentPage,
     required this.lastPage,
+    this.unreadTotal = 0,
   });
 
   final List<SecondHandConversation> items;
   final int currentPage;
   final int lastPage;
+  final int unreadTotal;
 
   bool get hasMore => currentPage < lastPage;
 
   static PaginatedConversations fromResponse(Map<String, dynamic> json) {
     final block = json['conversations'];
+    final unreadTotal = int.tryParse('${json['unread_total'] ?? 0}') ?? 0;
     if (block is Map<String, dynamic>) {
       final data = block['data'];
       return PaginatedConversations(
@@ -74,9 +77,15 @@ class PaginatedConversations {
             : [],
         currentPage: int.tryParse('${block['current_page'] ?? 1}') ?? 1,
         lastPage: int.tryParse('${block['last_page'] ?? 1}') ?? 1,
+        unreadTotal: unreadTotal,
       );
     }
-    return PaginatedConversations(items: const [], currentPage: 1, lastPage: 1);
+    return PaginatedConversations(
+      items: const [],
+      currentPage: 1,
+      lastPage: 1,
+      unreadTotal: unreadTotal,
+    );
   }
 }
 

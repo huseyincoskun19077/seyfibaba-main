@@ -52,7 +52,7 @@ import {
   useGetStateListApiQuery,
   useGetCityListApiQuery,
 } from "@/redux/features/locations/apiSlice";
-import { useSecondHandVerificationQuery } from "@/redux/features/secondHand/apiSlice";
+import { useSecondHandVerificationQuery, useSecondHandInboxQuery } from "@/redux/features/secondHand/apiSlice";
 
 /** İkinci el doğrulama onay tikı (yeşil) */
 function SecondHandApprovedTick({ className = "", title = "Doğrulandı" }) {
@@ -283,13 +283,12 @@ function ProfileContent() {
     String(secondHandVerData?.verification?.status || "").trim().toLowerCase() ===
       "approved";
 
-  /**
-   * get user location
-   * useState userLocation
-   * @Inilization  getCountryListApi, getStateListApi, getCityListApi
-   * @param {object|array}
-   * @returns {object|array}
-   */
+  const { data: secondHandInboxData } = useSecondHandInboxQuery(undefined, {
+    skip: !isAuthed || !secondHandVerified,
+    refetchOnFocus: true,
+    pollingInterval: 60000,
+  });
+  const secondHandUnreadCount = Number(secondHandInboxData?.unread_total || 0);
   const [userLocation, setUserLocation] = useState({
     country: null,
     state: null,
@@ -485,6 +484,11 @@ function ProfileContent() {
                                   <span className="leading-none">Onaylı</span>
                                 </span>
                               )}
+                              {secondHandUnreadCount > 0 && (
+                                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-[11px] font-800">
+                                  {secondHandUnreadCount > 99 ? "99+" : secondHandUnreadCount}
+                                </span>
+                              )}
                             </span>
                             <span className="text-[10px] font-600 uppercase tracking-wide text-amber-900/80 truncate">
                               Kendi ilanını yayınla
@@ -527,9 +531,16 @@ function ProfileContent() {
                             >
                               <span className="flex items-center justify-between gap-2">
                                 <span>{label}</span>
-                                {sub === "verification" && secondHandVerified && (
-                                  <SecondHandApprovedTick className="w-5 h-5 shrink-0" title="İkinci el doğrulandı" />
-                                )}
+                                <span className="inline-flex items-center gap-1.5">
+                                  {sub === "messages" && secondHandUnreadCount > 0 && (
+                                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-800">
+                                      {secondHandUnreadCount > 99 ? "99+" : secondHandUnreadCount}
+                                    </span>
+                                  )}
+                                  {sub === "verification" && secondHandVerified && (
+                                    <SecondHandApprovedTick className="w-5 h-5 shrink-0" title="İkinci el doğrulandı" />
+                                  )}
+                                </span>
                               </span>
                             </button>
                           ))}

@@ -993,11 +993,13 @@ class ShBottomNavItem {
     required this.icon,
     required this.activeIcon,
     required this.label,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final IconData activeIcon;
   final String label;
+  final int badgeCount;
 }
 
 /// Ana uygulama / CRM ile aynı dil: yüzen, yuvarlak menü çubuğu.
@@ -1073,12 +1075,24 @@ class ShBottomNav extends StatelessWidget {
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: Icon(
-                                  selected ? item.activeIcon : item.icon,
-                                  size: 22,
-                                  color: selected
-                                      ? ShTheme.dark
-                                      : ShTheme.muted,
+                                child: Badge(
+                                  isLabelVisible: item.badgeCount > 0,
+                                  label: Text(
+                                    item.badgeCount > 99
+                                        ? '99+'
+                                        : '${item.badgeCount}',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    selected ? item.activeIcon : item.icon,
+                                    size: 22,
+                                    color: selected
+                                        ? ShTheme.dark
+                                        : ShTheme.muted,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 2),

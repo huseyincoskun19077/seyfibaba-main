@@ -81,6 +81,7 @@ class _SecondHandListScreenState extends State<SecondHandListScreen> {
   List<Map<String, dynamic>> _categories = [];
   late int _tab;
   List<String> _recentSearches = [];
+  int _unreadMessages = 0;
 
   String get _token =>
       context.read<LoginBloc>().userInfo?.accessToken ?? '';
@@ -91,6 +92,7 @@ class _SecondHandListScreenState extends State<SecondHandListScreen> {
     _tab = widget.initialTab.clamp(1, 5);
     _load(reset: true);
     _loadRecentSearches();
+    _loadUnreadMessages();
     _scrollController.addListener(_onScroll);
     _service.fetchCategories().then((cats) {
       if (mounted) {
@@ -99,6 +101,18 @@ class _SecondHandListScreenState extends State<SecondHandListScreen> {
         });
       }
     }).catchError((_) => <Map<String, dynamic>>[]);
+  }
+
+  Future<void> _loadUnreadMessages() async {
+    final token = _token;
+    if (token.isEmpty) return;
+    try {
+      final inbox = await _service.fetchInbox(token: token, page: 1);
+      if (!mounted) return;
+      setState(() => _unreadMessages = inbox.unreadTotal);
+    } catch (_) {
+      // oturum/doğrulama yoksa rozet gösterme
+    }
   }
 
   @override
@@ -372,6 +386,7 @@ class _SecondHandListScreenState extends State<SecondHandListScreen> {
             icon: Icons.chat_bubble_outline,
             activeIcon: Icons.chat_bubble,
             label: 'Mesajlar',
+            badgeCount: _unreadMessages,
           ),
         ],
       ),

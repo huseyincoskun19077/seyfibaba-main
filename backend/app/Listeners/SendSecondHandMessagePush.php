@@ -3,19 +3,14 @@
 namespace App\Listeners;
 
 use App\Events\SecondHandMessageSent;
-use App\Notifications\SecondHandNewMessageNotification;
 
+/**
+ * Bildirim controller'da gönderilir; bu listener yalnızca broadcast sonrası ek iş için tutulur.
+ */
 class SendSecondHandMessagePush
 {
     public function handle(SecondHandMessageSent $event): void
     {
-        try {
-            $event->user->notify(new SecondHandNewMessageNotification($event->data));
-        } catch (\Throwable $e) {
-            \Log::warning('Second hand message notification failed', [
-                'user_id' => $event->user->id ?? null,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        // no-op: database + FCM SecondHandMessagingController::deliverSecondHandMessageNotice içinde
     }
 }

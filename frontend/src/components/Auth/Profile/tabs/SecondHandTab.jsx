@@ -247,11 +247,12 @@ function SecondHandTab({ subNav = "" }) {
   );
 
   const { data: inboxData, isLoading: inboxIsLoading, isFetching: inboxIsFetching, error: inboxError } = useSecondHandInboxQuery(undefined, {
-    // Hız: diğer sekmelerde inbox çekme.
-    skip: !tokenReady || section !== "messages",
+    skip: !tokenReady || !isApproved,
     refetchOnFocus: true,
     refetchOnReconnect: true,
+    pollingInterval: section === "messages" ? 20000 : 60000,
   });
+  const unreadMessageTotal = Number(inboxData?.unread_total || 0);
 
   const { data: threadData, isLoading: threadIsLoading, isFetching: threadIsFetching } = useSecondHandConversationMessagesQuery(
     selectedConversationId,
@@ -1138,7 +1139,7 @@ JSON şeması:
           { id: "verification", label: "Doğrulama" },
           { id: "listings", label: "İlanlarım", disabled: !isApproved },
           { id: "create", label: "İlan ekle", disabled: !isApproved },
-          { id: "messages", label: "Mesajlar" },
+          { id: "messages", label: "Mesajlar", badge: unreadMessageTotal },
         ].map((t) => (
           <button
             key={t.id}
@@ -1156,6 +1157,11 @@ JSON şeması:
               {t.label}
               {t.id === "verification" && isApproved && (
                 <SecondHandApprovedTick className="w-5 h-5 shrink-0" title="İkinci el doğrulandı" />
+              )}
+              {Number(t.badge || 0) > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-800">
+                  {Number(t.badge) > 99 ? "99+" : t.badge}
+                </span>
               )}
             </span>
           </button>
@@ -2066,7 +2072,9 @@ JSON şeması:
                         selectedConversationId === c.id ? "bg-qyellow/30" : ""
                       }`}
                     >
-                      <div className="font-600 truncate">{c.listing?.title || "İlan"}</div>
+                      <div className="font-700 truncate text-qblack">
+                        Ürün: {c.listing?.title || "İlan"}
+                      </div>
                       <div className="text-[11px] text-qgray truncate">
                         {String(c?.counterparty_role || "") === "seller"
                           ? (c.seller_business_name || c.counterparty_display || "Satıcı")
@@ -2077,7 +2085,9 @@ JSON şeması:
                         {c.last_message_preview || "—"}
                       </div>
                       {c.unread_count > 0 && (
-                        <span className="text-xs text-white bg-red-500 px-1.5 rounded">{c.unread_count}</span>
+                        <span className="mt-1 inline-flex text-xs text-white bg-red-500 px-1.5 rounded">
+                          {c.unread_count} yeni
+                        </span>
                       )}
                     </button>
                   </li>
@@ -2094,8 +2104,10 @@ JSON şeması:
               <>
                 <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="text-xs text-qgray truncate">{selectedConversation?.listing?.title || "İlan"}</div>
-                    <div className="text-sm font-700 text-qblack truncate">
+                    <div className="text-xs font-700 text-qblack truncate">
+                      Ürün: {selectedConversation?.listing?.title || "İlan"}
+                    </div>
+                    <div className="text-sm font-600 text-qgray truncate">
                       {String(selectedConversation?.counterparty_role || "") === "seller"
                         ? (selectedConversation?.seller_business_name || selectedConversation?.counterparty_display || "Satıcı")
                         : (selectedConversation?.counterparty_display || "Alıcı")}

@@ -1060,7 +1060,7 @@ class SecondHandMessagesTabState extends State<SecondHandMessagesTab> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            conv.listingTitle,
+                            'Ürün: ${conv.listingTitle}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -1070,9 +1070,22 @@ class SecondHandMessagesTabState extends State<SecondHandMessagesTab> {
                           ),
                           const SizedBox(height: 3),
                           Text(
+                            conv.counterpartyDisplay.isNotEmpty
+                                ? conv.counterpartyDisplay
+                                : 'Karşı taraf',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: ShTheme.muted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
                             conv.lastMessagePreview.isNotEmpty
                                 ? conv.lastMessagePreview
-                                : conv.counterpartyDisplay,
+                                : 'Mesaj yok',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
