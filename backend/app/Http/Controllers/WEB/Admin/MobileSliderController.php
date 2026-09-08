@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MobileSlider;
 use File;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class MobileSliderController extends Controller
 {
@@ -16,6 +17,13 @@ class MobileSliderController extends Controller
 
     public function index(Request $request)
     {
+        if (! Schema::hasTable('mobile_sliders')) {
+            return redirect()->route('admin.slider.index')->with([
+                'messege' => 'mobile_sliders tablosu yok. Sunucuda çalıştırın: cd /opt/seyfibaba-main/backend && php artisan migrate --force',
+                'alert-type' => 'error',
+            ]);
+        }
+
         $sliders = MobileSlider::query()->orderBy('serial')->orderBy('id')->get();
         $editSlider = null;
         if ($request->filled('edit')) {
@@ -27,6 +35,13 @@ class MobileSliderController extends Controller
 
     public function store(Request $request)
     {
+        if (! Schema::hasTable('mobile_sliders')) {
+            return redirect()->route('admin.slider.index')->with([
+                'messege' => 'mobile_sliders tablosu yok. Önce migrate çalıştırın.',
+                'alert-type' => 'error',
+            ]);
+        }
+
         $request->validate([
             'image' => [$request->filled('id') ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'title' => ['nullable', 'string', 'max:255'],
