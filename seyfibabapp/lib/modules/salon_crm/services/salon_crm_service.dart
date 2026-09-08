@@ -1000,6 +1000,95 @@ class SalonCrmCalendarShare {
   }
 }
 
+class SalonCrmWebsiteSettings {
+  SalonCrmWebsiteSettings({
+    required this.websiteEnabled,
+    required this.showCalendar,
+    required this.showPrices,
+    required this.showStaffAppointments,
+    required this.subscriptionUnlocked,
+    required this.publicActive,
+    this.province,
+    this.district,
+    this.type = 'kuafor',
+    this.name = '',
+    this.phone,
+    this.whatsapp,
+    this.instagram,
+    this.address,
+    this.addressLat,
+    this.addressLng,
+    this.profileText,
+    this.logoImage,
+    this.openHour = 9,
+    this.closeHour = 21,
+    this.seoTitle,
+    this.seoDescription,
+    this.path,
+    this.url,
+    this.qrUrl,
+    this.accessMessage,
+  });
+
+  final bool websiteEnabled;
+  final bool showCalendar;
+  final bool showPrices;
+  final bool showStaffAppointments;
+  final bool subscriptionUnlocked;
+  final bool publicActive;
+  final String? province;
+  final String? district;
+  final String type;
+  final String name;
+  final String? phone;
+  final String? whatsapp;
+  final String? instagram;
+  final String? address;
+  final double? addressLat;
+  final double? addressLng;
+  final String? profileText;
+  final String? logoImage;
+  final int openHour;
+  final int closeHour;
+  final String? seoTitle;
+  final String? seoDescription;
+  final String? path;
+  final String? url;
+  final String? qrUrl;
+  final String? accessMessage;
+
+  factory SalonCrmWebsiteSettings.fromMap(Map<String, dynamic> map) {
+    return SalonCrmWebsiteSettings(
+      websiteEnabled: map['website_enabled'] == true,
+      showCalendar: map['website_show_calendar'] == true,
+      showPrices: map['website_show_prices'] == true,
+      showStaffAppointments: map['website_show_staff_appointments'] == true,
+      subscriptionUnlocked: map['subscription_unlocked'] == true,
+      publicActive: map['public_active'] == true,
+      province: map['website_province']?.toString(),
+      district: map['website_district']?.toString(),
+      type: '${map['type'] ?? 'kuafor'}',
+      name: '${map['name'] ?? ''}',
+      phone: map['phone']?.toString(),
+      whatsapp: map['whatsapp']?.toString(),
+      instagram: map['instagram']?.toString(),
+      address: map['address']?.toString(),
+      addressLat: double.tryParse('${map['address_lat'] ?? ''}'),
+      addressLng: double.tryParse('${map['address_lng'] ?? ''}'),
+      profileText: map['profile_text']?.toString(),
+      logoImage: map['logo_image']?.toString(),
+      openHour: int.tryParse('${map['open_hour'] ?? 9}') ?? 9,
+      closeHour: int.tryParse('${map['close_hour'] ?? 21}') ?? 21,
+      seoTitle: map['website_seo_title']?.toString(),
+      seoDescription: map['website_seo_description']?.toString(),
+      path: map['path']?.toString(),
+      url: map['url']?.toString(),
+      qrUrl: map['qr_url']?.toString(),
+      accessMessage: map['access_message']?.toString(),
+    );
+  }
+}
+
 class SalonCrmService {
   SalonCrmService({http.Client? client}) : _client = client ?? http.Client();
 
@@ -1500,6 +1589,106 @@ class SalonCrmService {
       ),
     );
     return SalonCrmCalendarShare.fromMap(Map<String, dynamic>.from(response));
+  }
+
+  Future<SalonCrmWebsiteSettings> fetchWebsiteSettings(String token) async {
+    final response = await NetworkParser.callClientWithCatchException(
+      () => _client.get(
+        Uri.parse(RemoteUrls.salonCrmWebsite),
+        headers: _headers(token),
+      ),
+    );
+    return SalonCrmWebsiteSettings.fromMap(Map<String, dynamic>.from(response));
+  }
+
+  Future<Map<String, dynamic>> previewWebsiteUrl({
+    required String token,
+    required String province,
+    required String district,
+    required String name,
+  }) async {
+    final response = await NetworkParser.callClientWithCatchException(
+      () => _client.post(
+        Uri.parse(RemoteUrls.salonCrmWebsitePreview),
+        headers: _headers(token),
+        body: jsonEncode({
+          'province': province,
+          'district': district,
+          'name': name,
+        }),
+      ),
+    );
+    return Map<String, dynamic>.from(response);
+  }
+
+  Future<SalonCrmWebsiteSettings> updateWebsiteSettings({
+    required String token,
+    bool? websiteEnabled,
+    bool? showCalendar,
+    bool? showPrices,
+    bool? showStaffAppointments,
+    String? province,
+    String? district,
+    String? name,
+    String? type,
+    String? phone,
+    String? whatsapp,
+    String? instagram,
+    String? address,
+    double? addressLat,
+    double? addressLng,
+    String? profileText,
+    int? openHour,
+    int? closeHour,
+    String? seoTitle,
+    String? seoDescription,
+    String? logoImagePath,
+    bool removeLogo = false,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(RemoteUrls.salonCrmWebsite),
+    );
+    request.headers.addAll(_multipartHeaders(token));
+    void flag(String key, bool? value) {
+      if (value != null) request.fields[key] = value ? '1' : '0';
+    }
+
+    flag('website_enabled', websiteEnabled);
+    flag('website_show_calendar', showCalendar);
+    flag('website_show_prices', showPrices);
+    flag('website_show_staff_appointments', showStaffAppointments);
+    if (province != null) request.fields['website_province'] = province;
+    if (district != null) request.fields['website_district'] = district;
+    if (name != null) request.fields['name'] = name;
+    if (type != null) request.fields['type'] = type;
+    if (phone != null) request.fields['phone'] = phone;
+    if (whatsapp != null) request.fields['whatsapp'] = whatsapp;
+    if (instagram != null) request.fields['instagram'] = instagram;
+    if (address != null) request.fields['address'] = address;
+    if (addressLat != null) {
+      request.fields['address_lat'] = addressLat.toString();
+    }
+    if (addressLng != null) {
+      request.fields['address_lng'] = addressLng.toString();
+    }
+    if (profileText != null) request.fields['profile_text'] = profileText;
+    if (openHour != null) request.fields['open_hour'] = '$openHour';
+    if (closeHour != null) request.fields['close_hour'] = '$closeHour';
+    if (seoTitle != null) request.fields['website_seo_title'] = seoTitle;
+    if (seoDescription != null) {
+      request.fields['website_seo_description'] = seoDescription;
+    }
+    if (removeLogo) request.fields['remove_logo'] = '1';
+    if (logoImagePath != null && logoImagePath.isNotEmpty) {
+      request.files.add(await _imagePart('logo_image', logoImagePath));
+    }
+
+    final streamed = await request.send();
+    final response = await NetworkParser.callClientWithCatchException(
+      () => http.Response.fromStream(streamed),
+    );
+    return SalonCrmWebsiteSettings.fromMap(Map<String, dynamic>.from(response));
   }
 
   Future<SalonCrmSalonProfile> updateSalonProfile({

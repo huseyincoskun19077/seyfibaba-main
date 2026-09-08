@@ -713,6 +713,16 @@ class SalonCrmController extends Controller
             $salon->cover_image = $imageStorage->store($request->file('cover_image'), 'salon-crm-cover');
         }
 
+        if (
+            Schema::hasColumn('salon_crm_salons', 'website_name_slug')
+            && $salon->website_province
+            && $salon->website_district
+            && trim((string) $salon->name) !== ''
+        ) {
+            app(\App\Services\SalonCrmWebsiteService::class)
+                ->applySlugFields($salon, (string) $salon->website_province, (string) $salon->website_district, (string) $salon->name);
+        }
+
         $salon->save();
 
         return response()->json([

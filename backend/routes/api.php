@@ -329,6 +329,12 @@ Route::group([], function () {
         });
         Route::get('salon-crm/calendar/{token}', [\App\Http\Controllers\User\SalonCrmCalendarController::class, 'publicShow'])
             ->where('token', '[A-Za-z0-9]+');
+        Route::get('salon-crm/website/{province}/{district}/{slug}', [\App\Http\Controllers\User\SalonCrmWebsiteController::class, 'publicShow'])
+            ->where([
+                'province' => '[a-z0-9\-]+',
+                'district' => '[a-z0-9\-]+',
+                'slug' => '[a-z0-9\-]+',
+            ]);
         Route::post('salon-crm/auth/customer/register', [\App\Http\Controllers\User\SalonCrmAuthController::class, 'customerRegister']);
         Route::post('salon-crm/auth/customer/login', [\App\Http\Controllers\User\SalonCrmAuthController::class, 'customerLogin']);
 
@@ -374,6 +380,9 @@ Route::group([], function () {
             Route::patch('salon-crm/services/{id}', [\App\Http\Controllers\User\SalonCrmController::class, 'servicesUpdate']);
             Route::post('salon-crm/register', [\App\Http\Controllers\User\SalonCrmController::class, 'register']);
             Route::post('salon-crm/profile', [\App\Http\Controllers\User\SalonCrmController::class, 'profileUpdate']);
+            Route::get('salon-crm/website', [\App\Http\Controllers\User\SalonCrmWebsiteController::class, 'show']);
+            Route::post('salon-crm/website/preview', [\App\Http\Controllers\User\SalonCrmWebsiteController::class, 'preview']);
+            Route::post('salon-crm/website', [\App\Http\Controllers\User\SalonCrmWebsiteController::class, 'update']);
         });
 
         // İkinci El (C2C) doğrulama

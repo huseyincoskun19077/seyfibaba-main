@@ -354,6 +354,15 @@ class _SalonCrmHomeScreenState extends State<SalonCrmHomeScreen> {
               ),
             ),
             CrmMenuTile(
+              icon: Icons.language_rounded,
+              title: 'Web siteni aç',
+              subtitle: 'İl / ilçe / ad ile public sayfa',
+              onTap: () => Navigator.pushNamed(
+                context,
+                RouteNames.salonCrmWebsiteScreen,
+              ),
+            ),
+            CrmMenuTile(
               icon: Icons.storefront_rounded,
               title: 'Salon profili',
               subtitle: 'Ad, fotoğraf ve saatler',
@@ -768,6 +777,15 @@ class _SalonCrmHomeScreenState extends State<SalonCrmHomeScreen> {
                 onTap: () => Navigator.pushNamed(
                   context,
                   RouteNames.salonCrmCalendarShareScreen,
+                ),
+              ),
+              _QuickAction(
+                icon: Icons.language_rounded,
+                label: 'Web siteni aç',
+                color: const Color(0xFF059669),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  RouteNames.salonCrmWebsiteScreen,
                 ),
               ),
               _QuickAction(

@@ -87,6 +87,7 @@ export '/modules/salon_crm/screens/salon_crm_profile_screen.dart';
 export '/modules/salon_crm/screens/salon_crm_services_screen.dart';
 export '/modules/salon_crm/screens/salon_crm_customer_code_screen.dart';
 export '/modules/salon_crm/screens/salon_crm_calendar_share_screen.dart';
+export '/modules/salon_crm/screens/salon_crm_website_screen.dart';
 export '/modules/salon_crm/screens/salon_crm_my_photo_screen.dart';
 export '/modules/salon_crm/screens/salon_crm_customer_link_screen.dart';
 export '/modules/salon_crm/screens/salon_crm_customer_qr_scan_screen.dart';

@@ -132,6 +132,7 @@ class RouteNames {
       '/salonCrmCustomerCodeScreen';
   static const String salonCrmCalendarShareScreen =
       '/salonCrmCalendarShareScreen';
+  static const String salonCrmWebsiteScreen = '/salonCrmWebsiteScreen';
   static const String salonCrmMyPhotoScreen = '/salonCrmMyPhotoScreen';
   static const String salonCrmCustomerLinkScreen = '/salonCrmCustomerLinkScreen';
   static const String salonCrmCustomerQrScanScreen =
@@ -496,6 +497,12 @@ class RouteNames {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const SalonCrmCalendarShareScreen(),
+        );
+
+      case RouteNames.salonCrmWebsiteScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SalonCrmWebsiteScreen(),
         );
 
       case RouteNames.salonCrmMyPhotoScreen:

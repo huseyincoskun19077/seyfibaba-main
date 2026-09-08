@@ -409,6 +409,9 @@ class RemoteUrls {
   static const String salonCrmProfile = '${baseUrl}user/salon-crm/profile';
   static const String salonCrmCalendarShare =
       '${baseUrl}user/salon-crm/calendar-share';
+  static const String salonCrmWebsite = '${baseUrl}user/salon-crm/website';
+  static const String salonCrmWebsitePreview =
+      '${baseUrl}user/salon-crm/website/preview';
   static String salonCrmStaffPhoto(int id) =>
       '${baseUrl}user/salon-crm/staff/$id/photo';
 
