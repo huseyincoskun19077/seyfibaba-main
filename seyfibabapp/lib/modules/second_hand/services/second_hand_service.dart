@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/data/datasources/network_parser.dart';
@@ -469,13 +470,18 @@ class SecondHandService {
     required String token,
     int page = 1,
   }) async {
+    debugPrint('[SecondHand] fetchInbox page=$page');
     final uri = Uri.parse(RemoteUrls.secondHandUserMessagesInbox)
         .replace(queryParameters: {'page': '$page'});
     final response = await NetworkParser.callClientWithCatchException(
       () => _client.get(uri, headers: _jsonHeaders(token: token)),
     );
-    return PaginatedConversations.fromResponse(
+    final result = PaginatedConversations.fromResponse(
         Map<String, dynamic>.from(response));
+    debugPrint(
+      '[SecondHand] fetchInbox ok items=${result.items.length} unread=${result.unreadTotal}',
+    );
+    return result;
   }
 
   Future<PaginatedMessages> fetchConversationMessages({
@@ -483,14 +489,21 @@ class SecondHandService {
     required int conversationId,
     int page = 1,
   }) async {
+    debugPrint(
+      '[SecondHand] fetchMessages conversationId=$conversationId page=$page',
+    );
     final uri =
         Uri.parse('${RemoteUrls.secondHandUserMessagesConversations}$conversationId')
             .replace(queryParameters: {'page': '$page'});
     final response = await NetworkParser.callClientWithCatchException(
       () => _client.get(uri, headers: _jsonHeaders(token: token)),
     );
-    return PaginatedMessages.fromResponse(
+    final result = PaginatedMessages.fromResponse(
         Map<String, dynamic>.from(response));
+    debugPrint(
+      '[SecondHand] fetchMessages ok count=${result.items.length} listing=${result.conversation?.listingTitle}',
+    );
+    return result;
   }
 
   Future<void> markConversationRead({
@@ -509,6 +522,9 @@ class SecondHandService {
     required int listingId,
     required String body,
   }) async {
+    debugPrint(
+      '[SecondHand] sendToListing listingId=$listingId bodyLen=${body.trim().length}',
+    );
     final uri =
         Uri.parse('${RemoteUrls.secondHandUserMessagesListings}$listingId');
     final response = await NetworkParser.callClientWithCatchException(
@@ -517,7 +533,9 @@ class SecondHandService {
           body: jsonEncode({'body': body})),
     );
     final conversationId = response['conversation_id'] ?? response['conversation']?['id'];
-    return int.tryParse('$conversationId') ?? 0;
+    final id = int.tryParse('$conversationId') ?? 0;
+    debugPrint('[SecondHand] sendToListing ok conversationId=$id');
+    return id;
   }
 
   Future<SecondHandMessage> sendToConversation({
@@ -526,6 +544,9 @@ class SecondHandService {
     String body = '',
     List<String> attachmentPaths = const [],
   }) async {
+    debugPrint(
+      '[SecondHand] sendToConversation id=$conversationId bodyLen=${body.trim().length} files=${attachmentPaths.length}',
+    );
     final uri = Uri.parse(
         '${RemoteUrls.secondHandUserMessagesConversations}$conversationId');
 
@@ -535,7 +556,9 @@ class SecondHandService {
             headers: _jsonHeaders(token: token),
             body: jsonEncode({'body': body})),
       );
-      return _parseSentMessage(response);
+      final msg = _parseSentMessage(response);
+      debugPrint('[SecondHand] sendToConversation ok messageId=${msg.id}');
+      return msg;
     }
 
     final request = http.MultipartRequest('POST', uri);
@@ -559,7 +582,11 @@ class SecondHandService {
     final response = await NetworkParser.callClientWithCatchException(
       () => http.Response.fromStream(streamed),
     );
-    return _parseSentMessage(response);
+    final msg = _parseSentMessage(response);
+    debugPrint(
+      '[SecondHand] sendToConversation ok messageId=${msg.id} attachments=${msg.attachments.length}',
+    );
+    return msg;
   }
 
   SecondHandMessage _parseSentMessage(dynamic response) {

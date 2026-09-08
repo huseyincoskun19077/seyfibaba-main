@@ -27,15 +27,17 @@ class _SalonCrmGateScreenState extends State<SalonCrmGateScreen> {
   }
 
   Future<void> _boot() async {
+    debugPrint('[SalonCrm] gate boot');
     final session = await SalonCrmSession.read();
     if (!mounted) return;
 
     if (session != null) {
       final token = session['token'] ?? '';
+      final role = session['role'];
+      debugPrint('[SalonCrm] gate session role=$role');
       if (token.isNotEmpty) {
         SalonCrmService().syncPushToken(token);
       }
-      final role = session['role'];
       if (role == 'customer') {
         Navigator.pushReplacementNamed(
           context,
@@ -52,6 +54,7 @@ class _SalonCrmGateScreenState extends State<SalonCrmGateScreen> {
 
     // CRM session yok ama Seyfibaba'ya giriş yapmışsa → direkt patron girişi
     if (Utils.isLoggedIn(context)) {
+      debugPrint('[SalonCrm] gate → openPatron (no session)');
       await SalonCrmEntry.openPatron(context);
       // Setup/home'dan geri dönülünce Gate sonsuz loading'de kalmasın
       if (mounted) setState(() => _checking = false);
@@ -59,6 +62,7 @@ class _SalonCrmGateScreenState extends State<SalonCrmGateScreen> {
     }
 
     // Hiç giriş yapılmamış → rol seçim ekranı
+    debugPrint('[SalonCrm] gate → role picker');
     setState(() => _checking = false);
   }
 

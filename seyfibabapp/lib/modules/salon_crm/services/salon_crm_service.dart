@@ -1088,6 +1088,7 @@ class SalonCrmService {
   }
 
   Future<Map<String, dynamic>> patronBootstrap(String shoppingToken) async {
+    debugPrint('[SalonCrm] patronBootstrap request');
     final response = await NetworkParser.callClientWithCatchException(
       () => _client.post(
         Uri.parse(RemoteUrls.salonCrmPatronBootstrap),
@@ -1098,7 +1099,11 @@ class SalonCrmService {
         },
       ),
     );
-    return Map<String, dynamic>.from(response);
+    final map = Map<String, dynamic>.from(response);
+    debugPrint(
+      '[SalonCrm] patronBootstrap response has_salon=${map['has_salon']} message=${map['message']}',
+    );
+    return map;
   }
 
   Future<Map<String, dynamic>> patronRegisterLinked({

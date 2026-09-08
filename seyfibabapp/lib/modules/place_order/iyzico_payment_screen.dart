@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -29,6 +30,9 @@ class _IyzicoPaymentScreenState extends State<IyzicoPaymentScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint(
+      '[Iyzico] payment screen open orderId=${widget.args.orderId}',
+    );
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -57,9 +61,11 @@ class _IyzicoPaymentScreenState extends State<IyzicoPaymentScreen> {
         url.contains('payment_status=cancel');
 
     if (isSuccess) {
+      debugPrint('[Iyzico] payment success redirect');
       _canRedirect = false;
       _onPaymentSuccess();
     } else if (isFailed) {
+      debugPrint('[Iyzico] payment failed/cancel redirect');
       _canRedirect = false;
       Utils.errorSnackBar(context, 'Ödeme tamamlanamadı.');
       Navigator.pop(context);
@@ -69,6 +75,9 @@ class _IyzicoPaymentScreenState extends State<IyzicoPaymentScreen> {
   Future<void> _onPaymentSuccess() async {
     if (!mounted) return;
     Utils.showSnackBar(context, 'Ödemeniz başarıyla alındı.');
+    debugPrint(
+      '[Iyzico] payment success handled orderId=${widget.args.orderId}',
+    );
 
     await context.read<CartCubit>().getCartProducts();
 

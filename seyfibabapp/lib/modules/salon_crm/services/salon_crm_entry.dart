@@ -12,7 +12,9 @@ class SalonCrmEntry {
   SalonCrmEntry._();
 
   static Future<void> openPatron(BuildContext context) async {
+    debugPrint('[SalonCrm] openPatron start');
     if (!Utils.isLoggedIn(context)) {
+      debugPrint('[SalonCrm] openPatron → not logged in');
       Utils.errorSnackBar(
         context,
         'Salon paneli için önce Seyfibaba hesabınızla giriş yapın.',
@@ -25,6 +27,7 @@ class SalonCrmEntry {
     final existing = await SalonCrmSession.read();
     if (context.mounted && existing != null) {
       final role = existing['role'] ?? '';
+      debugPrint('[SalonCrm] openPatron existing session role=$role');
       if (role == 'owner' || role == 'staff') {
         await SalonCrmService().syncPushToken(existing['token'] ?? '');
         if (!context.mounted) return;
@@ -45,12 +48,15 @@ class SalonCrmEntry {
       if (jwt.isEmpty) throw Exception('Giriş gerekli');
 
       final service = SalonCrmService();
+      debugPrint('[SalonCrm] openPatron bootstrap…');
       final res = await service.patronBootstrap(jwt);
       if (context.mounted) Utils.closeDialog(context);
 
       if (!context.mounted) return;
 
-      if (res['has_salon'] == true) {
+      final hasSalon = res['has_salon'] == true;
+      debugPrint('[SalonCrm] openPatron has_salon=$hasSalon');
+      if (hasSalon) {
         final token = '${res['token'] ?? ''}';
         final salon = res['salon'];
         await SalonCrmSession.save(
@@ -63,13 +69,15 @@ class SalonCrmEntry {
         );
         await service.syncPushToken(token);
         if (!context.mounted) return;
+        debugPrint('[SalonCrm] openPatron → home');
         await Navigator.pushNamed(context, RouteNames.salonCrmHomeScreen);
       } else {
+        debugPrint('[SalonCrm] openPatron → setup');
         await Navigator.pushNamed(context, RouteNames.salonCrmPatronSetupScreen);
       }
     } catch (e) {
       if (context.mounted) Utils.closeDialog(context);
-      debugPrint('SalonCrmEntry.openPatron error: $e');
+      debugPrint('[SalonCrm] openPatron error: $e');
       if (!context.mounted) return;
       await Navigator.pushNamed(context, RouteNames.salonCrmPatronSetupScreen);
     }

@@ -39,15 +39,13 @@ class TrackingLocationScreenState extends State<TrackingLocationScreen> {
     pCubit = context.read<MapCubit>();
     initLatLng();
     _setMarkers();
-    _drawRoute();
-    pCubit.isOpen(true);
+    // Live courier tracking + Directions polling disabled.
     previousLocation = sourceLocation;
   }
 
   @override
   void dispose() {
-    pCubit.isOpen(false);
-    _timer?.cancel(); // Dispose the timer
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -140,8 +138,7 @@ class TrackingLocationScreenState extends State<TrackingLocationScreen> {
     );
     final response = await http.get(url);
 
-    debugPrint('Response status: ${response.statusCode}');
-    debugPrint('Response body: ${response.body}');
+    debugPrint('[Tracking] route status=${response.statusCode} bodyLen=${response.body.length}');
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -202,25 +199,8 @@ class TrackingLocationScreenState extends State<TrackingLocationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocConsumer<MapCubit, MapStateModel>(
-        listener: (context, state) {
-          final support = state.status;
-          if (support is RefreshStateEveryFive) {
-            if (state.isOpenSupport == true) {
-              pCubit.deliveryLocation();
-            }
-          }
-        },
+        listener: (context, state) {},
         builder: (context, state) {
-          LatLng updatedSourceLocation =
-              LatLng(state.dLatitude, state.dLongitude);
-
-          // Trigger marker animation when the location changes
-          if (updatedSourceLocation != destinationLocation) {
-            _animateMarker(updatedSourceLocation);
-            destinationLocation = updatedSourceLocation;
-            _drawRoute(); // Recalculate route if location changes
-          }
-
           return Stack(
             children: [
               GoogleMap(
