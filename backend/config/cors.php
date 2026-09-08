@@ -24,6 +24,8 @@ return [
         'http://seyfibaba.com',
         'https://www.seyfibaba.com',
         'http://www.seyfibaba.com',
+        'https://ikinciel.seyfibaba.com',
+        'http://ikinciel.seyfibaba.com',
         'http://213.238.181.47:3000',
         'http://localhost:3000',
         'http://127.0.0.1:3000',

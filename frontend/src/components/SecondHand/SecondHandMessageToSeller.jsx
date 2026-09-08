@@ -90,18 +90,46 @@ export default function SecondHandMessageToSeller({ listingId, sellerUserId }) {
   }
 
   if (verError) {
+    const playStoreUrl =
+      (typeof process !== "undefined" && process.env.NEXT_PUBLIC_PLAY_STORE_URL) ||
+      "https://play.google.com/store/apps/details?id=com.seyfibaba.app";
+    const appStoreUrl =
+      (typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_STORE_URL) ||
+      "https://apps.apple.com/tr/search?term=Seyfibaba";
+    const isIos =
+      typeof navigator !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    const storeUrl = isIos ? appStoreUrl : playStoreUrl;
+
     return (
       <div className="mt-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
         <div className="px-4 py-4">
           <p className="text-sm font-700 text-qblack">Doğrulama durumu alınamadı</p>
-          <p className="mt-1 text-xs text-qgray">Bağlantı veya oturum sorunlu olabilir. Tekrar deneyin.</p>
-          <button
-            type="button"
-            onClick={() => refetchVerification()}
-            className="mt-3 h-10 px-5 rounded-xl bg-qblack text-white text-sm font-700"
-          >
-            Tekrar dene
-          </button>
+          <p className="mt-1 text-xs text-qgray">
+            Bağlantı veya oturum sorunlu olabilir. Tekrar deneyin ya da mobil uygulamadan mesaj gönderin.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => refetchVerification()}
+              className="h-10 px-5 rounded-xl bg-qblack text-white text-sm font-700"
+            >
+              Tekrar dene
+            </button>
+            <a
+              href={storeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-10 inline-flex items-center justify-center rounded-xl bg-qyellow px-5 text-sm font-800 text-qblack"
+            >
+              Mobil uygulama indir
+            </a>
+            <Link
+              href={marketplaceUrl(marketplaceLoginHref())}
+              className="text-xs font-700 text-qblack underline"
+            >
+              Ana sitede giriş yap
+            </Link>
+          </div>
         </div>
       </div>
     );
