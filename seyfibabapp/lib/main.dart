@@ -56,7 +56,10 @@ class MyApp extends StatelessWidget {
         return Container(
           color: Colors.grey[200],
           alignment: Alignment.center,
-          child: CustomText(text: errorDetails.summary.toString()),
+          padding: const EdgeInsets.all(24),
+          child: const CustomText(
+            text: 'Bir sorun oluştu. Lütfen tekrar deneyin.',
+          ),
         );
       } else {
         // return CustomText(
