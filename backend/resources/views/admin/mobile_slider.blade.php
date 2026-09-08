@@ -50,8 +50,8 @@
                       <img src="{{ asset($editSlider->image) }}" alt="" style="max-height:80px;border-radius:6px;">
                     </div>
                   @endif
-                  <input type="file" name="image" class="form-control" accept="image/jpeg,image/png,image/webp" {{ empty($editSlider) ? 'required' : '' }}>
-                  <small class="text-muted">Önerilen: 1200×480 px, JPG/PNG/WEBP, en fazla 4 MB.</small>
+                  <input type="file" name="image" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" {{ empty($editSlider) ? 'required' : '' }}>
+                  <small class="text-muted">Önerilen: 1200×480 px, JPG/PNG/WEBP. En fazla ~10 MB (sunucu limiti daha düşükse küçültün).</small>
                 </div>
               </div>
               <div class="col-md-4">
@@ -89,8 +89,8 @@
                 <div class="form-group">
                   <label class="d-block">&nbsp;</label>
                   <label class="mt-2">
-                    <input type="hidden" name="status" value="0">
-                    <input type="checkbox" name="status" value="1" {{ old('status', $editSlider->status ?? true) ? 'checked' : '' }}>
+                    <input type="hidden" name="is_active" value="0">
+                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', ($editSlider->status ?? true) ? '1' : '0') == '1' ? 'checked' : '' }}>
                     Aktif
                   </label>
                 </div>
