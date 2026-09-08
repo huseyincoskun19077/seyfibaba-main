@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_font_awesome_web_names/flutter_font_awesome.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '/core/data/datasources/remote_data_source_packages.dart';
@@ -949,6 +950,66 @@ class Utils {
       return image.path;
     }
     return null;
+  }
+
+  /// Kamera / galeri (ve isteğe bağlı PDF) seçimi — doğrulama belgesi vb.
+  static Future<String?> pickImageFromCameraOrGallery(
+    BuildContext context, {
+    bool allowPdf = true,
+  }) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Belge nasıl eklensin?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Kamerayla çek'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Galeriden seç'),
+              onTap: () => Navigator.pop(ctx, 'gallery'),
+            ),
+            if (allowPdf)
+              ListTile(
+                leading: const Icon(Icons.picture_as_pdf_outlined),
+                title: const Text('PDF / dosya'),
+                onTap: () => Navigator.pop(ctx, 'file'),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (choice == null) return null;
+
+    if (choice == 'file') {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
+      );
+      if (result == null || result.files.isEmpty) return null;
+      return result.files.single.path;
+    }
+
+    final source =
+        choice == 'camera' ? ImageSource.camera : ImageSource.gallery;
+    final file = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 2000,
+      imageQuality: 85,
+    );
+    return file?.path;
   }
 
   static String orderStatus(String orderStatus) {

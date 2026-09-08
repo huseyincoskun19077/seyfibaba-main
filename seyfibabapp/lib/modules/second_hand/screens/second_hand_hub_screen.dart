@@ -220,7 +220,7 @@ class SecondHandVerificationTabState extends State<SecondHandVerificationTab> {
             required: true,
             selected: _taxDocPath != null,
             onPick: () async {
-              final path = await Utils.pickSingleImage();
+              final path = await Utils.pickImageFromCameraOrGallery(context);
               if (path != null) setState(() => _taxDocPath = path);
             },
           ),
@@ -231,7 +231,7 @@ class SecondHandVerificationTabState extends State<SecondHandVerificationTab> {
             selected: _barberDocPath != null,
             icon: Icons.badge_outlined,
             onPick: () async {
-              final path = await Utils.pickSingleImage();
+              final path = await Utils.pickImageFromCameraOrGallery(context);
               if (path != null) setState(() => _barberDocPath = path);
             },
           ),

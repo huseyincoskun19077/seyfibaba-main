@@ -1220,8 +1220,16 @@ JSON şeması:
                   </div>
                   <div>
                     <label className="block text-xs text-qgray mb-1">Vergi belgesi *</label>
-                    <input name="tax_document" type="file" accept=".jpg,.jpeg,.png,.pdf" className="text-sm" required />
-                    <p className="text-[11px] text-qgray mt-1">JPG/PNG/PDF (max 5MB)</p>
+                    <input
+                      name="tax_document"
+                      type="file"
+                      accept="image/*,.pdf,application/pdf"
+                      className="text-sm"
+                      required
+                    />
+                    <p className="text-[11px] text-qgray mt-1">
+                      Kamerayla çekin, galeriden seçin veya PDF yükleyin (max 5MB)
+                    </p>
                   </div>
                   <div>
                     <label className="block text-xs text-qgray mb-1">Kuaförler Odası sicil no (opsiyonel)</label>
@@ -1234,8 +1242,15 @@ JSON şeması:
                   </div>
                   <div>
                     <label className="block text-xs text-qgray mb-1">Kuaförler Odası evrakı (opsiyonel)</label>
-                    <input name="barber_document" type="file" accept=".jpg,.jpeg,.png,.pdf" className="text-sm" />
-                    <p className="text-[11px] text-qgray mt-1">JPG/PNG/PDF (max 5MB)</p>
+                    <input
+                      name="barber_document"
+                      type="file"
+                      accept="image/*,.pdf,application/pdf"
+                      className="text-sm"
+                    />
+                    <p className="text-[11px] text-qgray mt-1">
+                      Kamerayla çekin, galeriden seçin veya PDF yükleyin (max 5MB)
+                    </p>
                   </div>
                   <div className="rounded-lg border border-gray-200 bg-gray-50/60 p-3">
                     <label className="flex items-start gap-2 text-xs text-qblack">
