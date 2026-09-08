@@ -203,6 +203,12 @@ class SecondHandService {
     return '';
   }
 
+  static String resolveUserAvatarUrl(String? raw) {
+    final u = raw?.trim() ?? '';
+    if (u.isEmpty) return '';
+    return RemoteUrls.imageUrl(u);
+  }
+
   Future<PaginatedSecondHandListings> fetchPublicListings({
     int page = 1,
     String? q,

@@ -525,10 +525,25 @@ class _MessageBubble extends StatelessWidget {
   final bool isMine;
   final Future<void> Function(SecondHandMessageAttachment) onOpenAttachment;
 
+  Widget _avatar() {
+    final url = SecondHandService.resolveUserAvatarUrl(message.senderAvatar);
+    return CircleAvatar(
+      radius: 14,
+      backgroundColor: ShTheme.border.withValues(alpha: 0.8),
+      backgroundImage: url.isNotEmpty ? CachedNetworkImageProvider(url) : null,
+      child: url.isEmpty
+          ? const Icon(Icons.person, size: 16, color: ShTheme.muted)
+          : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasText = message.body.trim().isNotEmpty;
     final attachments = message.attachments;
+    final displayName = (message.senderDisplay ?? '').trim().isNotEmpty
+        ? message.senderDisplay!.trim()
+        : (isMine ? 'Sen' : 'Karşı taraf');
 
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -538,117 +553,132 @@ class _MessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMine) ...[
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: ShTheme.border.withValues(alpha: 0.8),
-              child: const Icon(
-                Icons.person,
-                size: 16,
-                color: ShTheme.muted,
-              ),
-            ),
+            _avatar(),
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: isMine ? ShTheme.primary : ShTheme.card,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isMine ? 16 : 4),
-                  bottomRight: Radius.circular(isMine ? 4 : 16),
+            child: Column(
+              crossAxisAlignment:
+                  isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, right: 4, bottom: 4),
+                  child: Text(
+                    displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: ShTheme.muted,
+                    ),
+                  ),
                 ),
-                border: isMine ? null : Border.all(color: ShTheme.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (attachments.isNotEmpty)
-                    ...attachments.map((att) {
-                      final url =
-                          SecondHandService.resolveAttachmentUrl(att);
-                      if (att.isImage && url.isNotEmpty) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: GestureDetector(
-                            onTap: () => onOpenAttachment(att),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 220,
-                                  maxHeight: 220,
-                                ),
-                                child: CachedNetworkImage(
-                                  imageUrl: url,
-                                  fit: BoxFit.cover,
-                                  placeholder: (_, __) => Container(
-                                    height: 120,
-                                    width: 160,
-                                    color: ShTheme.bg,
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isMine ? ShTheme.primary : ShTheme.card,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(isMine ? 16 : 4),
+                      bottomRight: Radius.circular(isMine ? 4 : 16),
+                    ),
+                    border: isMine ? null : Border.all(color: ShTheme.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (attachments.isNotEmpty)
+                        ...attachments.map((att) {
+                          final url =
+                              SecondHandService.resolveAttachmentUrl(att);
+                          if (att.isImage && url.isNotEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: GestureDetector(
+                                onTap: () => onOpenAttachment(att),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 220,
+                                      maxHeight: 220,
+                                    ),
+                                    child: CachedNetworkImage(
+                                      imageUrl: url,
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => Container(
+                                        height: 120,
+                                        width: 160,
+                                        color: ShTheme.bg,
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      errorWidget: (_, __, ___) => Container(
+                                        height: 80,
+                                        width: 140,
+                                        color: ShTheme.bg,
+                                        child: const Icon(Icons.broken_image),
                                       ),
                                     ),
                                   ),
-                                  errorWidget: (_, __, ___) => Container(
-                                    height: 80,
-                                    width: 140,
-                                    color: ShTheme.bg,
-                                    child: const Icon(Icons.broken_image),
-                                  ),
                                 ),
+                              ),
+                            );
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: InkWell(
+                              onTap: () => onOpenAttachment(att),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.insert_drive_file_outlined,
+                                      size: 18),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      att.originalName?.isNotEmpty == true
+                                          ? att.originalName!
+                                          : 'Dosya',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        );
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: InkWell(
-                          onTap: () => onOpenAttachment(att),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.insert_drive_file_outlined,
-                                  size: 18),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  att.originalName?.isNotEmpty == true
-                                      ? att.originalName!
-                                      : 'Dosya',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          );
+                        }),
+                      if (hasText)
+                        Text(
+                          message.body,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.4,
+                            color: ShTheme.dark,
                           ),
                         ),
-                      );
-                    }),
-                  if (hasText)
-                    Text(
-                      message.body,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        height: 1.4,
-                        color: ShTheme.dark,
-                      ),
-                    ),
-                ],
-              ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
+          if (isMine) ...[
+            const SizedBox(width: 8),
+            _avatar(),
+          ],
         ],
       ),
     );

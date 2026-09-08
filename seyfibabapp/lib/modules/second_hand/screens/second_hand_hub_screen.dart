@@ -1045,14 +1045,27 @@ class SecondHandMessagesTabState extends State<SecondHandMessagesTab> {
                 decoration: ShTheme.cardDecoration(),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: ShTheme.primary.withValues(alpha: 0.2),
-                      child: const Icon(
-                        Icons.store_outlined,
-                        color: ShTheme.dark,
-                        size: 20,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final avatarUrl = SecondHandService.resolveUserAvatarUrl(
+                          conv.counterpartyAvatar,
+                        );
+                        return CircleAvatar(
+                          radius: 22,
+                          backgroundColor:
+                              ShTheme.primary.withValues(alpha: 0.2),
+                          backgroundImage: avatarUrl.isNotEmpty
+                              ? NetworkImage(avatarUrl)
+                              : null,
+                          child: avatarUrl.isEmpty
+                              ? const Icon(
+                                  Icons.store_outlined,
+                                  color: ShTheme.dark,
+                                  size: 20,
+                                )
+                              : null,
+                        );
+                      },
                     ),
                     const SizedBox(width: 12),
                     Expanded(

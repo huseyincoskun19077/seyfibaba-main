@@ -16,7 +16,7 @@ import {
   useSecondHandUnblockUserMutation,
   useSecondHandReportCreateMutation,
 } from "@/redux/features/secondHand/apiSlice";
-import { marketplaceProfileUrl } from "@/utils/secondHandSite";
+import { marketplaceProfileUrl, secondHandAvatarUrl } from "@/utils/secondHandSite";
 
 export default function SecondHandMessagesModal({
   open,
@@ -248,6 +248,7 @@ export default function SecondHandMessagesModal({
           id: now,
           sender_id: msg.sender_id,
           sender_display: msg.sender_display,
+          sender_avatar: msg.sender_avatar,
           body: msg.body,
           attachments: Array.isArray(msg.attachments) ? msg.attachments : [],
           created_at: new Date().toISOString(),
@@ -278,12 +279,15 @@ export default function SecondHandMessagesModal({
 
       // Optimistic: anında ekle (yenileme yok)
       const now = Date.now();
+      const meName = auth()?.user?.name || "Sen";
+      const meAvatar = auth()?.user?.image || auth()?.user?.provider_avatar || "";
       setLiveMessages((prev) => [
         ...(Array.isArray(prev) ? prev : []),
         {
           id: now,
           sender_id: meId,
-          sender_display: "Ben",
+          sender_display: meName,
+          sender_avatar: meAvatar,
           body: text,
           attachments:
             filesToSend?.length > 0
@@ -320,12 +324,15 @@ export default function SecondHandMessagesModal({
     try {
       setSendError("");
       const now = Date.now();
+      const meName = auth()?.user?.name || "Sen";
+      const meAvatar = auth()?.user?.image || auth()?.user?.provider_avatar || "";
       setLiveMessages((prev) => [
         ...(Array.isArray(prev) ? prev : []),
         {
           id: now,
           sender_id: meId,
-          sender_display: "Ben",
+          sender_display: meName,
+          sender_avatar: meAvatar,
           body: t,
           attachments: [],
           created_at: new Date().toISOString(),
@@ -509,10 +516,20 @@ export default function SecondHandMessagesModal({
                       }`}
                     >
                       <div className="font-700 truncate">{c.listing?.title || "İlan"}</div>
-                      <div className="text-[11px] text-qgray truncate">
+                      <div className="text-[11px] text-qgray truncate flex items-center gap-1.5">
+                        {secondHandAvatarUrl(c.counterparty_avatar, appConfig.BASE_URL) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={secondHandAvatarUrl(c.counterparty_avatar, appConfig.BASE_URL)}
+                            alt=""
+                            className="h-4 w-4 rounded-full object-cover"
+                          />
+                        ) : null}
+                        <span className="truncate">
                         {String(c?.counterparty_role || "") === "seller"
                           ? (c.seller_business_name || c.counterparty_display || "Satıcı")
                           : (c.counterparty_display || "Alıcı")}
+                        </span>
                       </div>
                       <div className="text-xs text-qgray truncate">
                         {c.last_message_sender_display ? `${c.last_message_sender_display}: ` : ""}
@@ -731,17 +748,35 @@ export default function SecondHandMessagesModal({
                       </button>
                     </div>
                   ) : null}
-                  {liveMessages.map((m) => (
+                  {liveMessages.map((m) => {
+                    const mine = meId && m.sender_id === meId;
+                    const name = mine
+                      ? (m.sender_display || "Sen")
+                      : (m.sender_display || "Karşı taraf");
+                    const avatar = secondHandAvatarUrl(m.sender_avatar, appConfig.BASE_URL);
+                    return (
                     <div
                       key={m.id}
                       className={`text-sm p-2 rounded ${
                         isOfferBody(m.body)
                           ? "bg-amber-50 border border-amber-200"
-                          : (meId && m.sender_id === meId ? "bg-gray-100 ml-8" : "bg-blue-50 mr-8")
+                          : (mine ? "bg-gray-100 ml-8" : "bg-blue-50 mr-8")
                       }`}
                     >
                       <div className="text-[10px] text-qgray mb-1 flex items-center gap-2">
-                        <span>{meId && m.sender_id === meId ? "Ben" : (m.sender_display || "Karşı taraf")}</span>
+                        {avatar ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={avatar}
+                            alt=""
+                            className="h-5 w-5 rounded-full object-cover bg-gray-200"
+                          />
+                        ) : (
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[9px] font-800 text-qgray">
+                            {(name || "?").slice(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="font-800 text-qblack truncate">{name}</span>
                         {isOfferBody(m.body) ? (
                           <span className="inline-flex items-center rounded-full bg-amber-200/70 text-amber-900 px-2 py-0.5 text-[10px] font-900">
                             Teklif
@@ -773,7 +808,8 @@ export default function SecondHandMessagesModal({
                       ) : null}
                       <div className="text-[10px] text-qgray mt-1">{m.created_at ? new Date(m.created_at).toLocaleString("tr-TR") : ""}</div>
                     </div>
-                  ))}
+                    );
+                  })}
                   <div ref={endRef} />
                 </div>
 

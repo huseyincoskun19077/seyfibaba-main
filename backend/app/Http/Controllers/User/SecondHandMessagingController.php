@@ -31,6 +31,73 @@ class SecondHandMessagingController extends Controller
         return 'c2c:msg:' . $suffix . ':u:' . $userId . ($scopeId ? (':s:' . $scopeId) : '');
     }
 
+    /**
+     * Dükkan adı (doğrulanmış) varsa onu, yoksa kullanıcı adı-soyadı.
+     */
+    private function resolvePublicDisplayName(?User $user, ?string $businessName, string $fallback = 'Kullanıcı'): string
+    {
+        $biz = trim((string) ($businessName ?? ''));
+        if ($biz !== '') {
+            return $biz;
+        }
+
+        $name = trim((string) ($user?->name ?? ''));
+        if ($name !== '') {
+            return $name;
+        }
+
+        return $fallback;
+    }
+
+    /**
+     * Profil fotoğrafı yolu/URL (istemci BASE_URL ile birleştirebilir).
+     */
+    private function resolveUserAvatar(?User $user): ?string
+    {
+        if (!$user) {
+            return null;
+        }
+
+        $image = trim((string) ($user->image ?? ''));
+        if ($image !== '') {
+            return $image;
+        }
+
+        $provider = trim((string) ($user->provider_avatar ?? ''));
+        if ($provider !== '') {
+            return $provider;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, string>  $businessNames
+     * @param  \Illuminate\Support\Collection<int, User>  $users
+     */
+    private function decorateMessageSenderAttributes(
+        SecondHandMessage $message,
+        SecondHandConversation $conversation,
+        $businessNames,
+        $users
+    ): SecondHandMessage {
+        $senderId = (int) $message->sender_id;
+        $senderRole = $senderId === (int) $conversation->seller_id ? 'seller' : 'buyer';
+        $user = $users->get($senderId) ?? $message->sender;
+        $biz = (string) ($businessNames[$senderId] ?? '');
+
+        $message->setAttribute('sender_role', $senderRole);
+        $message->setAttribute(
+            'sender_display',
+            $this->resolvePublicDisplayName($user, $biz, $senderRole === 'seller' ? 'Satıcı' : 'Alıcı')
+        );
+        $message->setAttribute('sender_name', trim((string) ($user?->name ?? '')));
+        $message->setAttribute('sender_business_name', $biz);
+        $message->setAttribute('sender_avatar', $this->resolveUserAvatar($user));
+
+        return $message;
+    }
+
     private function enforceRateLimitOrAbort(array $ctx): void
     {
         $userId = (int) ($ctx['sender_id'] ?? 0);
@@ -304,6 +371,11 @@ class SecondHandMessagingController extends Controller
             ->where('status', SecondHandVerification::STATUS_APPROVED)
             ->pluck('business_name', 'user_id');
 
+        $users = User::query()
+            ->whereIn('id', $allUserIds)
+            ->get(['id', 'name', 'image', 'provider_avatar'])
+            ->keyBy('id');
+
         $conversations->getCollection()->transform(function ($conversation) {
             $body = trim((string) ($conversation->last_message_body ?? ''));
             $hasAtt = !empty($conversation->last_message_has_attachment);
@@ -315,27 +387,38 @@ class SecondHandMessagingController extends Controller
             return $conversation;
         });
 
-        $conversations->getCollection()->transform(function ($conversation) use ($userId, $businessNames) {
+        $conversations->getCollection()->transform(function ($conversation) use ($userId, $businessNames, $users) {
             $isSeller = (int) $conversation->seller_id === $userId;
             $otherId = $isSeller ? (int) $conversation->buyer_id : (int) $conversation->seller_id;
             $otherRole = $isSeller ? 'buyer' : 'seller';
+            $otherUser = $users->get($otherId);
+            $otherBiz = (string) ($businessNames[$otherId] ?? '');
 
-            $otherDisplay = $otherRole === 'seller'
-                ? (string) ($businessNames[$otherId] ?? 'Satıcı')
-                : 'Alıcı';
+            $otherDisplay = $this->resolvePublicDisplayName(
+                $otherUser,
+                $otherBiz,
+                $otherRole === 'seller' ? 'Satıcı' : 'Alıcı'
+            );
 
             $lastSenderId = (int) ($conversation->last_message_sender_id ?? 0);
             $lastSenderRole = $lastSenderId === (int) $conversation->seller_id ? 'seller' : 'buyer';
-            $lastSenderDisplay = $lastSenderRole === 'seller'
-                ? (string) ($businessNames[(int) $conversation->seller_id] ?? 'Satıcı')
-                : 'Alıcı';
+            $lastSenderUser = $lastSenderId ? $users->get($lastSenderId) : null;
+            $lastSenderBiz = $lastSenderId ? (string) ($businessNames[$lastSenderId] ?? '') : '';
+            $lastSenderDisplay = $lastSenderId
+                ? $this->resolvePublicDisplayName(
+                    $lastSenderUser,
+                    $lastSenderBiz,
+                    $lastSenderRole === 'seller' ? 'Satıcı' : 'Alıcı'
+                )
+                : null;
 
             $conversation->setAttribute('counterparty_id', $otherId);
             $conversation->setAttribute('counterparty_role', $otherRole);
             $conversation->setAttribute('counterparty_display', $otherDisplay);
+            $conversation->setAttribute('counterparty_avatar', $this->resolveUserAvatar($otherUser));
             $conversation->setAttribute('seller_business_name', (string) ($businessNames[(int) $conversation->seller_id] ?? ''));
             $conversation->setAttribute('last_message_sender_role', $lastSenderId ? $lastSenderRole : null);
-            $conversation->setAttribute('last_message_sender_display', $lastSenderId ? $lastSenderDisplay : null);
+            $conversation->setAttribute('last_message_sender_display', $lastSenderDisplay);
 
             return $conversation;
         });
@@ -378,16 +461,26 @@ class SecondHandMessagingController extends Controller
             ->where('status', SecondHandVerification::STATUS_APPROVED)
             ->pluck('business_name', 'user_id');
 
+        $users = User::query()
+            ->whereIn('id', [(int) $conversation->seller_id, (int) $conversation->buyer_id])
+            ->get(['id', 'name', 'image', 'provider_avatar'])
+            ->keyBy('id');
+
         $isSeller = (int) $conversation->seller_id === $userId;
         $otherId = $isSeller ? (int) $conversation->buyer_id : (int) $conversation->seller_id;
         $otherRole = $isSeller ? 'buyer' : 'seller';
-        $otherDisplay = $otherRole === 'seller'
-            ? (string) ($businessNames[$otherId] ?? 'Satıcı')
-            : ('Alıcı #' . $otherId);
+        $otherUser = $users->get($otherId);
+        $otherBiz = (string) ($businessNames[$otherId] ?? '');
+        $otherDisplay = $this->resolvePublicDisplayName(
+            $otherUser,
+            $otherBiz,
+            $otherRole === 'seller' ? 'Satıcı' : 'Alıcı'
+        );
 
         $conversation->setAttribute('counterparty_id', $otherId);
         $conversation->setAttribute('counterparty_role', $otherRole);
         $conversation->setAttribute('counterparty_display', $otherDisplay);
+        $conversation->setAttribute('counterparty_avatar', $this->resolveUserAvatar($otherUser));
         $conversation->setAttribute('seller_business_name', (string) ($businessNames[(int) $conversation->seller_id] ?? ''));
 
         // Konuşmayı açınca, karşı taraftan gelen okunmamış mesajları okundu işaretle
@@ -399,7 +492,10 @@ class SecondHandMessagingController extends Controller
 
         $messages = SecondHandMessage::query()
             ->where('conversation_id', (int) $conversation->id)
-            ->with(['attachments:id,message_id,kind,path,original_name,mime,size'])
+            ->with([
+                'attachments:id,message_id,kind,path,original_name,mime,size',
+                'sender:id,name,image,provider_avatar',
+            ])
             ->orderByDesc('id')
             ->paginate(50)
             ->withQueryString();
@@ -407,13 +503,8 @@ class SecondHandMessagingController extends Controller
         // UI tarafında kolaylık için artan sırada dönelim
         $messages->setCollection($messages->getCollection()->reverse()->values());
 
-        $sellerName = (string) ($businessNames[(int) $conversation->seller_id] ?? 'Satıcı');
-        $buyerName = 'Alıcı';
-        $messages->getCollection()->transform(function ($m) use ($conversation, $sellerName, $buyerName) {
-            $senderRole = (int) $m->sender_id === (int) $conversation->seller_id ? 'seller' : 'buyer';
-            $m->setAttribute('sender_role', $senderRole);
-            $m->setAttribute('sender_display', $senderRole === 'seller' ? $sellerName : $buyerName);
-            return $m;
+        $messages->getCollection()->transform(function ($m) use ($conversation, $businessNames, $users) {
+            return $this->decorateMessageSenderAttributes($m, $conversation, $businessNames, $users);
         });
 
         return response()->json([
@@ -597,7 +688,7 @@ class SecondHandMessagingController extends Controller
         return response()->json([
             'message' => 'Mesaj gönderildi.',
             'conversation' => $payload['conversation'],
-            'sent' => $payload['message'],
+            'sent' => $this->decorateSentMessagePayload($payload['message'], $payload['conversation'], $user),
             'attachments' => collect($payload['attachments'] ?? [])->values(),
         ], 201);
     }
@@ -675,9 +766,14 @@ class SecondHandMessagingController extends Controller
                     ->where('user_id', (int) $conversation->seller_id)
                     ->where('status', SecondHandVerification::STATUS_APPROVED)
                     ->value('business_name');
-                $buyerDisplay = 'Alıcı';
+                $buyerDisplay = $this->resolvePublicDisplayName($user, null, 'Alıcı');
                 $senderRole = $senderId === (int) $conversation->seller_id ? 'seller' : 'buyer';
-                $senderDisplay = $senderRole === 'seller' ? ($sellerBusinessName ?: 'Satıcı') : $buyerDisplay;
+                $senderBiz = $senderRole === 'seller' ? $sellerBusinessName : '';
+                $senderDisplay = $this->resolvePublicDisplayName(
+                    $user,
+                    $senderBiz,
+                    $senderRole === 'seller' ? 'Satıcı' : 'Alıcı'
+                );
                 $this->deliverSecondHandMessageNotice($receiver, [
                     'conversation_id' => (int) $conversation->id,
                     'listing_id' => (int) $conversation->listing->id,
@@ -686,6 +782,7 @@ class SecondHandMessagingController extends Controller
                     'sender_id' => $senderId,
                     'sender_role' => $senderRole,
                     'sender_display' => $senderDisplay,
+                    'sender_avatar' => $this->resolveUserAvatar($user),
                     'seller_business_name' => $sellerBusinessName,
                     'attachments' => collect($payload['attachments'] ?? [])->map(function ($a) {
                         return [
@@ -706,9 +803,21 @@ class SecondHandMessagingController extends Controller
 
         return response()->json([
             'message' => 'Mesaj gönderildi.',
-            'sent' => $payload['message'],
+            'sent' => $this->decorateSentMessagePayload($payload['message'], $conversation, $user),
             'attachments' => collect($payload['attachments'] ?? [])->values(),
         ], 201);
+    }
+
+    private function decorateSentMessagePayload(SecondHandMessage $message, SecondHandConversation $conversation, User $sender): SecondHandMessage
+    {
+        $businessNames = SecondHandVerification::query()
+            ->whereIn('user_id', [(int) $conversation->seller_id, (int) $conversation->buyer_id])
+            ->where('status', SecondHandVerification::STATUS_APPROVED)
+            ->pluck('business_name', 'user_id');
+
+        $users = collect([(int) $sender->id => $sender]);
+
+        return $this->decorateMessageSenderAttributes($message, $conversation, $businessNames, $users);
     }
 }
 

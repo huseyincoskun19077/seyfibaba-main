@@ -83,3 +83,14 @@ export function marketplaceProfileUrl(hash = "second-hand", search = "") {
   }
   return `${MARKETPLACE_ORIGIN}/profile${qs}#${normalized}`;
 }
+
+/** Profil / dükkan avatar yolu → mutlak URL */
+export function secondHandAvatarUrl(raw, baseUrl = "") {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  if (/^(https?:)?\/\//i.test(s) || s.startsWith("data:")) {
+    return s.startsWith("//") ? `https:${s}` : s;
+  }
+  const base = String(baseUrl || "").replace(/\/?$/, "/");
+  return `${base}${s.replace(/^\//, "")}`;
+}

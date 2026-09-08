@@ -170,6 +170,7 @@ class SecondHandConversation {
     required this.lastMessagePreview,
     required this.unreadCount,
     this.counterpartyId,
+    this.counterpartyAvatar,
     this.listingId,
     this.listingPrice,
     this.listingImageId,
@@ -181,6 +182,7 @@ class SecondHandConversation {
   final String lastMessagePreview;
   final int unreadCount;
   final int? counterpartyId;
+  final String? counterpartyAvatar;
   final int? listingId;
   final num? listingPrice;
   final int? listingImageId;
@@ -210,6 +212,7 @@ class SecondHandConversation {
       lastMessagePreview: '${map['last_message_preview'] ?? ''}',
       unreadCount: int.tryParse('${map['unread_count'] ?? 0}') ?? 0,
       counterpartyId: int.tryParse('${map['counterparty_id'] ?? ''}'),
+      counterpartyAvatar: map['counterparty_avatar']?.toString(),
       listingId: int.tryParse(
           '${listingMap?['id'] ?? map['listing_id'] ?? ''}'),
       listingPrice: num.tryParse('${listingMap?['price'] ?? ''}'),
@@ -260,6 +263,7 @@ class SecondHandMessage {
     required this.body,
     required this.createdAt,
     this.senderDisplay,
+    this.senderAvatar,
     this.attachments = const [],
   });
 
@@ -268,6 +272,7 @@ class SecondHandMessage {
   final String body;
   final String createdAt;
   final String? senderDisplay;
+  final String? senderAvatar;
   final List<SecondHandMessageAttachment> attachments;
 
   factory SecondHandMessage.fromMap(Map<String, dynamic> map) {
@@ -278,6 +283,7 @@ class SecondHandMessage {
       body: '${map['body'] ?? ''}',
       createdAt: '${map['created_at'] ?? ''}',
       senderDisplay: map['sender_display']?.toString(),
+      senderAvatar: map['sender_avatar']?.toString(),
       attachments: rawAtt is List
           ? rawAtt
               .whereType<Map>()

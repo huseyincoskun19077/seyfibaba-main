@@ -8,7 +8,7 @@ import apiRoutes from "@/appConfig/apiRoutes";
 import auth from "@/utils/auth";
 import appConfig from "@/appConfig";
 import { getSecondHandListingSeoPath } from "@/api/secondHandPublic";
-import { secondHandListingUrl, secondHandPageUrl } from "@/utils/secondHandSite";
+import { secondHandListingUrl, secondHandPageUrl, secondHandAvatarUrl } from "@/utils/secondHandSite";
 import ConsentModal from "@/components/Helpers/ConsentModal";
 import LegalConsentCheckboxes, { allRequiredChecked } from "@/components/Legal/LegalConsentCheckboxes";
 import { SECOND_HAND_REQUIRED_CONSENTS } from "@/config/legalDocuments";
@@ -2075,10 +2075,21 @@ JSON şeması:
                       <div className="font-700 truncate text-qblack">
                         Ürün: {c.listing?.title || "İlan"}
                       </div>
-                      <div className="text-[11px] text-qgray truncate">
-                        {String(c?.counterparty_role || "") === "seller"
-                          ? (c.seller_business_name || c.counterparty_display || "Satıcı")
-                          : (c.counterparty_display || "Alıcı")}
+                      <div className="text-[11px] text-qgray truncate flex items-center gap-1.5">
+                        {secondHandAvatarUrl(c.counterparty_avatar, appConfig.BASE_URL) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={secondHandAvatarUrl(c.counterparty_avatar, appConfig.BASE_URL)}
+                            alt=""
+                            className="h-4 w-4 rounded-full object-cover"
+                          />
+                        ) : null}
+                        <span className="truncate">
+                          {c.counterparty_display ||
+                            (String(c?.counterparty_role || "") === "seller"
+                              ? (c.seller_business_name || "Satıcı")
+                              : "Alıcı")}
+                        </span>
                       </div>
                       <div className="text-xs text-qgray truncate">
                         {c.last_message_sender_display ? `${c.last_message_sender_display}: ` : ""}
@@ -2274,17 +2285,35 @@ JSON şeması:
                   </div>
                 ) : null}
                 <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[320px]">
-                  {messages.map((m) => (
+                  {messages.map((m) => {
+                    const mine = meId && m.sender_id === meId;
+                    const name = mine
+                      ? (m.sender_display || "Sen")
+                      : (m.sender_display || "Karşı taraf");
+                    const avatar = secondHandAvatarUrl(m.sender_avatar, appConfig.BASE_URL);
+                    return (
                     <div
                       key={m.id}
                       className={`text-sm p-2 rounded ${
                         isOfferBody(m.body)
                           ? "bg-amber-50 border border-amber-200"
-                          : (meId && m.sender_id === meId ? "bg-gray-100 ml-8" : "bg-blue-50 mr-8")
+                          : (mine ? "bg-gray-100 ml-8" : "bg-blue-50 mr-8")
                       }`}
                     >
                       <div className="text-[10px] text-qgray mb-1 flex items-center gap-2">
-                        <span>{meId && m.sender_id === meId ? "Ben" : (m.sender_display || "Karşı taraf")}</span>
+                        {avatar ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={avatar}
+                            alt=""
+                            className="h-5 w-5 rounded-full object-cover bg-gray-200"
+                          />
+                        ) : (
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[9px] font-800 text-qgray">
+                            {(name || "?").slice(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="font-800 text-qblack truncate">{name}</span>
                         {isOfferBody(m.body) ? (
                           <span className="inline-flex items-center rounded-full bg-amber-200/70 text-amber-900 px-2 py-0.5 text-[10px] font-900">
                             Teklif
@@ -2317,7 +2346,8 @@ JSON şeması:
                         {m.read_at ? " · Okundu" : ""}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="px-3 pt-2 border-t border-gray-100 bg-white">
                   <div className="flex flex-wrap gap-2">
