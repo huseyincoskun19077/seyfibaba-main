@@ -17,20 +17,44 @@ class MobileSliderController extends Controller
 
     public function index(Request $request)
     {
-        if (! Schema::hasTable('mobile_sliders')) {
-            return redirect()->route('admin.slider.index')->with([
-                'messege' => 'mobile_sliders tablosu yok. Sunucuda çalıştırın: cd /opt/seyfibaba-main/backend && php artisan migrate --force',
-                'alert-type' => 'error',
+        try {
+            if (! Schema::hasTable('mobile_sliders')) {
+                return redirect()->route('admin.slider.index')->with([
+                    'messege' => 'mobile_sliders tablosu yok. Sunucuda çalıştırın: cd /opt/seyfibaba-main/backend && php artisan migrate --force',
+                    'alert-type' => 'error',
+                ]);
+            }
+
+            $sliders = MobileSlider::query()->orderBy('serial')->orderBy('id')->get();
+            $editSlider = null;
+            if ($request->filled('edit')) {
+                $editSlider = MobileSlider::query()->find((int) $request->query('edit'));
+            }
+
+            return response(view('admin.mobile_slider', compact('sliders', 'editSlider'))->render());
+        } catch (\Throwable $e) {
+            \Log::error('admin.mobile-slider index failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
-        }
 
-        $sliders = MobileSlider::query()->orderBy('serial')->orderBy('id')->get();
-        $editSlider = null;
-        if ($request->filled('edit')) {
-            $editSlider = MobileSlider::query()->find((int) $request->query('edit'));
-        }
+            $payload = json_encode([
+                'where' => 'admin.mobile-slider',
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ], JSON_UNESCAPED_UNICODE);
 
-        return view('admin.mobile_slider', compact('sliders', 'editSlider'));
+            return response(
+                '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Mobile Slider 500</title></head><body>'
+                .'<h1>admin/mobile-slider hata</h1><pre>'.e($e->getMessage())."\n".$e->getFile().':'.$e->getLine().'</pre>'
+                .'<p>Detay F12 → Console</p>'
+                .'<script>console.error("[admin.mobile-slider 500]", '.$payload.');</script>'
+                .'</body></html>',
+                500
+            );
+        }
     }
 
     public function store(Request $request)

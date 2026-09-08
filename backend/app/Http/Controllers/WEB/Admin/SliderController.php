@@ -16,8 +16,33 @@ class SliderController extends Controller
     }
 
     public function index(){
-        $sliders = Slider::all();
-        return view('admin.slider', compact('sliders'));
+        try {
+            $sliders = Slider::all();
+            // render() ile Blade hatalarını da yakala (normal return view() sonra patlar)
+            return response(view('admin.slider', compact('sliders'))->render());
+        } catch (\Throwable $e) {
+            \Log::error('admin.slider index failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            $payload = json_encode([
+                'where' => 'admin.slider',
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ], JSON_UNESCAPED_UNICODE);
+
+            return response(
+                '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Slider 500</title></head><body>'
+                .'<h1>admin/slider hata</h1><pre>'.e($e->getMessage())."\n".$e->getFile().':'.$e->getLine().'</pre>'
+                .'<p>Detay F12 → Console</p>'
+                .'<script>console.error("[admin.slider 500]", '.$payload.');</script>'
+                .'</body></html>',
+                500
+            );
+        }
     }
 
     public function create(){

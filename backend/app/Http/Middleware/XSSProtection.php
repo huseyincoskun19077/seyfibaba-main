@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class XSSProtection
 {
-    10|    private const ALLOWED_TAGS = '<p><br><strong><b><em><i><u><ul><ol><li><a><span><h1><h2><h3><h4><h5><h6><blockquote><code><pre>';
+    private const ALLOWED_TAGS = '<p><br><strong><b><em><i><u><ul><ol><li><a><span><h1><h2><h3><h4><h5><h6><blockquote><code><pre>';
 
     /**
      * Handle an incoming request.
@@ -17,7 +17,7 @@ class XSSProtection
      * @return mixed
      */
     public function handle(Request $request, Closure $next)
-    20|    {
+    {
         try {
             // ÖNEMLİ: $request->all() dosyaları da alır; merge + recursive sanitize
             // multipart yüklemelerde (slider, ürün görseli vb.) takılma/bozulmaya yol açar.
