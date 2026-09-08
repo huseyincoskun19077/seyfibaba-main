@@ -23,11 +23,10 @@
         </div>
         <div class="card-body">
           <p class="text-muted mb-3">
-            Buraya eklediğiniz görseller yalnızca mobil uygulamada görünür. Liste boşsa uygulama mevcut banner slider görsellerini kullanır.
-            Bağlantı veya kategori seçmezseniz slider yalnızca görsel olarak gösterilir; tıklanabilir buton çıkmaz.
+            Bu görseller yalnızca mobil uygulamada görünür. Başlık / alt başlık / link opsiyoneldir.
           </p>
 
-            <form method="POST" action="{{ route('admin.mobile-slider.store') }}" enctype="multipart/form-data" class="mb-4" id="mobile-slider-form">
+          <form method="POST" action="{{ route('admin.mobile-slider.store') }}" enctype="multipart/form-data" class="mb-4">
             @csrf
             @if ($errors->any())
               <div class="alert alert-danger">
@@ -38,11 +37,6 @@
                 </ul>
               </div>
             @endif
-            @if(session('messege'))
-              <div class="alert alert-{{ session('alert-type') === 'error' ? 'danger' : 'success' }}">
-                {{ session('messege') }}
-              </div>
-            @endif
             @if(!empty($editSlider))
               <input type="hidden" name="id" value="{{ $editSlider->id }}">
             @endif
@@ -50,82 +44,62 @@
               <div class="col-md-4">
                 <div class="form-group">
                   <label>Görsel {{ empty($editSlider) ? '*' : '' }}</label>
-                  @if(!empty($editSlider?->image))
+                  @if(!empty($editSlider) && !empty($editSlider->image))
                     <div class="mb-2">
                       <img src="{{ asset($editSlider->image) }}" alt="" style="max-height:80px;border-radius:6px;">
                     </div>
                   @endif
-                  <input type="file" name="image" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" {{ empty($editSlider) ? 'required' : '' }}>
-                  <small class="text-muted">Önerilen: 1200×480 px, JPG/PNG/WEBP. En fazla ~10 MB (sunucu limiti daha düşükse küçültün).</small>
+                  <input type="file" name="image" class="form-control" accept=".jpg,.jpeg,.png,.webp" {{ empty($editSlider) ? 'required' : '' }}>
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="form-group">
-                  <label>Başlık <span class="text-muted">(opsiyonel)</span></label>
-                  <input type="text" name="title" class="form-control" value="{{ old('title', $editSlider->title ?? '') }}" placeholder="Boş bırakılabilir">
+                  <label>Başlık (opsiyonel)</label>
+                  <input type="text" name="title" class="form-control" value="{{ old('title', !empty($editSlider) ? $editSlider->title : '') }}">
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="form-group">
-                  <label>Alt başlık <span class="text-muted">(opsiyonel)</span></label>
-                  <input type="text" name="subtitle" class="form-control" value="{{ old('subtitle', $editSlider->subtitle ?? '') }}" placeholder="Boş bırakılabilir">
+                  <label>Alt başlık (opsiyonel)</label>
+                  <input type="text" name="subtitle" class="form-control" value="{{ old('subtitle', !empty($editSlider) ? $editSlider->subtitle : '') }}">
                 </div>
               </div>
               <div class="col-md-5">
                 <div class="form-group">
                   <label>Bağlantı (opsiyonel)</label>
-                  <input type="text" name="link" class="form-control" placeholder="https://seyfibaba.com/... veya harici URL" value="{{ old('link', $editSlider->link ?? '') }}">
+                  <input type="text" name="link" class="form-control" value="{{ old('link', !empty($editSlider) ? $editSlider->link : '') }}">
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="form-group">
                   <label>Ürün / kategori slug (opsiyonel)</label>
-                  <input type="text" name="product_slug" class="form-control" placeholder="ornek-urun-slug" value="{{ old('product_slug', $editSlider->product_slug ?? '') }}">
-                  <small class="text-muted">Uygulama içi yönlendirme için slug yazın. Boş bırakılabilir.</small>
+                  <input type="text" name="product_slug" class="form-control" value="{{ old('product_slug', !empty($editSlider) ? $editSlider->product_slug : '') }}">
                 </div>
               </div>
               <div class="col-md-1">
                 <div class="form-group">
                   <label>Sıra</label>
-                  <input type="number" name="serial" class="form-control" min="0" value="{{ old('serial', $editSlider->serial ?? 1) }}">
+                  <input type="number" name="serial" class="form-control" min="0" value="{{ old('serial', !empty($editSlider) ? $editSlider->serial : 1) }}">
                 </div>
               </div>
               <div class="col-md-2">
                 <div class="form-group">
                   <label class="d-block">&nbsp;</label>
                   <label class="mt-2">
-                    <input type="hidden" name="is_active" value="0">
-                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', ($editSlider->status ?? true) ? '1' : '0') == '1' ? 'checked' : '' }}>
+                    <input type="hidden" name="status" value="0">
+                    <input type="checkbox" name="status" value="1" {{ old('status', !empty($editSlider) ? (int) $editSlider->status : 1) ? 'checked' : '' }}>
                     Aktif
                   </label>
                 </div>
               </div>
               <div class="col-md-12">
-                <button type="submit" class="btn btn-primary" id="mobile-slider-submit">{{ !empty($editSlider) ? 'Güncelle' : 'Mobil\'e ekle' }}</button>
+                <button type="submit" class="btn btn-primary">{{ !empty($editSlider) ? 'Güncelle' : 'Mobil\'e ekle' }}</button>
                 @if(!empty($editSlider))
                   <a href="{{ route('admin.mobile-slider.index') }}" class="btn btn-light">İptal</a>
                 @endif
-                <span class="text-muted ml-2 d-none" id="mobile-slider-wait">Yükleniyor, lütfen bekleyin…</span>
               </div>
             </div>
           </form>
-
-          <script>
-            (function () {
-              var form = document.getElementById('mobile-slider-form');
-              if (!form) return;
-              form.addEventListener('submit', function () {
-                var btn = document.getElementById('mobile-slider-submit');
-                var wait = document.getElementById('mobile-slider-wait');
-                if (btn) {
-                  btn.disabled = true;
-                }
-                if (wait) {
-                  wait.classList.remove('d-none');
-                }
-              });
-            })();
-          </script>
 
           <div class="table-responsive">
             <table class="table table-striped">
@@ -152,7 +126,7 @@
                       @if($slider->link)
                         <small>{{ \Illuminate\Support\Str::limit($slider->link, 40) }}</small>
                       @elseif($slider->product_slug)
-                        <small class="text-muted">Kategori: {{ $slider->product_slug }}</small>
+                        <small class="text-muted">{{ $slider->product_slug }}</small>
                       @else
                         <span class="text-muted">—</span>
                       @endif
