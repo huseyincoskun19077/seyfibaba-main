@@ -46,8 +46,9 @@ class SalonCrmEntry {
 
       final service = SalonCrmService();
       final res = await service.patronBootstrap(jwt);
+      if (context.mounted) Utils.closeDialog(context);
+
       if (!context.mounted) return;
-      Utils.closeDialog(context);
 
       if (res['has_salon'] == true) {
         final token = '${res['token'] ?? ''}';
@@ -62,15 +63,15 @@ class SalonCrmEntry {
         );
         await service.syncPushToken(token);
         if (!context.mounted) return;
-        Navigator.pushNamed(context, RouteNames.salonCrmHomeScreen);
+        await Navigator.pushNamed(context, RouteNames.salonCrmHomeScreen);
       } else {
-        Navigator.pushNamed(context, RouteNames.salonCrmPatronSetupScreen);
+        await Navigator.pushNamed(context, RouteNames.salonCrmPatronSetupScreen);
       }
     } catch (e) {
-      if (!context.mounted) return;
-      Utils.closeDialog(context);
+      if (context.mounted) Utils.closeDialog(context);
       debugPrint('SalonCrmEntry.openPatron error: $e');
-      Navigator.pushNamed(context, RouteNames.salonCrmPatronSetupScreen);
+      if (!context.mounted) return;
+      await Navigator.pushNamed(context, RouteNames.salonCrmPatronSetupScreen);
     }
   }
 

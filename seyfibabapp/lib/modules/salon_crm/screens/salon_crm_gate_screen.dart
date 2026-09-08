@@ -52,7 +52,9 @@ class _SalonCrmGateScreenState extends State<SalonCrmGateScreen> {
 
     // CRM session yok ama Seyfibaba'ya giriş yapmışsa → direkt patron girişi
     if (Utils.isLoggedIn(context)) {
-      SalonCrmEntry.openPatron(context);
+      await SalonCrmEntry.openPatron(context);
+      // Setup/home'dan geri dönülünce Gate sonsuz loading'de kalmasın
+      if (mounted) setState(() => _checking = false);
       return;
     }
 
