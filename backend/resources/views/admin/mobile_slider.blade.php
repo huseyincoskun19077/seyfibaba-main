@@ -56,14 +56,14 @@
               </div>
               <div class="col-md-4">
                 <div class="form-group">
-                  <label>Başlık</label>
-                  <input type="text" name="title" class="form-control" value="{{ old('title', $editSlider->title ?? '') }}">
+                  <label>Başlık <span class="text-muted">(opsiyonel)</span></label>
+                  <input type="text" name="title" class="form-control" value="{{ old('title', $editSlider->title ?? '') }}" placeholder="Boş bırakılabilir">
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="form-group">
-                  <label>Alt başlık</label>
-                  <input type="text" name="subtitle" class="form-control" value="{{ old('subtitle', $editSlider->subtitle ?? '') }}">
+                  <label>Alt başlık <span class="text-muted">(opsiyonel)</span></label>
+                  <input type="text" name="subtitle" class="form-control" value="{{ old('subtitle', $editSlider->subtitle ?? '') }}" placeholder="Boş bırakılabilir">
                 </div>
               </div>
               <div class="col-md-5">

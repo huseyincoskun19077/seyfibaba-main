@@ -58,8 +58,8 @@ class MobileSliderController extends Controller
                 ? MobileSlider::query()->findOrFail((int) $request->input('id'))
                 : new MobileSlider();
 
-            $slider->title = trim((string) $request->input('title', ''));
-            $slider->subtitle = trim((string) $request->input('subtitle', ''));
+            $slider->title = trim((string) $request->input('title', '')) ?: null;
+            $slider->subtitle = trim((string) $request->input('subtitle', '')) ?: null;
             $slider->link = trim((string) $request->input('link', ''));
             $slider->product_slug = trim((string) $request->input('product_slug', ''));
             $slider->serial = (int) ($request->input('serial') ?: 1);
