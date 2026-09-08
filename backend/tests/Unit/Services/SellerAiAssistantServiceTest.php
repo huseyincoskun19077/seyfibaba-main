@@ -56,6 +56,7 @@ class SellerAiAssistantServiceTest extends TestCase
             $table->decimal('price', 10, 2)->default(0);
             $table->decimal('offer_price', 10, 2)->default(0);
             $table->integer('qty')->default(0);
+            $table->integer('initial_qty')->nullable();
             $table->integer('status')->default(1);
             $table->integer('approve_by_admin')->default(1);
             $table->text('short_description')->nullable();
@@ -177,5 +178,113 @@ class SellerAiAssistantServiceTest extends TestCase
 
         $this->assertStringNotContainsString('ChatGPT', $result['reply']);
         $this->assertStringContainsString('Seyfibaba satıcı paneli asistanı', $result['reply']);
+    }
+
+    public function test_ai_assistant_bulk_deactivates_published_products_via_intent(): void
+    {
+        $vendor = Vendor::query()->create(['user_id' => 1, 'shop_name' => 'Test Shop']);
+        $other = Vendor::query()->create(['user_id' => 2, 'shop_name' => 'Other Shop']);
+
+        Product::query()->create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Ürün A',
+            'slug' => 'urun-a',
+            'thumb_image' => 'uploads/a.jpg',
+            'price' => 100,
+            'offer_price' => 0,
+            'qty' => 1,
+            'status' => 1,
+            'approve_by_admin' => 1,
+        ]);
+        Product::query()->create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Ürün B',
+            'slug' => 'urun-b',
+            'thumb_image' => 'uploads/b.jpg',
+            'price' => 200,
+            'offer_price' => 0,
+            'qty' => 1,
+            'status' => 1,
+            'approve_by_admin' => 1,
+        ]);
+        Product::query()->create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Taslak',
+            'slug' => 'taslak',
+            'thumb_image' => 'uploads/c.jpg',
+            'price' => 50,
+            'offer_price' => 0,
+            'qty' => 1,
+            'status' => 0,
+            'approve_by_admin' => 0,
+        ]);
+        Product::query()->create([
+            'vendor_id' => $other->id,
+            'name' => 'Başka Mağaza',
+            'slug' => 'baska',
+            'thumb_image' => 'uploads/d.jpg',
+            'price' => 99,
+            'offer_price' => 0,
+            'qty' => 1,
+            'status' => 1,
+            'approve_by_admin' => 1,
+        ]);
+
+        Http::fake([
+            'api.openai.com/*' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => 'Tüm yayındaki ürünleri pasif hale getirme işlemini sizin için gerçekleştiremiyorum. Lütfen panelden bu işlemi yapın.',
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $service = app(SellerAiAssistantService::class);
+        $result = $service->chat($vendor, 'yayında olan ürünler pasif hale getirir misin');
+
+        $this->assertNotNull($result['action_taken']);
+        $this->assertStringContainsString('2 ürün', (string) $result['action_taken']);
+        $this->assertSame(0, (int) Product::where('vendor_id', $vendor->id)->where('name', 'Ürün A')->value('status'));
+        $this->assertSame(0, (int) Product::where('vendor_id', $vendor->id)->where('name', 'Ürün B')->value('status'));
+        $this->assertSame(0, (int) Product::where('vendor_id', $vendor->id)->where('name', 'Taslak')->value('status'));
+        $this->assertSame(1, (int) Product::where('vendor_id', $other->id)->value('status'));
+    }
+
+    public function test_ai_assistant_bulk_deactivate_on_sen_yap_follow_up(): void
+    {
+        $vendor = Vendor::query()->create(['user_id' => 1, 'shop_name' => 'Test Shop']);
+        Product::query()->create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Ürün X',
+            'slug' => 'urun-x',
+            'thumb_image' => 'uploads/x.jpg',
+            'price' => 10,
+            'offer_price' => 0,
+            'qty' => 1,
+            'status' => 1,
+            'approve_by_admin' => 1,
+        ]);
+
+        Http::fake([
+            'api.openai.com/*' => Http::response([
+                'choices' => [[
+                    'message' => ['content' => 'Tamam.'],
+                ]],
+            ]),
+        ]);
+
+        $history = [
+            ['role' => 'user', 'content' => 'kaç ürünüm yayında'],
+            ['role' => 'assistant', 'content' => 'Toplam 1 ürününüz var. Bunlardan 1\'i yayında.'],
+            ['role' => 'user', 'content' => 'yayında olanları pasife al'],
+            ['role' => 'assistant', 'content' => 'Panelden yapmanız gerekiyor.'],
+        ];
+
+        $service = app(SellerAiAssistantService::class);
+        $result = $service->chat($vendor, 'sen pasif hale getir', $history);
+
+        $this->assertNotNull($result['action_taken']);
+        $this->assertSame(0, (int) Product::first()->status);
     }
 }

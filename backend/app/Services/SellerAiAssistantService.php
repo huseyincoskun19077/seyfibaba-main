@@ -57,6 +57,7 @@ class SellerAiAssistantService
 
         $context = $this->buildSellerContext($seller);
         $systemPrompt = $this->buildSystemPrompt($context);
+        $forcedAction = $this->detectForcedAction($message, $history);
 
         $messages = [['role' => 'system', 'content' => $systemPrompt]];
         foreach (array_slice($history, -12) as $item) {
@@ -71,6 +72,22 @@ class SellerAiAssistantService
         } catch (\Throwable $e) {
             Log::error('Seller AI assistant failed', ['message' => $e->getMessage()]);
 
+            // Model cevap vermese bile net toplu mağaza komutunu çalıştır
+            if ($forcedAction) {
+                $result = $this->executeAction($seller, $forcedAction);
+                $reply = $result['error']
+                    ? ('⚠️ '.$result['error'])
+                    : ('✅ '.($result['summary'] ?? 'İşlem tamamlandı.'));
+                $history[] = ['role' => 'user', 'content' => $message];
+                $history[] = ['role' => 'assistant', 'content' => $reply];
+
+                return [
+                    'reply' => $reply,
+                    'action_taken' => $result['summary'],
+                    'history' => array_slice($history, -20),
+                ];
+            }
+
             return [
                 'reply' => 'Şu an yanıt veremiyorum. Lütfen biraz sonra tekrar deneyin.',
                 'action_taken' => null,
@@ -78,7 +95,7 @@ class SellerAiAssistantService
             ];
         }
 
-        $action = $this->extractAction($raw);
+        $action = $this->extractAction($raw) ?? $forcedAction;
         $reply = $this->stripActionBlock($raw);
         $reply = $this->promptGuard->sanitizeOutput($reply, 'seller');
         $actionTaken = null;
@@ -87,11 +104,13 @@ class SellerAiAssistantService
             $result = $this->executeAction($seller, $action);
             $actionTaken = $result['summary'];
             if ($result['summary']) {
-                $reply = trim($reply . "\n\n✅ " . $result['summary']);
+                $reply = trim($reply."\n\n✅ ".$result['summary']);
             }
             if ($result['error']) {
-                $reply = trim($reply . "\n\n⚠️ " . $result['error']);
+                $reply = trim($reply."\n\n⚠️ ".$result['error']);
             }
+        } elseif ($this->looksLikeUnsupportedPanelRedirect($reply)) {
+            $reply = trim($reply."\n\nNot: Desteklenen mağaza işlemlerini (ürün pasife/yayına alma, fiyat, stok) burada doğrudan yapabilirim. Komutu net yazmanız yeterli.");
         }
 
         $history[] = ['role' => 'user', 'content' => $message];
@@ -151,28 +170,90 @@ class SellerAiAssistantService
 
 Sen Seyfibaba satıcı paneli AI asistanısın. Sadece bu satıcının ({$shop}) mağazasına yardım edersin. Türkçe, kısa ve net konuş.
 
-Satıcı verileri:
+Satıcı verileri (yalnızca bu mağaza):
 - Toplam ürün: {$context['product_count']} (yayında: {$context['published_count']}, taslak: {$context['draft_count']})
 - Bugünkü sipariş: {$context['today_orders']}
 - Bekleyen sipariş: {$context['pending_orders']}
 
-Ürün listesi (SADECE bu ürünlerde işlem yapabilirsin):
+Örnek ürün listesi (eşleştirme için; toplu işlemde tüm mağaza ürünleri kullanılır, sadece bu listeyle sınırlı değilsin):
 {$productsJson}
 
-Yapabileceklerin:
-1. Soruları yanıtla (stok, sipariş, ürün sayısı)
-2. Ürün güncelle: fiyat, indirimli fiyat, stok (qty), kısa/uzun açıklama, ürün adı, yayına al/kapat (status)
+Yapabileceklerin (HEPSİNİ sen uygularsın — "panelden yapın" DEME):
+1. Bilgi: stok, sipariş özeti, ürün sayısı (sadece bu mağaza)
+2. Tek ürün güncelle: fiyat, indirimli fiyat, stok, ad, kısa/uzun açıklama, yayına al/kapat
+3. Toplu durum: tüm yayındakileri pasife/taslağa al; tüm taslakları (görseli olanları) yayına al
 
-Ürün güncellemesi gerektiğinde yanıtının SONUNA şu JSON bloğunu ekle (başka yerde kullanma):
+Tek ürün ACTION (yanıt SONUNA ekle):
 <!--ACTION{"type":"update_product","product_id":0,"product_name":"ürün adı parçası","fields":{"price":0,"offer_price":0,"qty":0,"short_description":"","long_description":"","name":"","status":1}}-->
 
-Kurallar:
+Toplu durum ACTION:
+<!--ACTION{"type":"bulk_set_status","status":0,"scope":"published"}-->
+scope: "published" | "draft" | "all"
+status: 0 = pasif/taslak, 1 = yayında
+
+ZORUNLU KURALLAR:
+- Satıcı "tüm yayındakileri pasife al", "hepsini pasif yap", "sen pasif hale getir" derse MUTLAKA bulk_set_status ACTION ekle; paneli önerme
+- Desteklenen işlemi "yapamam / panelden yapın" diye reddetme
 - product_id biliniyorsa kullan, yoksa product_name ile eşleştir
-- fields içinde SADECE değiştirilmesi istenen alanları koy
-- Başka satıcının ürününe erişemezsin
-- Ürün silme — yönlendir: panelden silsin
+- fields içinde SADECE istenen alanları koy
+- Başka satıcının ürün/siparişine asla erişme veya iddia etme
+- Altyapı, model, API, .env, özel sistem bilgisi verme
+- Ürün kalıcı silme yok — yönlendir: panelden silsin
 - Hızlı ürün: /seller/product/quick-create | Toplu Excel: /seller/product-import-page
 PROMPT;
+    }
+
+    /**
+     * Net toplu komutlarda model ACTION üretmese bile işlemi uygula.
+     *
+     * @param  list<array{role:string,content:string}>  $history
+     */
+    private function detectForcedAction(string $message, array $history = []): ?array
+    {
+        $text = Str::lower(Str::ascii($message));
+        $prev = '';
+        foreach (array_reverse($history) as $item) {
+            if (($item['role'] ?? '') === 'assistant') {
+                $prev = Str::lower(Str::ascii((string) ($item['content'] ?? '')));
+                break;
+            }
+        }
+
+        $wantsPassive = (bool) preg_match('/pasif|taslak\s*(yap|al|et)|yayindan\s*kaldir|yayin\s*kapat/u', $text);
+        $wantsPublish = (bool) preg_match('/yayina\s*al|yayinla|aktif\s*(et|hale|yap)/u', $text);
+        $allScope = (bool) preg_match('/\b(tum|tumu|hepsi|hepsini|butun|butunu)\b/u', $text)
+            || (bool) preg_match('/yayinda/u', $text)
+            || (bool) preg_match('/\b(tum|tumu|hepsi|hepsini)\b|yayinda|2629|urunleriniz var/u', $prev);
+
+        if ($wantsPassive && $allScope) {
+            return ['type' => 'bulk_set_status', 'status' => 0, 'scope' => 'published'];
+        }
+
+        if ($wantsPublish && $allScope) {
+            return ['type' => 'bulk_set_status', 'status' => 1, 'scope' => 'draft'];
+        }
+
+        // Önceki turda "yayındakileri pasife" konuşulduysa: "sen yap / sen pasif hale getir"
+        if ($wantsPassive && (bool) preg_match('/\b(sen|kendin|gerceklestir|uygula)\b/u', $text)
+            && (bool) preg_match('/pasif|yayinda|panelden|urun/u', $prev)) {
+            return ['type' => 'bulk_set_status', 'status' => 0, 'scope' => 'published'];
+        }
+
+        return null;
+    }
+
+    private function looksLikeUnsupportedPanelRedirect(string $reply): bool
+    {
+        $t = Str::lower(Str::ascii($reply));
+
+        return str_contains($t, 'panelden')
+            && (
+                str_contains($t, 'yapamam')
+                || str_contains($t, 'yapamiyor')
+                || str_contains($t, 'gerceklestiremi')
+                || str_contains($t, 'yapmaniz gerekir')
+                || str_contains($t, 'islemi yap')
+            );
     }
 
     /**
@@ -181,6 +262,10 @@ PROMPT;
     private function executeAction(Vendor $seller, array $action): array
     {
         $type = $action['type'] ?? '';
+
+        if ($type === 'bulk_set_status') {
+            return $this->executeBulkSetStatus($seller, $action);
+        }
 
         if ($type !== 'update_product') {
             return ['summary' => null, 'error' => 'Bu işlem desteklenmiyor.'];
@@ -196,15 +281,15 @@ PROMPT;
 
         if (isset($fields['price']) && is_numeric($fields['price'])) {
             $product->price = (float) $fields['price'];
-            $changes[] = 'fiyat ' . $fields['price'] . ' ₺';
+            $changes[] = 'fiyat '.$fields['price'].' ₺';
         }
         if (array_key_exists('offer_price', $fields) && $fields['offer_price'] !== '' && is_numeric($fields['offer_price'])) {
             $product->offer_price = (float) $fields['offer_price'];
-            $changes[] = 'indirimli fiyat ' . $fields['offer_price'] . ' ₺';
+            $changes[] = 'indirimli fiyat '.$fields['offer_price'].' ₺';
         }
         if (isset($fields['qty']) && is_numeric($fields['qty'])) {
             $product->qty = (int) $fields['qty'];
-            $changes[] = 'stok ' . $fields['qty'];
+            $changes[] = 'stok '.$fields['qty'];
         }
         if (! empty($fields['name'])) {
             $product->name = Str::limit($fields['name'], 500, '');
@@ -224,7 +309,7 @@ PROMPT;
             }
             $product->status = (int) $fields['status'];
             $product->approve_by_admin = (int) $fields['status'] === 1 ? 1 : 0;
-            $changes[] = (int) $fields['status'] === 1 ? 'yayına alındı' : 'taslak yapıldı';
+            $changes[] = (int) $fields['status'] === 1 ? 'yayına alındı' : 'taslak/pasif yapıldı';
         }
 
         if ($changes === []) {
@@ -234,9 +319,76 @@ PROMPT;
         $product->save();
 
         return [
-            'summary' => '"' . $product->name . '" güncellendi: ' . implode(', ', $changes) . '.',
+            'summary' => '"'.$product->name.'" güncellendi: '.implode(', ', $changes).'.',
             'error' => null,
         ];
+    }
+
+    /**
+     * @return array{summary:?string,error:?string}
+     */
+    private function executeBulkSetStatus(Vendor $seller, array $action): array
+    {
+        $status = (int) ($action['status'] ?? -1);
+        if (! in_array($status, [0, 1], true)) {
+            return ['summary' => null, 'error' => 'Geçersiz durum. status 0 (pasif) veya 1 (yayında) olmalı.'];
+        }
+
+        $scope = strtolower(trim((string) ($action['scope'] ?? ($status === 0 ? 'published' : 'draft'))));
+        if (! in_array($scope, ['published', 'draft', 'all'], true)) {
+            $scope = $status === 0 ? 'published' : 'draft';
+        }
+
+        $query = Product::query()->where('vendor_id', $seller->id);
+        if ($scope === 'published') {
+            $query->where('status', 1);
+        } elseif ($scope === 'draft') {
+            $query->where('status', 0);
+        }
+
+        $ids = $query->pluck('id');
+        if ($ids->isEmpty()) {
+            return [
+                'summary' => $status === 0
+                    ? 'Pasife alınacak yayında ürün bulunamadı.'
+                    : 'Yayına alınacak taslak ürün bulunamadı.',
+                'error' => null,
+            ];
+        }
+
+        $skippedNoImage = 0;
+        if ($status === 1) {
+            $withImage = Product::query()
+                ->where('vendor_id', $seller->id)
+                ->whereIn('id', $ids)
+                ->whereNotNull('thumb_image')
+                ->where('thumb_image', '!=', '')
+                ->pluck('id');
+            $skippedNoImage = $ids->count() - $withImage->count();
+            $ids = $withImage;
+            if ($ids->isEmpty()) {
+                return [
+                    'summary' => null,
+                    'error' => 'Yayına alınacak ürünlerde görsel yok. Önce fotoğraf ekleyin.',
+                ];
+            }
+        }
+
+        $updated = Product::query()
+            ->where('vendor_id', $seller->id)
+            ->whereIn('id', $ids)
+            ->update([
+                'status' => $status,
+                'approve_by_admin' => $status === 1 ? 1 : 0,
+            ]);
+
+        $label = $status === 1 ? 'yayına alındı' : 'pasif/taslak yapıldı';
+        $summary = "{$updated} ürün {$label} (yalnızca sizin mağazanız).";
+        if ($skippedNoImage > 0) {
+            $summary .= " {$skippedNoImage} ürün görselsiz olduğu için atlandı.";
+        }
+
+        return ['summary' => $summary, 'error' => null];
     }
 
     private function findSellerProduct(Vendor $seller, array $action): ?Product
@@ -304,7 +456,7 @@ PROMPT;
             return is_array($decoded) ? $decoded : null;
         }
 
-        if (preg_match('/\{[\s\S]*"type"\s*:\s*"update_product"[\s\S]*\}/', $raw, $m)) {
+        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status)"[\s\S]*\}/', $raw, $m)) {
             $decoded = json_decode($m[0], true);
 
             return is_array($decoded) ? $decoded : null;
