@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\SalonCrmAppointment;
 use App\Models\SalonCrmSalon;
 use App\Models\SalonCrmService;
+use App\Models\SalonCrmStaff;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -249,9 +250,12 @@ class SalonCrmWebsiteService
                 'show_staff_appointments' => $showStaffAppts,
             ],
             'services' => $servicePayload,
-            'calendar' => $showCalendar
-                ? $this->publicCalendar($salon, $showStaffAppts)
-                : null,
+            'staff' => $this->publicStaff($salon, $showStaffAppts),
+            'calendar' => $showCalendar && !$showStaffAppts
+                ? $this->publicCalendar($salon, false)
+                : ($showCalendar && $showStaffAppts
+                    ? $this->publicCalendarSalonBlocks($salon)
+                    : null),
             'url' => $url,
             'qr_url' => $this->qrImageUrl($url),
             'book' => [
@@ -260,6 +264,94 @@ class SalonCrmWebsiteService
                 'deep_link_hint' => 'Uygulamada Salon Hub → Müşteri girişi → berber kodu: '.($joinCode ?: '—'),
             ],
         ];
+    }
+
+    private function publicStaff(SalonCrmSalon $salon, bool $showStaffAppointments): array
+    {
+        $staffRows = SalonCrmStaff::query()
+            ->where('salon_id', $salon->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'photo', 'show_photo_to_customers']);
+
+        $byStaff = [];
+        if ($showStaffAppointments && $staffRows->isNotEmpty()) {
+            $from = Carbon::now('Europe/Istanbul')->startOfDay();
+            $to = $from->copy()->addDays(6)->endOfDay();
+            $now = Carbon::now('Europe/Istanbul');
+            $ids = $staffRows->pluck('id')->all();
+
+            $rows = SalonCrmAppointment::query()
+                ->where('salon_id', $salon->id)
+                ->whereIn('staff_id', $ids)
+                ->where(function ($q) {
+                    $q->where('is_block', true)->orWhere('status', 'scheduled');
+                })
+                ->whereBetween('starts_at', [$from, $to])
+                ->orderBy('starts_at')
+                ->get(['staff_id', 'starts_at', 'duration_minutes', 'is_block']);
+
+            foreach ($rows as $row) {
+                $start = Carbon::parse($row->starts_at)->timezone('Europe/Istanbul');
+                $end = $start->copy()->addMinutes(max(5, (int) ($row->duration_minutes ?: 30)));
+                if ($end->lte($now)) {
+                    continue;
+                }
+                $sid = (int) $row->staff_id;
+                $dateKey = $start->toDateString();
+                $byStaff[$sid][$dateKey][] = [
+                    'start' => $start->format('H:i'),
+                    'end' => $end->format('H:i'),
+                    'kind' => $row->is_block ? 'closed' : 'busy',
+                ];
+            }
+        }
+
+        $now = Carbon::now('Europe/Istanbul');
+
+        return $staffRows->map(function ($member) use ($showStaffAppointments, $byStaff, $now) {
+            $photo = null;
+            if ($member->show_photo_to_customers && !empty($member->photo)) {
+                $photo = $member->photo;
+            }
+
+            $payload = [
+                'id' => (int) $member->id,
+                'name' => (string) $member->name,
+                'photo' => $photo,
+            ];
+
+            if (!$showStaffAppointments) {
+                $payload['appointments'] = null;
+                $payload['show_appointments'] = false;
+
+                return $payload;
+            }
+
+            $days = [];
+            $cursor = $now->copy()->startOfDay();
+            $last = $cursor->copy()->addDays(6);
+            $staffMap = $byStaff[(int) $member->id] ?? [];
+            while ($cursor->lte($last)) {
+                $key = $cursor->toDateString();
+                $slots = $staffMap[$key] ?? [];
+                if ($slots) {
+                    $days[] = [
+                        'date' => $key,
+                        'label' => $key === $now->toDateString()
+                            ? 'Bugün'
+                            : ($key === $now->copy()->addDay()->toDateString() ? 'Yarın' : $cursor->format('d.m')),
+                        'slots' => $slots,
+                    ];
+                }
+                $cursor->addDay();
+            }
+
+            $payload['show_appointments'] = true;
+            $payload['appointments'] = $days;
+
+            return $payload;
+        })->values()->all();
     }
 
     private function publicCalendar(SalonCrmSalon $salon, bool $showStaffAppointments): array
@@ -277,14 +369,40 @@ class SalonCrmWebsiteService
             ->orderBy('starts_at');
 
         if (!$showStaffAppointments) {
-            // Personel randevuları gizli: yalnızca salon geneli / staff_id null bloklar
             $query->where(function ($q) {
                 $q->whereNull('staff_id')->orWhere('is_block', true);
             });
         }
 
-        $rows = $query->get(['starts_at', 'duration_minutes', 'is_block', 'block_type', 'staff_id']);
+        return $this->formatCalendarDays(
+            $query->get(['starts_at', 'duration_minutes', 'is_block', 'staff_id']),
+            $salon,
+            $from,
+            $to,
+            $now,
+            $showStaffAppointments
+        );
+    }
 
+    private function publicCalendarSalonBlocks(SalonCrmSalon $salon): array
+    {
+        $from = Carbon::now('Europe/Istanbul')->startOfDay();
+        $to = $from->copy()->addDays(6)->endOfDay();
+        $now = Carbon::now('Europe/Istanbul');
+
+        $rows = SalonCrmAppointment::query()
+            ->where('salon_id', $salon->id)
+            ->where('is_block', true)
+            ->whereNull('staff_id')
+            ->whereBetween('starts_at', [$from, $to])
+            ->orderBy('starts_at')
+            ->get(['starts_at', 'duration_minutes', 'is_block', 'staff_id']);
+
+        return $this->formatCalendarDays($rows, $salon, $from, $to, $now, false);
+    }
+
+    private function formatCalendarDays($rows, SalonCrmSalon $salon, Carbon $from, Carbon $to, Carbon $now, bool $withStaffId): array
+    {
         $byDate = [];
         foreach ($rows as $row) {
             $start = Carbon::parse($row->starts_at)->timezone('Europe/Istanbul');
@@ -298,7 +416,7 @@ class SalonCrmWebsiteService
                 'end' => $end->format('H:i'),
                 'kind' => $row->is_block ? 'closed' : 'busy',
             ];
-            if ($showStaffAppointments && $row->staff_id) {
+            if ($withStaffId && $row->staff_id) {
                 $slot['staff_id'] = (int) $row->staff_id;
             }
             $byDate[$dateKey][] = $slot;

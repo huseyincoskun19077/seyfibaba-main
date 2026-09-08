@@ -325,6 +325,10 @@ class _SalonCrmWebsiteScreenState extends State<SalonCrmWebsiteScreen> {
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Personel randevularını göster'),
+                      subtitle: const Text(
+                        'Kapalıysa sadece isimler; açıksa her ustanın dolu saatleri',
+                        style: TextStyle(fontSize: 12),
+                      ),
                       value: _showStaffAppts,
                       onChanged: (v) => setState(() => _showStaffAppts = v),
                     ),

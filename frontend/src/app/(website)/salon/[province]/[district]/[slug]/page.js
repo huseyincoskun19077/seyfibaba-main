@@ -41,10 +41,8 @@ export default async function SalonPublicWebsitePage({ params }) {
   const data = await fetchSalonWebsite(province, district, slug);
 
   return (
-    <div className="w-full bg-[#fdfdfd] min-h-[70vh] py-10">
-      <div className="container-x mx-auto px-4">
-        <SalonWebsiteClient data={data} />
-      </div>
+    <div className="w-full min-h-[70vh]">
+      <SalonWebsiteClient data={data} />
     </div>
   );
 }
