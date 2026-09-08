@@ -1201,7 +1201,7 @@ JSON şeması:
               ) : (
                 <form onSubmit={handleVerificationSubmit} className="space-y-4 max-w-md">
                   <div>
-                    <label className="block text-xs text-qgray mb-1">İş yeri adı</label>
+                    <label className="block text-xs text-qgray mb-1">İş yeri adı *</label>
                     <input
                       name="business_name"
                       required
@@ -1210,7 +1210,7 @@ JSON şeması:
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-qgray mb-1">Vergi numarası</label>
+                    <label className="block text-xs text-qgray mb-1">Vergi numarası *</label>
                     <input
                       name="tax_number"
                       required
@@ -1219,12 +1219,12 @@ JSON şeması:
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-qgray mb-1">Vergi belgesi</label>
+                    <label className="block text-xs text-qgray mb-1">Vergi belgesi *</label>
                     <input name="tax_document" type="file" accept=".jpg,.jpeg,.png,.pdf" className="text-sm" required />
                     <p className="text-[11px] text-qgray mt-1">JPG/PNG/PDF (max 5MB)</p>
                   </div>
                   <div>
-                    <label className="block text-xs text-qgray mb-1">Berberler Odası sicil numarası (veya evrak)</label>
+                    <label className="block text-xs text-qgray mb-1">Kuaförler Odası sicil no (opsiyonel)</label>
                     <input
                       name="barber_registry_number"
                       className="w-full h-10 px-3 border border-gray-200 rounded-md text-sm"
@@ -1233,9 +1233,9 @@ JSON şeması:
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-qgray mb-1">Berberler Odası evrağı (isteğe bağlı)</label>
+                    <label className="block text-xs text-qgray mb-1">Kuaförler Odası evrakı (opsiyonel)</label>
                     <input name="barber_document" type="file" accept=".jpg,.jpeg,.png,.pdf" className="text-sm" />
-                    <p className="text-[11px] text-qgray mt-1">Sicil numarası yoksa evrak yükleyin.</p>
+                    <p className="text-[11px] text-qgray mt-1">JPG/PNG/PDF (max 5MB)</p>
                   </div>
                   <div className="rounded-lg border border-gray-200 bg-gray-50/60 p-3">
                     <label className="flex items-start gap-2 text-xs text-qblack">

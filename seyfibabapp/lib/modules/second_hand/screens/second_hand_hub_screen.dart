@@ -94,11 +94,6 @@ class SecondHandVerificationTabState extends State<SecondHandVerificationTab> {
           context, 'İşletme adı, vergi no ve vergi belgesi zorunludur.');
       return;
     }
-    if (_registryNumber.text.trim().isEmpty && _barberDocPath == null) {
-      Utils.errorSnackBar(context,
-          'Kuaförler Odası sicil no veya evrak yüklemeniz gerekiyor.');
-      return;
-    }
     if (!_acceptTerms || !_acceptPrivacy) {
       Utils.errorSnackBar(context, 'Sözleşmeleri onaylamanız gerekiyor.');
       return;
@@ -216,11 +211,13 @@ class SecondHandVerificationTabState extends State<SecondHandVerificationTab> {
           ShTextField(
             controller: _registryNumber,
             label: 'Kuaförler Odası sicil no',
-            hint: 'Sicil no veya evrak yükleyin',
+            hint: 'Opsiyonel',
+            optional: true,
           ),
           const SizedBox(height: 14),
           ShUploadTile(
             label: 'Vergi belgesi',
+            required: true,
             selected: _taxDocPath != null,
             onPick: () async {
               final path = await Utils.pickSingleImage();
@@ -230,6 +227,7 @@ class SecondHandVerificationTabState extends State<SecondHandVerificationTab> {
           const SizedBox(height: 10),
           ShUploadTile(
             label: 'Kuaförler Odası evrakı',
+            optional: true,
             selected: _barberDocPath != null,
             icon: Icons.badge_outlined,
             onPick: () async {

@@ -34,7 +34,7 @@ class SecondHandVerificationController extends Controller
             // Vergi belgesi zorunlu
             'tax_document' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
 
-            // Berberler Odası: sicil no veya evrak (en az biri)
+            // Kuaförler Odası: tamamen opsiyonel
             'barber_registry_number' => ['nullable', 'string', 'max:80'],
             'barber_document' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
 
@@ -42,14 +42,6 @@ class SecondHandVerificationController extends Controller
             'accept_terms' => ['required', 'accepted'],
             'accept_privacy' => ['required', 'accepted'],
         ]);
-
-        $hasRegistry = trim((string) $request->input('barber_registry_number')) !== '';
-        $hasDoc = $request->hasFile('barber_document');
-        if (! $hasRegistry && ! $hasDoc) {
-            return response()->json([
-                'message' => 'Berberler Odası sicil numarası veya evrak yüklemeniz gerekiyor.',
-            ], 422);
-        }
 
         $existing = SecondHandVerification::query()
             ->where('user_id', $user->id)

@@ -541,6 +541,21 @@ class SecondHandController extends Controller
         ]);
 
         try {
+            $user = \App\Models\User::find($verification->user_id);
+            if ($user) {
+                $user->notify(new \App\Notifications\SecondHandVerificationStatusNotification(
+                    $verification->fresh(),
+                    SecondHandVerification::STATUS_APPROVED
+                ));
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Second hand verification approved notification failed', [
+                'user_id' => $verification->user_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
             \App\Helpers\MailHelper::setMailConfig();
             $user = \App\Models\User::find($verification->user_id);
             if ($user && $user->email) {
@@ -570,6 +585,21 @@ class SecondHandController extends Controller
             'reviewed_by' => Auth::guard('admin')->id(),
             'reviewed_at' => now(),
         ]);
+
+        try {
+            $user = \App\Models\User::find($verification->user_id);
+            if ($user) {
+                $user->notify(new \App\Notifications\SecondHandVerificationStatusNotification(
+                    $verification->fresh(),
+                    SecondHandVerification::STATUS_REJECTED
+                ));
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Second hand verification rejected notification failed', [
+                'user_id' => $verification->user_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return redirect()->back()->with([
             'messege' => trans('admin_validation.Update Successfully'),
@@ -681,6 +711,21 @@ class SecondHandController extends Controller
         $listing->review_note = null;
         $listing->save();
 
+        try {
+            $user = \App\Models\User::find($listing->user_id);
+            if ($user) {
+                $user->notify(new \App\Notifications\SecondHandListingStatusNotification(
+                    $listing->fresh(),
+                    SecondHandListing::STATUS_ACTIVE
+                ));
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Second hand listing approved notification failed', [
+                'listing_id' => $listing->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         return redirect()->back()->with([
             'messege' => trans('admin_validation.Update Successfully'),
             'alert-type' => 'success',
@@ -709,6 +754,21 @@ class SecondHandController extends Controller
         $listing->reviewed_at = now();
         $listing->deactivated_at = now();
         $listing->save();
+
+        try {
+            $user = \App\Models\User::find($listing->user_id);
+            if ($user) {
+                $user->notify(new \App\Notifications\SecondHandListingStatusNotification(
+                    $listing->fresh(),
+                    SecondHandListing::STATUS_REJECTED
+                ));
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Second hand listing rejected notification failed', [
+                'listing_id' => $listing->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return redirect()->back()->with([
             'messege' => trans('admin_validation.Update Successfully'),

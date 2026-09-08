@@ -489,6 +489,7 @@ class ShTextField extends StatelessWidget {
     this.maxLines = 1,
     this.keyboardType,
     this.required = false,
+    this.optional = false,
   });
 
   final TextEditingController controller;
@@ -497,14 +498,19 @@ class ShTextField extends StatelessWidget {
   final int maxLines;
   final TextInputType? keyboardType;
   final bool required;
+  final bool optional;
 
   @override
   Widget build(BuildContext context) {
+    final displayLabel = required
+        ? '$label *'
+        : (optional ? '$label (opsiyonel)' : label);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          required ? '$label *' : label,
+          displayLabel,
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -789,15 +795,24 @@ class ShUploadTile extends StatelessWidget {
     required this.onPick,
     this.selected = false,
     this.icon = Icons.upload_file_rounded,
+    this.required = false,
+    this.optional = false,
   });
 
   final String label;
   final VoidCallback onPick;
   final bool selected;
   final IconData icon;
+  final bool required;
+  final bool optional;
 
   @override
   Widget build(BuildContext context) {
+    final baseLabel = required
+        ? '$label *'
+        : (optional ? '$label (opsiyonel)' : label);
+    final displayLabel = selected ? '$baseLabel yüklendi' : baseLabel;
+
     return Material(
       color: selected ? ShTheme.primary.withValues(alpha: 0.1) : ShTheme.card,
       borderRadius: BorderRadius.circular(ShTheme.radiusSm),
@@ -833,7 +848,7 @@ class ShUploadTile extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  selected ? '$label yüklendi' : label,
+                  displayLabel,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
