@@ -253,14 +253,12 @@ class SalonCrmWebsiteService
             'staff' => $this->publicStaff($salon, $showStaffAppts),
             'calendar' => $showCalendar && !$showStaffAppts
                 ? $this->publicCalendar($salon, false)
-                : ($showCalendar && $showStaffAppts
-                    ? $this->publicCalendarSalonBlocks($salon)
-                    : null),
+                : null,
             'url' => $url,
             'qr_url' => $this->qrImageUrl($url),
             'book' => [
                 'join_code' => $joinCode,
-                'app_hint' => 'Randevu almak için Seyfibaba uygulamasından Salon Hub → müşteri girişi ile bu salona bağlanın.',
+                'app_hint' => 'Randevu almak için Seyfibaba uygulamasını indirin. Salon Hub → müşteri girişi ile bu salona bağlanın.',
                 'deep_link_hint' => 'Uygulamada Salon Hub → Müşteri girişi → berber kodu: '.($joinCode ?: '—'),
             ],
         ];
@@ -274,32 +272,60 @@ class SalonCrmWebsiteService
             ->orderBy('name')
             ->get(['id', 'name', 'photo', 'show_photo_to_customers']);
 
-        $byStaff = [];
-        if ($showStaffAppointments && $staffRows->isNotEmpty()) {
-            $from = Carbon::now('Europe/Istanbul')->startOfDay();
-            $to = $from->copy()->addDays(6)->endOfDay();
-            $now = Carbon::now('Europe/Istanbul');
-            $ids = $staffRows->pluck('id')->all();
+        $people = collect([
+            (object) [
+                'id' => 0,
+                'role' => 'owner',
+                'name' => trim((string) ($salon->owner_name ?: $salon->name)) ?: 'Salon sahibi',
+                'photo' => $salon->logo_image,
+                'show_photo' => !empty($salon->logo_image),
+            ],
+        ]);
+
+        foreach ($staffRows as $member) {
+            $people->push((object) [
+                'id' => (int) $member->id,
+                'role' => 'staff',
+                'name' => (string) $member->name,
+                'photo' => ($member->show_photo_to_customers && !empty($member->photo))
+                    ? $member->photo
+                    : null,
+                'show_photo' => (bool) ($member->show_photo_to_customers && !empty($member->photo)),
+            ]);
+        }
+
+        $byPerson = [];
+        $now = Carbon::now('Europe/Istanbul');
+        $from = $now->copy()->startOfDay();
+        $to = $from->copy()->addDays(6)->endOfDay();
+
+        if ($showStaffAppointments) {
+            $fromStr = $from->format('Y-m-d H:i:s');
+            $toStr = $to->format('Y-m-d H:i:s');
+            $nowStr = $now->format('Y-m-d H:i:s');
 
             $rows = SalonCrmAppointment::query()
                 ->where('salon_id', $salon->id)
-                ->whereIn('staff_id', $ids)
                 ->where(function ($q) {
-                    $q->where('is_block', true)->orWhere('status', 'scheduled');
+                    $q->where('is_block', true)
+                        ->orWhereIn('status', ['scheduled', 'pending']);
                 })
-                ->whereBetween('starts_at', [$from, $to])
+                ->whereBetween('starts_at', [$fromStr, $toStr])
                 ->orderBy('starts_at')
                 ->get(['staff_id', 'starts_at', 'duration_minutes', 'is_block']);
 
             foreach ($rows as $row) {
-                $start = Carbon::parse($row->starts_at)->timezone('Europe/Istanbul');
-                $end = $start->copy()->addMinutes(max(5, (int) ($row->duration_minutes ?: 30)));
-                if ($end->lte($now)) {
+                $raw = $row->getRawOriginal('starts_at') ?? $row->starts_at;
+                $start = $this->parseSalonWallClock($raw);
+                $duration = max(5, (int) ($row->duration_minutes ?: 30));
+                $end = $start->copy()->addMinutes($duration);
+                // Bitmiş randevuları gizle (duvar saati string karşılaştırma)
+                if ($end->format('Y-m-d H:i:s') <= $nowStr) {
                     continue;
                 }
-                $sid = (int) $row->staff_id;
+                $pid = $row->staff_id ? (int) $row->staff_id : 0;
                 $dateKey = $start->toDateString();
-                $byStaff[$sid][$dateKey][] = [
+                $byPerson[$pid][$dateKey][] = [
                     'start' => $start->format('H:i'),
                     'end' => $end->format('H:i'),
                     'kind' => $row->is_block ? 'closed' : 'busy',
@@ -307,18 +333,12 @@ class SalonCrmWebsiteService
             }
         }
 
-        $now = Carbon::now('Europe/Istanbul');
-
-        return $staffRows->map(function ($member) use ($showStaffAppointments, $byStaff, $now) {
-            $photo = null;
-            if ($member->show_photo_to_customers && !empty($member->photo)) {
-                $photo = $member->photo;
-            }
-
+        return $people->map(function ($person) use ($showStaffAppointments, $byPerson, $now, $from) {
             $payload = [
-                'id' => (int) $member->id,
-                'name' => (string) $member->name,
-                'photo' => $photo,
+                'id' => (int) $person->id,
+                'role' => (string) $person->role,
+                'name' => (string) $person->name,
+                'photo' => $person->show_photo ? $person->photo : null,
             ];
 
             if (!$showStaffAppointments) {
@@ -329,21 +349,19 @@ class SalonCrmWebsiteService
             }
 
             $days = [];
-            $cursor = $now->copy()->startOfDay();
-            $last = $cursor->copy()->addDays(6);
-            $staffMap = $byStaff[(int) $member->id] ?? [];
+            $cursor = $from->copy();
+            $last = $from->copy()->addDays(6);
+            $map = $byPerson[(int) $person->id] ?? [];
             while ($cursor->lte($last)) {
                 $key = $cursor->toDateString();
-                $slots = $staffMap[$key] ?? [];
-                if ($slots) {
-                    $days[] = [
-                        'date' => $key,
-                        'label' => $key === $now->toDateString()
-                            ? 'Bugün'
-                            : ($key === $now->copy()->addDay()->toDateString() ? 'Yarın' : $cursor->format('d.m')),
-                        'slots' => $slots,
-                    ];
-                }
+                $slots = $map[$key] ?? [];
+                $days[] = [
+                    'date' => $key,
+                    'label' => $key === $now->toDateString()
+                        ? 'Bugün'
+                        : ($key === $now->copy()->addDay()->toDateString() ? 'Yarın' : $cursor->format('d.m')),
+                    'slots' => $slots,
+                ];
                 $cursor->addDay();
             }
 
@@ -354,18 +372,37 @@ class SalonCrmWebsiteService
         })->values()->all();
     }
 
+    private function parseSalonWallClock($value): Carbon
+    {
+        if ($value instanceof Carbon) {
+            return Carbon::parse($value->format('Y-m-d H:i:s'), 'Europe/Istanbul');
+        }
+        if ($value instanceof \DateTimeInterface) {
+            return Carbon::parse($value->format('Y-m-d H:i:s'), 'Europe/Istanbul');
+        }
+        $raw = trim((string) $value);
+        $raw = str_replace('T', ' ', $raw);
+        $raw = preg_replace('/\.\d+$/', '', $raw) ?? $raw;
+        $raw = preg_replace('/[zZ]|[+-]\d{2}:?\d{2}$/', '', $raw) ?? $raw;
+
+        return Carbon::parse(trim($raw), 'Europe/Istanbul');
+    }
+
     private function publicCalendar(SalonCrmSalon $salon, bool $showStaffAppointments): array
     {
         $from = Carbon::now('Europe/Istanbul')->startOfDay();
         $to = $from->copy()->addDays(6)->endOfDay();
         $now = Carbon::now('Europe/Istanbul');
+        $fromStr = $from->format('Y-m-d H:i:s');
+        $toStr = $to->format('Y-m-d H:i:s');
 
         $query = SalonCrmAppointment::query()
             ->where('salon_id', $salon->id)
             ->where(function ($q) {
-                $q->where('is_block', true)->orWhere('status', 'scheduled');
+                $q->where('is_block', true)
+                    ->orWhereIn('status', ['scheduled', 'pending']);
             })
-            ->whereBetween('starts_at', [$from, $to])
+            ->whereBetween('starts_at', [$fromStr, $toStr])
             ->orderBy('starts_at');
 
         if (!$showStaffAppointments) {
@@ -384,30 +421,15 @@ class SalonCrmWebsiteService
         );
     }
 
-    private function publicCalendarSalonBlocks(SalonCrmSalon $salon): array
-    {
-        $from = Carbon::now('Europe/Istanbul')->startOfDay();
-        $to = $from->copy()->addDays(6)->endOfDay();
-        $now = Carbon::now('Europe/Istanbul');
-
-        $rows = SalonCrmAppointment::query()
-            ->where('salon_id', $salon->id)
-            ->where('is_block', true)
-            ->whereNull('staff_id')
-            ->whereBetween('starts_at', [$from, $to])
-            ->orderBy('starts_at')
-            ->get(['starts_at', 'duration_minutes', 'is_block', 'staff_id']);
-
-        return $this->formatCalendarDays($rows, $salon, $from, $to, $now, false);
-    }
-
     private function formatCalendarDays($rows, SalonCrmSalon $salon, Carbon $from, Carbon $to, Carbon $now, bool $withStaffId): array
     {
+        $nowStr = $now->format('Y-m-d H:i:s');
         $byDate = [];
         foreach ($rows as $row) {
-            $start = Carbon::parse($row->starts_at)->timezone('Europe/Istanbul');
+            $raw = $row->getRawOriginal('starts_at') ?? $row->starts_at;
+            $start = $this->parseSalonWallClock($raw);
             $end = $start->copy()->addMinutes(max(5, (int) ($row->duration_minutes ?: 30)));
-            if ($end->lte($now)) {
+            if ($end->format('Y-m-d H:i:s') <= $nowStr) {
                 continue;
             }
             $dateKey = $start->toDateString();

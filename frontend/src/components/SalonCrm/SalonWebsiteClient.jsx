@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
 import { resolveProductImageUrl } from "@/utils/productImage";
@@ -69,7 +70,104 @@ function SectionTitle({ eyebrow, title, subtitle }) {
   );
 }
 
+function BookAppModal({ open, onClose, joinCode, playStoreUrl, appStoreUrl }) {
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 p-4 sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="salon-book-title"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md overflow-hidden rounded-[28px] bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bg-[#171411] px-6 py-5 text-white">
+          <p className="text-[11px] font-700 uppercase tracking-[0.2em] text-qyellow">
+            Randevu
+          </p>
+          <h3 id="salon-book-title" className="mt-1 text-2xl font-800">
+            Uygulamayı indir
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-white/75">
+            Randevu yalnızca Seyfibaba mobil uygulamasından alınır. İndir, Salon
+            Hub → müşteri girişi ile salona bağlan.
+          </p>
+        </div>
+        <div className="px-6 py-5">
+          {joinCode ? (
+            <div className="rounded-2xl border border-[#fcd34d]/70 bg-[#fffbeb] px-4 py-4 text-center">
+              <p className="text-[11px] font-700 uppercase tracking-[0.18em] text-[#92400e]">
+                Berber kodu
+              </p>
+              <p className="mt-1 font-mono text-3xl font-800 tracking-[0.18em] text-[#14110f]">
+                {joinCode}
+              </p>
+              <p className="mt-2 text-xs text-[#6b7280]">
+                Uygulamada bu kodu girmen yeterli
+              </p>
+            </div>
+          ) : null}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            {playStoreUrl ? (
+              <a
+                href={playStoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Google Play"
+              >
+                <GooglePlay />
+              </a>
+            ) : null}
+            {appStoreUrl ? (
+              <a
+                href={appStoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="App Store"
+              >
+                <AppleStore />
+              </a>
+            ) : null}
+            {!playStoreUrl && !appStoreUrl ? (
+              <p className="text-sm text-[#6b7280]">
+                Mağaza linkleri yakında — App Store / Play Store’dan “Seyfibaba”
+                arayın.
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full border border-black/10 text-sm font-700 text-[#14110f]"
+          >
+            Kapat
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SalonWebsiteClient({ data }) {
+  const [bookOpen, setBookOpen] = useState(false);
   const { websiteSetup } = useSelector((state) => state.websiteSetup);
   const download = websiteSetup?.payload?.flashSaleSidebarBanner;
   const playStoreUrl = download?.play_store?.trim();
@@ -215,12 +313,13 @@ export default function SalonWebsiteClient({ data }) {
                 Instagram
               </a>
             ) : null}
-            <a
-              href="#randevu"
+            <button
+              type="button"
+              onClick={() => setBookOpen(true)}
               className="inline-flex h-12 items-center rounded-full border border-white/20 bg-white/5 px-6 text-sm font-700 text-white backdrop-blur"
             >
               Randevu al
-            </a>
+            </button>
           </div>
         </div>
       </section>
@@ -233,19 +332,21 @@ export default function SalonWebsiteClient({ data }) {
               <section className="rounded-[28px] border border-black/5 bg-[#fffdf9] p-6 shadow-[0_18px_50px_rgba(20,17,15,0.06)] sm:p-8">
                 <SectionTitle
                   eyebrow="Ekip"
-                  title="Personellerimiz"
+                  title="Salon sahibi & ustalar"
                   subtitle={
                     flags.show_staff_appointments
-                      ? "Her ustanın dolu saatleri aşağıda. Müşteri isimleri paylaşılmaz."
-                      : "Salonumuzun ustaları. Randevu detayı için uygulamadan bağlanın."
+                      ? "Her kişi ayrı görünür. Yalnızca dolu saatler listelenir; müşteri isimleri paylaşılmaz."
+                      : "Salon sahibi ve ustalar. Randevu için uygulamayı indirin."
                   }
                 />
                 <div className="space-y-5">
                   {staff.map((member) => {
                     const photo = resolveProductImageUrl(member.photo);
+                    const roleLabel =
+                      member.role === "owner" ? "Salon sahibi" : "Usta";
                     return (
                       <article
-                        key={member.id}
+                        key={`${member.role}-${member.id}`}
                         className="overflow-hidden rounded-2xl border border-black/[0.04] bg-gradient-to-br from-white to-[#faf7f2]"
                       >
                         <div className="flex items-center gap-4 border-b border-black/[0.04] px-4 py-4">
@@ -264,53 +365,49 @@ export default function SalonWebsiteClient({ data }) {
                             )}
                           </div>
                           <div>
+                            <p className="text-[11px] font-700 uppercase tracking-[0.16em] text-[#b45309]">
+                              {roleLabel}
+                            </p>
                             <h3 className="text-lg font-800 text-[#14110f]">
                               {member.name}
                             </h3>
-                            <p className="text-xs text-[#6b7280]">
-                              {member.show_appointments
-                                ? "Dolu saatler görünür"
-                                : "Randevu için uygulamayı kullanın"}
-                            </p>
                           </div>
                         </div>
 
                         {member.show_appointments ? (
-                          <div className="px-4 py-4">
-                            {(member.appointments || []).length === 0 ? (
-                              <p className="text-sm text-[#6b7280]">
-                                Önümüzdeki günlerde dolu randevu görünmüyor.
-                              </p>
-                            ) : (
-                              <div className="space-y-3">
-                                {member.appointments.map((day) => (
-                                  <div key={`${member.id}-${day.date}`}>
-                                    <div className="mb-2 flex items-baseline justify-between">
-                                      <p className="text-sm font-800 text-[#14110f]">
-                                        {day.label}
-                                      </p>
-                                      <span className="text-[11px] text-[#9ca3af]">
-                                        {day.date}
+                          <div className="space-y-3 px-4 py-4">
+                            {(member.appointments || []).map((day) => (
+                              <div key={`${member.role}-${member.id}-${day.date}`}>
+                                <div className="mb-2 flex items-baseline justify-between">
+                                  <p className="text-sm font-800 text-[#14110f]">
+                                    {day.label}
+                                  </p>
+                                  <span className="text-[11px] text-[#9ca3af]">
+                                    {day.date}
+                                  </span>
+                                </div>
+                                {(day.slots || []).length === 0 ? (
+                                  <p className="text-xs text-[#6b7280]">
+                                    Dolu randevu yok
+                                  </p>
+                                ) : (
+                                  <div className="flex flex-wrap gap-2">
+                                    {day.slots.map((slot, idx) => (
+                                      <span
+                                        key={`${day.date}-${idx}`}
+                                        className={`inline-flex rounded-full px-3 py-1.5 text-xs font-700 ${
+                                          slot.kind === "closed"
+                                            ? "bg-[#f3f4f6] text-[#6b7280]"
+                                            : "bg-[#1a1512] text-qyellow"
+                                        }`}
+                                      >
+                                        {slot.start}–{slot.end}
                                       </span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                      {(day.slots || []).map((slot, idx) => (
-                                        <span
-                                          key={`${day.date}-${idx}`}
-                                          className={`inline-flex rounded-full px-3 py-1.5 text-xs font-700 ${
-                                            slot.kind === "closed"
-                                              ? "bg-[#f3f4f6] text-[#6b7280]"
-                                              : "bg-[#1a1512] text-qyellow"
-                                          }`}
-                                        >
-                                          {slot.start}–{slot.end}
-                                        </span>
-                                      ))}
-                                    </div>
+                                    ))}
                                   </div>
-                                ))}
+                                )}
                               </div>
-                            )}
+                            ))}
                           </div>
                         ) : null}
                       </article>
@@ -447,10 +544,7 @@ export default function SalonWebsiteClient({ data }) {
               <SectionTitle
                 eyebrow="Randevu"
                 title="Hemen bağlan"
-                subtitle={
-                  book.app_hint ||
-                  "Seyfibaba uygulamasından müşteri girişi ile randevu alın."
-                }
+                subtitle="Uygulamayı indirip berber koduyla salona bağlanın."
               />
               {book.join_code ? (
                 <div className="mb-5 rounded-2xl border border-[#fcd34d]/60 bg-white/70 px-4 py-4 text-center">
@@ -462,28 +556,13 @@ export default function SalonWebsiteClient({ data }) {
                   </p>
                 </div>
               ) : null}
-              <div className="flex flex-wrap gap-3">
-                {playStoreUrl ? (
-                  <a
-                    href={playStoreUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Google Play"
-                  >
-                    <GooglePlay />
-                  </a>
-                ) : null}
-                {appStoreUrl ? (
-                  <a
-                    href={appStoreUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="App Store"
-                  >
-                    <AppleStore />
-                  </a>
-                ) : null}
-              </div>
+              <button
+                type="button"
+                onClick={() => setBookOpen(true)}
+                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#171411] text-sm font-800 text-qyellow"
+              >
+                Randevu al — uygulamayı aç
+              </button>
             </section>
 
             {data.qr_url ? (
@@ -508,6 +587,14 @@ export default function SalonWebsiteClient({ data }) {
           </div>
         </div>
       </div>
+
+      <BookAppModal
+        open={bookOpen}
+        onClose={() => setBookOpen(false)}
+        joinCode={book.join_code}
+        playStoreUrl={playStoreUrl}
+        appStoreUrl={appStoreUrl}
+      />
     </div>
   );
 }
