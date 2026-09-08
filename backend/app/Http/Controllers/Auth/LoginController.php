@@ -47,12 +47,17 @@ class LoginController extends Controller
         $this->middleware('guest:api')->except('userLogout');
     }
 
-    public function loginPage(){
-        $banner = BreadcrumbImage::where(['id' => 5])->first();
-        $background = BannerImage::whereId('13')->first();
-        $recaptchaSetting = GoogleRecaptcha::first();
-        $socialLogin = SocialLoginInformation::first();
-        return view('login', compact('banner','background','recaptchaSetting','socialLogin'));
+    public function loginPage()
+    {
+        // Bu metod yalnızca /api/login altında kayıtlı; HTML view API'de Route [login] hatası üretir
+        // (RouteServiceProvider as('api.') → gerçek isim api.login).
+        return response()->json([
+            'message' => 'Giriş için POST kullanın.',
+            'endpoints' => [
+                'store_login' => url('/api/store-login'),
+                'auth_login' => url('/api/auth/login'),
+            ],
+        ]);
     }
 
     public function storeLogin(Request $request){

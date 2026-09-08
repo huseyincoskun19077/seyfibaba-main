@@ -20,7 +20,7 @@
                         <h4>{{__('Login')}}</h4>
                         <ul>
                             <li><a href="{{ route('home') }}">{{__('Home')}}</a></li>
-                            <li><a href="{{ route('login') }}">{{__('Login')}}</a></li>
+                            <li><span>{{__('Login')}}</span></li>
 
                         </ul>
                     </div>
