@@ -14,13 +14,24 @@ class SecondHandVerificationController extends Controller
     {
         $user = Auth::guard('api')->user();
 
+        // Onaylı kayıt varsa onu öncelikle göster (yeni pending/rejected kaydı gizlemesin)
         $verification = SecondHandVerification::query()
             ->where('user_id', $user->id)
-            ->latest()
+            ->where('status', SecondHandVerification::STATUS_APPROVED)
+            ->latest('id')
             ->first();
+
+        if (! $verification) {
+            $verification = SecondHandVerification::query()
+                ->where('user_id', $user->id)
+                ->latest('id')
+                ->first();
+        }
 
         return response()->json([
             'verification' => $verification,
+            'is_approved' => $verification
+                && $verification->status === SecondHandVerification::STATUS_APPROVED,
         ]);
     }
 

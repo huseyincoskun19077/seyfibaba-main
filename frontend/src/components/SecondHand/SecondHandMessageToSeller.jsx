@@ -8,6 +8,14 @@ import { useSecondHandSendToListingMutation, useSecondHandVerificationQuery } fr
 import { marketplaceProfileUrl, marketplaceUrl } from "@/utils/secondHandSite";
 import { marketplaceLoginHref } from "@/utils/auth";
 
+function isVerificationApproved(verData) {
+  if (verData?.is_approved === true) return true;
+  const status = String(verData?.verification?.status || "")
+    .trim()
+    .toLowerCase();
+  return status === "approved";
+}
+
 /**
  * @param {{ listingId: number|string; sellerUserId?: number|string }} props
  */
@@ -17,8 +25,17 @@ export default function SecondHandMessageToSeller({ listingId, sellerUserId }) {
 
   const session = auth();
   const tokenReady = !!session?.access_token;
-  const { data: verData } = useSecondHandVerificationQuery(undefined, { skip: !tokenReady });
-  const isSecondHandApproved = verData?.verification?.status === "approved";
+  const {
+    data: verData,
+    isLoading: verLoading,
+    isFetching: verFetching,
+    isError: verError,
+    refetch: refetchVerification,
+  } = useSecondHandVerificationQuery(undefined, {
+    skip: !tokenReady,
+    refetchOnMountOrArgChange: true,
+  });
+  const isSecondHandApproved = isVerificationApproved(verData);
   const myId = session?.user?.id != null ? Number(session.user.id) : null;
   const sellerId = sellerUserId != null ? Number(sellerUserId) : null;
   const isOwn = myId != null && sellerId != null && myId === sellerId;
@@ -60,6 +77,32 @@ export default function SecondHandMessageToSeller({ listingId, sellerUserId }) {
     return (
       <div className="mt-8 p-4 bg-gray-50 rounded-lg text-sm text-qgray">
         Kendi ilanınıza mesaj gönderemezsiniz.
+      </div>
+    );
+  }
+
+  if (verLoading || (verFetching && !verData)) {
+    return (
+      <div className="mt-8 p-4 border border-gray-200 rounded-lg text-sm text-qgray animate-pulse">
+        Doğrulama durumu kontrol ediliyor…
+      </div>
+    );
+  }
+
+  if (verError) {
+    return (
+      <div className="mt-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="px-4 py-4">
+          <p className="text-sm font-700 text-qblack">Doğrulama durumu alınamadı</p>
+          <p className="mt-1 text-xs text-qgray">Bağlantı veya oturum sorunlu olabilir. Tekrar deneyin.</p>
+          <button
+            type="button"
+            onClick={() => refetchVerification()}
+            className="mt-3 h-10 px-5 rounded-xl bg-qblack text-white text-sm font-700"
+          >
+            Tekrar dene
+          </button>
+        </div>
       </div>
     );
   }
@@ -118,7 +161,7 @@ export default function SecondHandMessageToSeller({ listingId, sellerUserId }) {
     <div className="mt-8 p-4 border border-qgray-border rounded-lg">
       <h2 className="text-lg font-600 text-qblack mb-2">Satıcıya yaz</h2>
       <p className="text-xs text-qgray mb-3">
-        Mesaj gönderebilmek için ikinci el doğrulamanız onaylı olmalıdır. Aktif olmayan ilanlarda mesaj kapalıdır.
+        Aktif olmayan ilanlarda mesaj kapalıdır.
       </p>
       <textarea
         value={body}
@@ -138,7 +181,7 @@ export default function SecondHandMessageToSeller({ listingId, sellerUserId }) {
           {isLoading ? "Gönderiliyor…" : "Gönder"}
         </button>
         <Link href={marketplaceProfileUrl("second-hand")} className="text-sm text-qgray underline">
-          Doğrulama ve mesajlarım
+          Mesajlarım
         </Link>
       </div>
     </div>

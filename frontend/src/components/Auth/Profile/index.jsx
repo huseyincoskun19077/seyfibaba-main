@@ -278,7 +278,10 @@ function ProfileContent() {
     // Sidebar tick/badge için gerekli
     skip: !isAuthed,
   });
-  const secondHandVerified = secondHandVerData?.verification?.status === "approved";
+  const secondHandVerified =
+    secondHandVerData?.is_approved === true ||
+    String(secondHandVerData?.verification?.status || "").trim().toLowerCase() ===
+      "approved";
 
   /**
    * get user location

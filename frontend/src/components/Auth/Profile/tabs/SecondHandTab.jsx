@@ -166,7 +166,9 @@ function SecondHandTab({ subNav = "" }) {
   const [submitVerification, { isLoading: verSubmitting }] = useSecondHandVerificationSubmitMutation();
 
   const verification = verData?.verification;
-  const isApproved = verification?.status === "approved";
+  const isApproved =
+    verData?.is_approved === true ||
+    String(verification?.status || "").trim().toLowerCase() === "approved";
 
   useEffect(() => {
     const k = (subNav || "").trim().toLowerCase();
