@@ -101,7 +101,7 @@ class _SecondHandConversationScreenState
         _conversation = result.conversation;
         _messages
           ..clear()
-          ..addAll(result.items.reversed);
+          ..addAll(result.items);
         _loading = false;
       });
       _scrollToBottom();
@@ -114,13 +114,13 @@ class _SecondHandConversationScreenState
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
-      }
+      if (!_scrollController.hasClients) return;
+      // reverse:true ListView'de 0 = en alt (yeni mesajlar)
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
     });
   }
 
@@ -227,10 +227,13 @@ class _SecondHandConversationScreenState
                       )
                     : ListView.builder(
                         controller: _scrollController,
+                        reverse: true,
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
-                          final message = _messages[index];
+                          // reverse:true → index 0 en altta; liste eskiden yeniye
+                          final message =
+                              _messages[_messages.length - 1 - index];
                           final isMine = _currentUserId != null &&
                               message.senderId == _currentUserId;
                           return _MessageBubble(
@@ -528,7 +531,7 @@ class _MessageBubble extends StatelessWidget {
     final attachments = message.attachments;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(top: 8),
       child: Row(
         mainAxisAlignment:
             isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
