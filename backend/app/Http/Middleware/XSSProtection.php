@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class XSSProtection
 {
-    private const ALLOWED_TAGS = '<p><br><strong><b><em><i><u><ul><ol><li><a><span><h1><h2><h3><h4><h5><h6><blockquote><code><pre>';
+    10|    private const ALLOWED_TAGS = '<p><br><strong><b><em><i><u><ul><ol><li><a><span><h1><h2><h3><h4><h5><h6><blockquote><code><pre>';
 
     /**
      * Handle an incoming request.
@@ -17,9 +17,12 @@ class XSSProtection
      * @return mixed
      */
     public function handle(Request $request, Closure $next)
-    {
+    20|    {
         try {
-            $input = array_filter($request->all());
+            // ÖNEMLİ: $request->all() dosyaları da alır; merge + recursive sanitize
+            // multipart yüklemelerde (slider, ürün görseli vb.) takılma/bozulmaya yol açar.
+            // Sadece metin input'larını temizle.
+            $input = $request->input();
 
             array_walk_recursive($input, function (&$value) {
                 if (! is_string($value)) {
@@ -37,7 +40,9 @@ class XSSProtection
                 $value = $sanitized;
             });
 
-            $request->merge($input);
+            if ($input !== []) {
+                $request->merge($input);
+            }
         } catch (\Throwable $e) {
             // XSS temizliği başarısız olsa da isteği düşürme
         }

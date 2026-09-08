@@ -27,7 +27,7 @@
             Bağlantı veya kategori seçmezseniz slider yalnızca görsel olarak gösterilir; tıklanabilir buton çıkmaz.
           </p>
 
-          <form method="POST" action="{{ route('admin.mobile-slider.store') }}" enctype="multipart/form-data" class="mb-4">
+            <form method="POST" action="{{ route('admin.mobile-slider.store') }}" enctype="multipart/form-data" class="mb-4" id="mobile-slider-form">
             @csrf
             @if ($errors->any())
               <div class="alert alert-danger">
@@ -36,6 +36,11 @@
                     <li>{{ $error }}</li>
                   @endforeach
                 </ul>
+              </div>
+            @endif
+            @if(session('messege'))
+              <div class="alert alert-{{ session('alert-type') === 'error' ? 'danger' : 'success' }}">
+                {{ session('messege') }}
               </div>
             @endif
             @if(!empty($editSlider))
@@ -96,13 +101,31 @@
                 </div>
               </div>
               <div class="col-md-12">
-                <button type="submit" class="btn btn-primary">{{ !empty($editSlider) ? 'Güncelle' : 'Mobil\'e ekle' }}</button>
+                <button type="submit" class="btn btn-primary" id="mobile-slider-submit">{{ !empty($editSlider) ? 'Güncelle' : 'Mobil\'e ekle' }}</button>
                 @if(!empty($editSlider))
                   <a href="{{ route('admin.mobile-slider.index') }}" class="btn btn-light">İptal</a>
                 @endif
+                <span class="text-muted ml-2 d-none" id="mobile-slider-wait">Yükleniyor, lütfen bekleyin…</span>
               </div>
             </div>
           </form>
+
+          <script>
+            (function () {
+              var form = document.getElementById('mobile-slider-form');
+              if (!form) return;
+              form.addEventListener('submit', function () {
+                var btn = document.getElementById('mobile-slider-submit');
+                var wait = document.getElementById('mobile-slider-wait');
+                if (btn) {
+                  btn.disabled = true;
+                }
+                if (wait) {
+                  wait.classList.remove('d-none');
+                }
+              });
+            })();
+          </script>
 
           <div class="table-responsive">
             <table class="table table-striped">
