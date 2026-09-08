@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -349,11 +351,15 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
   TurkeyAddressValue _address = const TurkeyAddressValue();
 
   SecondHandListing? _draft;
+  final List<String> _pendingImagePaths = [];
   bool _loadingCategories = true;
   bool _saving = false;
   bool _acceptUploadTerms = false;
   String _listingRulesTitle = 'İkinci El İlan Kuralları';
   String _listingRulesContent = '';
+
+  int get _imageCount =>
+      (_draft?.images.length ?? 0) + _pendingImagePaths.length;
 
   @override
   void initState() {
@@ -502,7 +508,7 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
     };
   }
 
-  Future<void> _saveDraft() async {
+  Future<void> _saveDraft({bool silent = false}) async {
     if (!_acceptUploadTerms) {
       Utils.errorSnackBar(
         context,
@@ -530,15 +536,41 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
         );
       }
       if (!mounted) return;
-      setState(() {
-        _draft = listing;
-        _saving = false;
-      });
-      Utils.showSnackBar(context, 'Taslak kaydedildi.');
+      setState(() => _draft = listing);
+      await _flushPendingImages();
+      if (!mounted) return;
+      setState(() => _saving = false);
+      if (!silent) {
+        Utils.showSnackBar(context, 'Taslak kaydedildi.');
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
       Utils.errorSnackBar(context, widget.errorMessage(e));
+    }
+  }
+
+  Future<void> _flushPendingImages() async {
+    if (_draft == null || _pendingImagePaths.isEmpty) return;
+    final paths = List<String>.from(_pendingImagePaths);
+    for (final path in paths) {
+      if ((_draft?.images.length ?? 0) >= 3) break;
+      try {
+        final listing = await widget.service.uploadListingImage(
+          token: widget.token,
+          listingId: _draft!.id,
+          filePath: path,
+        );
+        if (!mounted) return;
+        setState(() {
+          _draft = listing;
+          _pendingImagePaths.remove(path);
+        });
+      } catch (e) {
+        if (!mounted) return;
+        Utils.errorSnackBar(context, widget.errorMessage(e));
+        break;
+      }
     }
   }
 
@@ -551,11 +583,11 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
       return;
     }
 
-    if (_draft == null) {
-      await _saveDraft();
+    if (_draft == null || _pendingImagePaths.isNotEmpty) {
+      await _saveDraft(silent: true);
       if (_draft == null) return;
     }
-    if (_draft!.images.isEmpty) {
+    if (_imageCount < 1 || (_draft?.images.isEmpty ?? true)) {
       Utils.errorSnackBar(context, 'En az 1 fotoğraf eklemeniz zorunludur.');
       return;
     }
@@ -577,18 +609,7 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
   }
 
   Future<void> _addImage() async {
-    if (!_acceptUploadTerms) {
-      Utils.errorSnackBar(
-        context,
-        'İlan yüklemek için İkinci El İlan Kuralları’nı kabul etmelisiniz.',
-      );
-      return;
-    }
-    if (_draft == null) {
-      Utils.errorSnackBar(context, 'Önce taslağı kaydedin.');
-      return;
-    }
-    if (_draft!.images.length >= 3) {
+    if (_imageCount >= 3) {
       Utils.errorSnackBar(context, 'En fazla 3 fotoğraf yükleyebilirsiniz.');
       return;
     }
@@ -597,6 +618,13 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
       allowPdf: false,
     );
     if (path == null) return;
+
+    // Taslak yoksa önce yerel tut; kaydet/yayın sırasında yüklenir
+    if (_draft == null) {
+      setState(() => _pendingImagePaths.add(path));
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       final listing = await widget.service.uploadListingImage(
@@ -637,6 +665,10 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
     }
   }
 
+  void _removePendingImage(int index) {
+    setState(() => _pendingImagePaths.removeAt(index));
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loadingCategories) return const ShLoading();
@@ -648,7 +680,7 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
         children: [
           const ShSectionTitle(
             title: 'Yeni ilan',
-            subtitle: 'Başlık ve fiyat zorunlu. Önce kaydedin, sonra fotoğraf ekleyin.',
+            subtitle: 'Başlık, fiyat ve en az 1 fotoğraf zorunlu.',
           ),
           ShTextField(controller: _title, label: 'Başlık', required: true),
           const SizedBox(height: 14),
@@ -664,6 +696,112 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
             label: 'Fiyat (₺)',
             required: true,
             keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 20),
+          ShSectionTitle(
+            title: 'Fotoğraflar *',
+            subtitle:
+                'En az 1, en fazla 3. $_imageCount/3 — kamera veya galeri.',
+          ),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              ...(_draft?.images ?? []).map(
+                (img) => Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(ShTheme.radiusSm),
+                      child: ColoredBox(
+                        color: const Color(0xFFF0F0F3),
+                        child: CachedNetworkImage(
+                          width: 84,
+                          height: 84,
+                          fit: BoxFit.contain,
+                          imageUrl:
+                              SecondHandService.resolveListingImageUrl(img),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: GestureDetector(
+                        onTap: () => _deleteImage(img.id),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: ShTheme.dark,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ...List.generate(_pendingImagePaths.length, (index) {
+                final path = _pendingImagePaths[index];
+                return Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(ShTheme.radiusSm),
+                      child: Image.file(
+                        File(path),
+                        width: 84,
+                        height: 84,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: GestureDetector(
+                        onTap: () => _removePendingImage(index),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: ShTheme.dark,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+              if (_imageCount < 3)
+                Material(
+                  color: ShTheme.card,
+                  borderRadius: BorderRadius.circular(ShTheme.radiusSm),
+                  child: InkWell(
+                    onTap: _saving ? null : _addImage,
+                    borderRadius: BorderRadius.circular(ShTheme.radiusSm),
+                    child: Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(ShTheme.radiusSm),
+                        border: Border.all(color: ShTheme.border),
+                      ),
+                      child: const Icon(
+                        Icons.add_a_photo_outlined,
+                        color: ShTheme.muted,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 14),
           ShDropdownField<String>(
@@ -739,78 +877,6 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
             value: _address,
             onChanged: (v) => setState(() => _address = v),
           ),
-          if (_draft != null) ...[
-            const SizedBox(height: 20),
-            ShSectionTitle(
-              title: 'Fotoğraflar *',
-              subtitle:
-                  'En az 1, en fazla 3. ${_draft!.images.length}/3 — kamera veya galeri.',
-            ),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                ..._draft!.images.map(
-                  (img) => Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(ShTheme.radiusSm),
-                        child: ColoredBox(
-                          color: const Color(0xFFF0F0F3),
-                          child: CachedNetworkImage(
-                            width: 84,
-                            height: 84,
-                            fit: BoxFit.contain,
-                            imageUrl: SecondHandService.resolveListingImageUrl(img),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 2,
-                        right: 2,
-                        child: GestureDetector(
-                          onTap: () => _deleteImage(img.id),
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(
-                              color: ShTheme.dark,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              size: 14,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (_draft!.images.length < 3)
-                  Material(
-                    color: ShTheme.card,
-                    borderRadius: BorderRadius.circular(ShTheme.radiusSm),
-                    child: InkWell(
-                      onTap: _saving ? null : _addImage,
-                      borderRadius: BorderRadius.circular(ShTheme.radiusSm),
-                      child: Container(
-                        width: 84,
-                        height: 84,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(ShTheme.radiusSm),
-                          border: Border.all(color: ShTheme.border),
-                        ),
-                        child: const Icon(
-                          Icons.add_a_photo_outlined,
-                          color: ShTheme.muted,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ],
           const SizedBox(height: 20),
           const ShSectionTitle(
             title: 'İlan kuralları',
