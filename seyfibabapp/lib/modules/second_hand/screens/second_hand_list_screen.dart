@@ -291,6 +291,9 @@ class _SecondHandListScreenState extends State<SecondHandListScreen> {
     }
     if (i >= 2 && !_requireLogin()) return;
     setState(() => _tab = i);
+    if (i == 4 || i == 1) {
+      _loadUnreadMessages();
+    }
   }
 
   bool get _hasActiveFilters =>
