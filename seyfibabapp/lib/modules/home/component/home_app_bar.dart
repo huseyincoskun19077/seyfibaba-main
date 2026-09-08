@@ -47,22 +47,17 @@ class HomeAppBar extends StatelessWidget {
                     const Expanded(child: _HomeIdentity()),
                     BlocBuilder<LoginBloc, LoginModelState>(
                       builder: (context, _) {
-                        final isSeller = Utils.isSeller(context);
+                        // İkinci el hub'da var; alışveriş header'ında tekrar gösterme.
+                        // Sadece satıcıya panel girişi kalsın.
+                        if (!Utils.isSeller(context)) {
+                          return const SizedBox.shrink();
+                        }
                         return _HeaderIconButton(
-                          label: isSeller
-                              ? Language.sellerPanelEnter
-                              : Language.secondHand,
+                          label: Language.sellerPanelEnter,
                           onTap: () {
-                            if (isSeller) {
-                              Navigator.pushNamed(
-                                context,
-                                RouteNames.sellerPanelScreen,
-                              );
-                              return;
-                            }
                             Navigator.pushNamed(
                               context,
-                              RouteNames.secondHandListScreen,
+                              RouteNames.sellerPanelScreen,
                             );
                           },
                         );
