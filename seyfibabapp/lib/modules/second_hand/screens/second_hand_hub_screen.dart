@@ -555,6 +555,10 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
       await _saveDraft();
       if (_draft == null) return;
     }
+    if (_draft!.images.isEmpty) {
+      Utils.errorSnackBar(context, 'En az 1 fotoğraf eklemeniz zorunludur.');
+      return;
+    }
     setState(() => _saving = true);
     try {
       final msg = await widget.service.publishListing(
@@ -584,11 +588,14 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
       Utils.errorSnackBar(context, 'Önce taslağı kaydedin.');
       return;
     }
-    if (_draft!.images.length >= 6) {
-      Utils.errorSnackBar(context, 'En fazla 6 fotoğraf yükleyebilirsiniz.');
+    if (_draft!.images.length >= 3) {
+      Utils.errorSnackBar(context, 'En fazla 3 fotoğraf yükleyebilirsiniz.');
       return;
     }
-    final path = await Utils.pickSingleImage();
+    final path = await Utils.pickImageFromCameraOrGallery(
+      context,
+      allowPdf: false,
+    );
     if (path == null) return;
     setState(() => _saving = true);
     try {
@@ -734,9 +741,10 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
           ),
           if (_draft != null) ...[
             const SizedBox(height: 20),
-            const ShSectionTitle(
-              title: 'Fotoğraflar',
-              subtitle: 'En fazla 6 fotoğraf ekleyebilirsiniz.',
+            ShSectionTitle(
+              title: 'Fotoğraflar *',
+              subtitle:
+                  'En az 1, en fazla 3. ${_draft!.images.length}/3 — kamera veya galeri.',
             ),
             Wrap(
               spacing: 10,
@@ -779,7 +787,7 @@ class SecondHandAddListingTabState extends State<SecondHandAddListingTab> {
                     ],
                   ),
                 ),
-                if (_draft!.images.length < 6)
+                if (_draft!.images.length < 3)
                   Material(
                     color: ShTheme.card,
                     borderRadius: BorderRadius.circular(ShTheme.radiusSm),

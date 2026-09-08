@@ -15,7 +15,8 @@ use Illuminate\Support\Str;
 
 class SecondHandListingController extends Controller
 {
-    private const MAX_IMAGES_PER_LISTING = 6;
+    private const MAX_IMAGES_PER_LISTING = 3;
+    private const MIN_IMAGES_PER_LISTING = 1;
 
     private function ensureSecondHandVerified(int $userId): void
     {
@@ -197,6 +198,7 @@ class SecondHandListingController extends Controller
         $listing = SecondHandListing::query()
             ->where('id', (int) $id)
             ->where('user_id', $user->id)
+            ->withCount('images')
             ->firstOrFail();
 
         if ($listing->status !== SecondHandListing::STATUS_DRAFT) {
@@ -208,6 +210,12 @@ class SecondHandListingController extends Controller
         if (trim((string) $listing->title) === '' || (float) $listing->price <= 0) {
             return response()->json([
                 'message' => 'İlanı yayına almak için başlık ve fiyat zorunludur.',
+            ], 422);
+        }
+
+        if ((int) $listing->images_count < self::MIN_IMAGES_PER_LISTING) {
+            return response()->json([
+                'message' => 'İlanı yayına almak için en az 1 fotoğraf eklemelisiniz.',
             ], 422);
         }
 
@@ -248,7 +256,7 @@ class SecondHandListingController extends Controller
 
         if ((int) $listing->images_count >= self::MAX_IMAGES_PER_LISTING) {
             return response()->json([
-                'message' => 'Bu ilan için maksimum fotoğraf sayısına ulaşıldı.',
+                'message' => 'Bu ilan için en fazla 3 fotoğraf yükleyebilirsiniz.',
             ], 422);
         }
 

@@ -59,6 +59,9 @@ const VERIFICATION_LABEL = {
   rejected: "Reddedildi",
 };
 
+const MAX_LISTING_IMAGES = 3;
+const MIN_LISTING_IMAGES = 1;
+
 function listingImageSrc(imageId) {
   if (!imageId) return null;
   return `${apiRoutes.secondHandListingImage}${imageId}`;
@@ -294,6 +297,13 @@ function SecondHandTab({ subNav = "" }) {
       return;
     }
 
+    const listing = (listings || []).find((l) => String(l.id) === String(listingId));
+    const imageCount = Array.isArray(listing?.images) ? listing.images.length : 0;
+    if (imageCount < MIN_LISTING_IMAGES) {
+      toast.error("Yayına almak için en az 1 fotoğraf eklemelisiniz.");
+      return;
+    }
+
     try {
       await publishListing(listingId).unwrap();
       await recordLegalConsents({
@@ -454,10 +464,14 @@ function SecondHandTab({ subNav = "" }) {
     if (trDraft.district) body.district = trDraft.district.slice(0, 120);
     if (trDraft.locality) body.locality = trDraft.locality;
     if (trDraft.neighborhood) body.neighborhood = trDraft.neighborhood;
+    if (createPendingFiles.length < MIN_LISTING_IMAGES) {
+      toast.error("En az 1 fotoğraf eklemeniz zorunludur.");
+      return;
+    }
     try {
       const res = await createDraft(body).unwrap();
       const newId = res?.listing?.id;
-      const files = createPendingFiles.slice(0, 6);
+      const files = createPendingFiles.slice(0, MAX_LISTING_IMAGES);
       toast.success("Taslak oluşturuldu.");
       if (newId && files.length > 0) {
         let uploaded = 0;
@@ -955,7 +969,7 @@ JSON şeması:
     }
   };
 
-  /** İlan oluşturma kuyruğuna uygun türdeki dosyaları ekler (en fazla 6). */
+  /** İlan oluşturma kuyruğuna uygun türdeki dosyaları ekler (en fazla 3). */
   const appendCreatePendingFiles = (fileList) => {
     const picked = [];
     for (const f of Array.from(fileList || [])) {
@@ -967,7 +981,7 @@ JSON şeması:
     setCreatePendingFiles((prev) => {
       const next = [...prev];
       for (const f of picked) {
-        if (next.length >= 6) break;
+        if (next.length >= MAX_LISTING_IMAGES) break;
         next.push(f);
       }
       return next;
@@ -1585,7 +1599,10 @@ JSON şeması:
 
                   {item.status === "draft" && (
                     <div className="mt-3">
-                      <span className="mb-2 block text-xs font-600 text-qgray">Fotoğraf (taslak, en fazla 6)</span>
+                      <span className="mb-2 block text-xs font-600 text-qgray">
+                        Fotoğraf (taslak, en az 1 — en fazla {MAX_LISTING_IMAGES}) · {(item.images || []).length}/{MAX_LISTING_IMAGES}
+                      </span>
+                      {(item.images || []).length < MAX_LISTING_IMAGES && (
                       <div className="flex flex-wrap gap-2">
                         <label className="inline-flex cursor-pointer items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-600 text-qblack transition hover:bg-gray-50">
                           Galeri
@@ -1644,6 +1661,7 @@ JSON şeması:
                           />
                         </label>
                       </div>
+                      )}
                       <div className="flex flex-wrap gap-2 mt-2">
                         {(item.images || []).map((img) => (
                           <div key={img.id} className="relative w-16 h-16">
@@ -1853,11 +1871,13 @@ JSON şeması:
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm ring-1 ring-black/[0.03] sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h5 className="text-sm font-700 text-qblack">Fotoğraflar</h5>
-                  <p className="mt-0.5 text-xs text-qgray">JPEG, PNG veya WebP — en fazla 6 dosya.</p>
+                  <h5 className="text-sm font-700 text-qblack">Fotoğraflar *</h5>
+                  <p className="mt-0.5 text-xs text-qgray">
+                    JPEG, PNG veya WebP — en az 1, en fazla {MAX_LISTING_IMAGES} dosya. Galeri veya kamera.
+                  </p>
                 </div>
                 <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-700 text-qgray">
-                  {createPendingFiles.length} / 6
+                  {createPendingFiles.length} / {MAX_LISTING_IMAGES}
                 </span>
               </div>
               <div
