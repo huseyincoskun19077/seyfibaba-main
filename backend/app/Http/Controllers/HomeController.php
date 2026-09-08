@@ -365,6 +365,16 @@ class HomeController extends Controller
         
         $subscriptionBanner = BannerImage::select('id','image','banner_location','header','title')->find(27);
 
+        // Mobil uygulama indirme linkleri (Admin → Advertisement banner id 24)
+        $flashSaleSidebarBanner = BannerImage::select(
+            'id',
+            'link as play_store',
+            'image',
+            'banner_location',
+            'status',
+            'title as app_store'
+        )->find(24);
+
 
         return response()->json([
 
@@ -422,6 +432,8 @@ class HomeController extends Controller
             'pusher_info' => $pusher_info,
             
             'subscriptionBanner' => $subscriptionBanner,
+
+            'flashSaleSidebarBanner' => $flashSaleSidebarBanner,
 
         ]);
 

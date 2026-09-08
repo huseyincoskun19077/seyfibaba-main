@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import dynamic from "next/dynamic";
 const DiscountBanner = dynamic(() => import("../DiscountBanner"), { ssr: false });
+const MobileAppPrompt = dynamic(() => import("../MobileAppPrompt"), { ssr: false });
 import Drawer from "../Mobile/Drawer";
 import Footer from "./Footers/Footer";
 import Header from "./Headers/Header";
@@ -163,6 +164,7 @@ export default function LayoutClient({ children, childrenClasses, websiteSetupDa
         {showSecondHandDock ? <SecondHandMessagesDock /> : null}
         {isSecondHandSite ? null : <DiscountBanner datas={subscribeData} />}
         <Footer settings={settings} isSecondHandSite={isSecondHandSite} />
+        <MobileAppPrompt />
       </div>
     </>
   );
