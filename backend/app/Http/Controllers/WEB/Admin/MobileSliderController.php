@@ -19,10 +19,23 @@ class MobileSliderController extends Controller
     {
         try {
             if (! Schema::hasTable('mobile_sliders')) {
-                return redirect()->route('admin.slider.index')->with([
-                    'messege' => 'mobile_sliders tablosu yok. Sunucuda çalıştırın: cd /opt/seyfibaba-main/backend && php artisan migrate --force',
-                    'alert-type' => 'error',
-                ]);
+                $msg = 'mobile_sliders tablosu yok. Sunucuda: cd /opt/seyfibaba-main/backend && php artisan migrate --force';
+                \Log::error('admin.mobile-slider missing table');
+                $payload = json_encode([
+                    'where' => 'admin.mobile-slider',
+                    'message' => $msg,
+                ], JSON_UNESCAPED_UNICODE);
+
+                return response(
+                    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Mobile Slider</title></head><body style="font-family:sans-serif;padding:24px">'
+                    .'<h1>Mobil Slider açılamadı</h1>'
+                    .'<p><b>Sebep:</b> <code>mobile_sliders</code> tablosu veritabanında yok.</p>'
+                    .'<pre>cd /opt/seyfibaba-main/backend'."\n".'php artisan migrate --force</pre>'
+                    .'<p><a href="'.e(route('admin.slider.index')).'">← Web Slider</a></p>'
+                    .'<script>console.error("[admin.mobile-slider]", '.$payload.');</script>'
+                    .'</body></html>',
+                    503
+                );
             }
 
             $sliders = MobileSlider::query()->orderBy('serial')->orderBy('id')->get();
@@ -31,7 +44,15 @@ class MobileSliderController extends Controller
                 $editSlider = MobileSlider::query()->find((int) $request->query('edit'));
             }
 
-            return response(view('admin.mobile_slider', compact('sliders', 'editSlider'))->render());
+            $html = view('admin.mobile_slider', compact('sliders', 'editSlider'))->render();
+            // Sayfa açıldıysa console'da teyit satırı
+            $html = str_replace(
+                '</body>',
+                '<script>console.log("[admin.mobile-slider] ok", {count: '.count($sliders).'});</script></body>',
+                $html
+            );
+
+            return response($html);
         } catch (\Throwable $e) {
             \Log::error('admin.mobile-slider index failed', [
                 'message' => $e->getMessage(),
