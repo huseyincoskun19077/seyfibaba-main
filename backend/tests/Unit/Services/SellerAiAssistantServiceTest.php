@@ -247,6 +247,7 @@ class SellerAiAssistantServiceTest extends TestCase
         $this->assertStringContainsString('2 ürün', (string) $result['action_taken']);
         $this->assertSame(0, (int) Product::where('vendor_id', $vendor->id)->where('name', 'Ürün A')->value('status'));
         $this->assertSame(0, (int) Product::where('vendor_id', $vendor->id)->where('name', 'Ürün B')->value('status'));
+        $this->assertSame(1, (int) Product::where('vendor_id', $vendor->id)->where('name', 'Ürün A')->value('approve_by_admin'));
         $this->assertSame(0, (int) Product::where('vendor_id', $vendor->id)->where('name', 'Taslak')->value('status'));
         $this->assertSame(1, (int) Product::where('vendor_id', $other->id)->value('status'));
     }

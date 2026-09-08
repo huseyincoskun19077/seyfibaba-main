@@ -308,8 +308,12 @@ PROMPT;
                 return ['summary' => null, 'error' => 'Görsel olmadan ürün yayına alınamaz. Önce fotoğraf ekleyin.'];
             }
             $product->status = (int) $fields['status'];
-            $product->approve_by_admin = (int) $fields['status'] === 1 ? 1 : 0;
-            $changes[] = (int) $fields['status'] === 1 ? 'yayına alındı' : 'taslak/pasif yapıldı';
+            // Satıcı pasife alma: yalnızca status=0 (approve_by_admin dokunulmaz).
+            // Admin pasifi approve_by_admin=0 ile işaretlenir; onu taklit etme.
+            if ((int) $fields['status'] === 1) {
+                $product->approve_by_admin = 1;
+            }
+            $changes[] = (int) $fields['status'] === 1 ? 'yayına alındı' : 'pasif/taslak yapıldı';
         }
 
         if ($changes === []) {
@@ -377,10 +381,12 @@ PROMPT;
         $updated = Product::query()
             ->where('vendor_id', $seller->id)
             ->whereIn('id', $ids)
-            ->update([
-                'status' => $status,
-                'approve_by_admin' => $status === 1 ? 1 : 0,
-            ]);
+            ->update(
+                $status === 1
+                    ? ['status' => 1, 'approve_by_admin' => 1]
+                    // Satıcı pasifi: admin kilidi (approve_by_admin=0) koyma
+                    : ['status' => 0]
+            );
 
         $label = $status === 1 ? 'yayına alındı' : 'pasif/taslak yapıldı';
         $summary = "{$updated} ürün {$label} (yalnızca sizin mağazanız).";
