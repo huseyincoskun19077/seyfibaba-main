@@ -29,6 +29,15 @@
 
           <form method="POST" action="{{ route('admin.mobile-slider.store') }}" enctype="multipart/form-data" class="mb-4">
             @csrf
+            @if ($errors->any())
+              <div class="alert alert-danger">
+                <ul class="mb-0 pl-3">
+                  @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                  @endforeach
+                </ul>
+              </div>
+            @endif
             @if(!empty($editSlider))
               <input type="hidden" name="id" value="{{ $editSlider->id }}">
             @endif
@@ -65,16 +74,9 @@
               </div>
               <div class="col-md-4">
                 <div class="form-group">
-                  <label>Kategori / ürün slug (opsiyonel)</label>
-                  <select name="product_slug" class="form-control select2">
-                    <option value="">Seçilmedi</option>
-                    @foreach($products as $product)
-                      <option value="{{ $product->slug }}" {{ old('product_slug', $editSlider->product_slug ?? '') === $product->slug ? 'selected' : '' }}>
-                        {{ $product->name }}
-                      </option>
-                    @endforeach
-                  </select>
-                  <small class="text-muted">Uygulama içi kategori sayfasına yönlendirir. Bağlantı ile birlikte kullanılırsa önce bağlantı denenir.</small>
+                  <label>Ürün / kategori slug (opsiyonel)</label>
+                  <input type="text" name="product_slug" class="form-control" placeholder="ornek-urun-slug" value="{{ old('product_slug', $editSlider->product_slug ?? '') }}">
+                  <small class="text-muted">Uygulama içi yönlendirme için slug yazın. Boş bırakılabilir.</small>
                 </div>
               </div>
               <div class="col-md-1">
