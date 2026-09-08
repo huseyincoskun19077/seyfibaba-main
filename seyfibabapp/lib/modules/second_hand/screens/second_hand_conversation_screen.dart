@@ -157,8 +157,8 @@ class _SecondHandConversationScreenState
     );
   }
 
-  Future<void> _send() async {
-    final text = _messageController.text.trim();
+  Future<void> _send({String? presetBody}) async {
+    final text = (presetBody ?? _messageController.text).trim();
     if ((text.isEmpty && _pendingAttachments.isEmpty) || _sending) return;
 
     setState(() => _sending = true);
@@ -246,7 +246,41 @@ class _SecondHandConversationScreenState
           ),
           if (_pendingAttachments.isNotEmpty) _buildPendingAttachments(),
           if (_showEmojiBar) _buildEmojiBar(),
+          if (_messages.isEmpty && !_loading) _buildQuickReplies(),
           _buildComposer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickReplies() {
+    return Container(
+      width: double.infinity,
+      color: ShTheme.card,
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Hızlı mesaj',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: ShTheme.muted,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final quick in secondHandQuickReplies)
+                ActionChip(
+                  label: Text(quick.key),
+                  onPressed: _sending ? null : () => _send(presetBody: quick.value),
+                ),
+            ],
+          ),
         ],
       ),
     );

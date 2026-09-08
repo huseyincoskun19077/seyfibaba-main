@@ -310,3 +310,11 @@ const secondHandConditionLabels = {
   'used': 'İyi durumda',
   'defective': 'Yıpranmış veya onarım gerekebilir',
 };
+
+/// İlk mesaj için hazır cevaplar (etiket → gönderilecek metin).
+const secondHandQuickReplies = <MapEntry<String, String>>[
+  MapEntry('Satılık mı?', 'Merhaba, ürün hâlâ satılık mı?'),
+  MapEntry('Fiyat nedir?', 'Merhaba, son fiyatınız nedir?'),
+  MapEntry('Görüşelim', 'Merhaba, müsait olduğunuzda görüşebilir miyiz?'),
+  MapEntry('Durumu nasıl?', 'Merhaba, ürünün durumu hakkında bilgi verir misiniz?'),
+];

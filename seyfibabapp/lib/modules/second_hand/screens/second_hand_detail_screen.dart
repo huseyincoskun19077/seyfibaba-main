@@ -77,10 +77,10 @@ class _SecondHandDetailScreenState extends State<SecondHandDetailScreen> {
     ).format(price);
   }
 
-  Future<void> _sendMessage() async {
+  Future<void> _sendMessage({String? presetBody}) async {
     if (!_ensureLoggedIn()) return;
 
-    final text = _messageController.text.trim();
+    final text = (presetBody ?? _messageController.text).trim();
     if (text.isEmpty) {
       Utils.errorSnackBar(context, 'Mesaj yazın.');
       return;
@@ -171,12 +171,38 @@ class _SecondHandDetailScreenState extends State<SecondHandDetailScreen> {
                 style: TextStyle(fontSize: 13, color: ShTheme.muted),
               ),
               const SizedBox(height: 16),
+              const Text(
+                'Hazır mesaj',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: ShTheme.muted,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final quick in secondHandQuickReplies)
+                    ActionChip(
+                      label: Text(quick.key),
+                      onPressed: _sending
+                          ? null
+                          : () {
+                              Navigator.pop(ctx);
+                              _sendMessage(presetBody: quick.value);
+                            },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
               TextField(
                 controller: _messageController,
                 maxLines: 4,
                 autofocus: true,
                 decoration: InputDecoration(
-                  hintText: 'Merhaba, ilan hakkında bilgi almak istiyorum…',
+                  hintText: 'veya kendi mesajınızı yazın…',
                   filled: true,
                   fillColor: ShTheme.bg,
                   border: OutlineInputBorder(
