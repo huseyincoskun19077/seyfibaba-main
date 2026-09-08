@@ -2,18 +2,35 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import GooglePlay from "@/components/Helpers/icons/GooglePlay";
-import AppleStore from "@/components/Helpers/icons/AppleStore";
 
 const STORAGE_KEY = "seyfibaba_mobile_app_prompt_dismissed_at";
-const DISMISS_DAYS = 14;
+const DISMISS_DAYS = 7;
 
-function isMobileBrowser() {
-  if (typeof window === "undefined") return false;
+/** Admin banner boş olsa bile Play Store sayfası açılsın */
+const FALLBACK_PLAY_STORE =
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_PLAY_STORE_URL) ||
+  "https://play.google.com/store/apps/details?id=com.seyfibaba.app";
+
+const FALLBACK_APP_STORE =
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_STORE_URL) ||
+  "https://apps.apple.com/tr/search?term=Seyfibaba";
+
+function detectPlatform() {
+  if (typeof window === "undefined") {
+    return { isMobile: false, isIos: false, isAndroid: false };
+  }
   const ua = navigator.userAgent || "";
+  const isIos = /iPhone|iPad|iPod/i.test(ua);
+  const isAndroid = /Android/i.test(ua);
   const mobileUa = /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-  const narrow = window.matchMedia("(max-width: 900px)").matches;
-  return mobileUa || narrow;
+  const narrow =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(max-width: 900px)").matches;
+  return {
+    isMobile: mobileUa || narrow,
+    isIos,
+    isAndroid,
+  };
 }
 
 function isDismissedRecently() {
@@ -28,41 +45,64 @@ function isDismissedRecently() {
   }
 }
 
+function pickBanner(setupRoot) {
+  if (!setupRoot || typeof setupRoot !== "object") return null;
+  // RTK: state.websiteSetup = action → .payload = setup data
+  // veya doğrudan setup data
+  return (
+    setupRoot.flashSaleSidebarBanner ||
+    setupRoot.payload?.flashSaleSidebarBanner ||
+    null
+  );
+}
+
 /**
- * Mobil tarayıcıda opsiyonel uygulama indirme önerisi.
- * Zorla yönlendirme yapmaz; "Web'de devam et" ile kapanır.
+ * Mobil web ilk girişte tam ekran popup: App Store / Play Store indirme.
  */
-export default function MobileAppPrompt() {
+export default function MobileAppPrompt({ setupData = null }) {
   const { websiteSetup } = useSelector((state) => state.websiteSetup);
   const [visible, setVisible] = useState(false);
+  const [platform, setPlatform] = useState({
+    isMobile: false,
+    isIos: false,
+    isAndroid: false,
+  });
 
-  const { playStoreUrl, appStoreUrl, hasLinks } = useMemo(() => {
-    const banner = websiteSetup?.payload?.flashSaleSidebarBanner;
+  const { playStoreUrl, appStoreUrl } = useMemo(() => {
+    const banner =
+      pickBanner(setupData) ||
+      pickBanner(websiteSetup) ||
+      pickBanner(websiteSetup?.payload);
+
     const play =
-      (banner?.play_store || "").trim() ||
-      (process.env.NEXT_PUBLIC_PLAY_STORE_URL || "").trim();
+      String(banner?.play_store || banner?.link || "").trim() ||
+      String(FALLBACK_PLAY_STORE || "").trim();
     const apple =
-      (banner?.app_store || "").trim() ||
-      (process.env.NEXT_PUBLIC_APP_STORE_URL || "").trim();
-    const enabled = banner == null || Number(banner.status) === 1;
-    return {
-      playStoreUrl: play,
-      appStoreUrl: apple,
-      hasLinks: enabled && Boolean(play || apple),
-    };
-  }, [websiteSetup]);
+      String(banner?.app_store || banner?.title || "").trim() ||
+      String(FALLBACK_APP_STORE || "").trim();
+
+    // title alanı App Store URL değilse (eski banner metni) fallback kullan
+    const appleUrl = /^https?:\/\//i.test(apple) ? apple : FALLBACK_APP_STORE;
+    const playUrl = /^https?:\/\//i.test(play) ? play : FALLBACK_PLAY_STORE;
+
+    return { playStoreUrl: playUrl, appStoreUrl: appleUrl };
+  }, [setupData, websiteSetup]);
 
   useEffect(() => {
-    if (!hasLinks) {
+    const p = detectPlatform();
+    setPlatform(p);
+    if (!p.isMobile) {
       setVisible(false);
       return;
     }
-    if (!isMobileBrowser() || isDismissedRecently()) {
+    if (isDismissedRecently()) {
       setVisible(false);
       return;
     }
-    setVisible(true);
-  }, [hasLinks]);
+    // Kısa gecikme: sayfa boyası bittikten sonra popup
+    const t = window.setTimeout(() => setVisible(true), 400);
+    return () => window.clearTimeout(t);
+  }, []);
 
   const dismiss = () => {
     try {
@@ -73,68 +113,101 @@ export default function MobileAppPrompt() {
     setVisible(false);
   };
 
-  if (!visible || !hasLinks) return null;
+  const primaryUrl = platform.isIos ? appStoreUrl : playStoreUrl;
+  const primaryLabel = platform.isIos
+    ? "App Store’dan indir"
+    : "Google Play’den indir";
+
+  const openStore = (url) => {
+    if (!url) return;
+    window.location.href = url;
+  };
+
+  if (!visible) return null;
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-[10050] p-3 sm:p-4 pointer-events-none"
+      className="fixed inset-0 z-[10060] flex items-end justify-center sm:items-center p-4"
       role="dialog"
-      aria-label="Mobil uygulama önerisi"
+      aria-modal="true"
+      aria-labelledby="mobile-app-prompt-title"
     >
-      <div className="pointer-events-auto mx-auto max-w-lg rounded-2xl border border-black/10 bg-qblack text-white shadow-2xl shadow-black/40">
-        <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-          <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-qyellow text-qblack text-lg font-800">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
+        aria-label="Kapat"
+        onClick={dismiss}
+      />
+
+      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div className="bg-qblack px-6 pt-7 pb-6 text-white">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-qyellow text-2xl font-800 text-qblack">
             S
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-800 leading-snug">Seyfibaba uygulamasını deneyin</p>
-            <p className="mt-1 text-xs leading-relaxed text-white/75">
-              Mobilde alışveriş, ikinci el ve bildirimler uygulama ile daha rahat. İsterseniz
-              indirebilir, isterseniz web’de devam edebilirsiniz.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={dismiss}
-            className="shrink-0 rounded-full p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white"
-            aria-label="Kapat"
+          <h2
+            id="mobile-app-prompt-title"
+            className="text-center text-xl font-800 leading-tight"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            Seyfibaba uygulamasını indirin
+          </h2>
+          <p className="mt-2 text-center text-sm leading-relaxed text-white/75">
+            Daha hızlı alışveriş, bildirimler ve ikinci el için mobil uygulamayı
+            kullanın. İsterseniz web’de de devam edebilirsiniz.
+          </p>
+        </div>
+
+        <div className="space-y-3 px-5 py-5">
+          <button
+            type="button"
+            onClick={() => openStore(primaryUrl)}
+            className="flex w-full items-center justify-center rounded-2xl bg-qyellow px-4 py-3.5 text-base font-800 text-qblack transition hover:brightness-95"
+          >
+            {primaryLabel}
           </button>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
-          {playStoreUrl ? (
-            <a
-              href={playStoreUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex scale-90 origin-left"
-              aria-label="Google Play'den indir"
+          {!platform.isIos && appStoreUrl ? (
+            <button
+              type="button"
+              onClick={() => openStore(appStoreUrl)}
+              className="flex w-full items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-700 text-qblack transition hover:bg-gray-50"
             >
-              <GooglePlay />
-            </a>
+              App Store’dan indir
+            </button>
           ) : null}
-          {appStoreUrl ? (
-            <a
-              href={appStoreUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex scale-90 origin-left"
-              aria-label="App Store'dan indir"
-            >
-              <AppleStore />
-            </a>
-          ) : null}
-        </div>
 
-        <div className="border-t border-white/10 px-4 py-3">
+          {platform.isIos && playStoreUrl ? (
+            <button
+              type="button"
+              onClick={() => openStore(playStoreUrl)}
+              className="flex w-full items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-700 text-qblack transition hover:bg-gray-50"
+            >
+              Google Play’den indir
+            </button>
+          ) : null}
+
+          {!platform.isIos && !platform.isAndroid ? (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => openStore(playStoreUrl)}
+                className="rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-700 text-qblack hover:bg-gray-50"
+              >
+                Android
+              </button>
+              <button
+                type="button"
+                onClick={() => openStore(appStoreUrl)}
+                className="rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-700 text-qblack hover:bg-gray-50"
+              >
+                iPhone
+              </button>
+            </div>
+          ) : null}
+
           <button
             type="button"
             onClick={dismiss}
-            className="w-full rounded-xl bg-white/10 px-3 py-2.5 text-sm font-700 text-white transition hover:bg-white/15"
+            className="w-full rounded-2xl px-4 py-3 text-sm font-600 text-qgray transition hover:bg-gray-50 hover:text-qblack"
           >
             Web’de devam et
           </button>

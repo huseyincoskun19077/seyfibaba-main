@@ -164,7 +164,7 @@ export default function LayoutClient({ children, childrenClasses, websiteSetupDa
         {showSecondHandDock ? <SecondHandMessagesDock /> : null}
         {isSecondHandSite ? null : <DiscountBanner datas={subscribeData} />}
         <Footer settings={settings} isSecondHandSite={isSecondHandSite} />
-        <MobileAppPrompt />
+        <MobileAppPrompt setupData={websiteSetupData} />
       </div>
     </>
   );
