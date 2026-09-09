@@ -87,6 +87,7 @@ class FcmPushService
                 ],
                 'apns' => [
                     'headers' => [
+                        'apns-push-type' => 'alert',
                         'apns-priority' => '10',
                     ],
                     'payload' => [
@@ -97,7 +98,6 @@ class FcmPushService
                             ],
                             'sound' => 'default',
                             'badge' => 1,
-                            'content-available' => 1,
                         ],
                     ],
                 ],
@@ -113,12 +113,19 @@ class FcmPushService
                 );
 
             if ($response->successful()) {
+                Log::info('FCM send ok', [
+                    'project_id' => $projectId,
+                    'token_suffix' => substr($token, -12),
+                    'title' => $title,
+                ]);
+
                 return ['sent' => true, 'reason' => null];
             }
 
             Log::warning('FCM send failed', [
                 'status' => $response->status(),
                 'body' => $response->body(),
+                'token_suffix' => substr($token, -12),
             ]);
         } catch (\Throwable $e) {
             Log::warning('FCM send exception: '.$e->getMessage());
