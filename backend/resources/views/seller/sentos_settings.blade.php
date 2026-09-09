@@ -17,9 +17,8 @@
 
         <div class="section-body">
             <div class="alert alert-info">
-                <strong>Sentos eklentisi:</strong> API bilgilerini kaydedin, bağlantıyı test edin, ardından ürünleri çekin.
-                Senkron yalnızca bu satıcı hesabına yazar; diğer satıcılar ve ödeme akışı etkilenmez.
-                Kategori eşleşmezse o ürün atlanır (yanlış kategoriye basılmaz).
+                <strong>Sentos eklentisi:</strong> Ürün çekme + ödenen siparişleri Sentos’a aktarma + kargo bilgisini Sentos’a yazma.
+                Yalnızca bu satıcı ve Sentos açıkken çalışır; ödeme/checkout akışı Sentos hatasında bozulmaz.
             </div>
 
             <div class="row">
@@ -96,7 +95,36 @@
                                         <span class="custom-switch-indicator"></span>
                                         <span class="custom-switch-description">Sentos entegrasyonunu bu mağaza için aç</span>
                                     </label>
-                                    <p class="text-muted mb-0 mt-2">Kapalıyken sonraki senkron fazları bu satıcı için çalışmaz.</p>
+                                    <p class="text-muted mb-0 mt-2">Kapalıyken ürün ve sipariş senkronu çalışmaz.</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="custom-switch mt-2">
+                                        <input
+                                            type="checkbox"
+                                            name="push_orders"
+                                            value="1"
+                                            class="custom-switch-input"
+                                            {{ old('push_orders', $settings->push_orders ?? true) ? 'checked' : '' }}
+                                        >
+                                        <span class="custom-switch-indicator"></span>
+                                        <span class="custom-switch-description">Ödenen siparişleri Sentos’a otomatik gönder</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="channel_id">Satış kanalı ID (opsiyonel)</label>
+                                        <input type="number" min="1" class="form-control" id="channel_id" name="channel_id"
+                                               value="{{ old('channel_id', $settings->channel_id ?? '') }}"
+                                               placeholder="Boş bırakırsanız otomatik bulunur/oluşur">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="warehouse_id">Depo ID (opsiyonel)</label>
+                                        <input type="number" min="1" class="form-control" id="warehouse_id" name="warehouse_id"
+                                               value="{{ old('warehouse_id', $settings->warehouse_id ?? '') }}"
+                                               placeholder="Boş bırakırsanız ilk depo kullanılır">
+                                    </div>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">Kaydet</button>

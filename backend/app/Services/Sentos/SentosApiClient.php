@@ -169,6 +169,87 @@ class SentosApiClient
         };
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listWarehouses(VendorSentosSetting $setting): array
+    {
+        $response = $this->request($setting, 'GET', '/warehouses');
+        if (! $response->successful()) {
+            throw new \RuntimeException('Depo listesi alınamadı: HTTP ' . $response->status());
+        }
+
+        return $this->extractObjectList($response->json());
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listSalesChannels(VendorSentosSetting $setting): array
+    {
+        $response = $this->request($setting, 'GET', '/sales-channels');
+        if (! $response->successful()) {
+            throw new \RuntimeException('Satış kanalları alınamadı: HTTP ' . $response->status());
+        }
+
+        return $this->extractObjectList($response->json());
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function createSalesChannel(VendorSentosSetting $setting, array $payload): array
+    {
+        $response = $this->request($setting, 'POST', '/sales-channels', [], $payload);
+        if (! $response->successful()) {
+            throw new \RuntimeException('Satış kanalı oluşturulamadı: HTTP ' . $response->status());
+        }
+
+        $json = $response->json();
+
+        return is_array($json) ? $json : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public function createOrder(VendorSentosSetting $setting, array $payload): Response
+    {
+        return $this->request($setting, 'POST', '/orders', [], $payload, 45);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public function updateOrderStatus(VendorSentosSetting $setting, int $sentosOrderId, array $payload): Response
+    {
+        return $this->request($setting, 'PUT', '/orders/' . $sentosOrderId, [], $payload, 30);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function extractObjectList(mixed $json): array
+    {
+        if (! is_array($json)) {
+            return [];
+        }
+        if ($json !== [] && array_keys($json) === range(0, count($json) - 1)) {
+            return array_values(array_filter($json, 'is_array'));
+        }
+        foreach (['data', 'content', 'items', 'warehouses', 'sales_channels', 'channels'] as $key) {
+            if (isset($json[$key]) && is_array($json[$key])) {
+                $chunk = $json[$key];
+                if ($chunk !== [] && array_keys($chunk) === range(0, count($chunk) - 1)) {
+                    return array_values(array_filter($chunk, 'is_array'));
+                }
+            }
+        }
+
+        return [];
+    }
+
     private function extractProductHint(mixed $json): ?string
     {
         $normalizer = app(SentosProductNormalizer::class);

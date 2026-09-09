@@ -115,6 +115,24 @@ class SellerOrderCargoController extends Controller
 
         \App\Support\OrderFulfillmentSync::sync($order);
 
+        if (config('features.sentos_enabled', true)) {
+            try {
+                app(\App\Services\Sentos\SentosOrderSyncService::class)->markShipped(
+                    $order,
+                    (int) $seller->id,
+                    $validated['carrier_name'],
+                    $validated['tracking_number'],
+                    $validated['tracking_url'] ?? null
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Sentos ship sync failed', [
+                    'order_id' => $order->id,
+                    'vendor_id' => $seller->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return redirect()->back()->with([
             'messege' => 'Manuel kargo bilgisi kaydedildi ve kargoya verildi olarak işaretlendi.',
             'alert-type' => 'success',

@@ -15,6 +15,9 @@ class VendorSentosSetting extends Model
         'api_key',
         'api_secret',
         'is_enabled',
+        'channel_id',
+        'warehouse_id',
+        'push_orders',
         'last_tested_at',
         'last_test_status',
         'last_test_message',
@@ -26,6 +29,7 @@ class VendorSentosSetting extends Model
 
     protected $casts = [
         'is_enabled' => 'boolean',
+        'push_orders' => 'boolean',
         'api_key' => 'encrypted',
         'api_secret' => 'encrypted',
         'last_tested_at' => 'datetime',

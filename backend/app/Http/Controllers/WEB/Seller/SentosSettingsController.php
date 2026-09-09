@@ -59,6 +59,9 @@ class SentosSettingsController extends Controller
             'api_key' => [$settings->exists ? 'nullable' : 'required', 'string', 'max:500'],
             'api_secret' => [$settings->exists ? 'nullable' : 'required', 'string', 'max:500'],
             'is_enabled' => ['nullable', 'boolean'],
+            'push_orders' => ['nullable', 'boolean'],
+            'channel_id' => ['nullable', 'integer', 'min:1'],
+            'warehouse_id' => ['nullable', 'integer', 'min:1'],
         ];
 
         $data = $request->validate($rules);
@@ -81,11 +84,14 @@ class SentosSettingsController extends Controller
         }
 
         $settings->is_enabled = $request->boolean('is_enabled');
+        $settings->push_orders = $request->boolean('push_orders');
+        $settings->channel_id = $data['channel_id'] ?? $settings->channel_id;
+        $settings->warehouse_id = $data['warehouse_id'] ?? $settings->warehouse_id;
         $settings->vendor_id = $seller->id;
         $settings->save();
 
         return back()->with([
-            'messege' => 'Sentos ayarları kaydedildi. Bağlantıyı test edebilirsiniz.',
+            'messege' => 'Sentos ayarları kaydedildi.',
             'alert-type' => 'success',
         ]);
     }
