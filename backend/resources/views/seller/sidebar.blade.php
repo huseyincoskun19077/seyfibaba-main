@@ -65,6 +65,21 @@
 
           <li class="{{ Route::is('seller.inventory') || Route::is('seller.stock-history') ? 'active' : '' }}"><a class="nav-link" href="{{ route('seller.inventory') }}"><i class="fas fa-th-large"></i> <span>{{__('admin.Inventory')}}</span></a></li>
 
+          <li class="menu-header mt-3">Eklentiler</li>
+          <li class="nav-item dropdown {{ Route::is('seller.integrations.*') || Route::is('seller.sentos.*') ? 'active' : '' }}">
+            <a href="#" class="nav-link has-dropdown"><i class="fas fa-puzzle-piece"></i><span>Eklentiler</span></a>
+            <ul class="dropdown-menu">
+              <li class="{{ Route::is('seller.integrations.index') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('seller.integrations.index') }}">Tüm Eklentiler</a>
+              </li>
+              @if(config('features.sentos_enabled', true))
+              <li class="{{ Route::is('seller.sentos.*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('seller.sentos.index') }}">Sentos</a>
+              </li>
+              @endif
+            </ul>
+          </li>
+
           <li class="{{ Route::is('seller.my-withdraw.index') ? 'active' : '' }}"><a class="nav-link" href="{{ route('seller.my-withdraw.index') }}"><i class="far fa-newspaper"></i> <span>{{__('admin.My Withdraw')}}</span></a></li>
 
           <li class="{{ Route::is('seller.return-requests.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('seller.return-requests.index') }}"><i class="fas fa-undo"></i> <span>İade Talepleri</span></a></li>

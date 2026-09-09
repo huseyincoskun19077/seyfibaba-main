@@ -102,6 +102,8 @@ use App\Http\Controllers\WEB\Admin\SpecificationKeyController;
 use App\Http\Controllers\WEB\Deliveryman\MyWithdrawController;
 use App\Http\Controllers\WEB\Seller\SellerAiAssistantController;
 use App\Http\Controllers\WEB\Seller\SellerDashboardController;
+use App\Http\Controllers\WEB\Seller\SellerIntegrationsController;
+use App\Http\Controllers\WEB\Seller\SentosSettingsController;
 
 
 
@@ -303,6 +305,13 @@ Route::group(['middleware' => ['XSS']], function () {
             Route::get('product-export', [SellerProductController::class, 'product_export'])->name('product-export');
             Route::get('product-demo-export', [SellerProductController::class, 'demo_product_export'])->name('product-demo-export');
             Route::post('product-import', [SellerProductController::class, 'product_import'])->name('product-import');
+
+            // Eklentiler hub + Sentos (opt-in). Core marketplace flow untouched.
+            Route::get('eklentiler', [SellerIntegrationsController::class, 'index'])->name('integrations.index');
+            Route::get('eklentiler/sentos', [SentosSettingsController::class, 'index'])->name('sentos.index');
+            Route::put('eklentiler/sentos', [SentosSettingsController::class, 'update'])->name('sentos.update');
+            Route::post('eklentiler/sentos/test', [SentosSettingsController::class, 'test'])->name('sentos.test');
+            Route::post('eklentiler/sentos/disable', [SentosSettingsController::class, 'disable'])->name('sentos.disable');
 
 
             Route::get('subcategory-by-category/{id}', [SellerProductController::class, 'getSubcategoryByCategory'])->name('subcategory-by-category');

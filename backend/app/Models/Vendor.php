@@ -75,6 +75,11 @@ class Vendor extends Model
         return $this->hasOne(CallCenterCommission::class);
     }
 
+    public function sentosSetting()
+    {
+        return $this->hasOne(VendorSentosSetting::class);
+    }
+
     public function primaryCategory()
     {
         return $this->belongsTo(Category::class, 'primary_category_id');
