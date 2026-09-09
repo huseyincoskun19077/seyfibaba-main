@@ -31,11 +31,13 @@ class NotificationCubit extends Cubit<NotificationState> {
     final uri = Uri.parse(RemoteUrls.updateUserForPushNotification(accessToken))
         .replace(queryParameters: {
       'token': accessToken,
-      'user_id': model.userId,
-      'device_token': model.deviceToken,
     });
     debugPrint('notification-url $uri');
-    final result = await _repository.updateUserForPushNotification(uri);
+    final result = await _repository.updateUserForPushNotification(
+      uri,
+      deviceToken: model.deviceToken,
+      userId: model.userId,
+    );
     result.fold(
       (failure) {
         emit(NotificationError(failure.message, failure.statusCode));

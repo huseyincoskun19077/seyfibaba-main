@@ -46,6 +46,10 @@
 	<false/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Doğrulama belgesi ve ürün fotoğrafları çekmek için kameraya erişim gerekir.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

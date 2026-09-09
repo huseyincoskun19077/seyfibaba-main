@@ -37,7 +37,11 @@ abstract class AuthRepository {
 
   Future<Either<Failure, String>> createDeliveryMan(DeliveryManStateModel body);
 
-  Future<Either<Failure, dynamic>> updateUserForPushNotification(Uri uri);
+  Future<Either<Failure, dynamic>> updateUserForPushNotification(
+    Uri uri, {
+    String? deviceToken,
+    String? userId,
+  });
 }
 
 class AuthRepositoryImp extends AuthRepository {
@@ -227,9 +231,16 @@ class AuthRepositoryImp extends AuthRepository {
 
   @override
   Future<Either<Failure, dynamic>> updateUserForPushNotification(
-      Uri uri) async {
+    Uri uri, {
+    String? deviceToken,
+    String? userId,
+  }) async {
     try {
-      final result = await remoteDataSource.updateUserForPushNotification(uri);
+      final result = await remoteDataSource.updateUserForPushNotification(
+        uri,
+        deviceToken: deviceToken,
+        userId: userId,
+      );
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, e.statusCode));

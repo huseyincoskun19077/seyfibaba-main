@@ -42,6 +42,11 @@ class FcmChannel
 
         $token = is_string($token) ? trim($token) : '';
         if ($token === '') {
+            \Illuminate\Support\Facades\Log::warning('FCM channel skipped: empty device token', [
+                'user_id' => $notifiable instanceof User ? $notifiable->id : null,
+                'notification' => $notification::class,
+            ]);
+
             return;
         }
 

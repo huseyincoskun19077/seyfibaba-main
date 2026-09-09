@@ -666,7 +666,9 @@ class SecondHandMessagingController extends Controller
                 ]);
             }
         } catch (\Throwable $e) {
-            // bildirim hatası mesajlaşmayı bozmasın
+            Log::warning('Second hand message notice outer failed', [
+                'error' => $e->getMessage(),
+            ]);
         }
 
         // İlk mesajda e-posta bildirimi (satıcıya)
@@ -799,7 +801,10 @@ class SecondHandMessagingController extends Controller
                 ]);
             }
         } catch (\Throwable $e) {
-            // bildirim hatası mesajlaşmayı bozmasın
+            Log::warning('Second hand conversation notice outer failed', [
+                'error' => $e->getMessage(),
+                'conversation_id' => (int) $conversationId,
+            ]);
         }
 
         return response()->json([

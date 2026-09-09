@@ -72,7 +72,11 @@ abstract class RemoteDataSource {
 
   Future<String> verifyOtp(Map<String, dynamic> body);
 
-  Future<dynamic> updateUserForPushNotification(Uri uri);
+  Future<dynamic> updateUserForPushNotification(
+    Uri uri, {
+    String? deviceToken,
+    String? userId,
+  });
 
   Future<AboutInformationModel> getAboutUsData();
 
@@ -561,9 +565,24 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   }
 
   @override
-  Future<dynamic> updateUserForPushNotification(Uri uri) async {
-    final headers = {'Accept': 'application/json'};
-    final clientMethod = client.post(uri, headers: headers);
+  Future<dynamic> updateUserForPushNotification(
+    Uri uri, {
+    String? deviceToken,
+    String? userId,
+  }) async {
+    final headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    final body = <String, dynamic>{
+      if (deviceToken != null) 'device_token': deviceToken,
+      if (userId != null) 'user_id': userId,
+    };
+    final clientMethod = client.post(
+      uri,
+      headers: headers,
+      body: jsonEncode(body),
+    );
     final responseJsonBody =
         await NetworkParser.callClientWithCatchException(() => clientMethod);
     debugPrint('updateUserForPushNotification $responseJsonBody');

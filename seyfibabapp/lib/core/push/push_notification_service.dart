@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -50,8 +51,14 @@ class PushNotificationService {
 
     _navigatorKey = navigatorKey;
 
+    const darwinInit = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
     const initSettings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/launcher_icon'),
+      iOS: darwinInit,
     );
 
     await _localNotifications.initialize(
@@ -70,6 +77,12 @@ class PushNotificationService {
     await androidPlugin?.requestNotificationsPermission();
 
     await _requestPermission();
+
+    await _messaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
 
     // Debug'da background isolate hot-reload'ı bozabiliyor; foreground + token açık.
     if (!kDebugMode) {
@@ -108,6 +121,18 @@ class PushNotificationService {
       final loginBloc = context.read<LoginBloc>();
       if (!loginBloc.isLogedIn) {
         return;
+      }
+
+      if (!kIsWeb && Platform.isIOS) {
+        String? apns = await _messaging.getAPNSToken();
+        if (apns == null) {
+          await Future<void>.delayed(const Duration(seconds: 2));
+          apns = await _messaging.getAPNSToken();
+        }
+        if (apns == null) {
+          debugPrint('APNs token not ready; FCM token skipped');
+          return;
+        }
       }
 
       final token = await _messaging.getToken();
@@ -197,6 +222,11 @@ class PushNotificationService {
           importance: Importance.high,
           priority: Priority.high,
           icon: '@mipmap/launcher_icon',
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
         ),
       ),
       payload: jsonEncode(message.data),
