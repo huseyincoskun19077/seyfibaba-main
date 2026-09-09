@@ -64,6 +64,7 @@ class SentosProductSyncService
         }
 
         $setting->update([
+            'last_sync_at' => now(),
             'last_sync_status' => 'processing',
             'last_sync_message' => 'Ürünler Sentos’tan çekiliyor…',
             'last_sync_stats' => $stats,

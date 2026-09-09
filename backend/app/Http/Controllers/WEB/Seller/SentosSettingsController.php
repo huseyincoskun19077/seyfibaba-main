@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\WEB\Seller;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\ProcessSentosProductSyncJob;
 use App\Models\VendorSentosSetting;
 use App\Services\Sentos\SentosApiClient;
 use Auth;
@@ -148,7 +147,7 @@ class SentosSettingsController extends Controller
         ]);
     }
 
-    public function syncProducts()
+    public function syncProducts(\App\Services\Sentos\SentosProductSyncService $syncService)
     {
         if (! config('features.sentos_enabled', true)) {
             abort(404);
@@ -174,28 +173,23 @@ class SentosSettingsController extends Controller
             ]);
         }
 
-        if ($settings->last_sync_status === 'processing') {
+        $stuckProcessing = $settings->last_sync_status === 'processing'
+            && $settings->updated_at
+            && $settings->updated_at->gt(now()->subMinutes(10));
+
+        if ($stuckProcessing) {
             return back()->with([
-                'messege' => 'Bir senkron zaten çalışıyor. Lütfen biraz sonra sayfayı yenileyin.',
+                'messege' => 'Bir senkron zaten çalışıyor. Lütfen 1–2 dakika sonra sayfayı yenileyin.',
                 'alert-type' => 'error',
             ]);
         }
 
-        $settings->update([
-            'last_sync_status' => 'processing',
-            'last_sync_message' => 'Ürün senkronu kuyruğa alındı…',
-        ]);
-
-        $job = new ProcessSentosProductSyncJob($settings->id);
-        if (app()->runningUnitTests()) {
-            $job->handle(app(\App\Services\Sentos\SentosProductSyncService::class));
-        } else {
-            ProcessSentosProductSyncJob::dispatch($settings->id)->afterResponse();
-        }
+        // Run inline so seller sees the result immediately (no jobs table / afterResponse dependency).
+        $result = $syncService->syncVendor($settings);
 
         return back()->with([
-            'messege' => 'Ürün senkronu başladı. Birkaç dakika sonra bu sayfayı yenileyin; sonuç burada görünecek.',
-            'alert-type' => 'success',
+            'messege' => $result['message'],
+            'alert-type' => $result['ok'] ? 'success' : 'error',
         ]);
     }
 }

@@ -140,22 +140,28 @@
                             <hr>
                             <p class="mb-2">
                                 <strong>Son ürün senkronu:</strong>
-                                @if($settings?->last_sync_at)
+                                @php
+                                    $syncStatus = $settings->last_sync_status ?? null;
+                                    $syncMessage = $settings->last_sync_message ?? null;
+                                @endphp
+                                @if($syncStatus === 'processing')
+                                    <span class="text-warning">Çalışıyor…</span>
+                                @elseif($settings?->last_sync_at)
                                     {{ $settings->last_sync_at->format('d.m.Y H:i') }}
                                     —
-                                    @if($settings->last_sync_status === 'success')
+                                    @if($syncStatus === 'success')
                                         <span class="text-success">Başarılı</span>
-                                    @elseif($settings->last_sync_status === 'processing')
-                                        <span class="text-warning">Çalışıyor</span>
                                     @else
                                         <span class="text-danger">Başarısız / kısmi</span>
                                     @endif
+                                @elseif($syncMessage)
+                                    <span class="text-muted">{{ $syncStatus ?: 'Bilgi var' }}</span>
                                 @else
                                     Henüz çalıştırılmadı
                                 @endif
                             </p>
-                            @if($settings?->last_sync_message)
-                                <p class="small text-muted mb-3">{{ $settings->last_sync_message }}</p>
+                            @if($syncMessage)
+                                <p class="small text-muted mb-3">{{ $syncMessage }}</p>
                             @endif
 
                             @if($settings)
@@ -165,9 +171,9 @@
                                         <i class="fas fa-vial mr-1"></i> Bağlantıyı Test Et
                                     </button>
                                 </form>
-                                <form action="{{ route('seller.sentos.sync-products') }}" method="POST" class="mb-2" onsubmit="return confirm('Sentos ürünleri bu mağazaya çekilsin / güncellensin mi?');">
+                                <form action="{{ route('seller.sentos.sync-products') }}" method="POST" class="mb-2" onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerHTML='Çekiliyor, bekleyin…'; return true;">
                                     @csrf
-                                    <button type="submit" class="btn btn-primary btn-block" {{ ($settings->last_sync_status === 'processing' || ! $settings->is_enabled) ? 'disabled' : '' }}>
+                                    <button type="submit" class="btn btn-primary btn-block" {{ ! $settings->is_enabled ? 'disabled' : '' }}>
                                         <i class="fas fa-sync mr-1"></i> Ürünleri Çek / Güncelle
                                     </button>
                                 </form>
