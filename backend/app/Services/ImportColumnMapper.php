@@ -13,32 +13,63 @@ class ImportColumnMapper
     private const FIELD_SYNONYMS = [
         'name' => [
             'name', 'urun adi', 'urun_adi', 'urun ad', 'product name', 'product_name',
-            'baslik', 'title', 'isim', 'ad', 'urun ismi', 'urun_ismi',
+            'baslik', 'title', 'title_tr', 'isim', 'ad', 'urun ismi', 'urun_ismi',
         ],
         'short_name' => ['short_name', 'short name', 'kisa ad', 'kisa_ad'],
-        'slug' => ['slug', 'seourl', 'seo url'],
-        'category' => ['category', 'kategori', 'ana kategori', 'ana_kategori', 'kategori adi'],
+        'slug' => ['slug', 'seourl', 'seo url', 'manuel_geturl_tr', 'manuel geturl tr'],
+        'category' => [
+            'category', 'kategori', 'ana kategori', 'ana_kategori', 'kategori adi',
+            'products_cat_associate', 'products cat associate', 'urun kategorileri',
+        ],
         'sub_category' => ['sub_category', 'sub category', 'alt kategori', 'alt_kategori'],
         'child_category' => ['child_category', 'child category', 'alt alt kategori', 'alt_alt_kategori'],
-        'brand' => ['brand', 'marka', 'marka adi', 'marka_adi'],
+        'brand' => ['brand', 'brands', 'marka', 'marka adi', 'marka_adi'],
         'price' => [
             'price', 'fiyat', 'birim fiyat', 'birim_fiyat', 'satis fiyati', 'satis_fiyati',
-            'liste fiyati', 'liste_fiyati', 'ucret', 'tutar',
+            'liste fiyati', 'liste_fiyati', 'ucret', 'tutar', 'unit_price', 'unit price',
         ],
         'offer_price' => [
             'offer_price', 'offer price', 'indirimli fiyat', 'indirimli_fiyat',
             'kampanya fiyati', 'kampanya_fiyati',
         ],
         'qty' => ['qty', 'quantity', 'stok', 'stock', 'adet', 'miktar', 'quantity in stock'],
-        'short_description' => ['short_description', 'short description', 'kisa aciklama', 'kisa_aciklama'],
-        'long_description' => ['long_description', 'long description', 'uzun aciklama', 'uzun_aciklama', 'aciklama', 'description'],
-        'sku' => ['sku', 'barkod', 'barcode', 'stok kodu', 'stok_kodu', 'urun kodu', 'urun_kodu', 'erp urun kodu', 'erp_urun_kodu', 'kod'],
-        'weight' => ['weight', 'agirlik', 'gramaj'],
+        'short_description' => [
+            'short_description', 'short description', 'kisa aciklama', 'kisa_aciklama',
+            'description_tr', 'description tr', 'kisa tanim',
+        ],
+        'long_description' => [
+            'long_description', 'long description', 'uzun aciklama', 'uzun_aciklama',
+            'aciklama', 'description', 'detail_tr', 'detail tr', 'icerik',
+        ],
+        'sku' => [
+            'sku', 'barkod', 'barcode', 'stok kodu', 'stok_kodu', 'urun kodu', 'urun_kodu',
+            'erp urun kodu', 'erp_urun_kodu', 'kod', 'code',
+        ],
+        'weight' => ['weight', 'agirlik', 'gramaj', 'desi'],
         'tags' => ['tags', 'etiket', 'etiketler', 'anahtar kelime', 'anahtar_kelime'],
         'image_url' => [
             'image_url', 'image url', 'image', 'resim url', 'resim_url', 'resim',
             'gorsel', 'gorsel url', 'gorsel_url', 'foto', 'fotograf', 'photo', 'picture',
+            'urun resmi',
         ],
+    ];
+
+    /** Softtr / dış ERP başlıklarındaki |alan| kodları */
+    private const PIPE_CODE_MAP = [
+        'title_tr' => 'name',
+        'title' => 'name',
+        'unit_price' => 'price',
+        'indirimli_fiyat' => 'offer_price',
+        'stok' => 'qty',
+        'code' => 'sku',
+        'picture' => 'image_url',
+        'products_cat_associate' => 'category',
+        'brands' => 'brand',
+        'description_tr' => 'short_description',
+        'detail_tr' => 'long_description',
+        'desi' => 'weight',
+        'etiket' => 'tags',
+        'manuel_geturl_tr' => 'slug',
     ];
 
     /**
@@ -65,7 +96,19 @@ class ImportColumnMapper
                     continue;
                 }
 
-                $normalized = $this->normalizeHeader((string) $rawHeader);
+                $original = trim((string) $rawHeader);
+                $pipeCode = $this->extractPipeCode($original);
+                if ($pipeCode !== null && isset(self::PIPE_CODE_MAP[$pipeCode])) {
+                    $mapped = self::PIPE_CODE_MAP[$pipeCode];
+                    if ($mapped === $field) {
+                        $assignments[$index] = $field;
+                        $notes[] = "Softtr sütun: \"{$original}\" → {$field}";
+                        continue 2;
+                    }
+                    continue;
+                }
+
+                $normalized = $this->normalizeHeader($original);
                 if ($normalized === '') {
                     continue;
                 }
@@ -138,11 +181,25 @@ class ImportColumnMapper
 
     private function normalizeHeader(string $header): string
     {
+        $pipeCode = $this->extractPipeCode($header);
+        if ($pipeCode !== null) {
+            return $pipeCode;
+        }
+
         $header = Str::ascii(mb_strtolower(trim($header)));
         $header = preg_replace('/[^a-z0-9\s]/', ' ', $header) ?? '';
         $header = preg_replace('/\s+/', ' ', $header) ?? '';
 
         return trim($header);
+    }
+
+    private function extractPipeCode(string $header): ?string
+    {
+        if (preg_match('/\|\s*([a-z0-9_]+)\s*\|/i', $header, $match)) {
+            return Str::lower($match[1]);
+        }
+
+        return null;
     }
 
     /**

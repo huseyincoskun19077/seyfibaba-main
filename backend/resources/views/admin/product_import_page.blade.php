@@ -41,6 +41,12 @@
                                 <div class="form-group col-12">
                                     <label>{{__('admin.Import File')}} <span class="text-danger">*</span></label>
                                     <input type="file" id="name" class="form-control-file"  name="import_file" required>
+                                    <small class="form-text text-muted">
+                                        CSV şablonu veya Softtr Excel (xlsx) yüklenebilir.
+                                        Kategori yolu <code>Ana &gt; Alt &gt; Child</code> ise child bulunursa oraya,
+                                        yoksa sub, yoksa ana kategoriye yazılır.
+                                        Görseller için tam URL gerekir (sadece dosya adı indirmez).
+                                    </small>
                                 </div>
 
                             </div>

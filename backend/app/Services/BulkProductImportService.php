@@ -149,6 +149,8 @@ class BulkProductImportService
                 continue;
             }
 
+            $this->expandCategoryPath($normalizedRow);
+
             $normalizedRow['price'] = $this->columnMapper->normalizeNumeric($normalizedRow['price']);
             if ($normalizedRow['offer_price'] !== null && $normalizedRow['offer_price'] !== '') {
                 $normalizedRow['offer_price'] = $this->columnMapper->normalizeNumeric($normalizedRow['offer_price']);
@@ -372,6 +374,57 @@ class BulkProductImportService
         }
 
         return $msg . '.';
+    }
+
+    /**
+     * Softtr tarzı "Ana > Alt > Child" yolunu category / sub_category / child_category alanlarına ayırır.
+     * Eşleşmede child yoksa sub, sub yoksa ana kategoriye düşülür (resolver zaten null bırakır).
+     *
+     * @param  array<string, mixed>  $row
+     */
+    private function expandCategoryPath(array &$row): void
+    {
+        $raw = trim((string) ($row['category'] ?? ''));
+        if ($raw === '') {
+            return;
+        }
+
+        if (! preg_match('/[>\/|]/u', $raw)) {
+            return;
+        }
+
+        $parts = preg_split('/\s*[>\/|]+\s*/u', $raw) ?: [];
+        $parts = array_values(array_filter(array_map(
+            static fn ($part) => trim((string) $part),
+            $parts
+        ), static fn ($part) => $part !== ''));
+
+        if ($parts === []) {
+            return;
+        }
+
+        if (count($parts) === 1) {
+            $row['category'] = $parts[0];
+
+            return;
+        }
+
+        if (count($parts) === 2) {
+            $row['category'] = $parts[0];
+            if (empty($row['sub_category'])) {
+                $row['sub_category'] = $parts[1];
+            }
+
+            return;
+        }
+
+        $row['category'] = $parts[0];
+        if (empty($row['sub_category'])) {
+            $row['sub_category'] = $parts[count($parts) - 2];
+        }
+        if (empty($row['child_category'])) {
+            $row['child_category'] = $parts[count($parts) - 1];
+        }
     }
 
     /**
