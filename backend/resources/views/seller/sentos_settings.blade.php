@@ -17,9 +17,9 @@
 
         <div class="section-body">
             <div class="alert alert-info">
-                <strong>Faz 1:</strong> Bu ekran yalnızca Sentos API bilgilerini kaydeder ve bağlantıyı test eder.
-                Ürün çekme / stok-fiyat senkronu sonraki fazda açılacak.
-                Kaydetmek veya kapatmak mevcut Seyfibaba ürünlerinizi değiştirmez.
+                <strong>Sentos eklentisi:</strong> API bilgilerini kaydedin, bağlantıyı test edin, ardından ürünleri çekin.
+                Senkron yalnızca bu satıcı hesabına yazar; diğer satıcılar ve ödeme akışı etkilenmez.
+                Kategori eşleşmezse o ürün atlanır (yanlış kategoriye basılmaz).
             </div>
 
             <div class="row">
@@ -137,11 +137,38 @@
                                 <p class="small text-muted mb-3">{{ $settings->last_test_message }}</p>
                             @endif
 
+                            <hr>
+                            <p class="mb-2">
+                                <strong>Son ürün senkronu:</strong>
+                                @if($settings?->last_sync_at)
+                                    {{ $settings->last_sync_at->format('d.m.Y H:i') }}
+                                    —
+                                    @if($settings->last_sync_status === 'success')
+                                        <span class="text-success">Başarılı</span>
+                                    @elseif($settings->last_sync_status === 'processing')
+                                        <span class="text-warning">Çalışıyor</span>
+                                    @else
+                                        <span class="text-danger">Başarısız / kısmi</span>
+                                    @endif
+                                @else
+                                    Henüz çalıştırılmadı
+                                @endif
+                            </p>
+                            @if($settings?->last_sync_message)
+                                <p class="small text-muted mb-3">{{ $settings->last_sync_message }}</p>
+                            @endif
+
                             @if($settings)
                                 <form action="{{ route('seller.sentos.test') }}" method="POST" class="mb-2">
                                     @csrf
                                     <button type="submit" class="btn btn-success btn-block">
                                         <i class="fas fa-vial mr-1"></i> Bağlantıyı Test Et
+                                    </button>
+                                </form>
+                                <form action="{{ route('seller.sentos.sync-products') }}" method="POST" class="mb-2" onsubmit="return confirm('Sentos ürünleri bu mağazaya çekilsin / güncellensin mi?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary btn-block" {{ ($settings->last_sync_status === 'processing' || ! $settings->is_enabled) ? 'disabled' : '' }}>
+                                        <i class="fas fa-sync mr-1"></i> Ürünleri Çek / Güncelle
                                     </button>
                                 </form>
                                 <form action="{{ route('seller.sentos.disable') }}" method="POST" onsubmit="return confirm('Sentos bu mağaza için kapatılsın mı? Ürünleriniz silinmez.');">

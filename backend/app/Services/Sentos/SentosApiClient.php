@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 /**
- * Isolated Sentos HTTP client. Phase 1: connection test only.
- * Does not write to products/orders or touch marketplace checkout.
+ * Isolated Sentos HTTP client.
+ * Phase 1: connection test. Phase 2: product listing for vendor sync only.
  */
 class SentosApiClient
 {
@@ -93,8 +93,58 @@ class SentosApiClient
         ];
     }
 
-    public function request(VendorSentosSetting $setting, string $method, string $path, array $query = [], ?array $body = null): Response
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listAllProducts(VendorSentosSetting $setting, int $pageSize = 50, int $maxPages = 100): array
     {
+        $normalizer = app(SentosProductNormalizer::class);
+        $all = [];
+        $page = 1;
+
+        while ($page <= $maxPages) {
+            $response = $this->request($setting, 'GET', '/products', [
+                'page' => $page,
+                'size' => $pageSize,
+                'pageSize' => $pageSize,
+                'per_page' => $pageSize,
+            ], null, 60);
+
+            if ($response->status() === 401 || $response->status() === 403) {
+                throw new \RuntimeException('Kimlik doğrulama başarısız (API key/secret).');
+            }
+
+            if (! $response->successful()) {
+                throw new \RuntimeException('Ürün listesi HTTP ' . $response->status());
+            }
+
+            $items = $normalizer->extractListItems($response->json());
+            if ($items === []) {
+                break;
+            }
+
+            foreach ($items as $item) {
+                $all[] = $item;
+            }
+
+            if (count($items) < $pageSize) {
+                break;
+            }
+
+            $page++;
+        }
+
+        return $all;
+    }
+
+    public function request(
+        VendorSentosSetting $setting,
+        string $method,
+        string $path,
+        array $query = [],
+        ?array $body = null,
+        int $timeout = 20
+    ): Response {
         $base = rtrim($this->normalizeBaseUrl($setting->api_base_url), '/');
         $path = '/' . ltrim($path, '/');
         $url = $base . $path;
@@ -105,7 +155,7 @@ class SentosApiClient
         )
             ->acceptJson()
             ->asJson()
-            ->timeout(20)
+            ->timeout($timeout)
             ->connectTimeout(10);
 
         $method = strtoupper($method);
@@ -121,19 +171,13 @@ class SentosApiClient
 
     private function extractProductHint(mixed $json): ?string
     {
-        if (! is_array($json)) {
-            return 'Ürün listesi endpoint yanıt verdi.';
+        $normalizer = app(SentosProductNormalizer::class);
+        $items = $normalizer->extractListItems($json);
+        if ($items !== []) {
+            return 'Ürün endpoint erişilebilir (örnek sayfa kayıt: ' . count($items) . ').';
         }
 
-        foreach (['data', 'products', 'content', 'items'] as $key) {
-            if (isset($json[$key]) && is_array($json[$key])) {
-                $count = count($json[$key]);
-
-                return 'Ürün endpoint erişilebilir (örnek sayfa kayıt: ' . $count . ').';
-            }
-        }
-
-        if (isset($json['total']) || isset($json['totalElements']) || isset($json['count'])) {
+        if (is_array($json) && (isset($json['total']) || isset($json['totalElements']) || isset($json['count']))) {
             $total = $json['total'] ?? $json['totalElements'] ?? $json['count'];
 
             return 'Ürün endpoint erişilebilir (toplam: ' . $total . ').';

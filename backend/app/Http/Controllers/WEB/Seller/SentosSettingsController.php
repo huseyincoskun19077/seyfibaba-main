@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\WEB\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ProcessSentosProductSyncJob;
 use App\Models\VendorSentosSetting;
 use App\Services\Sentos\SentosApiClient;
 use Auth;
 use Illuminate\Http\Request;
 
 /**
- * Phase 1 only: save Sentos credentials + test connection.
- * Does not create/update products or orders.
+ * Sentos seller settings + Phase 2 product sync trigger.
+ * Opt-in per vendor only; does not alter other sellers or checkout.
  */
 class SentosSettingsController extends Controller
 {
@@ -143,6 +144,57 @@ class SentosSettingsController extends Controller
 
         return back()->with([
             'messege' => 'Sentos entegrasyonu bu satıcı için kapatıldı. Mevcut Seyfibaba ürünleri etkilenmedi.',
+            'alert-type' => 'success',
+        ]);
+    }
+
+    public function syncProducts()
+    {
+        if (! config('features.sentos_enabled', true)) {
+            abort(404);
+        }
+
+        $seller = Auth::guard('web')->user()?->seller;
+        if (! $seller) {
+            abort(403);
+        }
+
+        $settings = VendorSentosSetting::query()->where('vendor_id', $seller->id)->first();
+        if (! $settings || ! $settings->hasCredentials()) {
+            return back()->with([
+                'messege' => 'Önce Sentos API bilgilerini kaydedin ve bağlantıyı test edin.',
+                'alert-type' => 'error',
+            ]);
+        }
+
+        if (! $settings->is_enabled) {
+            return back()->with([
+                'messege' => 'Senkron için Sentos entegrasyonunu açmanız gerekir.',
+                'alert-type' => 'error',
+            ]);
+        }
+
+        if ($settings->last_sync_status === 'processing') {
+            return back()->with([
+                'messege' => 'Bir senkron zaten çalışıyor. Lütfen biraz sonra sayfayı yenileyin.',
+                'alert-type' => 'error',
+            ]);
+        }
+
+        $settings->update([
+            'last_sync_status' => 'processing',
+            'last_sync_message' => 'Ürün senkronu kuyruğa alındı…',
+        ]);
+
+        $job = new ProcessSentosProductSyncJob($settings->id);
+        if (app()->runningUnitTests()) {
+            $job->handle(app(\App\Services\Sentos\SentosProductSyncService::class));
+        } else {
+            ProcessSentosProductSyncJob::dispatch($settings->id)->afterResponse();
+        }
+
+        return back()->with([
+            'messege' => 'Ürün senkronu başladı. Birkaç dakika sonra bu sayfayı yenileyin; sonuç burada görünecek.',
             'alert-type' => 'success',
         ]);
     }

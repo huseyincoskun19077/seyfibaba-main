@@ -32,7 +32,7 @@ class SellerIntegrationsController extends Controller
             [
                 'key' => 'sentos',
                 'name' => 'Sentos',
-                'description' => 'Ürün, stok, fiyat ve sipariş senkronu için Sentos API bağlantısı.',
+                'description' => 'Ürün çekme, stok/fiyat güncelleme. Sipariş senkronu sonraki fazda.',
                 'enabled_globally' => (bool) config('features.sentos_enabled', true),
                 'connected' => (bool) ($sentos?->is_enabled && $sentos?->hasCredentials()),
                 'status_label' => $this->sentosStatusLabel($sentos),

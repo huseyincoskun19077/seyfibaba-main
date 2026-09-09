@@ -18,6 +18,10 @@ class VendorSentosSetting extends Model
         'last_tested_at',
         'last_test_status',
         'last_test_message',
+        'last_sync_at',
+        'last_sync_status',
+        'last_sync_message',
+        'last_sync_stats',
     ];
 
     protected $casts = [
@@ -25,6 +29,8 @@ class VendorSentosSetting extends Model
         'api_key' => 'encrypted',
         'api_secret' => 'encrypted',
         'last_tested_at' => 'datetime',
+        'last_sync_at' => 'datetime',
+        'last_sync_stats' => 'array',
     ];
 
     protected $hidden = [
