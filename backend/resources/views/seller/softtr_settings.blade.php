@@ -162,8 +162,8 @@
                         <div class="card-header"><h4><i class="fas fa-boxes mr-2"></i>Softtr’dan gelen ürünler</h4></div>
                         <div class="card-body">
                             <p class="text-muted small mb-3">
-                                Kategori / alt kategori / alt-alt kategori Seyfibaba eşleşmesidir.
-                                Detay düzenleme Ürünler menüsünden; Softtr kataloğuna yazılmaz.
+                                Softtr her varyantı ayrı satır gönderebilir; aynı SKU tek ürüne birleştirilir.
+                                Kategori eşlemesi Seyfibaba tarafındadır. Detay düzenleme Ürünler menüsünden; Softtr’a yazılmaz.
                             </p>
                             <div class="table-responsive">
                                 <table class="table table-striped table-md">

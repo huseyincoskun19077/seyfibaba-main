@@ -33,8 +33,16 @@ class SofttrSettingsController extends Controller
         }
 
         $settings = VendorSofttrSetting::query()->where('vendor_id', $seller->id)->first();
+        // One Softtr product can map many Softtr variant IDs → list unique Seyfibaba products.
+        $latestMapIds = VendorSofttrProductMap::query()
+            ->selectRaw('MAX(id) as id')
+            ->where('vendor_id', $seller->id)
+            ->groupBy('product_id')
+            ->pluck('id');
+
         $mappedProducts = VendorSofttrProductMap::query()
             ->where('vendor_id', $seller->id)
+            ->whereIn('id', $latestMapIds)
             ->with([
                 'product:id,name,short_name,sku,price,offer_price,qty,status,thumb_image,category_id,sub_category_id,child_category_id',
                 'product.category:id,name',

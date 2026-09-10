@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Pull Softtr products into one vendor catalog (one-way Softtr → Seyfibaba).
- * Does not call Softtr updateStokAndPrice (that writes INTO Softtr).
+ * Softtr list often returns one row per variant with the same SKU — we dedupe by SKU.
  */
 class SofttrProductSyncService
 {
@@ -34,8 +34,6 @@ class SofttrProductSyncService
     }
 
     /**
-     * Hourly: create new Softtr products + update price/stock for mapped ones.
-     *
      * @return array{ok: bool, message: string, stats: array<string, int>}
      */
     public function syncVendorPriceStock(VendorSofttrSetting $setting): array
@@ -53,6 +51,7 @@ class SofttrProductSyncService
 
         $stats = [
             'fetched' => 0,
+            'deduped' => 0,
             'created' => 0,
             'updated' => 0,
             'unchanged' => 0,
@@ -80,7 +79,6 @@ class SofttrProductSyncService
         $label = $full ? 'Ürün senkronu' : 'Saatlik senkron';
 
         try {
-            // Softtr: max 100/page; always page with ≥2s gap (manual + hourly).
             $delay = max(2000, $pageDelayMs);
             $rawProducts = $this->client->listAllProducts($setting, 100, 200, $delay);
         } catch (\Throwable $e) {
@@ -102,74 +100,65 @@ class SofttrProductSyncService
             ];
         }
 
-        $maps = VendorSofttrProductMap::query()
-            ->where('vendor_id', $vendor->id)
-            ->get()
-            ->keyBy(fn (VendorSofttrProductMap $m) => (string) $m->softtr_product_id);
-
         $shopOrigin = $this->client->shopOrigin($setting);
+        $grouped = [];
+        foreach ($rawProducts as $raw) {
+            if (! is_array($raw)) {
+                continue;
+            }
+            $normalized = $this->normalizer->normalize($raw, $shopOrigin);
+            if (! $normalized) {
+                $stats['skipped']++;
+                continue;
+            }
+            $stats['fetched']++;
 
-        $this->categoryResolver->beginBulkImport(max(count($rawProducts), 1));
+            $key = $this->dedupeKey($normalized);
+            if (! isset($grouped[$key])) {
+                $normalized['softtr_ids'] = [(string) $normalized['softtr_id']];
+                $grouped[$key] = $normalized;
+                continue;
+            }
+
+            $grouped[$key]['softtr_ids'][] = (string) $normalized['softtr_id'];
+            $grouped[$key]['qty'] = max((int) $grouped[$key]['qty'], (int) $normalized['qty']);
+            if ($grouped[$key]['price'] <= 0 && $normalized['price'] > 0) {
+                $grouped[$key]['price'] = $normalized['price'];
+            }
+            if ($grouped[$key]['image_url'] === '' && $normalized['image_url'] !== '') {
+                $grouped[$key]['image_url'] = $normalized['image_url'];
+            }
+            if ($grouped[$key]['barcode'] === '' && $normalized['barcode'] !== '') {
+                $grouped[$key]['barcode'] = $normalized['barcode'];
+            }
+        }
+
+        $stats['deduped'] = count($grouped);
+        $this->categoryResolver->beginBulkImport(max(count($grouped), 1));
 
         try {
-            foreach ($rawProducts as $raw) {
-                if (! is_array($raw)) {
-                    continue;
-                }
-
-                $normalized = $this->normalizer->normalize($raw, $shopOrigin);
-                if (! $normalized) {
-                    $stats['skipped']++;
-                    continue;
-                }
-
-                $stats['fetched']++;
-                $map = $maps->get((string) $normalized['softtr_id']);
+            foreach ($grouped as $normalized) {
+                $softtrIds = array_values(array_unique($normalized['softtr_ids'] ?? [(string) $normalized['softtr_id']]));
+                unset($normalized['softtr_ids']);
+                $normalized['softtr_id'] = $softtrIds[0];
 
                 try {
-                    if (! $map) {
-                        $result = $this->upsertProduct($vendor, $normalized);
-                        if ($result === 'created') {
-                            $stats['created']++;
-                            $newMap = VendorSofttrProductMap::query()
-                                ->where('vendor_id', $vendor->id)
-                                ->where('softtr_product_id', $normalized['softtr_id'])
-                                ->first();
-                            if ($newMap) {
-                                $maps->put((string) $normalized['softtr_id'], $newMap);
-                            }
-                        } elseif ($result === 'updated') {
-                            $stats['updated']++;
-                        } else {
-                            $stats['skipped']++;
-                        }
-                        continue;
-                    }
-
-                    if ($full) {
-                        $result = $this->upsertProduct($vendor, $normalized);
-                        if ($result === 'updated') {
-                            $stats['updated']++;
-                        } elseif ($result === 'created') {
-                            $stats['created']++;
-                        } else {
-                            $stats['skipped']++;
-                        }
+                    $result = $this->upsertProduct($vendor, $normalized, $softtrIds);
+                    if ($result === 'created') {
+                        $stats['created']++;
+                    } elseif ($result === 'updated') {
+                        $stats['updated']++;
+                    } elseif ($result === 'unchanged') {
+                        $stats['unchanged']++;
                     } else {
-                        $result = $this->updateMappedPriceStock($vendor, $map, $normalized);
-                        if ($result === 'updated') {
-                            $stats['updated']++;
-                        } elseif ($result === 'unchanged') {
-                            $stats['unchanged']++;
-                        } else {
-                            $stats['skipped']++;
-                        }
+                        $stats['skipped']++;
                     }
                 } catch (\Throwable $e) {
                     $stats['failed']++;
                     Log::warning('Softtr product upsert failed', [
                         'vendor_id' => $vendor->id,
                         'softtr_id' => $normalized['softtr_id'] ?? null,
+                        'sku' => $normalized['sku'] ?? null,
                         'error' => $e->getMessage(),
                     ]);
                 }
@@ -179,9 +168,10 @@ class SofttrProductSyncService
         }
 
         $message = sprintf(
-            '%s: %d çekildi, %d yeni, %d güncellendi, %d aynı, %d atlandı, %d hata.',
+            '%s: %d Softtr satırı → %d ürün (SKU birleşimi), %d yeni, %d güncellendi, %d aynı, %d atlandı, %d hata.',
             $label,
             $stats['fetched'],
+            $stats['deduped'],
             $stats['created'],
             $stats['updated'],
             $stats['unchanged'],
@@ -209,56 +199,34 @@ class SofttrProductSyncService
     /**
      * @param  array<string, mixed>  $data
      */
-    private function updateMappedPriceStock(Vendor $vendor, VendorSofttrProductMap $map, array $data): string
+    private function dedupeKey(array $data): string
     {
-        $price = $data['price'] > 0 ? $data['price'] : $data['offer_price'];
-        if ($price <= 0) {
-            return 'skipped';
+        $sku = mb_strtolower(trim((string) ($data['sku'] ?? '')));
+        if ($sku !== '' && ! str_starts_with($sku, 'softtr-')) {
+            return 'sku:' . $sku;
         }
-
-        $offer = $data['offer_price'] > 0 && $data['offer_price'] < $price ? $data['offer_price'] : 0;
-        $qty = (int) $data['qty'];
-
-        $product = Product::query()
-            ->where('id', $map->product_id)
-            ->where('vendor_id', $vendor->id)
-            ->first();
-
-        if (! $product) {
-            return 'skipped';
+        $barcode = mb_strtolower(trim((string) ($data['barcode'] ?? '')));
+        if ($barcode !== '') {
+            return 'barcode:' . $barcode;
         }
+        $name = mb_strtolower(trim((string) ($data['name'] ?? '')));
 
-        $priceChanged = abs((float) $product->price - (float) $price) > 0.0001
-            || abs((float) $product->offer_price - (float) $offer) > 0.0001;
-        $qtyChanged = (int) $product->qty !== $qty;
-
-        if (! $priceChanged && ! $qtyChanged) {
-            $map->last_synced_at = now();
-            $map->save();
-
-            return 'unchanged';
-        }
-
-        $product->price = $price;
-        $product->offer_price = $offer;
-        $product->qty = $qty;
-        $product->save();
-
-        $map->softtr_sku = $data['sku'] !== '' ? $data['sku'] : $map->softtr_sku;
-        $map->softtr_barcode = $data['barcode'] !== '' ? $data['barcode'] : $map->softtr_barcode;
-        $map->last_synced_at = now();
-        $map->save();
-
-        return 'updated';
+        return 'name:' . $name . '|price:' . number_format((float) ($data['price'] ?? 0), 2, '.', '');
     }
 
     /**
      * @param  array<string, mixed>  $data
+     * @param  list<string>  $softtrIds
      */
-    private function upsertProduct(Vendor $vendor, array $data): string
+    private function upsertProduct(Vendor $vendor, array $data, array $softtrIds = []): string
     {
         if ($data['price'] <= 0 && $data['offer_price'] <= 0) {
             throw new \RuntimeException('Fiyat yok: ' . $data['name']);
+        }
+
+        $softtrIds = array_values(array_unique(array_filter(array_map('strval', $softtrIds))));
+        if ($softtrIds === []) {
+            $softtrIds = [(string) $data['softtr_id']];
         }
 
         $match = $this->categoryResolver->resolve(
@@ -276,32 +244,16 @@ class SofttrProductSyncService
             throw new \RuntimeException('Kategori eşleştirilemedi: ' . ($data['category_name'] ?: $data['name']));
         }
 
-        $map = VendorSofttrProductMap::query()
-            ->where('vendor_id', $vendor->id)
-            ->where('softtr_product_id', $data['softtr_id'])
-            ->first();
-
-        $product = null;
+        $sku = trim((string) $data['sku']);
+        $product = $this->findExistingProduct($vendor, $sku, $softtrIds);
         $created = false;
-
-        if ($map) {
-            $product = Product::query()
-                ->where('id', $map->product_id)
-                ->where('vendor_id', $vendor->id)
-                ->first();
-        }
-
-        if (! $product && ! empty($data['sku'])) {
-            $product = Product::query()
-                ->where('vendor_id', $vendor->id)
-                ->where('sku', $data['sku'])
-                ->first();
-        }
 
         if (! $product) {
             $product = new Product();
             $product->vendor_id = $vendor->id;
             $created = true;
+        } else {
+            $this->collapseSkuDuplicates($vendor, $sku, $product);
         }
 
         $name = $data['name'];
@@ -309,6 +261,11 @@ class SofttrProductSyncService
         $shortName = mb_substr($name, 0, 30);
         $price = $data['price'] > 0 ? $data['price'] : $data['offer_price'];
         $offer = $data['offer_price'] > 0 && $data['offer_price'] < $price ? $data['offer_price'] : 0;
+
+        $priceChanged = $created
+            || abs((float) $product->price - (float) $price) > 0.0001
+            || abs((float) ($product->offer_price ?? 0) - (float) $offer) > 0.0001;
+        $qtyChanged = $created || (int) $product->qty !== (int) $data['qty'];
 
         $thumbImage = $product->thumb_image ?? '';
         if (! ProductImageUrl::hasImage($thumbImage) && $data['image_url'] !== '') {
@@ -329,7 +286,6 @@ class SofttrProductSyncService
                     $thumbImage = $stored;
                     break;
                 }
-                // Softtr CDN URL — show even if download blocked.
                 if (! ProductImageUrl::hasImage($thumbImage)) {
                     $thumbImage = $external;
                 }
@@ -338,9 +294,27 @@ class SofttrProductSyncService
 
         $canPublish = ProductImageUrl::hasImage($thumbImage);
 
+        if (! $created && ! $priceChanged && ! $qtyChanged && ProductImageUrl::hasImage($product->thumb_image ?? null)) {
+            foreach ($softtrIds as $sid) {
+                VendorSofttrProductMap::query()->updateOrCreate(
+                    ['vendor_id' => $vendor->id, 'softtr_product_id' => $sid],
+                    [
+                        'product_id' => $product->id,
+                        'softtr_sku' => $sku,
+                        'softtr_barcode' => $data['barcode'],
+                        'last_synced_at' => now(),
+                    ]
+                );
+            }
+
+            return 'unchanged';
+        }
+
         $product->short_name = $shortName;
         $product->name = $name;
-        $product->slug = $this->uniqueSlug($slugBase, $product->id);
+        if ($created || trim((string) $product->slug) === '') {
+            $product->slug = $this->uniqueSlug($slugBase, $product->id);
+        }
         $product->category_id = (int) ($category->id ?? 0);
         $product->sub_category_id = (int) ($match['sub_category']->id ?? 0);
         $product->child_category_id = (int) ($match['child_category']->id ?? 0);
@@ -352,7 +326,7 @@ class SofttrProductSyncService
         $product->long_description = $data['long_description'] !== ''
             ? $data['long_description']
             : '<p>' . e($name) . '</p>';
-        $product->sku = $data['sku'];
+        $product->sku = $sku !== '' ? $sku : $product->sku;
         $product->weight = is_numeric($data['weight']) ? $data['weight'] : 0;
         $product->tags = $name;
         $product->is_undefine = 1;
@@ -364,20 +338,80 @@ class SofttrProductSyncService
         $product->approve_by_admin = $canPublish ? 1 : 0;
         $product->save();
 
-        VendorSofttrProductMap::query()->updateOrCreate(
-            [
-                'vendor_id' => $vendor->id,
-                'softtr_product_id' => $data['softtr_id'],
-            ],
-            [
-                'product_id' => $product->id,
-                'softtr_sku' => $data['sku'],
-                'softtr_barcode' => $data['barcode'],
-                'last_synced_at' => now(),
-            ]
-        );
+        foreach ($softtrIds as $sid) {
+            VendorSofttrProductMap::query()->updateOrCreate(
+                [
+                    'vendor_id' => $vendor->id,
+                    'softtr_product_id' => $sid,
+                ],
+                [
+                    'product_id' => $product->id,
+                    'softtr_sku' => $sku,
+                    'softtr_barcode' => $data['barcode'],
+                    'last_synced_at' => now(),
+                ]
+            );
+        }
 
         return $created ? 'created' : 'updated';
+    }
+
+    /**
+     * @param  list<string>  $softtrIds
+     */
+    private function findExistingProduct(Vendor $vendor, string $sku, array $softtrIds): ?Product
+    {
+        if ($sku !== '') {
+            $bySku = Product::query()
+                ->where('vendor_id', $vendor->id)
+                ->whereRaw('LOWER(TRIM(sku)) = ?', [mb_strtolower(trim($sku))])
+                ->orderBy('id')
+                ->first();
+            if ($bySku) {
+                return $bySku;
+            }
+        }
+
+        $map = VendorSofttrProductMap::query()
+            ->where('vendor_id', $vendor->id)
+            ->whereIn('softtr_product_id', $softtrIds)
+            ->orderBy('id')
+            ->first();
+
+        if ($map) {
+            return Product::query()
+                ->where('id', $map->product_id)
+                ->where('vendor_id', $vendor->id)
+                ->first();
+        }
+
+        return null;
+    }
+
+    private function collapseSkuDuplicates(Vendor $vendor, string $sku, Product $keep): void
+    {
+        if ($sku === '') {
+            return;
+        }
+
+        $dupes = Product::query()
+            ->where('vendor_id', $vendor->id)
+            ->whereRaw('LOWER(TRIM(sku)) = ?', [mb_strtolower(trim($sku))])
+            ->where('id', '!=', $keep->id)
+            ->get();
+
+        foreach ($dupes as $dupe) {
+            VendorSofttrProductMap::query()
+                ->where('vendor_id', $vendor->id)
+                ->where('product_id', $dupe->id)
+                ->update(['product_id' => $keep->id]);
+
+            $dupe->status = 0;
+            $dupe->qty = 0;
+            $dupe->sku = trim((string) $dupe->sku) . '-dup-' . $dupe->id;
+            $dupe->approve_by_admin = 0;
+            $dupe->save();
+        }
     }
 
     private function uniqueSlug(string $base, ?int $ignoreId = null): string
