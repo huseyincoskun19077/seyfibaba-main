@@ -4,6 +4,7 @@ namespace App\Http\Controllers\WEB\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Models\VendorSentosSetting;
+use App\Models\VendorSofttrSetting;
 use App\Support\VendorCatalogIntegration;
 use Auth;
 
@@ -29,7 +30,13 @@ class SellerIntegrationsController extends Controller
             $sentos = VendorSentosSetting::query()->where('vendor_id', $seller->id)->first();
         }
 
+        $softtr = null;
+        if (config('features.softtr_enabled', true)) {
+            $softtr = VendorSofttrSetting::query()->where('vendor_id', $seller->id)->first();
+        }
+
         $activeKey = VendorCatalogIntegration::activeKey((int) $seller->id);
+        $vendorId = (int) $seller->id;
 
         $integrations = [
             [
@@ -42,23 +49,21 @@ class SellerIntegrationsController extends Controller
                 'route' => 'seller.sentos.index',
                 'icon' => 'fas fa-store',
                 'badge' => 'Hazır',
-                'locked' => ! VendorCatalogIntegration::canUse((int) $seller->id, VendorCatalogIntegration::SENTOS),
-                'lock_message' => VendorCatalogIntegration::blockMessage((int) $seller->id, VendorCatalogIntegration::SENTOS),
+                'locked' => ! VendorCatalogIntegration::canUse($vendorId, VendorCatalogIntegration::SENTOS),
+                'lock_message' => VendorCatalogIntegration::blockMessage($vendorId, VendorCatalogIntegration::SENTOS),
             ],
             [
                 'key' => VendorCatalogIntegration::SOFTTR,
                 'name' => 'Softtr',
-                'description' => 'Yakında: Softtr mağaza entegrasyonu.',
-                'enabled_globally' => false,
-                'connected' => false,
-                'status_label' => 'Yakında',
-                'route' => null,
+                'description' => 'Softtr mağazadan ürün çekme; saatlik fiyat ve stok güncelleme (tek yön).',
+                'enabled_globally' => (bool) config('features.softtr_enabled', true),
+                'connected' => (bool) ($softtr?->is_enabled && $softtr?->hasCredentials()),
+                'status_label' => $this->softtrStatusLabel($softtr),
+                'route' => 'seller.softtr.index',
                 'icon' => 'fas fa-box-open',
-                'badge' => 'Planlandı',
-                'locked' => $activeKey !== null && $activeKey !== VendorCatalogIntegration::SOFTTR,
-                'lock_message' => $activeKey && $activeKey !== VendorCatalogIntegration::SOFTTR
-                    ? VendorCatalogIntegration::blockMessage((int) $seller->id, VendorCatalogIntegration::SOFTTR)
-                    : '',
+                'badge' => 'Hazır',
+                'locked' => ! VendorCatalogIntegration::canUse($vendorId, VendorCatalogIntegration::SOFTTR),
+                'lock_message' => VendorCatalogIntegration::blockMessage($vendorId, VendorCatalogIntegration::SOFTTR),
             ],
             [
                 'key' => 'other',
@@ -72,7 +77,7 @@ class SellerIntegrationsController extends Controller
                 'badge' => 'Planlandı',
                 'locked' => $activeKey !== null,
                 'lock_message' => $activeKey
-                    ? VendorCatalogIntegration::blockMessage((int) $seller->id, 'other')
+                    ? VendorCatalogIntegration::blockMessage($vendorId, 'other')
                     : '',
             ],
         ];
@@ -90,20 +95,37 @@ class SellerIntegrationsController extends Controller
         if (! $sentos) {
             return 'Kurulmadı';
         }
-
         if (! $sentos->hasCredentials()) {
             return 'Bilgi girilmedi';
         }
-
         if ($sentos->last_test_status === 'success' && $sentos->is_enabled) {
             return 'Bağlı';
         }
-
         if ($sentos->last_test_status === 'failed') {
             return 'Test başarısız';
         }
-
         if ($sentos->is_enabled) {
+            return 'Açık (test edilmedi)';
+        }
+
+        return 'Kapalı';
+    }
+
+    private function softtrStatusLabel(?VendorSofttrSetting $softtr): string
+    {
+        if (! $softtr) {
+            return 'Kurulmadı';
+        }
+        if (! $softtr->hasCredentials()) {
+            return 'Bilgi girilmedi';
+        }
+        if ($softtr->last_test_status === 'success' && $softtr->is_enabled) {
+            return 'Bağlı';
+        }
+        if ($softtr->last_test_status === 'failed') {
+            return 'Test başarısız';
+        }
+        if ($softtr->is_enabled) {
             return 'Açık (test edilmedi)';
         }
 

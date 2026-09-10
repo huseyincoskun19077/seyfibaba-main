@@ -41,6 +41,11 @@ class Kernel extends ConsoleKernel
             ->hourly()
             ->withoutOverlapping(110);
 
+        // Softtr: saatlik ürün / fiyat / stok çekimi
+        $schedule->command('softtr:sync-price-stock')
+            ->hourly()
+            ->withoutOverlapping(110);
+
         // Salon CRM — randevuya ~30 dk kala push
         $schedule->command('salon-crm:appointment-remind')->everyFiveMinutes();
     }

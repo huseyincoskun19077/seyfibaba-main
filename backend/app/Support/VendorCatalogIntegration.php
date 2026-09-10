@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\VendorSentosSetting;
+use App\Models\VendorSofttrSetting;
 
 /**
  * One catalog integration per vendor (Sentos XOR Softtr XOR …).
@@ -28,7 +29,14 @@ class VendorCatalogIntegration
             return self::SENTOS;
         }
 
-        // Softtr / others: check here when their settings tables exist.
+        $softtr = VendorSofttrSetting::query()
+            ->where('vendor_id', $vendorId)
+            ->where('is_enabled', true)
+            ->exists();
+
+        if ($softtr) {
+            return self::SOFTTR;
+        }
 
         return null;
     }

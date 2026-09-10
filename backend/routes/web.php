@@ -104,6 +104,7 @@ use App\Http\Controllers\WEB\Seller\SellerAiAssistantController;
 use App\Http\Controllers\WEB\Seller\SellerDashboardController;
 use App\Http\Controllers\WEB\Seller\SellerIntegrationsController;
 use App\Http\Controllers\WEB\Seller\SentosSettingsController;
+use App\Http\Controllers\WEB\Seller\SofttrSettingsController;
 
 
 
@@ -314,6 +315,12 @@ Route::group(['middleware' => ['XSS']], function () {
             Route::post('eklentiler/sentos/disable', [SentosSettingsController::class, 'disable'])->name('sentos.disable');
             Route::post('eklentiler/sentos/sync-products', [SentosSettingsController::class, 'syncProducts'])->name('sentos.sync-products');
             Route::post('eklentiler/sentos/push-order/{orderId}', [SentosSettingsController::class, 'pushOrder'])->name('sentos.push-order');
+
+            Route::get('eklentiler/softtr', [SofttrSettingsController::class, 'index'])->name('softtr.index');
+            Route::put('eklentiler/softtr', [SofttrSettingsController::class, 'update'])->name('softtr.update');
+            Route::post('eklentiler/softtr/test', [SofttrSettingsController::class, 'test'])->name('softtr.test');
+            Route::post('eklentiler/softtr/disable', [SofttrSettingsController::class, 'disable'])->name('softtr.disable');
+            Route::post('eklentiler/softtr/sync-products', [SofttrSettingsController::class, 'syncProducts'])->name('softtr.sync-products');
 
 
             Route::get('subcategory-by-category/{id}', [SellerProductController::class, 'getSubcategoryByCategory'])->name('subcategory-by-category');

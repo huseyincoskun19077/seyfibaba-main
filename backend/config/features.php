@@ -25,4 +25,13 @@ return [
     */
     'sentos_enabled' => env('FEATURE_SENTOS', true),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Softtr satıcı entegrasyonu (opt-in per vendor)
+    |--------------------------------------------------------------------------
+    | Pull-only product catalog from seller Softtr shop API (Basic Auth).
+    | Mutually exclusive with Sentos via VendorCatalogIntegration.
+    */
+    'softtr_enabled' => env('FEATURE_SOFTTR', true),
+
 ];

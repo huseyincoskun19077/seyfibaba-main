@@ -66,7 +66,7 @@
           <li class="{{ Route::is('seller.inventory') || Route::is('seller.stock-history') ? 'active' : '' }}"><a class="nav-link" href="{{ route('seller.inventory') }}"><i class="fas fa-th-large"></i> <span>{{__('admin.Inventory')}}</span></a></li>
 
           <li class="menu-header mt-3">Entegrasyon</li>
-          <li class="nav-item dropdown {{ Route::is('seller.integrations.*') || Route::is('seller.sentos.*') ? 'active' : '' }}">
+          <li class="nav-item dropdown {{ Route::is('seller.integrations.*') || Route::is('seller.sentos.*') || Route::is('seller.softtr.*') ? 'active' : '' }}">
             <a href="#" class="nav-link has-dropdown"><i class="fas fa-plug"></i><span>Entegrasyon</span></a>
             <ul class="dropdown-menu">
               <li class="{{ Route::is('seller.integrations.index') ? 'active' : '' }}">
@@ -75,6 +75,11 @@
               @if(config('features.sentos_enabled', true))
               <li class="{{ Route::is('seller.sentos.*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('seller.sentos.index') }}">Sentos</a>
+              </li>
+              @endif
+              @if(config('features.softtr_enabled', true))
+              <li class="{{ Route::is('seller.softtr.*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('seller.softtr.index') }}">Softtr</a>
               </li>
               @endif
             </ul>
