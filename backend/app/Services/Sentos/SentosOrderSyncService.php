@@ -296,15 +296,21 @@ class SentosOrderSyncService
 
     private function mapPaymentMethod(Order $order): string
     {
+        // Sentos accepted values (HTTP 422 otherwise):
+        // KREDIKARTI/BANKAKARTI, EFT/HAVALE, NAKIT, KAPIDAODEME/NAKIT, KAPIDAODEME/KREDIKARTI
         $method = strtolower((string) ($order->payment_method ?? ''));
-        if (str_contains($method, 'cash') || (int) ($order->cash_on_delivery ?? 0) === 1) {
-            return 'CASH_ON_DELIVERY';
+
+        if ((int) ($order->cash_on_delivery ?? 0) === 1 || str_contains($method, 'cash_on_delivery')) {
+            return 'KAPIDAODEME/NAKIT';
         }
-        if (str_contains($method, 'bank') || str_contains($method, 'havale') || str_contains($method, 'eft')) {
-            return 'MONEY_ORDER';
+        if (str_contains($method, 'bank') || str_contains($method, 'havale') || str_contains($method, 'eft') || str_contains($method, 'money')) {
+            return 'EFT/HAVALE';
+        }
+        if (str_contains($method, 'cash') || str_contains($method, 'nakit')) {
+            return 'NAKIT';
         }
 
-        return 'CREDIT_CARD';
+        return 'KREDIKARTI/BANKAKARTI';
     }
 
     private function normalizePhone(string $phone): string
