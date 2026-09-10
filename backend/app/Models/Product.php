@@ -71,6 +71,11 @@ class Product extends Model
         return $this->belongsTo(SubCategory::class,'sub_category_id');
     }
 
+    public function childCategory()
+    {
+        return $this->belongsTo(ChildCategory::class, 'child_category_id');
+    }
+
     public function seller(){
         return $this->belongsTo(Vendor::class,'vendor_id');
     }

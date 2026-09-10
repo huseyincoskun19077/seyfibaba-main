@@ -100,14 +100,20 @@ class SofttrApiClient
     }
 
     /**
+     * Softtr docs: pageSize max 100 (orders). Products list uses same paging.
+     * Always fetch page-by-page with a short delay between pages.
+     *
      * @return list<array<string, mixed>>
      */
     public function listAllProducts(
         VendorSofttrSetting $setting,
-        int $pageSize = 50,
-        int $maxPages = 100,
-        int $pageDelayMs = 0
+        int $pageSize = 100,
+        int $maxPages = 200,
+        int $pageDelayMs = 2000
     ): array {
+        $pageSize = max(1, min(100, $pageSize));
+        $pageDelayMs = max(1500, $pageDelayMs);
+
         $normalizer = app(SofttrProductNormalizer::class);
         $all = [];
         $page = 1;
@@ -117,6 +123,7 @@ class SofttrApiClient
                 'page' => $page,
                 'pageSize' => $pageSize,
                 'size' => $pageSize,
+                'per_page' => $pageSize,
             ], null, 60);
 
             if ($response->status() === 401 || $response->status() === 403) {
@@ -124,10 +131,11 @@ class SofttrApiClient
             }
 
             if (! $response->successful()) {
-                throw new \RuntimeException('Ürün listesi HTTP ' . $response->status());
+                throw new \RuntimeException('Ürün listesi HTTP ' . $response->status() . ' (sayfa ' . $page . ')');
             }
 
-            $items = $normalizer->extractListItems($response->json());
+            $json = $response->json();
+            $items = $normalizer->extractListItems($json);
             if ($items === []) {
                 break;
             }
@@ -136,12 +144,25 @@ class SofttrApiClient
                 $all[] = $item;
             }
 
+            // Prefer Softtr pageCount when present
+            $pageCount = null;
+            if (is_array($json)) {
+                $pageCount = $json['data']['pageCount']
+                    ?? $json['data']['page_count']
+                    ?? $json['pageCount']
+                    ?? null;
+            }
+
+            if (is_numeric($pageCount) && $page >= (int) $pageCount) {
+                break;
+            }
+
             if (count($items) < $pageSize) {
                 break;
             }
 
             $page++;
-            if ($pageDelayMs > 0 && $page <= $maxPages) {
+            if ($page <= $maxPages) {
                 usleep($pageDelayMs * 1000);
             }
         }

@@ -235,18 +235,21 @@
                         </div>
                         <div class="card-body">
                             <p class="text-muted small mb-3">
-                                Bu liste yalnızca eşleşmiş Sentos ürünleridir. Ürün detayı / düzenleme için Ürünler menüsüne gidin —
-                                buradan Sentos tarafına yazılmaz.
+                                Kategori / alt kategori / alt-alt kategori Seyfibaba eşleşmesidir.
+                                Ürün detayı Ürünler menüsünden; Sentos kataloğuna yazılmaz.
                             </p>
                             <div class="table-responsive">
                                 <table class="table table-striped table-md">
                                     <thead>
                                         <tr>
+                                            <th style="width:70px;">Resim</th>
                                             <th>Ürün</th>
+                                            <th>Kategori</th>
+                                            <th>Alt kategori</th>
+                                            <th>Alt alt kategori</th>
                                             <th>SKU</th>
                                             <th>Fiyat</th>
                                             <th>Stok</th>
-                                            <th>Sentos ID</th>
                                             <th>Son senkron</th>
                                             <th></th>
                                         </tr>
@@ -255,7 +258,18 @@
                                         @forelse(($mappedProducts ?? []) as $map)
                                             @php $p = $map->product; @endphp
                                             <tr>
+                                                <td>
+                                                    @if($p)
+                                                        <img src="{{ product_image_url($p->thumb_image) }}" alt=""
+                                                             class="rounded" width="56" height="56" style="object-fit:cover;">
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </td>
                                                 <td>{{ $p?->short_name ?: ($p?->name ?: '—') }}</td>
+                                                <td>{{ $p?->category?->name ?: '—' }}</td>
+                                                <td>{{ $p?->subCategory?->name ?: '—' }}</td>
+                                                <td>{{ $p?->childCategory?->name ?: '—' }}</td>
                                                 <td><code>{{ $p?->sku ?: ($map->sentos_sku ?: '—') }}</code></td>
                                                 <td>
                                                     @if($p)
@@ -270,7 +284,7 @@
                                                 <td>
                                                     @if($p)
                                                         @if((int) $p->qty < 1)
-                                                            <span class="badge badge-warning">Stok eksik ({{ (int) $p->qty }})</span>
+                                                            <span class="badge badge-warning">{{ (int) $p->qty }}</span>
                                                         @else
                                                             {{ (int) $p->qty }}
                                                         @endif
@@ -278,7 +292,6 @@
                                                         —
                                                     @endif
                                                 </td>
-                                                <td><code>{{ $map->sentos_product_id }}</code></td>
                                                 <td>{{ $map->last_synced_at?->format('d.m.Y H:i') ?: '—' }}</td>
                                                 <td>
                                                     @if($p)
@@ -292,7 +305,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="7" class="text-center text-muted py-4">
+                                                <td colspan="10" class="text-center text-muted py-4">
                                                     Henüz eşleşmiş ürün yok. Entegrasyonu açıp «Ürünleri Çek» çalıştırın.
                                                 </td>
                                             </tr>

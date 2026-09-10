@@ -80,7 +80,9 @@ class SofttrProductSyncService
         $label = $full ? 'Ürün senkronu' : 'Saatlik senkron';
 
         try {
-            $rawProducts = $this->client->listAllProducts($setting, 50, 100, $pageDelayMs);
+            // Softtr: max 100/page; always page with ≥2s gap (manual + hourly).
+            $delay = max(2000, $pageDelayMs);
+            $rawProducts = $this->client->listAllProducts($setting, 100, 200, $delay);
         } catch (\Throwable $e) {
             Log::warning('Softtr product list failed', [
                 'vendor_id' => $vendor->id,

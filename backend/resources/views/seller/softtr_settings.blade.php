@@ -78,7 +78,11 @@
                                         <span class="custom-switch-indicator"></span>
                                         <span class="custom-switch-description">Softtr entegrasyonunu bu mağaza için aç</span>
                                     </label>
-                                    <p class="text-muted mb-0 mt-2">İlk kurulumda «Ürünleri Çek»; sonra sistem saatte bir fiyat/stok (+ yeni ürün) günceller.</p>
+                                    <p class="text-muted mb-0 mt-2">
+                                        Otomatik senkron: <strong>saatte 1 kez</strong> (cron).
+                                        Her turda Softtr’ye <strong>sayfa sayfa</strong> istek atılır — sayfa başına en fazla <strong>100 ürün</strong>, sayfalar arası ~2 sn beklenir.
+                                        Elle «Ürünleri Çek» de aynı sayfalama ile çalışır.
+                                    </p>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary" {{ !empty($integrationBlocked) && !($settings->is_enabled ?? false) ? 'disabled' : '' }}>Kaydet</button>
@@ -157,23 +161,55 @@
                     <div class="card">
                         <div class="card-header"><h4><i class="fas fa-boxes mr-2"></i>Softtr’dan gelen ürünler</h4></div>
                         <div class="card-body">
-                            <p class="text-muted small mb-3">Detay/düzenleme Ürünler menüsünden; Softtr kataloğuna yazılmaz.</p>
+                            <p class="text-muted small mb-3">
+                                Kategori / alt kategori / alt-alt kategori Seyfibaba eşleşmesidir.
+                                Detay düzenleme Ürünler menüsünden; Softtr kataloğuna yazılmaz.
+                            </p>
                             <div class="table-responsive">
                                 <table class="table table-striped table-md">
                                     <thead>
                                     <tr>
-                                        <th>Ürün</th><th>SKU</th><th>Fiyat</th><th>Stok</th><th>Softtr ID</th><th>Son senkron</th><th></th>
+                                        <th style="width:70px;">Resim</th>
+                                        <th>Ürün</th>
+                                        <th>Kategori</th>
+                                        <th>Alt kategori</th>
+                                        <th>Alt alt kategori</th>
+                                        <th>SKU</th>
+                                        <th>Fiyat</th>
+                                        <th>Stok</th>
+                                        <th>Son senkron</th>
+                                        <th></th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     @forelse(($mappedProducts ?? []) as $map)
                                         @php $p = $map->product; @endphp
                                         <tr>
+                                            <td>
+                                                @if($p)
+                                                    <img src="{{ product_image_url($p->thumb_image) }}" alt=""
+                                                         class="rounded" width="56" height="56" style="object-fit:cover;">
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
                                             <td>{{ $p?->short_name ?: ($p?->name ?: '—') }}</td>
+                                            <td>{{ $p?->category?->name ?: '—' }}</td>
+                                            <td>{{ $p?->subCategory?->name ?: '—' }}</td>
+                                            <td>{{ $p?->childCategory?->name ?: '—' }}</td>
                                             <td><code>{{ $p?->sku ?: ($map->softtr_sku ?: '—') }}</code></td>
                                             <td>{{ $p ? number_format((float)$p->price, 2, ',', '.') : '—' }}</td>
-                                            <td>{{ $p ? (int)$p->qty : '—' }}</td>
-                                            <td><code>{{ $map->softtr_product_id }}</code></td>
+                                            <td>
+                                                @if($p)
+                                                    @if((int)$p->qty < 1)
+                                                        <span class="badge badge-warning">{{ (int)$p->qty }}</span>
+                                                    @else
+                                                        {{ (int)$p->qty }}
+                                                    @endif
+                                                @else
+                                                    —
+                                                @endif
+                                            </td>
                                             <td>{{ $map->last_synced_at?->format('d.m.Y H:i') ?: '—' }}</td>
                                             <td>
                                                 @if($p)
@@ -182,7 +218,7 @@
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="7" class="text-center text-muted py-4">Henüz eşleşmiş ürün yok.</td></tr>
+                                        <tr><td colspan="10" class="text-center text-muted py-4">Henüz eşleşmiş ürün yok.</td></tr>
                                     @endforelse
                                     </tbody>
                                 </table>

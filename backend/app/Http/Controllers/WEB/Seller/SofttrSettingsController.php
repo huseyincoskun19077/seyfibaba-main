@@ -35,7 +35,12 @@ class SofttrSettingsController extends Controller
         $settings = VendorSofttrSetting::query()->where('vendor_id', $seller->id)->first();
         $mappedProducts = VendorSofttrProductMap::query()
             ->where('vendor_id', $seller->id)
-            ->with(['product:id,name,short_name,sku,price,offer_price,qty,status,thumb_image'])
+            ->with([
+                'product:id,name,short_name,sku,price,offer_price,qty,status,thumb_image,category_id,sub_category_id,child_category_id',
+                'product.category:id,name',
+                'product.subCategory:id,name',
+                'product.childCategory:id,name',
+            ])
             ->orderByDesc('last_synced_at')
             ->orderByDesc('id')
             ->paginate(30);
