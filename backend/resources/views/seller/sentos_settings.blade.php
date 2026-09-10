@@ -10,17 +10,18 @@
             <h1>Sentos Entegrasyonu</h1>
             <div class="section-header-breadcrumb">
                 <div class="breadcrumb-item active"><a href="{{ route('seller.dashboard') }}">Panel</a></div>
-                <div class="breadcrumb-item"><a href="{{ route('seller.integrations.index') }}">Eklentiler</a></div>
+                <div class="breadcrumb-item"><a href="{{ route('seller.integrations.index') }}">Entegrasyon</a></div>
                 <div class="breadcrumb-item">Sentos</div>
             </div>
         </div>
 
         <div class="section-body">
             <div class="alert alert-info">
-                <strong>Sentos eklentisi (tek yön ürün):</strong>
+                <strong>Sentos entegrasyonu (tek yön ürün):</strong>
                 Ürünler <strong>Sentos → Seyfibaba</strong> çekilir. Seyfibaba’da ürün düzenlemek Sentos kataloğunu değiştirmez.
                 Saatlik otomatik senkron yeni ürünleri de alır; fiyat/stok günceller.
                 Ödenen siparişler (ve kargo) Seyfibaba → Sentos’a gider. Checkout/Iyzico Sentos hatasında bozulmaz.
+                <br><strong>Not:</strong> Sentos açıkken Softtr veya başka katalog entegrasyonu açılamaz.
             </div>
 
             <div class="row">

@@ -4,10 +4,11 @@ namespace App\Http\Controllers\WEB\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Models\VendorSentosSetting;
+use App\Support\VendorCatalogIntegration;
 use Auth;
 
 /**
- * Seller integrations hub. Opt-in plugins only; does not alter marketplace core.
+ * Seller integrations hub. Opt-in; one catalog integration at a time.
  */
 class SellerIntegrationsController extends Controller
 {
@@ -28,9 +29,11 @@ class SellerIntegrationsController extends Controller
             $sentos = VendorSentosSetting::query()->where('vendor_id', $seller->id)->first();
         }
 
+        $activeKey = VendorCatalogIntegration::activeKey((int) $seller->id);
+
         $integrations = [
             [
-                'key' => 'sentos',
+                'key' => VendorCatalogIntegration::SENTOS,
                 'name' => 'Sentos',
                 'description' => 'Ürün çekme, stok/fiyat, ödenen sipariş aktarımı ve kargo durumu.',
                 'enabled_globally' => (bool) config('features.sentos_enabled', true),
@@ -38,10 +41,12 @@ class SellerIntegrationsController extends Controller
                 'status_label' => $this->sentosStatusLabel($sentos),
                 'route' => 'seller.sentos.index',
                 'icon' => 'fas fa-store',
-                'badge' => 'Aktif eklenti',
+                'badge' => 'Hazır',
+                'locked' => ! VendorCatalogIntegration::canUse((int) $seller->id, VendorCatalogIntegration::SENTOS),
+                'lock_message' => VendorCatalogIntegration::blockMessage((int) $seller->id, VendorCatalogIntegration::SENTOS),
             ],
             [
-                'key' => 'softtr',
+                'key' => VendorCatalogIntegration::SOFTTR,
                 'name' => 'Softtr',
                 'description' => 'Yakında: Softtr mağaza entegrasyonu.',
                 'enabled_globally' => false,
@@ -50,6 +55,10 @@ class SellerIntegrationsController extends Controller
                 'route' => null,
                 'icon' => 'fas fa-box-open',
                 'badge' => 'Planlandı',
+                'locked' => $activeKey !== null && $activeKey !== VendorCatalogIntegration::SOFTTR,
+                'lock_message' => $activeKey && $activeKey !== VendorCatalogIntegration::SOFTTR
+                    ? VendorCatalogIntegration::blockMessage((int) $seller->id, VendorCatalogIntegration::SOFTTR)
+                    : '',
             ],
             [
                 'key' => 'other',
@@ -61,12 +70,18 @@ class SellerIntegrationsController extends Controller
                 'route' => null,
                 'icon' => 'fas fa-puzzle-piece',
                 'badge' => 'Planlandı',
+                'locked' => $activeKey !== null,
+                'lock_message' => $activeKey
+                    ? VendorCatalogIntegration::blockMessage((int) $seller->id, 'other')
+                    : '',
             ],
         ];
 
         return view('seller.integrations.index', [
             'seller' => $seller,
             'integrations' => $integrations,
+            'activeIntegration' => $activeKey,
+            'activeIntegrationLabel' => VendorCatalogIntegration::label($activeKey),
         ]);
     }
 

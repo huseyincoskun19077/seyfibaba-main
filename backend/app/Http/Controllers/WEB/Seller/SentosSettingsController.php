@@ -5,6 +5,7 @@ namespace App\Http\Controllers\WEB\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\VendorSentosSetting;
 use App\Services\Sentos\SentosApiClient;
+use App\Support\VendorCatalogIntegration;
 use Auth;
 use Illuminate\Http\Request;
 
@@ -96,6 +97,16 @@ class SentosSettingsController extends Controller
         $settings->channel_id = $data['channel_id'] ?? $settings->channel_id;
         $settings->warehouse_id = $data['warehouse_id'] ?? $settings->warehouse_id;
         $settings->vendor_id = $seller->id;
+
+        if ($settings->is_enabled && ! VendorCatalogIntegration::canUse((int) $seller->id, VendorCatalogIntegration::SENTOS)) {
+            // Allow keep-enabled if Sentos is already the active one; block only when another wins.
+            // canUse is true when active is null or sentos — if another is active, refuse enable.
+            return back()->with([
+                'messege' => VendorCatalogIntegration::blockMessage((int) $seller->id, VendorCatalogIntegration::SENTOS),
+                'alert-type' => 'error',
+            ])->withInput();
+        }
+
         $settings->save();
 
         return back()->with([
