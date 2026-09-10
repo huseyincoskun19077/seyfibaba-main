@@ -105,6 +105,8 @@ class SofttrProductSyncService
             ->get()
             ->keyBy(fn (VendorSofttrProductMap $m) => (string) $m->softtr_product_id);
 
+        $shopOrigin = $this->client->shopOrigin($setting);
+
         $this->categoryResolver->beginBulkImport(max(count($rawProducts), 1));
 
         try {
@@ -113,7 +115,7 @@ class SofttrProductSyncService
                     continue;
                 }
 
-                $normalized = $this->normalizer->normalize($raw);
+                $normalized = $this->normalizer->normalize($raw, $shopOrigin);
                 if (! $normalized) {
                     $stats['skipped']++;
                     continue;
@@ -308,13 +310,26 @@ class SofttrProductSyncService
 
         $thumbImage = $product->thumb_image ?? '';
         if (! ProductImageUrl::hasImage($thumbImage) && $data['image_url'] !== '') {
-            $external = ProductImageUrl::normalizeForStorage($data['image_url']);
-            if ($external) {
-                $thumbImage = $external;
-            } else {
-                $stored = $this->imageStorage->storeFromUrl($data['image_url'], $shortName ?: 'softtr', 20);
+            $candidates = [$data['image_url']];
+            if (preg_match('#^(https?://[^/]+)/(Data|Uploads|uploads|images|Images|Content/Images)/(.+)$#i', $data['image_url'], $m)) {
+                foreach (['Data', 'Uploads', 'uploads', 'images', 'Images', 'Content/Images'] as $folder) {
+                    $candidates[] = $m[1] . '/' . $folder . '/' . $m[3];
+                }
+            }
+
+            foreach (array_unique($candidates) as $candidateUrl) {
+                $external = ProductImageUrl::normalizeForStorage($candidateUrl);
+                if (! $external) {
+                    continue;
+                }
+                $stored = $this->imageStorage->storeFromUrl($external, $shortName ?: 'softtr', 15);
                 if ($stored) {
                     $thumbImage = $stored;
+                    break;
+                }
+                // Softtr CDN URL — show even if download blocked.
+                if (! ProductImageUrl::hasImage($thumbImage)) {
+                    $thumbImage = $external;
                 }
             }
         }

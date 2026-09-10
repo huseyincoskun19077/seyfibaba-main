@@ -149,6 +149,16 @@ class SofttrApiClient
         return $all;
     }
 
+    /**
+     * Shop origin without /api — used to absolutize relative Softtr image paths.
+     */
+    public function shopOrigin(VendorSofttrSetting $setting): string
+    {
+        $base = rtrim($this->normalizeBaseUrl($setting->api_base_url), '/');
+
+        return (string) preg_replace('#/api$#i', '', $base);
+    }
+
     public function request(
         VendorSofttrSetting $setting,
         string $method,

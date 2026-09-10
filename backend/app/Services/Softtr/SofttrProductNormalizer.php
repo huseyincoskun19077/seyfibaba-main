@@ -3,8 +3,8 @@
 namespace App\Services\Softtr;
 
 /**
- * Softtr product payloads → stable shape for Seyfibaba Product fields (names unchanged).
- * Docs list GET /products/list without a full schema; field synonyms cover Softtr Excel + typical API keys.
+ * Softtr product payloads → Seyfibaba Product fields (column names unchanged).
+ * Softtr list schema is undocumented; synonyms + relative image resolution cover real shops.
  */
 class SofttrProductNormalizer
 {
@@ -29,14 +29,25 @@ class SofttrProductNormalizer
      *   weight: float|int|string
      * }|null
      */
-    public function normalize(array $raw): ?array
+    public function normalize(array $raw, string $shopOrigin = ''): ?array
     {
+        // Some Softtr responses wrap the product under "product" / "data".
+        foreach (['product', 'Product', 'item', 'content'] as $wrap) {
+            if (! empty($raw[$wrap]) && is_array($raw[$wrap]) && ! $this->isList($raw[$wrap])) {
+                $raw = array_merge($raw[$wrap], $raw);
+                break;
+            }
+        }
+
         $id = $this->first($raw, [
-            'productId', 'product_id', 'id', 'Id', 'variantId', 'variant_id',
+            'productId', 'product_id', 'ProductId', 'id', 'Id', 'ID',
+            'variantId', 'variant_id', 'productID',
         ]);
-        $barcode = trim((string) $this->first($raw, ['barcode', 'Barcode', 'ean', 'gtin']));
+        $barcode = trim((string) $this->first($raw, [
+            'barcode', 'Barcode', 'BARCODE', 'ean', 'gtin', 'barkod',
+        ]));
         $sku = trim((string) $this->first($raw, [
-            'code', 'sku', 'product_code', 'productCode', 'stock_code', 'itemCode',
+            'code', 'sku', 'SKU', 'product_code', 'productCode', 'stock_code', 'itemCode', 'stokKodu',
         ]));
 
         if (($id === null || $id === '') && $barcode !== '') {
@@ -47,7 +58,8 @@ class SofttrProductNormalizer
         }
 
         $name = trim((string) $this->first($raw, [
-            'title_tr', 'title', 'name', 'product_name', 'productName', 'itemTitle', 'Name',
+            'title_tr', 'title', 'Title', 'name', 'Name', 'product_name', 'productName',
+            'itemTitle', 'urunAdi', 'urun_adi',
         ]));
 
         if ($id === null || $id === '' || $name === '') {
@@ -55,7 +67,7 @@ class SofttrProductNormalizer
         }
 
         $categoryPath = trim((string) $this->first($raw, [
-            'products_cat_associate', 'category', 'category_name', 'categoryName', 'kategori',
+            'products_cat_associate', 'category', 'category_name', 'categoryName', 'kategori', 'categoryPath',
         ]));
         [$categoryName, $subName, $childName] = $this->splitCategoryPath($categoryPath);
         if ($categoryName === '') {
@@ -63,19 +75,22 @@ class SofttrProductNormalizer
         }
 
         $price = $this->toFloat($this->first($raw, [
-            'mainProductPrice', 'unit_price', 'unitPrice', 'price', 'sale_price', 'list_price',
+            'mainProductPrice', 'MainProductPrice', 'unit_price', 'unitPrice', 'price', 'Price',
+            'sale_price', 'list_price', 'satisFiyati', 'fiyat',
         ]));
         $offer = $this->toFloat($this->first($raw, [
             'indirimli_fiyat', 'offer_price', 'offerPrice', 'discount_price', 'variantPrice',
+            'VariantPrice', 'indirimliFiyat',
         ]));
+        // variantPrice is often an add-on; only treat as offer if main price exists and variant is lower positive standalone.
         if ($offer > 0 && $price <= 0) {
             $price = $offer;
             $offer = 0;
+        } elseif ($offer >= $price && $price > 0) {
+            $offer = 0;
         }
 
-        $qty = (int) $this->toFloat($this->first($raw, [
-            'stockAmount', 'stock_amount', 'stok', 'stock', 'quantity', 'qty',
-        ]));
+        $qty = $this->extractStockQty($raw);
 
         $categoryKey = strtolower(trim(implode('>', array_filter([$categoryName, $subName, $childName]))));
         if ($categoryKey === '') {
@@ -94,15 +109,17 @@ class SofttrProductNormalizer
             'sub_category_name' => $subName,
             'child_category_name' => $childName,
             'category_key' => 'path:' . $categoryKey,
-            'brand' => trim((string) $this->first($raw, ['brands', 'brand', 'brand_name', 'marka', 'itemBrand'])),
+            'brand' => trim((string) $this->first($raw, [
+                'brands', 'brand', 'Brand', 'brand_name', 'marka', 'itemBrand',
+            ])),
             'short_description' => trim((string) $this->first($raw, [
-                'description_tr', 'short_description', 'summary', 'description',
+                'description_tr', 'short_description', 'summary', 'description', 'aciklama',
             ])),
             'long_description' => trim((string) $this->first($raw, [
-                'detail_tr', 'long_description', 'detail', 'content', 'html_content',
+                'detail_tr', 'long_description', 'detail', 'content', 'html_content', 'detay',
             ])),
-            'image_url' => $this->extractImageUrl($raw),
-            'weight' => $this->first($raw, ['desi', 'weight', 'volumetric_weight']) ?? 0,
+            'image_url' => $this->extractImageUrl($raw, $shopOrigin),
+            'weight' => $this->first($raw, ['desi', 'weight', 'volumetric_weight', 'Desi']) ?? 0,
         ];
     }
 
@@ -119,7 +136,7 @@ class SofttrProductNormalizer
             return array_values(array_filter($payload, 'is_array'));
         }
 
-        foreach (['data', 'content', 'products', 'items', 'result', 'results'] as $key) {
+        foreach (['data', 'content', 'products', 'items', 'result', 'results', 'productList'] as $key) {
             if (! isset($payload[$key])) {
                 continue;
             }
@@ -133,9 +150,55 @@ class SofttrProductNormalizer
             if (is_array($chunk) && isset($chunk['data']) && is_array($chunk['data']) && $this->isList($chunk['data'])) {
                 return array_values(array_filter($chunk['data'], 'is_array'));
             }
+            if (is_array($chunk) && isset($chunk['products']) && is_array($chunk['products']) && $this->isList($chunk['products'])) {
+                return array_values(array_filter($chunk['products'], 'is_array'));
+            }
         }
 
         return [];
+    }
+
+    /**
+     * Softtr stockAmount (+ variants). Docs use stockAmount on price/stock updates.
+     *
+     * @param  array<string, mixed>  $raw
+     */
+    private function extractStockQty(array $raw): int
+    {
+        $fromVariants = 0;
+        foreach (['variants', 'variantList', 'productVariants', 'Varyants', 'varyants'] as $key) {
+            if (empty($raw[$key]) || ! is_array($raw[$key])) {
+                continue;
+            }
+            foreach ($raw[$key] as $variant) {
+                if (! is_array($variant)) {
+                    continue;
+                }
+                $fromVariants += (int) $this->toFloat($this->first($variant, [
+                    'stockAmount', 'StockAmount', 'stock_amount', 'stok', 'stock', 'quantity', 'qty',
+                    'stokMiktari', 'stokAdedi', 'availableStock', 'totalStock',
+                ]));
+            }
+        }
+
+        $direct = $this->first($raw, [
+            'stockAmount', 'StockAmount', 'stock_amount', 'stok', 'Stok', 'stock', 'Stock',
+            'quantity', 'qty', 'stokMiktari', 'stokAdedi', 'StokMiktari', 'availableStock',
+            'totalStock', 'toplamStok', 'erp_stock',
+        ]);
+
+        // Nested stock object: { amount: 10 } / { stockAmount: 10 }
+        if (($direct === null || $direct === '') && isset($raw['stock']) && is_array($raw['stock'])) {
+            $direct = $this->first($raw['stock'], ['stockAmount', 'amount', 'qty', 'quantity', 'value']);
+        }
+
+        $fromProduct = (int) $this->toFloat($direct);
+
+        if ($fromVariants > 0) {
+            return max(0, $fromVariants);
+        }
+
+        return max(0, $fromProduct);
     }
 
     /**
@@ -150,12 +213,29 @@ class SofttrProductNormalizer
             }
         }
 
+        // Case-insensitive fallback
+        $lowerMap = [];
+        foreach ($raw as $k => $v) {
+            if (is_string($k) || is_int($k)) {
+                $lowerMap[strtolower((string) $k)] = $v;
+            }
+        }
+        foreach ($keys as $key) {
+            $lk = strtolower($key);
+            if (array_key_exists($lk, $lowerMap) && $lowerMap[$lk] !== null && $lowerMap[$lk] !== '') {
+                return $lowerMap[$lk];
+            }
+        }
+
         return null;
     }
 
     private function toFloat(mixed $value): float
     {
         if ($value === null || $value === '') {
+            return 0.0;
+        }
+        if (is_bool($value)) {
             return 0.0;
         }
         if (is_numeric($value)) {
@@ -192,42 +272,94 @@ class SofttrProductNormalizer
     }
 
     /**
+     * Softtr often returns relative paths or bare filenames (Excel picture column).
+     *
      * @param  array<string, mixed>  $raw
      */
-    private function extractImageUrl(array $raw): string
+    private function extractImageUrl(array $raw, string $shopOrigin = ''): string
     {
-        $direct = $this->first($raw, [
-            'picture', 'image_url', 'imageUrl', 'image', 'photo', 'thumbnail', 'gorsel',
-        ]);
-        if (is_string($direct) && preg_match('#^https?://#i', $direct)) {
-            return trim($direct);
-        }
-        if (is_array($direct)) {
-            foreach (['url', 'src', 'path', 'image'] as $k) {
-                if (! empty($direct[$k]) && is_string($direct[$k]) && preg_match('#^https?://#i', $direct[$k])) {
-                    return trim($direct[$k]);
-                }
+        $origin = rtrim($shopOrigin, '/');
+
+        $candidates = [];
+        foreach ([
+            'picture', 'Picture', 'image_url', 'imageUrl', 'image', 'Image', 'photo', 'Photo',
+            'thumbnail', 'thumb', 'gorsel', 'resim', 'resimUrl', 'productImage', 'product_image',
+            'image1', 'Image1', 'mainImage', 'cover',
+        ] as $key) {
+            $val = $this->first($raw, [$key]);
+            if ($val !== null && $val !== '') {
+                $candidates[] = $val;
             }
         }
 
-        foreach (['images', 'pictures', 'gallery'] as $key) {
+        foreach (['images', 'pictures', 'gallery', 'Images', 'Pictures'] as $key) {
             if (empty($raw[$key]) || ! is_array($raw[$key])) {
                 continue;
             }
             $first = $raw[$key][0] ?? null;
-            if (is_string($first) && preg_match('#^https?://#i', $first)) {
-                return trim($first);
-            }
-            if (is_array($first)) {
-                foreach (['url', 'src', 'path'] as $k) {
-                    if (! empty($first[$k]) && is_string($first[$k]) && preg_match('#^https?://#i', $first[$k])) {
-                        return trim($first[$k]);
-                    }
-                }
+            if ($first !== null) {
+                $candidates[] = $first;
             }
         }
 
-        return is_string($direct) ? trim($direct) : '';
+        foreach ($candidates as $candidate) {
+            $resolved = $this->resolveImageCandidate($candidate, $origin);
+            if ($resolved !== '') {
+                return $resolved;
+            }
+        }
+
+        return '';
+    }
+
+    private function resolveImageCandidate(mixed $candidate, string $origin): string
+    {
+        if (is_array($candidate)) {
+            foreach (['url', 'src', 'path', 'image', 'picture', 'href'] as $k) {
+                if (! empty($candidate[$k]) && is_string($candidate[$k])) {
+                    $inner = $this->resolveImageCandidate($candidate[$k], $origin);
+                    if ($inner !== '') {
+                        return $inner;
+                    }
+                }
+            }
+
+            return '';
+        }
+
+        $path = trim((string) $candidate);
+        if ($path === '' || strcasecmp($path, 'null') === 0) {
+            return '';
+        }
+
+        if (str_starts_with($path, '//')) {
+            return 'https:' . $path;
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        if ($origin === '') {
+            return $path;
+        }
+
+        // Absolute path on shop: /Data/xxx.jpg
+        if (str_starts_with($path, '/')) {
+            return $origin . $path;
+        }
+
+        // Relative path with folders
+        if (str_contains($path, '/')) {
+            return $origin . '/' . ltrim($path, '/');
+        }
+
+        // Bare filename — Softtr shops commonly keep files under /Data/
+        if ($origin !== '') {
+            return $origin . '/Data/' . $path;
+        }
+
+        return $path;
     }
 
     private function isList(array $arr): bool

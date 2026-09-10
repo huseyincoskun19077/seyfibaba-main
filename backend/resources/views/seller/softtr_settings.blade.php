@@ -21,11 +21,11 @@
             @endif
 
             <div class="alert alert-info">
-                <strong>Softtr (tek yön ürün):</strong>
-                Ürünler Softtr mağazanızdan <code>GET /products/list</code> ile çekilir.
-                Softtr’daki <code>updateStokAndPrice</code> Softtr’ye yazar; Seyfibaba stokunu güncellemez — biz Softtr’den çekeriz.
-                Saatlik otomatik senkron yeni ürün + fiyat/stok günceller.
-                Sentos ile aynı anda açılamaz.
+                <strong>Softtr (yalnızca ürün):</strong>
+                Softtr API ürün listeleme + stok/fiyat okuma destekler; <strong>Seyfibaba siparişlerini Softtr’ye gönderme yok</strong>
+                (dokümandaki sipariş endpoint’leri Softtr siparişlerini okumak/güncellemek içindir).
+                Ürünler Softtr → Seyfibaba çekilir. Softtr’daki <code>updateStokAndPrice</code> Softtr’ye yazar; biz kullanmayız.
+                Saatlik senkron: yeni ürün + fiyat + stok. Sentos ile aynı anda açılamaz.
                 Doküman: <a href="https://api.softtr.net/docbeta/" target="_blank" rel="noopener">api.softtr.net/docbeta</a>
             </div>
 
