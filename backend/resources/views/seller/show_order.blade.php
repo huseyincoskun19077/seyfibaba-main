@@ -41,6 +41,41 @@
                                 </div>
                                 <hr>
                                 @include('partials.seller_order_flow', ['order' => $order])
+                                @if(!empty($sentosEnabledForSeller))
+                                    <div class="alert {{ ($sentosOrderMap && $sentosOrderMap->last_sync_status === 'success') ? 'alert-success' : (($sentosOrderMap && $sentosOrderMap->last_sync_status === 'failed') ? 'alert-danger' : 'alert-secondary') }} mb-3">
+                                        <strong><i class="fas fa-plug mr-1"></i> Sentos</strong>
+                                        @if(!$sentosOrderMap)
+                                            <span class="ml-2">Bu sipariş henüz Sentos’a gönderilmedi.</span>
+                                            <small class="d-block text-muted mt-1">Entegrasyon açıksa ödeme sonrası otomatik gider. Gerekirse Eklentiler → Sentos ayarlarını kontrol edin.</small>
+                                        @elseif($sentosOrderMap->last_sync_status === 'success')
+                                            <span class="ml-2">Sentos’a aktarıldı.</span>
+                                            <small class="d-block mt-1">
+                                                Sentos sipariş no:
+                                                <code>{{ $sentosOrderMap->sentos_order_id ?: $sentosOrderMap->sentos_external_order_id }}</code>
+                                                @if($sentosOrderMap->last_sentos_status)
+                                                    — durum kodu: {{ $sentosOrderMap->last_sentos_status }}
+                                                @endif
+                                                @if($sentosOrderMap->last_synced_at)
+                                                    — {{ $sentosOrderMap->last_synced_at->format('d.m.Y H:i') }}
+                                                @endif
+                                            </small>
+                                            @if($sentosOrderMap->last_sync_message)
+                                                <small class="d-block text-muted">{{ $sentosOrderMap->last_sync_message }}</small>
+                                            @endif
+                                        @else
+                                            <span class="ml-2">Sentos aktarımı başarısız / bekliyor.</span>
+                                            @if($sentosOrderMap->last_sync_message)
+                                                <small class="d-block mt-1">{{ $sentosOrderMap->last_sync_message }}</small>
+                                            @endif
+                                        @endif
+                                        @if(!$sentosOrderMap || $sentosOrderMap->last_sync_status !== 'success')
+                                            <form action="{{ route('seller.sentos.push-order', $order->id) }}" method="POST" class="mt-2 mb-0">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">Sentos’a Şimdi Gönder</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                @endif
                                 @php
                                     $orderAddress = $order->orderAddress;
                                 @endphp

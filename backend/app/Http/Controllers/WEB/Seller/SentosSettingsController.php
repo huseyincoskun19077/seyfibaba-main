@@ -32,9 +32,17 @@ class SentosSettingsController extends Controller
 
         $settings = VendorSentosSetting::query()->where('vendor_id', $seller->id)->first();
 
+        $mappedProducts = \App\Models\VendorSentosProductMap::query()
+            ->where('vendor_id', $seller->id)
+            ->with(['product:id,name,short_name,sku,price,offer_price,qty,status,thumb_image'])
+            ->orderByDesc('last_synced_at')
+            ->orderByDesc('id')
+            ->paginate(30);
+
         return view('seller.sentos_settings', [
             'seller' => $seller,
             'settings' => $settings,
+            'mappedProducts' => $mappedProducts,
             'normalizedPreview' => $settings
                 ? $client->normalizeBaseUrl((string) $settings->api_base_url)
                 : '',
@@ -197,5 +205,60 @@ class SentosSettingsController extends Controller
             'messege' => $result['message'],
             'alert-type' => $result['ok'] ? 'success' : 'error',
         ]);
+    }
+
+    public function pushOrder(int $orderId, \App\Services\Sentos\SentosOrderSyncService $orderSync)
+    {
+        if (! config('features.sentos_enabled', true)) {
+            abort(404);
+        }
+
+        $seller = Auth::guard('web')->user()?->seller;
+        if (! $seller) {
+            abort(403);
+        }
+
+        $settings = VendorSentosSetting::query()->where('vendor_id', $seller->id)->first();
+        if (! $settings || ! $settings->is_enabled || ! $settings->hasCredentials()) {
+            return back()->with([
+                'messege' => 'Sentos entegrasyonu kapalı veya API bilgisi eksik.',
+                'alert-type' => 'error',
+            ]);
+        }
+
+        $order = \App\Models\Order::query()
+            ->where('id', $orderId)
+            ->where('payment_status', 1)
+            ->whereHas('orderProducts', fn ($q) => $q->where('seller_id', $seller->id))
+            ->first();
+
+        if (! $order) {
+            return back()->with([
+                'messege' => 'Sipariş bulunamadı veya size ait değil.',
+                'alert-type' => 'error',
+            ]);
+        }
+
+        try {
+            $map = $orderSync->pushForVendor($order, (int) $seller->id);
+            if (! $map) {
+                return back()->with([
+                    'messege' => 'Sipariş Sentos’a gönderilemedi (sipariş gönderimi kapalı olabilir).',
+                    'alert-type' => 'error',
+                ]);
+            }
+
+            return back()->with([
+                'messege' => $map->last_sync_status === 'success'
+                    ? ('Sipariş Sentos’a aktarıldı. Sentos ID: ' . ($map->sentos_order_id ?: $map->sentos_external_order_id))
+                    : ('Sentos aktarımı: ' . ($map->last_sync_message ?: 'başarısız')),
+                'alert-type' => $map->last_sync_status === 'success' ? 'success' : 'error',
+            ]);
+        } catch (\Throwable $e) {
+            return back()->with([
+                'messege' => 'Sentos aktarım hatası: ' . $e->getMessage(),
+                'alert-type' => 'error',
+            ]);
+        }
     }
 }

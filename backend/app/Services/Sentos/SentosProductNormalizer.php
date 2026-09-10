@@ -28,7 +28,7 @@ class SentosProductNormalizer
      *   weight: float|int|string
      * }|null
      */
-    public function normalize(array $raw): ?array
+    public function normalize(array $raw, ?int $preferredWarehouseId = null): ?array
     {
         $id = $this->first($raw, ['id', 'product_id', 'productId', 'Id']);
         $name = trim((string) $this->first($raw, ['name', 'title', 'product_name', 'productName', 'Name']));
@@ -43,14 +43,15 @@ class SentosProductNormalizer
         $categoryKey = $this->buildCategoryKey($raw, $categoryName, $subName, $childName);
 
         $price = $this->toFloat($this->first($raw, [
-            'price', 'sale_price', 'salePrice', 'unit_price', 'unitPrice', 'list_price', 'mainProductPrice',
+            'sale_price', 'salePrice', 'price', 'unit_price', 'unitPrice', 'list_price', 'mainProductPrice', 'purchase_price',
         ]));
+        if ($price <= 0) {
+            $price = $this->extractNestedPrice($raw);
+        }
         $offer = $this->toFloat($this->first($raw, [
             'offer_price', 'offerPrice', 'discount_price', 'discountPrice', 'special_price',
         ]));
-        $qty = (int) $this->toFloat($this->first($raw, [
-            'stock', 'stock_amount', 'stockAmount', 'quantity', 'qty', 'inventory',
-        ]));
+        $qty = $this->extractStockQty($raw, $preferredWarehouseId);
 
         $sku = trim((string) $this->first($raw, ['sku', 'code', 'product_code', 'productCode', 'stock_code']));
         $barcode = trim((string) $this->first($raw, ['barcode', 'barcode_number', 'gtin', 'ean']));
@@ -72,7 +73,7 @@ class SentosProductNormalizer
                 'short_description', 'shortDescription', 'summary', 'description',
             ])),
             'long_description' => trim((string) $this->first($raw, [
-                'long_description', 'longDescription', 'detail', 'details', 'content', 'html_content',
+                'long_description', 'longDescription', 'detail', 'details', 'content', 'html_content', 'description_detail',
             ])),
             'image_url' => $this->extractImageUrl($raw),
             'weight' => $this->first($raw, ['weight', 'desi', 'volumetric_weight']) ?? 0,
@@ -135,10 +136,125 @@ class SentosProductNormalizer
         if (is_numeric($value)) {
             return (float) $value;
         }
-        $normalized = str_replace([' ', ','], ['', '.'], (string) $value);
-        $normalized = preg_replace('/[^0-9.\-]/', '', $normalized) ?? '0';
+        $raw = trim((string) $value);
+        if (preg_match('/^\d{1,3}(\.\d{3})+,\d+$/', $raw)) {
+            $raw = str_replace('.', '', $raw);
+            $raw = str_replace(',', '.', $raw);
+        } else {
+            $raw = str_replace([' ', ','], ['', '.'], $raw);
+        }
+        $normalized = preg_replace('/[^0-9.\-]/', '', $raw) ?? '0';
 
         return is_numeric($normalized) ? (float) $normalized : 0.0;
+    }
+
+    /**
+     * Sentos stock lives in stocks: [{warehouse, stock}] and/or variants[].stocks.
+     *
+     * @param  array<string, mixed>  $raw
+     */
+    private function extractStockQty(array $raw, ?int $preferredWarehouseId = null): int
+    {
+        $fromProductStocks = $this->sumStocksArray($raw['stocks'] ?? null, $preferredWarehouseId);
+        $fromVariantStocks = 0;
+
+        if (! empty($raw['variants']) && is_array($raw['variants'])) {
+            foreach ($raw['variants'] as $variant) {
+                if (! is_array($variant)) {
+                    continue;
+                }
+                $variantSum = $this->sumStocksArray($variant['stocks'] ?? null, $preferredWarehouseId);
+                if ($variantSum > 0) {
+                    $fromVariantStocks += $variantSum;
+                } else {
+                    $fromVariantStocks += (int) $this->toFloat(
+                        $variant['stock'] ?? $variant['quantity'] ?? $variant['qty'] ?? 0
+                    );
+                }
+            }
+        }
+
+        // Prefer warehouse stocks arrays (Sentos shape); avoid double-counting flat + nested.
+        if ($fromVariantStocks > 0) {
+            return max(0, $fromVariantStocks);
+        }
+        if ($fromProductStocks > 0) {
+            return max(0, $fromProductStocks);
+        }
+
+        $direct = $this->first($raw, [
+            'stock', 'stock_amount', 'stockAmount', 'quantity', 'qty', 'inventory', 'erp_stock',
+        ]);
+
+        return max(0, (int) $this->toFloat($direct));
+    }
+
+    private function sumStocksArray(mixed $stocks, ?int $preferredWarehouseId = null): int
+    {
+        if (! is_array($stocks)) {
+            return 0;
+        }
+
+        $sum = 0;
+        $matchedPreferred = false;
+        foreach ($stocks as $row) {
+            if (! is_array($row)) {
+                if (is_numeric($row)) {
+                    $sum += (int) $row;
+                }
+                continue;
+            }
+            $qty = (int) $this->toFloat($row['stock'] ?? $row['quantity'] ?? $row['qty'] ?? 0);
+            $warehouse = isset($row['warehouse'])
+                ? (int) $row['warehouse']
+                : (isset($row['warehouse_id']) ? (int) $row['warehouse_id'] : null);
+
+            if ($preferredWarehouseId && $warehouse === $preferredWarehouseId) {
+                if (! $matchedPreferred) {
+                    $sum = 0;
+                    $matchedPreferred = true;
+                }
+                $sum += $qty;
+                continue;
+            }
+            if (! $matchedPreferred) {
+                $sum += $qty;
+            }
+        }
+
+        return $sum;
+    }
+
+    /**
+     * @param  array<string, mixed>  $raw
+     */
+    private function extractNestedPrice(array $raw): float
+    {
+        $prices = $raw['prices'] ?? null;
+        if (! is_array($prices)) {
+            return 0.0;
+        }
+
+        foreach (['b2c', 'B2C', 'sentos', 'default'] as $channel) {
+            if (! empty($prices[$channel]) && is_array($prices[$channel])) {
+                $sale = $this->toFloat($prices[$channel]['sale_price'] ?? $prices[$channel]['list_price'] ?? 0);
+                if ($sale > 0) {
+                    return $sale;
+                }
+            }
+        }
+
+        foreach ($prices as $channelPrices) {
+            if (! is_array($channelPrices)) {
+                continue;
+            }
+            $sale = $this->toFloat($channelPrices['sale_price'] ?? $channelPrices['list_price'] ?? 0);
+            if ($sale > 0) {
+                return $sale;
+            }
+        }
+
+        return 0.0;
     }
 
     /**

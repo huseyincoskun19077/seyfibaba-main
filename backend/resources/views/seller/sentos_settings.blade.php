@@ -17,8 +17,10 @@
 
         <div class="section-body">
             <div class="alert alert-info">
-                <strong>Sentos eklentisi:</strong> Ürün çekme + ödenen siparişleri Sentos’a aktarma + kargo bilgisini Sentos’a yazma.
-                Yalnızca bu satıcı ve Sentos açıkken çalışır; ödeme/checkout akışı Sentos hatasında bozulmaz.
+                <strong>Sentos eklentisi (tek yön ürün):</strong>
+                Ürünler <strong>Sentos → Seyfibaba</strong> çekilir. Seyfibaba’da ürün düzenlemek Sentos kataloğunu değiştirmez.
+                Saatlik otomatik senkron yeni ürünleri de alır; fiyat/stok günceller.
+                Ödenen siparişler (ve kargo) Seyfibaba → Sentos’a gider. Checkout/Iyzico Sentos hatasında bozulmaz.
             </div>
 
             <div class="row">
@@ -95,7 +97,7 @@
                                         <span class="custom-switch-indicator"></span>
                                         <span class="custom-switch-description">Sentos entegrasyonunu bu mağaza için aç</span>
                                     </label>
-                                    <p class="text-muted mb-0 mt-2">Kapalıyken ürün ve sipariş senkronu çalışmaz.</p>
+                                    <p class="text-muted mb-0 mt-2">Stok Sentos’taki <code>stocks</code> dizisinden okunur. İlk kurulumda «Ürünleri Çek» veya saatlik senkron ürünleri getirir; sonrasında sistem <strong>saatte bir</strong> yeni ürün + fiyat/stok günceller (API rate limit’ine uygun). Detay/düzenleme için <strong>Ürünler</strong> menüsünü kullanın.</p>
                                 </div>
 
                                 <div class="form-group">
@@ -219,6 +221,87 @@
                         <div class="card-body small text-muted">
                             API bilgileriniz şifreli saklanır. Bilgileri Sentos panelinden (Hesabım) alabilirsiniz.
                             Dokümantasyon: <a href="https://api.sentos.com.tr/docs" target="_blank" rel="noopener">api.sentos.com.tr/docs</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-boxes mr-2"></i>Sentos’tan gelen ürünler</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small mb-3">
+                                Bu liste yalnızca eşleşmiş Sentos ürünleridir. Ürün detayı / düzenleme için Ürünler menüsüne gidin —
+                                buradan Sentos tarafına yazılmaz.
+                            </p>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-md">
+                                    <thead>
+                                        <tr>
+                                            <th>Ürün</th>
+                                            <th>SKU</th>
+                                            <th>Fiyat</th>
+                                            <th>Stok</th>
+                                            <th>Sentos ID</th>
+                                            <th>Son senkron</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse(($mappedProducts ?? []) as $map)
+                                            @php $p = $map->product; @endphp
+                                            <tr>
+                                                <td>{{ $p?->short_name ?: ($p?->name ?: '—') }}</td>
+                                                <td><code>{{ $p?->sku ?: ($map->sentos_sku ?: '—') }}</code></td>
+                                                <td>
+                                                    @if($p)
+                                                        {{ number_format((float) $p->price, 2, ',', '.') }}
+                                                        @if((float) $p->offer_price > 0)
+                                                            <small class="text-success d-block">İnd: {{ number_format((float) $p->offer_price, 2, ',', '.') }}</small>
+                                                        @endif
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($p)
+                                                        @if((int) $p->qty < 1)
+                                                            <span class="badge badge-warning">Stok eksik ({{ (int) $p->qty }})</span>
+                                                        @else
+                                                            {{ (int) $p->qty }}
+                                                        @endif
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </td>
+                                                <td><code>{{ $map->sentos_product_id }}</code></td>
+                                                <td>{{ $map->last_synced_at?->format('d.m.Y H:i') ?: '—' }}</td>
+                                                <td>
+                                                    @if($p)
+                                                        <a href="{{ route('seller.product.edit', $p->id) }}" class="btn btn-sm btn-primary">
+                                                            Ürünlerde aç
+                                                        </a>
+                                                    @else
+                                                        <span class="text-muted">Kayıt yok</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted py-4">
+                                                    Henüz eşleşmiş ürün yok. Entegrasyonu açıp «Ürünleri Çek» çalıştırın.
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                            @if(isset($mappedProducts) && method_exists($mappedProducts, 'links'))
+                                <div class="mt-2">{{ $mappedProducts->links() }}</div>
+                            @endif
                         </div>
                     </div>
                 </div>

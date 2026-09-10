@@ -94,16 +94,23 @@ class SentosApiClient
     }
 
     /**
+     * List products with optional pacing for Sentos rate limits
+     * (docs: identical-body GET ≈ 2/min — different page query is fine; we still pace).
+     *
      * @return list<array<string, mixed>>
      */
-    public function listAllProducts(VendorSentosSetting $setting, int $pageSize = 50, int $maxPages = 100): array
-    {
+    public function listAllProducts(
+        VendorSentosSetting $setting,
+        int $pageSize = 50,
+        int $maxPages = 100,
+        int $pageDelayMs = 0
+    ): array {
         $normalizer = app(SentosProductNormalizer::class);
         $all = [];
         $page = 1;
 
         while ($page <= $maxPages) {
-            $response = $this->request($setting, 'GET', '/products', [
+            $response = $this->requestWithRateLimitRetry($setting, 'GET', '/products', [
                 'page' => $page,
                 'size' => $pageSize,
                 'pageSize' => $pageSize,
@@ -132,9 +139,46 @@ class SentosApiClient
             }
 
             $page++;
+            if ($pageDelayMs > 0 && $page <= $maxPages) {
+                usleep($pageDelayMs * 1000);
+            }
         }
 
         return $all;
+    }
+
+    /**
+     * Retry once after ~35s on HTTP 429 (Sentos GET identical-body ≈ 2/min).
+     */
+    public function requestWithRateLimitRetry(
+        VendorSentosSetting $setting,
+        string $method,
+        string $path,
+        array $query = [],
+        ?array $body = null,
+        int $timeout = 20,
+        int $maxAttempts = 3
+    ): Response {
+        $attempt = 0;
+        $response = null;
+
+        while ($attempt < $maxAttempts) {
+            $attempt++;
+            $response = $this->request($setting, $method, $path, $query, $body, $timeout);
+
+            if ($response->status() !== 429) {
+                return $response;
+            }
+
+            if ($attempt >= $maxAttempts) {
+                break;
+            }
+
+            // Docs: identical GET ≤ 2/min → wait just over half a minute before retry.
+            sleep(35);
+        }
+
+        return $response;
     }
 
     public function request(

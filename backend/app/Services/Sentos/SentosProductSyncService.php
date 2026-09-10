@@ -93,6 +93,7 @@ class SentosProductSyncService
         }
 
         $this->categoryResolver->beginBulkImport(max(count($rawProducts), 1));
+        $preferredWarehouseId = $setting->warehouse_id ? (int) $setting->warehouse_id : null;
 
         try {
             foreach ($rawProducts as $raw) {
@@ -100,7 +101,7 @@ class SentosProductSyncService
                     continue;
                 }
 
-                $normalized = $this->normalizer->normalize($raw);
+                $normalized = $this->normalizer->normalize($raw, $preferredWarehouseId);
                 if (! $normalized) {
                     $stats['skipped']++;
                     continue;
@@ -153,6 +154,204 @@ class SentosProductSyncService
             'message' => $message,
             'stats' => $stats,
         ];
+    }
+
+    /**
+     * Hourly sync: update price/stock for mapped products; create new Sentos products into Seyfibaba.
+     * One-way only (Sentos → Seyfibaba). Never writes product catalog back to Sentos.
+     * Uses paced GET /products to stay within Sentos rate limits.
+     *
+     * @return array{ok: bool, message: string, stats: array<string, int>}
+     */
+    public function syncVendorPriceStock(VendorSentosSetting $setting): array
+    {
+        @set_time_limit(0);
+        @ini_set('memory_limit', '512M');
+
+        $stats = [
+            'fetched' => 0,
+            'created' => 0,
+            'updated' => 0,
+            'unchanged' => 0,
+            'skipped' => 0,
+            'failed' => 0,
+        ];
+
+        if (! $setting->is_enabled || ! $setting->hasCredentials()) {
+            return [
+                'ok' => false,
+                'message' => 'Sentos kapalı veya API bilgisi eksik.',
+                'stats' => $stats,
+            ];
+        }
+
+        $vendor = Vendor::query()->find($setting->vendor_id);
+        if (! $vendor) {
+            return [
+                'ok' => false,
+                'message' => 'Satıcı bulunamadı.',
+                'stats' => $stats,
+            ];
+        }
+
+        try {
+            // ~2s between pages: keep under Sentos GET pressure (docs: identical GET ≈ 2/min).
+            $rawProducts = $this->client->listAllProducts($setting, 50, 100, 2000);
+        } catch (\Throwable $e) {
+            Log::warning('Sentos price/stock list failed', [
+                'vendor_id' => $vendor->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $setting->update([
+                'last_sync_at' => now(),
+                'last_sync_status' => 'failed',
+                'last_sync_message' => 'Saatlik senkron listesi alınamadı: ' . $e->getMessage(),
+                'last_sync_stats' => $stats,
+            ]);
+
+            return [
+                'ok' => false,
+                'message' => 'Ürün listesi alınamadı: ' . $e->getMessage(),
+                'stats' => $stats,
+            ];
+        }
+
+        $preferredWarehouseId = $setting->warehouse_id ? (int) $setting->warehouse_id : null;
+        $maps = VendorSentosProductMap::query()
+            ->where('vendor_id', $vendor->id)
+            ->get()
+            ->keyBy(fn (VendorSentosProductMap $m) => (string) $m->sentos_product_id);
+
+        $this->categoryResolver->beginBulkImport(max(count($rawProducts), 1));
+
+        try {
+            foreach ($rawProducts as $raw) {
+                if (! is_array($raw)) {
+                    continue;
+                }
+
+                $normalized = $this->normalizer->normalize($raw, $preferredWarehouseId);
+                if (! $normalized) {
+                    $stats['skipped']++;
+                    continue;
+                }
+
+                $stats['fetched']++;
+                $map = $maps->get((string) $normalized['sentos_id']);
+
+                try {
+                    if (! $map) {
+                        // New product in Sentos → create on Seyfibaba (pull only).
+                        $result = $this->upsertProduct($vendor, $normalized);
+                        if ($result === 'created') {
+                            $stats['created']++;
+                            $newMap = VendorSentosProductMap::query()
+                                ->where('vendor_id', $vendor->id)
+                                ->where('sentos_product_id', $normalized['sentos_id'])
+                                ->first();
+                            if ($newMap) {
+                                $maps->put((string) $normalized['sentos_id'], $newMap);
+                            }
+                        } elseif ($result === 'updated') {
+                            $stats['updated']++;
+                        } else {
+                            $stats['skipped']++;
+                        }
+                        continue;
+                    }
+
+                    $result = $this->updateMappedPriceStock($vendor, $map, $normalized);
+                    if ($result === 'updated') {
+                        $stats['updated']++;
+                    } elseif ($result === 'unchanged') {
+                        $stats['unchanged']++;
+                    } else {
+                        $stats['skipped']++;
+                    }
+                } catch (\Throwable $e) {
+                    $stats['failed']++;
+                    Log::warning('Sentos hourly product sync failed', [
+                        'vendor_id' => $vendor->id,
+                        'sentos_id' => $normalized['sentos_id'] ?? null,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        } finally {
+            $this->categoryResolver->endBulkImport();
+        }
+
+        $message = sprintf(
+            'Saatlik senkron: %d çekildi, %d yeni, %d fiyat/stok güncellendi, %d aynı, %d atlandı, %d hata.',
+            $stats['fetched'],
+            $stats['created'],
+            $stats['updated'],
+            $stats['unchanged'],
+            $stats['skipped'],
+            $stats['failed']
+        );
+
+        $ok = $stats['failed'] === 0
+            || ($stats['created'] + $stats['updated'] + $stats['unchanged']) > 0;
+
+        $setting->update([
+            'last_sync_at' => now(),
+            'last_sync_status' => $ok ? 'success' : 'failed',
+            'last_sync_message' => $message,
+            'last_sync_stats' => $stats,
+        ]);
+
+        return [
+            'ok' => $ok,
+            'message' => $message,
+            'stats' => $stats,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function updateMappedPriceStock(Vendor $vendor, VendorSentosProductMap $map, array $data): string
+    {
+        $price = $data['price'] > 0 ? $data['price'] : $data['offer_price'];
+        if ($price <= 0) {
+            return 'skipped';
+        }
+
+        $offer = $data['offer_price'] > 0 && $data['offer_price'] < $price ? $data['offer_price'] : 0;
+        $qty = (int) $data['qty'];
+
+        $product = Product::query()
+            ->where('id', $map->product_id)
+            ->where('vendor_id', $vendor->id)
+            ->first();
+
+        if (! $product) {
+            return 'skipped';
+        }
+
+        $priceChanged = abs((float) $product->price - (float) $price) > 0.0001
+            || abs((float) $product->offer_price - (float) $offer) > 0.0001;
+        $qtyChanged = (int) $product->qty !== $qty;
+
+        if (! $priceChanged && ! $qtyChanged) {
+            $map->last_synced_at = now();
+            $map->save();
+
+            return 'unchanged';
+        }
+
+        $product->price = $price;
+        $product->offer_price = $offer;
+        $product->qty = $qty;
+        $product->save();
+
+        $map->sentos_sku = $data['sku'] !== '' ? $data['sku'] : $map->sentos_sku;
+        $map->last_synced_at = now();
+        $map->save();
+
+        return 'updated';
     }
 
     /**

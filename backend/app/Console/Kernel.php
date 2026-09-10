@@ -36,6 +36,11 @@ class Kernel extends ConsoleKernel
         // Ürün bakış hatırlatmaları
         $schedule->command('products:view-remind')->hourly();
 
+        // Sentos: saatlik fiyat + stok çekimi (rate-limit uyumlu; opt-in satıcılar)
+        $schedule->command('sentos:sync-price-stock')
+            ->hourly()
+            ->withoutOverlapping(110);
+
         // Salon CRM — randevuya ~30 dk kala push
         $schedule->command('salon-crm:appointment-remind')->everyFiveMinutes();
     }

@@ -165,11 +165,28 @@ class SellerOrderController extends Controller
         }
 
         $setting = Setting::first();
+        $sentosOrderMap = null;
+        $sentosEnabledForSeller = false;
+        if (config('features.sentos_enabled', true)) {
+            $sentosSettings = \App\Models\VendorSentosSetting::query()
+                ->where('vendor_id', $seller->id)
+                ->first();
+            $sentosEnabledForSeller = (bool) ($sentosSettings && $sentosSettings->is_enabled);
+            if ($sentosEnabledForSeller) {
+                $sentosOrderMap = \App\Models\VendorSentosOrderMap::query()
+                    ->where('vendor_id', $seller->id)
+                    ->where('order_id', $order->id)
+                    ->first();
+            }
+        }
+
         return view('seller.show_order', compact(
             'order',
             'setting',
             'orderDistinctSellerCount',
-            'sellerLinesSubtotal'
+            'sellerLinesSubtotal',
+            'sentosOrderMap',
+            'sentosEnabledForSeller'
         ));
     }
 

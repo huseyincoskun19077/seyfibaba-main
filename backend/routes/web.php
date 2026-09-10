@@ -313,6 +313,7 @@ Route::group(['middleware' => ['XSS']], function () {
             Route::post('eklentiler/sentos/test', [SentosSettingsController::class, 'test'])->name('sentos.test');
             Route::post('eklentiler/sentos/disable', [SentosSettingsController::class, 'disable'])->name('sentos.disable');
             Route::post('eklentiler/sentos/sync-products', [SentosSettingsController::class, 'syncProducts'])->name('sentos.sync-products');
+            Route::post('eklentiler/sentos/push-order/{orderId}', [SentosSettingsController::class, 'pushOrder'])->name('sentos.push-order');
 
 
             Route::get('subcategory-by-category/{id}', [SellerProductController::class, 'getSubcategoryByCategory'])->name('subcategory-by-category');
