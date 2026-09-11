@@ -34,4 +34,11 @@ return [
     */
     'softtr_enabled' => env('FEATURE_SOFTTR', true),
 
+    /*
+    | Softtr /products/list often omits categories — fallback into Seyfibaba tree.
+    | Default: Kozmetik (3) → sub "Tırnak Malzemeleri" (matched by name under that category).
+    */
+    'softtr_default_category_id' => (int) env('SOFTTR_DEFAULT_CATEGORY_ID', 3),
+    'softtr_default_sub_category_name' => env('SOFTTR_DEFAULT_SUB_CATEGORY_NAME', 'Tırnak Malzemeleri'),
+
 ];

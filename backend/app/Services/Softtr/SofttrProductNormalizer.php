@@ -75,13 +75,24 @@ class SofttrProductNormalizer
         }
 
         $price = $this->toFloat($this->first($raw, [
-            'mainProductPrice', 'MainProductPrice', 'unit_price', 'unitPrice', 'price', 'Price',
+            'salePrice', 'unitPrice', 'mainProductPrice', 'MainProductPrice', 'unit_price', 'unitPrice', 'price', 'Price',
             'sale_price', 'list_price', 'satisFiyati', 'fiyat',
         ]));
         $offer = $this->toFloat($this->first($raw, [
             'indirimli_fiyat', 'offer_price', 'offerPrice', 'discount_price', 'variantPrice',
             'VariantPrice', 'indirimliFiyat',
         ]));
+        // Softtr: salePrice is often the sell price; unitPrice list — if both, prefer lower as offer when discount.
+        if ($price > 0) {
+            $unit = $this->toFloat($this->first($raw, ['unitPrice', 'UnitPrice']));
+            $sale = $this->toFloat($this->first($raw, ['salePrice', 'SalePrice']));
+            if ($unit > 0 && $sale > 0 && $sale < $unit) {
+                $price = $unit;
+                $offer = $sale;
+            } elseif ($sale > 0) {
+                $price = $sale;
+            }
+        }
         // variantPrice is often an add-on; only treat as offer if main price exists and variant is lower positive standalone.
         if ($offer > 0 && $price <= 0) {
             $price = $offer;
@@ -110,13 +121,13 @@ class SofttrProductNormalizer
             'child_category_name' => $childName,
             'category_key' => 'path:' . $categoryKey,
             'brand' => trim((string) $this->first($raw, [
-                'brands', 'brand', 'Brand', 'brand_name', 'marka', 'itemBrand',
+                'brandName', 'brands', 'brand', 'Brand', 'brand_name', 'marka', 'itemBrand',
             ])),
             'short_description' => trim((string) $this->first($raw, [
-                'description_tr', 'short_description', 'summary', 'description', 'aciklama',
+                'descriptionShort', 'description_tr', 'short_description', 'summary', 'description', 'aciklama',
             ])),
             'long_description' => trim((string) $this->first($raw, [
-                'detail_tr', 'long_description', 'detail', 'content', 'html_content', 'detay',
+                'description', 'detail_tr', 'long_description', 'detail', 'content', 'html_content', 'detay',
             ])),
             'image_url' => $this->extractImageUrl($raw, $shopOrigin),
             'weight' => $this->first($raw, ['desi', 'weight', 'volumetric_weight', 'Desi']) ?? 0,
@@ -182,9 +193,9 @@ class SofttrProductNormalizer
         }
 
         $direct = $this->first($raw, [
-            'stockAmount', 'StockAmount', 'stock_amount', 'stok', 'Stok', 'stock', 'Stock',
+            'unitStock', 'totalStock', 'stockAmount', 'StockAmount', 'stock_amount', 'stok', 'Stok', 'stock', 'Stock',
             'quantity', 'qty', 'stokMiktari', 'stokAdedi', 'StokMiktari', 'availableStock',
-            'totalStock', 'toplamStok', 'erp_stock',
+            'toplamStok', 'erp_stock',
         ]);
 
         // Nested stock object: { amount: 10 } / { stockAmount: 10 }

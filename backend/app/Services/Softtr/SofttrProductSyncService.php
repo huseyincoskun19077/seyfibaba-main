@@ -2,10 +2,15 @@
 
 namespace App\Services\Softtr;
 
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\ChildCategory;
 use App\Models\Product;
+use App\Models\SubCategory;
 use App\Models\Vendor;
 use App\Models\VendorSofttrProductMap;
 use App\Models\VendorSofttrSetting;
+use App\Services\BarcodeCatalogService;
 use App\Services\ImportCategoryResolver;
 use App\Services\ProductImageStorage;
 use App\Support\ProductImageUrl;
@@ -241,6 +246,20 @@ class SofttrProductSyncService
 
         $category = $match['category'] ?? null;
         if (! $category) {
+            $match = $this->defaultCategoryMatch();
+            $category = $match['category'] ?? null;
+            // Softtr often sends brandName even when category is missing.
+            if (($match['brand'] ?? null) === null && ($data['brand'] ?? '') !== '') {
+                $brand = Brand::query()
+                    ->where('status', 1)
+                    ->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($data['brand']))])
+                    ->first();
+                if ($brand) {
+                    $match['brand'] = $brand;
+                }
+            }
+        }
+        if (! $category) {
             throw new \RuntimeException('Kategori eşleştirilemedi: ' . ($data['category_name'] ?: $data['name']));
         }
 
@@ -327,16 +346,39 @@ class SofttrProductSyncService
             ? $data['long_description']
             : '<p>' . e($name) . '</p>';
         $product->sku = $sku !== '' ? $sku : $product->sku;
+        $barcode = trim((string) ($data['barcode'] ?? ''));
+        if ($barcode !== '') {
+            $product->barcode = $barcode;
+        } elseif ($sku !== '' && preg_match('/^[0-9]{8,14}$/', $sku)) {
+            $product->barcode = $sku;
+        }
         $product->weight = is_numeric($data['weight']) ? $data['weight'] : 0;
         $product->tags = $name;
         $product->is_undefine = 1;
         $product->is_specification = 0;
-        $product->seo_title = $name;
-        $product->seo_description = mb_substr($name, 0, 155);
+        $seoTitle = $name;
+        if (! empty($product->barcode) && ! str_contains($seoTitle, (string) $product->barcode)) {
+            $seoTitle = mb_substr($name . ' ' . $product->barcode, 0, 190);
+        }
+        $product->seo_title = $seoTitle;
+        $product->seo_description = mb_substr(
+            $name . (! empty($product->barcode) ? ('. Barkod: ' . $product->barcode) : ''),
+            0,
+            320
+        );
         $product->thumb_image = $thumbImage ?: ($product->thumb_image ?: '');
         $product->status = $canPublish ? 1 : 0;
         $product->approve_by_admin = $canPublish ? 1 : 0;
         $product->save();
+
+        try {
+            app(BarcodeCatalogService::class)->upsertFromProduct($product);
+        } catch (\Throwable $e) {
+            Log::warning('Softtr barcode catalog upsert failed', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         foreach ($softtrIds as $sid) {
             VendorSofttrProductMap::query()->updateOrCreate(
@@ -354,6 +396,48 @@ class SofttrProductSyncService
         }
 
         return $created ? 'created' : 'updated';
+    }
+
+    /**
+     * Softtr list API often has no category fields — fall back to Kozmetik / Tırnak Malzemeleri.
+     *
+     * @return array{category: ?Category, sub_category: ?SubCategory, child_category: ?ChildCategory, brand: ?Brand}
+     */
+    private function defaultCategoryMatch(): array
+    {
+        $categoryId = (int) config('features.softtr_default_category_id', 3);
+        $subName = trim((string) config('features.softtr_default_sub_category_name', 'Tırnak Malzemeleri'));
+
+        $category = Category::query()
+            ->where('id', $categoryId)
+            ->where('status', 1)
+            ->first()
+            ?: Category::query()->where('name', 'Kozmetik')->where('status', 1)->first();
+
+        $sub = null;
+        if ($category && $subName !== '') {
+            $sub = SubCategory::query()
+                ->where('category_id', $category->id)
+                ->where('status', 1)
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($subName)])
+                ->first();
+
+            if (! $sub) {
+                $sub = SubCategory::query()
+                    ->where('category_id', $category->id)
+                    ->where('status', 1)
+                    ->where('name', 'like', '%' . $subName . '%')
+                    ->orderBy('id')
+                    ->first();
+            }
+        }
+
+        return [
+            'category' => $category,
+            'sub_category' => $sub,
+            'child_category' => null,
+            'brand' => null,
+        ];
     }
 
     /**
