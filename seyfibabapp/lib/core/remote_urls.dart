@@ -83,6 +83,10 @@ class RemoteUrls {
   static const String sellerProductCreateMeta = '${baseUrl}seller/product/create';
   static const String sellerProductQuickCreate =
       '${baseUrl}seller/product/quick-create';
+  static String sellerProductBarcodeLookup(String barcode) =>
+      '${baseUrl}seller/product/barcode-lookup?barcode=${Uri.encodeQueryComponent(barcode)}';
+  static const String sellerProductBarcodeCreate =
+      '${baseUrl}seller/product/barcode-create';
   static String sellerProductShow(int id) => '${baseUrl}seller/product/$id';
   static String sellerProductEdit(int id) =>
       '${baseUrl}seller/product/$id/edit';

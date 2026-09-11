@@ -50,6 +50,13 @@ class SellerMoreTab extends StatelessWidget {
         () => Navigator.pushNamed(context, RouteNames.sellerQuickProductScreen),
       ),
       _MoreItem(
+        Icons.qr_code_scanner_rounded,
+        'Barkod ile Ekle',
+        'Katalogdan doldur — fiyat ve stok gir',
+        () =>
+            Navigator.pushNamed(context, RouteNames.sellerBarcodeProductScreen),
+      ),
+      _MoreItem(
         Icons.payments_outlined,
         'Kazanç / Çekim',
         'Özet, sipariş kazançları ve çekim talebi',

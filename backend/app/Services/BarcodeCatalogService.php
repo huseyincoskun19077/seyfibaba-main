@@ -168,6 +168,50 @@ class BarcodeCatalogService
     }
 
     /**
+     * Any product with a barcode enriches the durable catalog (does not store price/qty).
+     */
+    public function upsertFromProduct(Product $product): ?BarcodeCatalog
+    {
+        $fromBarcode = $this->normalizeBarcode($product->barcode);
+        $fromSku = $this->normalizeBarcode($product->sku);
+        $code = $fromBarcode !== '' ? $fromBarcode : (
+            preg_match('/^[0-9]{8,14}$/', $fromSku) ? $fromSku : ''
+        );
+        if ($code === '') {
+            return null;
+        }
+
+        $row = BarcodeCatalog::query()->firstOrNew(['barcode' => $code]);
+        $usage = (int) ($row->usage_count ?? 0);
+
+        $incomingHasLocal = ProductImageUrl::hasImage($product->thumb_image)
+            && ! ProductImageUrl::isExternal($product->thumb_image);
+        $existingHasLocal = ProductImageUrl::hasImage($row->thumb_image ?? null)
+            && ! ProductImageUrl::isExternal($row->thumb_image ?? null);
+
+        $payload = $this->payloadFromProduct($product, (int) $product->vendor_id);
+        if ($existingHasLocal && ! $incomingHasLocal) {
+            unset($payload['thumb_image']);
+        }
+
+        $row->fill($payload);
+        $row->barcode = $code;
+        $row->usage_count = $usage;
+        if (! $row->exists) {
+            $row->source_product_id = $product->id;
+            $row->source_vendor_id = (int) $product->vendor_id;
+        }
+        $row->save();
+
+        if ($fromBarcode === '') {
+            $product->barcode = $code;
+            $product->saveQuietly();
+        }
+
+        return $row;
+    }
+
+    /**
      * Copy catalog image into a new file so seller/catalog stay independent on disk.
      */
     private function copyThumbForSeller(BarcodeCatalog $catalog): string

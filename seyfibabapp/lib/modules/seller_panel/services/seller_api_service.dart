@@ -255,6 +255,44 @@ class SellerApiService {
     return Map<String, dynamic>.from(response);
   }
 
+  Future<Map<String, dynamic>> lookupBarcodeProduct({
+    required String token,
+    required String barcode,
+  }) async {
+    final response = await NetworkParser.callClientWithCatchException(
+      () => _client.get(
+        Uri.parse(RemoteUrls.sellerProductBarcodeLookup(barcode)),
+        headers: _jsonHeaders(token),
+      ),
+    );
+    return Map<String, dynamic>.from(response);
+  }
+
+  Future<Map<String, dynamic>> createBarcodeProduct({
+    required String token,
+    required String barcode,
+    required double price,
+    required int quantity,
+    double? offerPrice,
+  }) async {
+    final body = <String, dynamic>{
+      'barcode': barcode.trim(),
+      'price': price,
+      'quantity': quantity,
+    };
+    if (offerPrice != null && offerPrice > 0) {
+      body['offer_price'] = offerPrice;
+    }
+    final response = await NetworkParser.callClientWithCatchException(
+      () => _client.post(
+        Uri.parse(RemoteUrls.sellerProductBarcodeCreate),
+        headers: _jsonHeaders(token),
+        body: jsonEncode(body),
+      ),
+    );
+    return Map<String, dynamic>.from(response);
+  }
+
   Future<void> updateProduct({
     required String token,
     required int productId,

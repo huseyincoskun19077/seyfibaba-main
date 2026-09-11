@@ -248,6 +248,15 @@ class SellerProductController extends Controller
         $product->is_featured = $request->is_featured ? 1 : 0;
         $product->save();
 
+        try {
+            app(\App\Services\BarcodeCatalogService::class)->upsertFromProduct($product);
+        } catch (\Throwable $e) {
+            Log::warning('Barcode catalog upsert failed on seller store', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         app(SimpleProductColorService::class)->sync(
             $product,
             app(SimpleProductColorService::class)->payloadFromRequest($request)
@@ -468,6 +477,15 @@ class SellerProductController extends Controller
             $product->status = (int) $request->status;
         }
         $product->save();
+
+        try {
+            app(\App\Services\BarcodeCatalogService::class)->upsertFromProduct($product);
+        } catch (\Throwable $e) {
+            Log::warning('Barcode catalog upsert failed on seller update', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         app(SimpleProductColorService::class)->sync(
             $product,

@@ -47,6 +47,7 @@ export '/modules/search/product_search_screen.dart';
 export '/modules/seller/become_seller_screen.dart';
 export '/modules/seller_panel/seller_panel_screen.dart';
 export '/modules/seller_panel/screens/seller_quick_product_screen.dart';
+export '/modules/seller_panel/screens/seller_barcode_product_screen.dart';
 export '/modules/seller_panel/screens/seller_edit_product_screen.dart';
 export '/modules/seller_panel/screens/seller_bulk_import_screen.dart';
 export '/modules/seller_panel/screens/seller_earnings_screen.dart';

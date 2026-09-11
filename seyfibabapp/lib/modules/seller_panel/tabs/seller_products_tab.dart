@@ -161,6 +161,18 @@ class _SellerProductsTabState extends State<SellerProductsTab> {
     }
   }
 
+  Future<void> _openBarcodeCreate() async {
+    if (widget.kycStatus != 'approved') {
+      Utils.errorSnackBar(context, 'Ürün eklemek için KYC onayınız gerekli.');
+      return;
+    }
+    final ok = await Navigator.pushNamed(
+      context,
+      RouteNames.sellerBarcodeProductScreen,
+    );
+    if (ok == true && mounted) await _load(reset: true);
+  }
+
   Future<void> _openQuickCreate() async {
     if (widget.kycStatus != 'approved') {
       Utils.errorSnackBar(context, 'Ürün eklemek için KYC onayınız gerekli.');
@@ -224,9 +236,17 @@ class _SellerProductsTabState extends State<SellerProductsTab> {
                   children: [
                     Expanded(
                       child: _ActionTile(
+                        icon: Icons.qr_code_scanner_rounded,
+                        label: 'Barkod',
+                        emphasize: true,
+                        onTap: _openBarcodeCreate,
+                      ),
+                    ),
+                    Container(width: 1, height: 36, color: HomeTheme.border),
+                    Expanded(
+                      child: _ActionTile(
                         icon: Icons.flash_on_rounded,
                         label: 'Hızlı',
-                        emphasize: true,
                         onTap: _openQuickCreate,
                       ),
                     ),

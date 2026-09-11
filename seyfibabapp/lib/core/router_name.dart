@@ -83,6 +83,7 @@ class RouteNames {
   static const String becomeSellerScreen = '/becomeSellerScreen';
   static const String sellerPanelScreen = '/sellerPanelScreen';
   static const String sellerQuickProductScreen = '/sellerQuickProductScreen';
+  static const String sellerBarcodeProductScreen = '/sellerBarcodeProductScreen';
   static const String sellerEditProductScreen = '/sellerEditProductScreen';
   static const String sellerBulkImportScreen = '/sellerBulkImportScreen';
   static const String sellerEarningsScreen = '/sellerEarningsScreen';
@@ -228,6 +229,12 @@ class RouteNames {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const SellerQuickProductScreen(),
+        );
+
+      case RouteNames.sellerBarcodeProductScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SellerBarcodeProductScreen(),
         );
 
       case RouteNames.sellerEditProductScreen:

@@ -116,6 +116,15 @@ class QuickProductService
         $product->new_product = 1;
         $product->save();
 
+        try {
+            app(\App\Services\BarcodeCatalogService::class)->upsertFromProduct($product);
+        } catch (\Throwable $e) {
+            Log::warning('Barcode catalog upsert failed on quick create', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         if (!empty($uc['colors']) && is_array($uc['colors'])) {
             app(\App\Services\SimpleProductColorService::class)->sync($product, $uc['colors']);
         }

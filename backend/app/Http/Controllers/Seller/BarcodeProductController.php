@@ -34,7 +34,7 @@ class BarcodeProductController extends Controller
                 'success' => false,
                 'message' => 'Bu barkod katalogda yok.',
                 'barcode' => $code,
-            ], 404);
+            ]);
         }
 
         $item->load(['category:id,name']);
