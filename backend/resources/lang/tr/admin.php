@@ -147,7 +147,7 @@ return array (
   'Select Child Category' => 'Alt Kategori Seç',
   'Brand' => 'Marka',
   'Select Brand' => 'Marka Seç',
-  'SKU' => 'Stok Kodu',
+  'SKU' => 'Barkod',
   'Price' => 'Fiyat',
   'Offer Price' => 'İndirimli Fiyat',
   'Stock Quantity' => 'Stok Miktarı',

@@ -871,12 +871,10 @@ export default function ProductView({
               ))}
             </p>
           )}
-          {safeProduct?.sku ? (
+          {(safeProduct?.barcode || safeProduct?.sku) ? (
             <p className="text-[13px] text-qgray leading-7">
-              <span className="text-qblack uppercase">
-                {ServeLangItem()?.SKU}:
-              </span>{" "}
-              {safeProduct.sku}
+              <span className="text-qblack">Barkod:</span>{" "}
+              {safeProduct?.barcode || safeProduct?.sku}
             </p>
           ) : null}
         </div>

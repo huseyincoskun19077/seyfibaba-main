@@ -224,6 +224,9 @@ class SellerProductController extends Controller
         $product->child_category_id = $request->child_category ? $request->child_category : 0;
         $product->brand_id = $request->brand ? $request->brand : 0;
         $product->sku = $request->sku;
+        $product->barcode = $request->filled('barcode')
+            ? trim((string) $request->barcode)
+            : trim((string) ($request->sku ?? ''));
         $product->price = $request->price;
         $product->offer_price = $request->filled('offer_price') ? $request->offer_price : 0;
         $product->sale_unit_qty = max(1, (int) ($request->input('sale_unit_qty', 1) ?: 1));
@@ -444,6 +447,9 @@ class SellerProductController extends Controller
         $product->qty = $request->quantity ? $request->quantity : 0;
         $product->sale_unit_qty = max(1, (int) ($request->input('sale_unit_qty', 1) ?: 1));
         $product->sku = $request->sku;
+        $product->barcode = $request->filled('barcode')
+            ? trim((string) $request->barcode)
+            : trim((string) ($request->sku ?? ''));
         $product->price = $request->price;
         $product->offer_price = $request->filled('offer_price') ? $request->offer_price : 0;
         $product->short_description = $request->short_description;

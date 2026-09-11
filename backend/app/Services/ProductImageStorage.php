@@ -88,7 +88,7 @@ class ProductImageStorage
     /**
      * Download image from URL and store locally. Returns null on failure.
      */
-    public function storeFromUrl(string $url, string $filenamePrefix = 'product', int $timeoutSeconds = 30): ?string
+    public function storeFromUrl(string $url, string $filenamePrefix = 'product', int $timeoutSeconds = 30, array $extraHeaders = []): ?string
     {
         $url = trim($url);
         if ($url === '') {
@@ -101,13 +101,15 @@ class ProductImageStorage
         }
 
         try {
+            $headers = array_merge([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'Accept' => 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+                'Accept-Language' => 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+            ], $extraHeaders);
+
             $response = \Illuminate\Support\Facades\Http::timeout($timeoutSeconds)
                 ->withOptions(['allow_redirects' => true])
-                ->withHeaders([
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                    'Accept' => 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-                    'Accept-Language' => 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
-                ])
+                ->withHeaders($headers)
                 ->get($url);
 
             if (! $response->successful()) {

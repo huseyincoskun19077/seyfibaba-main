@@ -238,7 +238,7 @@ return array (
   'of' => '/',
   'Products Available' => 'Mevcut Ürünler',
   'Products not Available' => 'Mevcut Olmayan Ürünler',
-  'SKU' => 'SKU',
+  'SKU' => 'Barkod',
   'order number' => 'sipariş numarası',
   'order tracking nubmer' => 'sipariş takip numarası',
   'Invalid data' => 'Geçersiz veri',
