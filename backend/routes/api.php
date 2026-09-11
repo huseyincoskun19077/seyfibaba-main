@@ -71,6 +71,7 @@ use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Seller\SellerDashboardController;
 use App\Http\Controllers\Seller\SellerProfileController;
 use App\Http\Controllers\Seller\QuickProductController as ApiQuickProductController;
+use App\Http\Controllers\Seller\BarcodeProductController as ApiBarcodeProductController;
 use App\Http\Controllers\Seller\SellerProductController;
 use App\Http\Controllers\Seller\SellerProductGalleryController;
 use App\Http\Controllers\Seller\SellerProductVariantController;
@@ -461,6 +462,8 @@ Route::group([], function () {
         Route::get('email-history',[SellerProfileController::class,'emailHistory'])->name('email-history');
 
         Route::post('product/quick-create', [ApiQuickProductController::class, 'store'])->name('product.quick-create');
+        Route::get('product/barcode-lookup', [ApiBarcodeProductController::class, 'lookup'])->name('product.barcode-lookup');
+        Route::post('product/barcode-create', [ApiBarcodeProductController::class, 'store'])->name('product.barcode-create');
 
         Route::resource('product', SellerProductController::class);
         Route::post('update-product/{id}', [SellerProductController::class, 'update'])->name('update-product');

@@ -91,6 +91,7 @@ use App\Http\Controllers\WEB\Admin\ShippingMethodController;
 use App\Http\Controllers\WEB\Admin\WithdrawMethodController;
 use App\Http\Controllers\WEB\Deliveryman\MyReviewController;
 use App\Http\Controllers\WEB\Seller\QuickProductController;
+use App\Http\Controllers\WEB\Seller\BarcodeProductController;
 use App\Http\Controllers\WEB\Seller\SellerProductController;
 
 use App\Http\Controllers\WEB\Seller\SellerProfileController;
@@ -289,6 +290,10 @@ Route::group(['middleware' => ['XSS']], function () {
             Route::get('product/quick-create', [QuickProductController::class, 'create'])->name('product.quick-create');
             Route::post('product/quick-store', [QuickProductController::class, 'store'])->name('product.quick-store');
             Route::post('product/quick-ai-fill', [QuickProductController::class, 'aiFill'])->name('product.quick-ai-fill');
+
+            Route::get('product/barcode-create', [BarcodeProductController::class, 'create'])->name('product.barcode-create');
+            Route::get('product/barcode-lookup', [BarcodeProductController::class, 'lookup'])->name('product.barcode-lookup');
+            Route::post('product/barcode-store', [BarcodeProductController::class, 'store'])->name('product.barcode-store');
 
             Route::resource('product', SellerProductController::class);
             Route::post('product/{id}/duplicate', [SellerProductController::class, 'duplicate'])->name('product.duplicate');

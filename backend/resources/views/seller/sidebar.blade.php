@@ -36,7 +36,7 @@
           </li>
 
 
-          <li class="nav-item dropdown {{ Route::is('seller.product.*') || Route::is('seller.product-brand.*') || Route::is('seller.product-variant') || Route::is('seller.create-product-variant') || Route::is('seller.edit-product-variant') || Route::is('seller.product-gallery') || Route::is('seller.product-variant-item') || Route::is('seller.create-product-variant-item') || Route::is('seller.edit-product-variant-item') || Route::is('seller.product-review') || Route::is('seller.wholesale') || Route::is('seller.create-wholesale') || Route::is('seller.edit-wholesale') || Route::is('seller.pending-product') || Route::is('admin.product-highlight') || Route::is('seller.show-product-review') || Route::is('seller.stockout-product') || Route::is('seller.product-import-page') || Route::is('seller.product.quick-create') ? 'active' : '' }}">
+          <li class="nav-item dropdown {{ Route::is('seller.product.*') || Route::is('seller.product-brand.*') || Route::is('seller.product-variant') || Route::is('seller.create-product-variant') || Route::is('seller.edit-product-variant') || Route::is('seller.product-gallery') || Route::is('seller.product-variant-item') || Route::is('seller.create-product-variant-item') || Route::is('seller.edit-product-variant-item') || Route::is('seller.product-review') || Route::is('seller.wholesale') || Route::is('seller.create-wholesale') || Route::is('seller.edit-wholesale') || Route::is('seller.pending-product') || Route::is('admin.product-highlight') || Route::is('seller.show-product-review') || Route::is('seller.stockout-product') || Route::is('seller.product-import-page') || Route::is('seller.product.quick-create') || Route::is('seller.product.barcode-create') ? 'active' : '' }}">
             <a href="#" class="nav-link has-dropdown"><i class="fas fa-th-large"></i><span>{{__('admin.Manage Products')}}</span></a>
 
             <ul class="dropdown-menu">
@@ -44,6 +44,7 @@
             <li class="{{ Route::is('seller.ai-assistant.*') ? 'active' : '' }}"><a class="nav-link" href="#" onclick="document.getElementById('saiFab')?.click();return false;"><i class="fas fa-robot text-primary mr-1"></i> AI Asistan</a></li>
 
             <li class="{{ Route::is('seller.product.quick-create') ? 'active' : '' }}"><a class="nav-link" href="{{ route('seller.product.quick-create') }}"><i class="fas fa-bolt text-warning mr-1"></i> Hızlı Ürün Ekle</a></li>
+            <li class="{{ Route::is('seller.product.barcode-create') ? 'active' : '' }}"><a class="nav-link" href="{{ route('seller.product.barcode-create') }}"><i class="fas fa-barcode text-primary mr-1"></i> Barkod ile Ekle</a></li>
 
             <li class="{{ Route::is('seller.product-import-page') ? 'active' : '' }}"><a class="nav-link" href="{{ route('seller.product-import-page') }}"><i class="fas fa-file-excel text-success mr-1"></i> Toplu Excel Yükle</a></li>
 
