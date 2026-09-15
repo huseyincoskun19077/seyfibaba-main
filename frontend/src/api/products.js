@@ -1,7 +1,7 @@
 import apiRoutes from "@/appConfig/apiRoutes";
 import { notFound } from "next/navigation";
 
-const PUBLIC_CONTENT_REVALIDATE = 300;
+const PUBLIC_CONTENT_REVALIDATE = 60;
 
 const appendListParam = (params, key, value) => {
   if (!value) return;

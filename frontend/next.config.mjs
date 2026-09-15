@@ -166,7 +166,7 @@ const nextConfig = {
       {
         source: "/",
         headers: [
-          { key: "Cache-Control", value: "public, s-maxage=60, stale-while-revalidate=120" },
+          { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
         ],
       },
       {
@@ -178,19 +178,20 @@ const nextConfig = {
       {
         source: "/products",
         headers: [
-          { key: "Cache-Control", value: "public, s-maxage=300, stale-while-revalidate=600" },
+          { key: "Cache-Control", value: "public, s-maxage=60, stale-while-revalidate=120" },
         ],
       },
       {
         source: "/search",
         headers: [
-          { key: "Cache-Control", value: "public, s-maxage=300, stale-while-revalidate=600" },
+          { key: "Cache-Control", value: "public, s-maxage=60, stale-while-revalidate=120" },
         ],
       },
       {
         source: "/urun/:slug*",
         headers: [
-          { key: "Cache-Control", value: "public, s-maxage=300, stale-while-revalidate=600" },
+          // Seller price/content updates must show immediately; mobile hits API live.
+          { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
         ],
       },
     ];

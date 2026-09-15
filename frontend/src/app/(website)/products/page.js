@@ -4,7 +4,7 @@ import { cache } from "react";
 import JsonLd, { generateItemListSchema, generateBreadcrumbSchema } from "@/components/Helpers/JsonLd";
 import { buildPageTitle } from "@/utils/pageTitle";
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 const resolveProductsQuery = (searchParamsObj = {}) => {
   const query = {};

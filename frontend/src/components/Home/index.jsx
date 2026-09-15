@@ -8,6 +8,7 @@ import Banner from "./Banner";
 import CategorySection from "./CategorySection";
 import { isFlashSaleActive } from "@/utils/flashSale";
 import appConfig from "@/appConfig";
+import apiRoutes from "@/appConfig/apiRoutes";
 import { resolveProductImageUrl } from "@/utils/productImage";
 import ProductCard from "../Helpers/Cards/ProductCard";
 import HomeSlider from "../Slider/HomeSlider";
@@ -20,7 +21,37 @@ const CampaignCountDown = dynamic(() => import("./CampaignCountDown"));
 
 export default function Home({ homepageData }) {
   const pathname = usePathname() || "";
-  const getsectionTitles = homepageData?.section_title;
+  const [homepage, setHomepage] = useState(homepageData);
+
+  useEffect(() => {
+    setHomepage(homepageData);
+  }, [homepageData]);
+
+  // Mobil gibi: sayfa açılınca anasayfa ürünlerini canlı API'den yenile
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(apiRoutes.shopo, {
+          method: "GET",
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data && typeof data === "object") {
+          setHomepage(data);
+        }
+      } catch {
+        /* SSR verisi kalsın */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const getsectionTitles = homepage?.section_title;
 
   const getTurkishSectionTitle = (key, value) => {
     if (
@@ -48,7 +79,6 @@ export default function Home({ homepageData }) {
     });
   }
 
-  const homepage = homepageData;
   const mobileSliderSettings = {
     pagination: {
       clickable: true,

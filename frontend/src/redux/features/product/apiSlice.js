@@ -279,9 +279,9 @@ export const productApis = apiSlice.injectEndpoints({
           method: "GET",
         };
       },
-      serializeQueryArgs: ({ endpointName }) => {
-        return endpointName;
-      },
+      keepUnusedDataFor: 0,
+      serializeQueryArgs: ({ endpointName, queryArgs }) =>
+        `${endpointName}-${queryArgs || ""}`,
       forceRefetch({ currentArg, previousArg }) {
         return currentArg !== previousArg;
       },

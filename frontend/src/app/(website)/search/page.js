@@ -7,7 +7,7 @@ import JsonLd, {
 } from "@/components/Helpers/JsonLd";
 import { buildPageTitle } from "@/utils/pageTitle";
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 const resolveSearchQuery = (searchParamsObj = {}) => {
   const query = {};
