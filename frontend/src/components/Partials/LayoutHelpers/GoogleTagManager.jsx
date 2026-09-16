@@ -11,7 +11,7 @@ function GoogleTagManager({ gTagId }) {
   if (id.startsWith("GTM-")) {
     return (
       <>
-        <Script id="gtm-script" strategy="lazyOnload">
+        <Script id="gtm-script" strategy="afterInteractive">
           {`
             (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
             new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -32,14 +32,14 @@ function GoogleTagManager({ gTagId }) {
     );
   }
 
-  // Google Analytics 4 (G-XXXXXXXXXX)
+  // GA4 (G-...), Google Ads (AW-...), Universal Analytics (UA-...)
   return (
     <>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${id}`}
-        strategy="lazyOnload"
+        strategy="afterInteractive"
       />
-      <Script id="google-analytics" strategy="lazyOnload">
+      <Script id="google-gtag" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){window.dataLayer.push(arguments);}

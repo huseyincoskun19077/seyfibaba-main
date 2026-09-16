@@ -407,7 +407,21 @@ class HomeController extends Controller
             'customPages' => $customPages,
 
             // Tracking: sadece public güvenli alanlar (ID + status)
-            'googleAnalytic' => null,
+            'googleAnalytic' => (function () {
+                $ga = GoogleAnalytic::query()->first();
+                if (! $ga || (int) $ga->status !== 1) {
+                    return null;
+                }
+                $analyticId = trim((string) $ga->analytic_id);
+                if (! preg_match('/^(G|GTM|AW|UA)-[A-Z0-9-]+$/i', $analyticId)) {
+                    return null;
+                }
+
+                return [
+                    'status' => 1,
+                    'analytic_id' => $analyticId,
+                ];
+            })(),
             'facebookPixel' => (function () {
                 $pixel = FacebookPixel::query()->first();
                 if (! $pixel || (int) $pixel->status !== 1) {

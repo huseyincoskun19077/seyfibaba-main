@@ -7,6 +7,10 @@ import { setupAction } from "@/redux/features/websiteSetup/websiteSetupSlice";
 import { useGetDefaultSetupQuery } from "@/redux/features/websiteSetup/apiSlice";
 import { STORAGE_KEYS } from "@/utils/layoutConstants";
 import { persistWebsiteSetupStorage } from "@/utils/websiteSetupBootstrap";
+import {
+  hasAnalyticsConsent,
+  hasMarketingConsent,
+} from "@/components/Helpers/Consent";
 
 import MaintenanceWrapper from "@/components/Partials/MaintenanceWrapper";
 import Consent from "../Helpers/Consent";
@@ -21,6 +25,8 @@ export default function DefaultLayoutClient({ children }) {
   const [gtagId, setGtagId] = useState(null);
   const [fbPixel, setFbPixel] = useState(null);
   const [messageWidget, setMessageWidget] = useState(null);
+  const [allowMarketing, setAllowMarketing] = useState(false);
+  const [allowAnalytics, setAllowAnalytics] = useState(false);
 
   const pathname = usePathname();
   const dispatch = useDispatch();
@@ -28,17 +34,24 @@ export default function DefaultLayoutClient({ children }) {
   const { text_direction } = settings();
   const shouldFetchFallbackSetup = pathname?.startsWith("/callback/") ?? false;
 
-  // Use server-bootstrapped setup from Redux when available.
-  // Only fall back to a client query for callback routes that do not mount the website shell.
   const { data: fallbackSetupData, isLoading: siteLoading } =
     useGetDefaultSetupQuery(undefined, {
       skip: !shouldFetchFallbackSetup,
     });
   const websiteSetupData = websiteSetup?.payload || fallbackSetupData;
 
-  /**
-   * Initializes message widget if conditions are met
-   */
+  const refreshConsentFlags = useCallback(() => {
+    setAllowMarketing(hasMarketingConsent());
+    setAllowAnalytics(hasAnalyticsConsent());
+  }, []);
+
+  useEffect(() => {
+    refreshConsentFlags();
+    const onPrefs = () => refreshConsentFlags();
+    window.addEventListener("seyfibaba:cookie-prefs", onPrefs);
+    return () => window.removeEventListener("seyfibaba:cookie-prefs", onPrefs);
+  }, [refreshConsentFlags]);
+
   const initializeMessageWidget = useCallback(
     (pusherInfo) => {
       if (typeof window === "undefined") return;
@@ -54,77 +67,68 @@ export default function DefaultLayoutClient({ children }) {
     [messageWidget]
   );
 
-  /**
-   * Processes website setup data and initializes all necessary configurations
-   */
   const processWebsiteSetup = useCallback(
     (data) => {
-      const {
-        pusher_info,
-        googleAnalytic,
-        facebookPixel,
-      } = data;
+      const { pusher_info, googleAnalytic, facebookPixel } = data;
 
-      // Keep Redux in sync, then persist the same setup payload locally.
       dispatch(setupAction(data));
       persistWebsiteSetupStorage(data);
 
-      // Set state values
       setGtagId(googleAnalytic?.analytic_id);
       setFbPixel(facebookPixel);
-
-      // Initialize message widget
       initializeMessageWidget(pusher_info);
     },
     [dispatch, initializeMessageWidget]
   );
 
-  /**
-   * Initializes Facebook Pixel
-   */
   const initializeFacebookPixel = useCallback(async () => {
-    if (!fbPixel || !fbPixel.app_id || fbPixel.app_id.length < 10 || !/^\d+$/.test(fbPixel.app_id)) return;
+    if (!allowMarketing) return;
+    if (!fbPixel || !fbPixel.app_id || fbPixel.app_id.length < 10 || !/^\d+$/.test(fbPixel.app_id)) {
+      return;
+    }
 
     try {
       const ReactPixel = (await import("react-facebook-pixel")).default;
       ReactPixel.init(fbPixel.app_id);
       ReactPixel.pageView();
-    } catch (error) {
-      // Facebook Pixel init silently failed
+    } catch {
+      // silent
     }
-  }, [fbPixel]);
+  }, [fbPixel, allowMarketing]);
 
-  /**
-   * Tracks page views for Facebook Pixel on route changes
-   */
   const trackFacebookPixelPageView = useCallback(async () => {
-    if (!fbPixel || !fbPixel.app_id || fbPixel.app_id.length < 10 || !/^\d+$/.test(fbPixel.app_id) || typeof window === "undefined") return;
+    if (!allowMarketing) return;
+    if (
+      !fbPixel ||
+      !fbPixel.app_id ||
+      fbPixel.app_id.length < 10 ||
+      !/^\d+$/.test(fbPixel.app_id) ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
 
     try {
       const ReactPixel = (await import("react-facebook-pixel")).default;
       ReactPixel.pageView();
-    } catch (error) {
-      // Facebook Pixel pageView silently failed
+    } catch {
+      // silent
     }
-  }, [fbPixel]);
+  }, [fbPixel, allowMarketing]);
 
-  // Process website setup data
   useEffect(() => {
     if (!websiteSetupData || siteLoading) return;
     processWebsiteSetup(websiteSetupData);
   }, [websiteSetupData, siteLoading, processWebsiteSetup]);
 
-  // Initialize Facebook Pixel
   useEffect(() => {
     initializeFacebookPixel();
   }, [initializeFacebookPixel]);
 
-  // Track route changes for Facebook Pixel
   useEffect(() => {
     trackFacebookPixelPageView();
   }, [pathname, trackFacebookPixelPageView]);
 
-  // Set text direction
   useEffect(() => {
     const html = document.getElementsByTagName("html");
     if (html[0]) {
@@ -134,29 +138,20 @@ export default function DefaultLayoutClient({ children }) {
 
   return (
     <>
-      {/* Google Tag Manager */}
-      {gtagId && <GoogleTagManager gTagId={gtagId} />}
-      {/* Cookie Consent */}
+      {gtagId &&
+      (String(gtagId).startsWith("AW-") ? allowMarketing : allowAnalytics) ? (
+        <GoogleTagManager gTagId={gtagId} />
+      ) : null}
       <Consent />
 
-      {/* Main Content */}
       <main id="main-content">
         <MaintenanceWrapper>{children}</MaintenanceWrapper>
       </main>
 
-      {/* AI Chat Widget */}
       <ChatWidget />
-
-      {/* Authentication Modal */}
       <AuthenticationModal />
-
-      {/* Simple Flying Cart Animation */}
       <SimpleFlyingCart />
-
-      {/* Fixed Cart Button */}
       <FixedCartButton />
-
-      {/* Scroll to Top */}
       <ScrollToTop />
     </>
   );

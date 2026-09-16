@@ -21,6 +21,7 @@ import {
   SELLER_REGISTER_REQUIRED_CONSENTS,
 } from "@/config/legalDocuments";
 import { recordLegalConsents } from "@/api/recordLegalConsents";
+import { hasMarketingConsent } from "@/components/Helpers/Consent";
 
 const IMAGE_FALLBACK = "/assets/images/server-error.png";
 
@@ -189,15 +190,17 @@ export default function SellerQuickRegister() {
       setSuccess(response.data || response);
       toast.success(response.message || "Kayıt oluşturuldu.");
       try {
-        const ReactPixel = (await import("react-facebook-pixel")).default;
-        ReactPixel.track("Lead", {
-          content_name: "seller_register",
-          content_category: "seller",
-        });
-        ReactPixel.track("CompleteRegistration", {
-          content_name: "seller_register",
-          status: true,
-        });
+        if (hasMarketingConsent()) {
+          const ReactPixel = (await import("react-facebook-pixel")).default;
+          ReactPixel.track("Lead", {
+            content_name: "seller_register",
+            content_category: "seller",
+          });
+          ReactPixel.track("CompleteRegistration", {
+            content_name: "seller_register",
+            status: true,
+          });
+        }
       } catch {
         // Pixel yoksa sessiz geç
       }

@@ -36,10 +36,22 @@ export function sanitizeWebsiteSetup(data) {
         }
       : null;
 
+  const analyticId = String(data.googleAnalytic?.analytic_id || "").trim();
+  const googleAnalytic =
+    data.googleAnalytic &&
+    typeof data.googleAnalytic === "object" &&
+    Number(data.googleAnalytic.status) === 1 &&
+    /^(G|GTM|AW|UA)-[A-Z0-9-]+$/i.test(analyticId)
+      ? {
+          status: 1,
+          analytic_id: analyticId,
+        }
+      : null;
+
   return {
     ...data,
     setting,
-    googleAnalytic: null,
+    googleAnalytic,
     facebookPixel,
     tawk_setting: null,
     pusher_info: sanitizePusherInfo(data.pusher_info),

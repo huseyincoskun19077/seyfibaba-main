@@ -920,12 +920,14 @@
                                                             </div>
 
                                                             <div class="form-group">
-                                                                <label for="">Google Analytics / GTM Ölçüm Kimliği</label>
-                                                                <input type="text" class="form-control" name="analytic_id" value="{{ $googleAnalytic->analytic_id }}" placeholder="Örn: G-XXXXXXXXXX veya GTM-XXXXXXX">
+                                                                <label for="">Google Analytics / Ads / GTM Ölçüm Kimliği</label>
+                                                                <input type="text" class="form-control" name="analytic_id" value="{{ $googleAnalytic->analytic_id }}" placeholder="Örn: AW-XXXXXXXXXX, G-XXXXXXXXXX veya GTM-XXXXXXX">
                                                                 <small class="text-muted">
-                                                                    Google Analytics 4 için <strong>G-XXXXXXXXXX</strong> formatında,
+                                                                    Google Ads için <strong>AW-XXXXXXXXXX</strong>,
+                                                                    Google Analytics 4 için <strong>G-XXXXXXXXXX</strong>,
                                                                     Google Tag Manager için <strong>GTM-XXXXXXX</strong> formatında ölçüm kimliğini girin.
-                                                                    Bu kimliği <a href="https://analytics.google.com" target="_blank">Google Analytics</a> veya
+                                                                    Bu kimliği <a href="https://ads.google.com" target="_blank">Google Ads</a>,
+                                                                    <a href="https://analytics.google.com" target="_blank">Google Analytics</a> veya
                                                                     <a href="https://tagmanager.google.com" target="_blank">Google Tag Manager</a> panelinden alabilirsiniz.
                                                                 </small>
                                                             </div>
