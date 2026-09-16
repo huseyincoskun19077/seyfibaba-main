@@ -10,6 +10,7 @@ import DefaultLayout from "@/components/Partials/DefaultLayout";
 import { Providers } from "@/redux/providers";
 import Toaster from "@/components/Helpers/Toaster";
 import localFont from "next/font/local";
+import getSetupData from "@/api/setup";
 
 const inter = localFont({
   src: [
@@ -92,21 +93,52 @@ export const viewport = {
   themeColor: "#ffffff",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const setup = await getSetupData();
+  const gtagId = String(setup?.googleAnalytic?.analytic_id || "").trim();
+  const useGtag = /^(G|AW|UA)-[A-Z0-9-]+$/i.test(gtagId);
+
   return (
     <html lang="tr" translate="no" className="notranslate">
       <head>
         <link rel="preconnect" href="https://admin.seyfibaba.com/" />
         <link rel="dns-prefetch" href="https://admin.seyfibaba.com/" />
+        {useGtag ? (
+          <>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('consent', 'default', {
+                    ad_storage: 'denied',
+                    ad_user_data: 'denied',
+                    ad_personalization: 'denied',
+                    analytics_storage: 'denied',
+                    wait_for_update: 500
+                  });
+                `,
+              }}
+            />
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${gtagId}`}
+            />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  gtag('js', new Date());
+                  gtag('config', '${gtagId}');
+                `,
+              }}
+            />
+          </>
+        ) : null}
       </head>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning={true}>
-        {/* loader */}
         <NextSnakeLoader />
-        {/* Toaster container */}
         <Toaster />
-        {/* redux and context providers */}
         <Providers>
-          {/* global app shell */}
           <DefaultLayout>
             <AosWrapper>{children}</AosWrapper>
           </DefaultLayout>

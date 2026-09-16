@@ -21,6 +21,16 @@ import FixedCartButton from "../Helpers/FixedCartButton";
 import ScrollToTop from "../Helpers/ScrollToTop";
 import ChatWidget from "../ChatWidget";
 
+function syncGoogleConsent({ marketing, analytics }) {
+  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
+  window.gtag("consent", "update", {
+    ad_storage: marketing ? "granted" : "denied",
+    ad_user_data: marketing ? "granted" : "denied",
+    ad_personalization: marketing ? "granted" : "denied",
+    analytics_storage: analytics ? "granted" : "denied",
+  });
+}
+
 export default function DefaultLayoutClient({ children }) {
   const [gtagId, setGtagId] = useState(null);
   const [fbPixel, setFbPixel] = useState(null);
@@ -41,8 +51,11 @@ export default function DefaultLayoutClient({ children }) {
   const websiteSetupData = websiteSetup?.payload || fallbackSetupData;
 
   const refreshConsentFlags = useCallback(() => {
-    setAllowMarketing(hasMarketingConsent());
-    setAllowAnalytics(hasAnalyticsConsent());
+    const marketing = hasMarketingConsent();
+    const analytics = hasAnalyticsConsent();
+    setAllowMarketing(marketing);
+    setAllowAnalytics(analytics);
+    syncGoogleConsent({ marketing, analytics });
   }, []);
 
   useEffect(() => {
@@ -74,7 +87,7 @@ export default function DefaultLayoutClient({ children }) {
       dispatch(setupAction(data));
       persistWebsiteSetupStorage(data);
 
-      setGtagId(googleAnalytic?.analytic_id);
+      setGtagId(googleAnalytic?.analytic_id || null);
       setFbPixel(facebookPixel);
       initializeMessageWidget(pusher_info);
     },
@@ -136,12 +149,13 @@ export default function DefaultLayoutClient({ children }) {
     }
   }, [text_direction]);
 
+  // AW-/G- etiketi root layout <head> içinde (Google doğrulaması için).
+  // GTM container ayrı yüklenir.
+  const useClientGtm = Boolean(gtagId && String(gtagId).startsWith("GTM-"));
+
   return (
     <>
-      {gtagId &&
-      (String(gtagId).startsWith("AW-") ? allowMarketing : allowAnalytics) ? (
-        <GoogleTagManager gTagId={gtagId} />
-      ) : null}
+      {useClientGtm ? <GoogleTagManager gTagId={gtagId} /> : null}
       <Consent />
 
       <main id="main-content">
