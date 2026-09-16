@@ -406,9 +406,23 @@ class HomeController extends Controller
 
             'customPages' => $customPages,
 
-            // Tracking / chat kimlikleri public website-setup'ta yok
+            // Tracking: sadece public güvenli alanlar (ID + status)
             'googleAnalytic' => null,
-            'facebookPixel' => null,
+            'facebookPixel' => (function () {
+                $pixel = FacebookPixel::query()->first();
+                if (! $pixel || (int) $pixel->status !== 1) {
+                    return null;
+                }
+                $appId = preg_replace('/\D+/', '', (string) $pixel->app_id);
+                if (! $appId || strlen($appId) < 10) {
+                    return null;
+                }
+
+                return [
+                    'status' => 1,
+                    'app_id' => $appId,
+                ];
+            })(),
             'tawk_setting' => null,
 
             'cookie_consent' => $cookie_consent,

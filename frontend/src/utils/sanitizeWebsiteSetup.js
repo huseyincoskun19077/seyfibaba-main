@@ -25,11 +25,22 @@ export function sanitizeWebsiteSetup(data) {
       }
     : data.setting;
 
+  const facebookPixel =
+    data.facebookPixel &&
+    typeof data.facebookPixel === "object" &&
+    Number(data.facebookPixel.status) === 1 &&
+    /^\d{10,20}$/.test(String(data.facebookPixel.app_id || ""))
+      ? {
+          status: 1,
+          app_id: String(data.facebookPixel.app_id),
+        }
+      : null;
+
   return {
     ...data,
     setting,
     googleAnalytic: null,
-    facebookPixel: null,
+    facebookPixel,
     tawk_setting: null,
     pusher_info: sanitizePusherInfo(data.pusher_info),
   };
