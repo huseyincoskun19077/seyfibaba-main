@@ -95,24 +95,13 @@ function ProductsCompare() {
     }
   };
 
-  // Calculate product price with variants
+  // Listing / compare: her zaman ürünün kendi fiyatı (varyant toplamı yok)
   const calculatePrice = (item) => {
     if (!item) return 0;
-
-    const variantPrices =
-      item.variants?.map(
-        (variant) => variant.active_variant_items?.[0]?.price || 0
-      ) || [];
-
-    const variantSum = variantPrices.reduce(
-      (sum, price) => sum + parseInt(price),
-      0
-    );
-    const basePrice = item.offerPrice
-      ? parseInt(item.offerPrice)
-      : parseInt(item.price);
-
-    return basePrice + variantSum;
+    const offer = Number(item.offerPrice || item.offer_price || 0);
+    const price = Number(item.price || 0);
+    if (offer > 0 && (price <= 0 || offer < price)) return offer;
+    return price;
   };
 
   // Calculate table column width

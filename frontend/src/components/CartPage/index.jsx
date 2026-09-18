@@ -19,6 +19,7 @@ import {
   updateAllItems,
 } from "../../redux/features/cart/cartSlice";
 import useRefreshCartPrices from "@/hooks/useRefreshCartPrices";
+import { resolveCartLineUnitPrice } from "@/utils/variantPricing";
 
 function CartPage() {
   // Redux hooks
@@ -82,12 +83,8 @@ function CartPage() {
     if (item.totalPrice != null && !Number.isNaN(Number(item.totalPrice))) {
       return Number(item.totalPrice);
     }
-    const basePrice = Number(item.product.offer_price || item.product.price || 0);
-    const variantPrice = (item.variants || []).reduce(
-      (sum, variant) => sum + Number(variant?.variant_item?.price || 0),
-      0
-    );
-    return (basePrice + variantPrice) * parseInt(item.qty || 1, 10);
+    const unit = resolveCartLineUnitPrice(item);
+    return unit * parseInt(item.qty || 1, 10);
   };
 
   /**

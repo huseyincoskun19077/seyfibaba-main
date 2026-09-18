@@ -27,6 +27,7 @@ import appConfig from "@/appConfig";
 import useBfCacheRemountKey from "@/hooks/useBfCacheRemountKey";
 import { displayTurkishLabel } from "@/utils/turkishDisplay";
 import { getSaleUnitQty, isEffectiveOfferPrice } from "@/utils/productPricing";
+import { resolveProductUnitPrice, parseAmount } from "@/utils/variantPricing";
 import ProductSaleUnitInfo from "../Shared/ProductSaleUnitInfo";
 import ProductFurnitureInquiry from "./ProductFurnitureInquiry";
 import { getProductImageProps } from "@/utils/productImage";
@@ -48,50 +49,10 @@ const resolveImageSrc = (value) => {
   return `${appConfig.BASE_URL}${raw.replace(/^\/+/, "")}`;
 };
 
-const parseAmount = (value) => {
-  const parsedValue = parseInt(value, 10);
-  return Number.isNaN(parsedValue) ? 0 : parsedValue;
-};
-
 const getInitialVariantItems = (variants = []) => {
   return variants
     .map((variant) => variant?.active_variant_items?.[0] || null)
     .filter(Boolean);
-};
-
-const calculateVariantPricing = (product, selectedVariantItems = [], variants = []) => {
-  const basePrice = parseAmount(product?.price);
-  const baseOfferPrice = isEffectiveOfferPrice(product?.offer_price, product?.price)
-    ? parseAmount(product.offer_price)
-    : null;
-
-  let colorAbsolute = null;
-  let extras = 0;
-
-  selectedVariantItems.forEach((item) => {
-    const parent = (variants || []).find(
-      (v) => Number(v?.id) === Number(item?.product_variant_id)
-    );
-    const parentName = String(parent?.name || item?.product_variant_name || "");
-    const amount = parseAmount(item?.price);
-    if (/renk|color/i.test(parentName)) {
-      colorAbsolute = amount;
-    } else {
-      extras += amount;
-    }
-  });
-
-  if (colorAbsolute !== null) {
-    return {
-      price: colorAbsolute + extras,
-      offerPrice: null,
-    };
-  }
-
-  return {
-    price: basePrice + extras,
-    offerPrice: baseOfferPrice !== null ? baseOfferPrice + extras : null,
-  };
 };
 
 const slugifyVariantParam = (value) =>
@@ -233,7 +194,10 @@ const VariantSelector = ({ variants, onSelectVariant, basePrice = 0 }) => {
             {isColor ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {items.map((item) => {
-                  const total = Number(item.price || 0);
+                  // Varyant fiyatı mutlak satış fiyatıdır; ürün fiyatına eklenmez.
+                  const total = Number(item.price || 0) > 0
+                    ? Number(item.price)
+                    : Number(basePrice || 0);
                   const selected = Number(selectedId) === Number(item.id);
                   const imgSrc = item.image
                     ? item.image.startsWith("http")
@@ -461,7 +425,7 @@ export default function ProductView({
   }, [src, safeProduct?.thumb_image, safeImages]);
 
   useEffect(() => {
-    const pricing = calculateVariantPricing(
+    const pricing = resolveProductUnitPrice(
       safeProduct,
       selectedVariantItems,
       varients

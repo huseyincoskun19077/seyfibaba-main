@@ -34,18 +34,13 @@ export default function ProductsTable({ className, products }) {
     }
   };
 
-  // Calculate product price with variants
+  // Wishlist: ürünün kendi fiyatı (varyant toplamı yok)
   const calculatePrice = (item) => {
-    if (!item) return 0;
-
-    const basePrice = item.product.offer_price || item.product.price;
-    const variantPrice =
-      item.product.active_variants?.reduce((sum, variant) => {
-        const variantItemPrice = variant?.active_variant_items?.[0]?.price || 0;
-        return sum + parseInt(variantItemPrice);
-      }, 0) || 0;
-
-    return parseInt(basePrice) + variantPrice;
+    if (!item?.product) return 0;
+    const offer = Number(item.product.offer_price || 0);
+    const price = Number(item.product.price || 0);
+    if (offer > 0 && (price <= 0 || offer < price)) return offer;
+    return price;
   };
 
   // Process products data

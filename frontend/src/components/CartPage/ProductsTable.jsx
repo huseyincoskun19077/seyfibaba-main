@@ -7,34 +7,14 @@ import ServeLangItem from "../Helpers/ServeLangItem";
 import CurrencyConvert from "../Shared/CurrencyConvert";
 import { getProductImageProps } from "@/utils/productImage";
 import { buildProductPath } from "@/utils/url";
+import { resolveCartLineUnitPrice } from "@/utils/variantPricing";
 
 /**
- * Calculate variant price from variants array
- * @param {Array} variants - Array of variant objects
- * @returns {number} Total variant price
- */
-const calculateVariantPrice = (variants) => {
-  if (!variants || variants.length === 0) return 0;
-
-  return variants
-    .map((variant) =>
-      variant.variant_item ? Number(variant.variant_item.price) : 0
-    )
-    .reduce((sum, price) => sum + price, 0);
-};
-
-/**
- * Calculate base item price including variants
- * @param {Object} item - Cart item object
- * @returns {number} Total item price
+ * Calculate base item price (varyant fiyatı ürün fiyatına EKLENMEZ)
  */
 const calculateItemPrice = (item) => {
   if (!item) return 0;
-
-  const basePrice = item.product.offer_price || item.product.price;
-  const variantPrice = calculateVariantPrice(item.variants);
-
-  return Number(basePrice) + variantPrice;
+  return Number(resolveCartLineUnitPrice(item) || 0);
 };
 
 /**

@@ -19,27 +19,33 @@ class CartPriceService
         $base = $product->offer_price
             ? (float) $product->offer_price
             : (float) $product->price;
-        $extras = 0.0;
 
         if ($variantItemIds !== []) {
             $items = ProductVariantItem::query()
                 ->whereIn('id', $variantItemIds)
                 ->get(['id', 'price', 'product_variant_name']);
 
+            $absolute = null;
             foreach ($items as $item) {
                 $variantName = (string) ($item->product_variant_name ?? '');
-                // Renk fiyatı mutlak satış fiyatıdır; diğer varyantlar eski delta mantığında kalır.
-                if (preg_match('/renk|color/i', $variantName)) {
-                    $base = (float) $item->price;
-                } else {
-                    $extras += (float) $item->price;
+                $amount = (float) $item->price;
+                if ($amount <= 0) {
+                    continue;
                 }
+                // Renk/Boyut vb. fiyatı ürün fiyatına EKLENMEZ; o seçeneğin satış fiyatıdır.
+                if (preg_match('/renk|color|boyut|beden|ölçü|olcu|ebat|genişlik|yükseklik/iu', $variantName)) {
+                    if (preg_match('/renk|color/iu', $variantName) || $absolute === null) {
+                        $absolute = $amount;
+                    }
+                }
+            }
+
+            if ($absolute !== null) {
+                $base = $absolute;
             }
         }
 
-        $price = $base + $extras;
-
-        return round($this->applyFlashSaleDiscount($product->id, $price), 2);
+        return round($this->applyFlashSaleDiscount($product->id, $base), 2);
     }
 
     /**
