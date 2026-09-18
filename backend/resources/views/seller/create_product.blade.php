@@ -134,6 +134,7 @@
                             <label>{{__('admin.Weight')}}(g) <small class="text-muted">(Opsiyonel)</small></label>
                             <input type="text" inputmode="decimal" class="form-control" name="weight" value="{{ old('weight') }}">
                         </div>
+                        @include('seller.partials.delivery_info_field', ['deliveryInfo' => old('delivery_info'), 'wrapperClass' => 'col-12'])
                         <div class="form-group col-12">
                             <label>{{__('admin.Short Description')}} <span class="text-danger">*</span></label>
                             <textarea name="short_description" cols="30" rows="5" class="form-control">{{ old('short_description') }}</textarea>

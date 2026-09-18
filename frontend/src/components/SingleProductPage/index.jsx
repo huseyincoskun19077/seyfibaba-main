@@ -454,8 +454,20 @@ export default function SingleProductPage({ details }) {
                 <div data-aos="fade-up" className="w-full tab-content-item">
                   <div className="prose max-w-none text-qgray text-sm leading-7">
                     <h3 className="text-lg font-semibold text-qblack mb-4">Teslimat Bilgisi</h3>
+                    {safeProduct?.delivery_info ? (
+                      <div className="mb-4 rounded-xl border border-[#ece3cf] bg-[#fffaf0] px-4 py-3 text-qblacktext">
+                        <p className="text-xs font-700 uppercase tracking-wide text-[#9a7b2f] mb-1">
+                          Satıcı kargo süresi
+                        </p>
+                        <p className="text-sm md:text-base font-600 leading-relaxed">
+                          {safeProduct.delivery_info}
+                        </p>
+                      </div>
+                    ) : null}
                     <ul className="list-disc pl-5 space-y-2">
-                      <li>Siparişiniz onaylandıktan sonra 1-3 iş günü içinde kargoya verilir.</li>
+                      {!safeProduct?.delivery_info ? (
+                        <li>Siparişiniz onaylandıktan sonra 1-3 iş günü içinde kargoya verilir.</li>
+                      ) : null}
                       <li>Kargo süresi bulunduğunuz bölgeye göre 2-5 iş günü arasında değişir.</li>
                       <li>Kargo takip numarası sipariş detaylarınızda görüntülenecektir.</li>
                       <li>Teslimat sırasında alıcının kimliği kontrol edilebilir.</li>

@@ -93,6 +93,7 @@
                 <input type="number" step="0.01" min="0" name="offer_price" class="form-control" value="{{ old('offer_price') }}" placeholder="Opsiyonel">
               </div>
             </div>
+            @include('seller.partials.delivery_info_field', ['deliveryInfo' => old('delivery_info'), 'wrapperClass' => '', 'inputId' => 'bc_delivery_info'])
             <p class="small text-muted">Komisyon oranı ≈ %{{ number_format((float)($commissionRate ?? 10), 1) }}</p>
             <button type="submit" class="btn btn-primary btn-lg btn-block">Ürünü yayınla</button>
           </form>

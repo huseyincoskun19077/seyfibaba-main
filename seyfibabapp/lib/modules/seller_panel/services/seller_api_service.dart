@@ -170,6 +170,7 @@ class SellerApiService {
     String? tags,
     String? sku,
     String? weight,
+    String? deliveryInfo,
     String? seoTitle,
     String? seoDescription,
     int saleUnitQty = 1,
@@ -219,6 +220,9 @@ class SellerApiService {
     }
     if (weight != null && weight.trim().isNotEmpty) {
       request.fields['weight'] = weight.trim();
+    }
+    if (deliveryInfo != null && deliveryInfo.trim().isNotEmpty) {
+      request.fields['delivery_info'] = deliveryInfo.trim();
     }
     if (seoTitle != null && seoTitle.trim().isNotEmpty) {
       request.fields['seo_title'] = seoTitle.trim();
@@ -274,6 +278,7 @@ class SellerApiService {
     required double price,
     required int quantity,
     double? offerPrice,
+    String? deliveryInfo,
   }) async {
     final body = <String, dynamic>{
       'barcode': barcode.trim(),
@@ -282,6 +287,9 @@ class SellerApiService {
     };
     if (offerPrice != null && offerPrice > 0) {
       body['offer_price'] = offerPrice;
+    }
+    if (deliveryInfo != null && deliveryInfo.trim().isNotEmpty) {
+      body['delivery_info'] = deliveryInfo.trim();
     }
     final response = await NetworkParser.callClientWithCatchException(
       () => _client.post(

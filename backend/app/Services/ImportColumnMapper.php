@@ -46,6 +46,11 @@ class ImportColumnMapper
             'erp urun kodu', 'erp_urun_kodu', 'kod', 'code',
         ],
         'weight' => ['weight', 'agirlik', 'gramaj', 'desi'],
+        'delivery_info' => [
+            'delivery_info', 'delivery info', 'kargo suresi', 'kargo_suresi',
+            'teslimat', 'teslimat bilgisi', 'teslimat_bilgisi', 'kargo notu', 'kargo_notu',
+            'shipping', 'shipping time', 'shipping_time',
+        ],
         'tags' => ['tags', 'etiket', 'etiketler', 'anahtar kelime', 'anahtar_kelime'],
         'image_url' => [
             'image_url', 'image url', 'image', 'resim url', 'resim_url', 'resim',

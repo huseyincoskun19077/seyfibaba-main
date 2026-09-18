@@ -138,6 +138,7 @@
                             <label>Stok (kaç paket) <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" name="quantity" min="0" value="{{ $product->qty }}">
                         </div>
+                        @include('seller.partials.delivery_info_field', ['deliveryInfo' => old('delivery_info', $product->delivery_info), 'wrapperClass' => 'col-12'])
                         <div class="form-group col-12">
                             <label>{{__('admin.Short Description')}} <span class="text-danger">*</span></label>
                             <textarea name="short_description" cols="30" rows="10" class="form-control text-area-5">{{ $product->short_description }}</textarea>

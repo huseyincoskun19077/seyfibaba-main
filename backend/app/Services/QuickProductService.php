@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\SubCategory;
 use App\Models\Vendor;
 use App\Support\ProductSlug;
+use App\Support\ProductDeliveryInfo;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 
@@ -108,6 +109,7 @@ class QuickProductService
         $product->status = 1;
         $product->approve_by_admin = 1;
         $product->weight = (float) ($uc['weight'] ?? 0);
+        $product->delivery_info = ProductDeliveryInfo::normalize($uc['delivery_info'] ?? null);
         $product->is_undefine = 1;
         $product->is_specification = 0;
         $product->seo_title = trim($uc['seo_title'] ?? '') ?: ($ai['seo_title'] ?: mb_substr($name, 0, 60));

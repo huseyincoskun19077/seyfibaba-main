@@ -9,6 +9,7 @@ import '../../../modules/home/widgets/home_theme.dart';
 import '../../../utils/utils.dart';
 import '../models/seller_catalog_option.dart';
 import '../services/seller_api_service.dart';
+import '../widgets/seller_delivery_info_field.dart';
 
 class SellerQuickProductScreen extends StatefulWidget {
   const SellerQuickProductScreen({super.key});
@@ -33,6 +34,7 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
   final _brandNameCtrl = TextEditingController();
   final _skuCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
+  final _deliveryCtrl = TextEditingController();
   final _seoTitleCtrl = TextEditingController();
   final _seoDescCtrl = TextEditingController();
 
@@ -82,6 +84,7 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
     _brandNameCtrl.dispose();
     _skuCtrl.dispose();
     _weightCtrl.dispose();
+    _deliveryCtrl.dispose();
     _seoTitleCtrl.dispose();
     _seoDescCtrl.dispose();
     for (final color in _colors) {
@@ -342,6 +345,7 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
         longDescription: _longDescCtrl.text,
         sku: _skuCtrl.text,
         weight: _weightCtrl.text,
+        deliveryInfo: _deliveryCtrl.text,
         seoTitle: _seoTitleCtrl.text,
         seoDescription: _seoDescCtrl.text,
         saleUnitQty: _packQty,
@@ -775,6 +779,8 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
+            const SizedBox(height: 12),
+            SellerDeliveryInfoField(controller: _deliveryCtrl),
             const SizedBox(height: 12),
             TextField(
               controller: _seoTitleCtrl,

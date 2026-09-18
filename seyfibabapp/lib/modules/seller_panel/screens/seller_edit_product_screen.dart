@@ -11,6 +11,7 @@ import '../../../modules/home/widgets/home_theme.dart';
 import '../../../utils/utils.dart';
 import '../models/seller_catalog_option.dart';
 import '../services/seller_api_service.dart';
+import '../widgets/seller_delivery_info_field.dart';
 
 class SellerEditProductScreen extends StatefulWidget {
   const SellerEditProductScreen({super.key, required this.productId});
@@ -36,6 +37,7 @@ class _SellerEditProductScreenState extends State<SellerEditProductScreen> {
   final _tagsCtrl = TextEditingController();
   final _seoTitleCtrl = TextEditingController();
   final _seoDescCtrl = TextEditingController();
+  final _deliveryCtrl = TextEditingController();
 
   bool _loading = true;
   bool _saving = false;
@@ -71,6 +73,7 @@ class _SellerEditProductScreenState extends State<SellerEditProductScreen> {
     _tagsCtrl.dispose();
     _seoTitleCtrl.dispose();
     _seoDescCtrl.dispose();
+    _deliveryCtrl.dispose();
     super.dispose();
   }
 
@@ -103,6 +106,7 @@ class _SellerEditProductScreenState extends State<SellerEditProductScreen> {
       _tagsCtrl.text = '${p['tags'] ?? ''}';
       _seoTitleCtrl.text = '${p['seo_title'] ?? ''}';
       _seoDescCtrl.text = '${p['seo_description'] ?? ''}';
+      _deliveryCtrl.text = '${p['delivery_info'] ?? ''}';
       _categoryId = int.tryParse('${p['category_id'] ?? ''}');
       _subCategoryId = int.tryParse('${p['sub_category_id'] ?? ''}');
       _brandId = int.tryParse('${p['brand_id'] ?? ''}');
@@ -253,6 +257,7 @@ class _SellerEditProductScreenState extends State<SellerEditProductScreen> {
           'tags': _tagsCtrl.text.trim(),
           'seo_title': _seoTitleCtrl.text.trim(),
           'seo_description': _seoDescCtrl.text.trim(),
+          'delivery_info': _deliveryCtrl.text.trim(),
         },
         thumbImagePath: _newImagePath,
       );
@@ -427,6 +432,8 @@ class _SellerEditProductScreenState extends State<SellerEditProductScreen> {
                     const SizedBox(height: 12),
                     _field(_skuCtrl, 'SKU'),
                     _field(_tagsCtrl, 'Etiketler'),
+                    SellerDeliveryInfoField(controller: _deliveryCtrl),
+                    const SizedBox(height: 12),
                     _field(_seoTitleCtrl, 'SEO başlık'),
                     _field(_seoDescCtrl, 'SEO açıklama', maxLines: 3),
                     const SizedBox(height: 16),

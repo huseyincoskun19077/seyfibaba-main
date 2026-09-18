@@ -9,6 +9,7 @@ import '../../../modules/home/widgets/home_theme.dart';
 import '../../../utils/utils.dart';
 import '../models/seller_catalog_option.dart';
 import '../services/seller_api_service.dart';
+import '../widgets/seller_delivery_info_field.dart';
 
 class SellerFullProductScreen extends StatefulWidget {
   const SellerFullProductScreen({super.key});
@@ -32,6 +33,7 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
   final _tagsCtrl = TextEditingController();
   final _seoTitleCtrl = TextEditingController();
   final _seoDescCtrl = TextEditingController();
+  final _deliveryCtrl = TextEditingController();
 
   SellerProductCreateMeta? _meta;
   List<SellerCatalogOption> _subs = const [];
@@ -64,6 +66,7 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
     _tagsCtrl.dispose();
     _seoTitleCtrl.dispose();
     _seoDescCtrl.dispose();
+    _deliveryCtrl.dispose();
     super.dispose();
   }
 
@@ -253,6 +256,7 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
           'tags': _tagsCtrl.text.trim(),
           'seo_title': _seoTitleCtrl.text.trim(),
           'seo_description': _seoDescCtrl.text.trim(),
+          'delivery_info': _deliveryCtrl.text.trim(),
         },
         thumbImagePath: _imagePath!,
       );
@@ -428,6 +432,8 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
                     const SizedBox(height: 12),
                     _field(_skuCtrl, 'SKU'),
                     _field(_tagsCtrl, 'Etiketler'),
+                    SellerDeliveryInfoField(controller: _deliveryCtrl),
+                    const SizedBox(height: 12),
                     _field(_seoTitleCtrl, 'SEO başlık'),
                     _field(_seoDescCtrl, 'SEO açıklama', maxLines: 3),
                     const SizedBox(height: 16),

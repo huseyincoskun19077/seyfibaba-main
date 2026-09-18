@@ -6,6 +6,7 @@ import '../../../modules/authentication/controller/login/login_bloc.dart';
 import '../../../modules/home/widgets/home_theme.dart';
 import '../../../utils/utils.dart';
 import '../services/seller_api_service.dart';
+import '../widgets/seller_delivery_info_field.dart';
 
 /// Barkod kataloğundan ürün ekleme — fiyat / stok / indirim satıcıdan.
 class SellerBarcodeProductScreen extends StatefulWidget {
@@ -22,6 +23,7 @@ class _SellerBarcodeProductScreenState extends State<SellerBarcodeProductScreen>
   final _priceCtrl = TextEditingController();
   final _qtyCtrl = TextEditingController(text: '1');
   final _offerCtrl = TextEditingController();
+  final _deliveryCtrl = TextEditingController();
 
   Map<String, dynamic>? _catalog;
   Map<String, dynamic>? _alreadyOwned;
@@ -38,6 +40,7 @@ class _SellerBarcodeProductScreenState extends State<SellerBarcodeProductScreen>
     _priceCtrl.dispose();
     _qtyCtrl.dispose();
     _offerCtrl.dispose();
+    _deliveryCtrl.dispose();
     super.dispose();
   }
 
@@ -123,6 +126,7 @@ class _SellerBarcodeProductScreenState extends State<SellerBarcodeProductScreen>
         price: price,
         quantity: qty,
         offerPrice: offer,
+        deliveryInfo: _deliveryCtrl.text,
       );
       if (!mounted) return;
       Utils.showSnackBar(context, 'Ürün eklendi');
@@ -320,6 +324,8 @@ class _SellerBarcodeProductScreenState extends State<SellerBarcodeProductScreen>
                 ),
               ),
             ),
+            const SizedBox(height: 12),
+            SellerDeliveryInfoField(controller: _deliveryCtrl),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,

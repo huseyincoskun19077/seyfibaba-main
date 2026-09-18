@@ -297,7 +297,7 @@ export default function Drawer({ className, open, action, isSecondHandSite = fal
               {isMultivendor === 1 && (
                 <div className="mt-4 px-4">
                   <Link
-                    href="/satici-kayit"
+                    href="/satici"
                     onClick={closeDrawer}
                     className="flex h-12 w-full items-center justify-center rounded-xl bg-qyellow text-sm font-700 text-qblack shadow-sm transition hover:brightness-95"
                   >

@@ -72,6 +72,7 @@ class BarcodeProductController extends Controller
             'price' => 'required|numeric|min:0.01|max:99999999',
             'quantity' => 'required|integer|min:0|max:999999',
             'offer_price' => 'nullable|numeric|min:0|max:99999999',
+            'delivery_info' => 'nullable|string|max:500',
         ]);
 
         $item = $this->catalog->findByBarcode($validated['barcode']);
@@ -89,7 +90,8 @@ class BarcodeProductController extends Controller
             $item,
             (float) $validated['price'],
             (int) $validated['quantity'],
-            $offer
+            $offer,
+            $validated['delivery_info'] ?? null
         );
 
         return response()->json([

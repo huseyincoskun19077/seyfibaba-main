@@ -124,7 +124,8 @@ class BarcodeCatalogService
         BarcodeCatalog $catalog,
         float $price,
         int $qty,
-        ?float $offerPrice = null
+        ?float $offerPrice = null,
+        ?string $deliveryInfo = null
     ): Product {
         $offer = $offerPrice && $offerPrice > 0 && $offerPrice < $price ? $offerPrice : 0;
         $name = trim((string) $catalog->name) ?: ('Ürün ' . $catalog->barcode);
@@ -149,6 +150,7 @@ class BarcodeCatalogService
         $product->long_description = $catalog->long_description ?: ('<p>' . e($name) . '</p>');
         $product->tags = $catalog->tags ?: $name;
         $product->weight = (float) ($catalog->weight ?? 0);
+        $product->delivery_info = \App\Support\ProductDeliveryInfo::normalize($deliveryInfo);
         $product->is_undefine = 1;
         $product->is_specification = 0;
         $product->seo_title = $catalog->seo_title ?: mb_substr($name . ' ' . $catalog->barcode, 0, 190);

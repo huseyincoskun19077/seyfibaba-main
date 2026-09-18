@@ -133,10 +133,6 @@ const AccountLink = ({ auth }) => {
       <Link href="/signup" aria-label={ServeLangItem()?.Sign_Up || "Üye Ol"}>
         <span className={linkClass}>{ServeLangItem()?.Sign_Up || "Üye Ol"}</span>
       </Link>
-      <span className="text-qgray">|</span>
-      <Link href="/satici-kayit" aria-label="Satıcı Ol">
-        <span className={linkClass}>Satıcı Ol</span>
-      </Link>
     </div>
   );
 };
@@ -177,6 +173,15 @@ export default function TopBar({
             <ul className="flex space-x-6">
               <li className="rtl:ml-6 ltr:ml-0">
                 <AccountLink auth={session} />
+              </li>
+              <li>
+                <Link
+                  href="/satici"
+                  className="text-xs leading-6 text-qblack font-700 cursor-pointer"
+                  aria-label="Satıcı Ol — bilgi ve başvuru"
+                >
+                  Satıcı Ol
+                </Link>
               </li>
               <li>
                 <Link

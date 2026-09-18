@@ -30,6 +30,7 @@ class BulkProductImportService
         'long_description',
         'sku',
         'weight',
+        'delivery_info',
         'tags',
         'image_url',
     ];
@@ -257,6 +258,9 @@ class BulkProductImportService
             $product->weight = ($normalizedRow['weight'] !== '' && $normalizedRow['weight'] !== null)
                 ? $normalizedRow['weight']
                 : 0;
+            $product->delivery_info = \App\Support\ProductDeliveryInfo::normalize(
+                $normalizedRow['delivery_info'] ?? null
+            );
             $product->tags = $normalizedRow['tags'] ?: $productName;
             $product->is_undefine = 1;
             $product->is_specification = 0;

@@ -28,6 +28,7 @@ use App\Models\CompareProduct;
 use Image;
 use File;
 use Str;
+use App\Support\ProductDeliveryInfo;
 use Auth;
 use App\Support\ProductSlug;
 
@@ -174,6 +175,7 @@ class SellerProductController extends Controller
             'price' => 'required|numeric',
             'status' => 'required',
             'weight' => 'nullable|numeric',
+            'delivery_info' => 'nullable|string|max:500',
             'quantity' => 'required|numeric',
             'sale_unit_qty' => 'nullable|integer|min:1|max:9999',
         ];
@@ -226,6 +228,7 @@ class SellerProductController extends Controller
         $product->status = 1;
         $product->approve_by_admin = 1;
         $product->weight = $request->filled('weight') ? $request->weight : 0;
+        $product->delivery_info = ProductDeliveryInfo::normalize($request->input('delivery_info'));
         $product->is_undefine = 1;
         $product->is_specification = $request->is_specification ? 1 : 0;
         $product->seo_title = $request->seo_title ? $request->seo_title : $request->name;
@@ -320,6 +323,7 @@ class SellerProductController extends Controller
             'price' => 'required|numeric',
             'status' => 'required',
             'weight' => 'nullable|numeric',
+            'delivery_info' => 'nullable|string|max:500',
             'quantity' => 'required|numeric',
             'sale_unit_qty' => 'nullable|integer|min:1|max:9999',
         ];
@@ -377,6 +381,7 @@ class SellerProductController extends Controller
             $product->status = (int) $request->status;
         }
         $product->weight = $request->filled('weight') ? $request->weight : 0;
+        $product->delivery_info = ProductDeliveryInfo::normalize($request->input('delivery_info'));
         $product->is_specification = $request->is_specification ? 1 : 0;
         $product->seo_title = $request->seo_title ? $request->seo_title : $request->name;
         $product->seo_description = $request->seo_description ? $request->seo_description : $request->name;

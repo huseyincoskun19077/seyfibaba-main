@@ -248,6 +248,7 @@
               <label>Ağırlık (g)</label>
               <input type="number" name="weight" class="form-control" value="{{ old('weight') }}" step="1" min="0" inputmode="numeric">
             </div>
+            @include('seller.partials.delivery_info_field', ['deliveryInfo' => old('delivery_info'), 'wrapperClass' => 'mt-3 mb-0'])
             <div class="form-group mt-3">
               <label>SEO başlığı</label>
               <input type="text" name="seo_title" id="qpSeoTitle" class="form-control" value="{{ old('seo_title') }}">

@@ -18,6 +18,20 @@ const ViewMoreTitle = dynamic(() => import("../Helpers/ViewMoreTitle"));
 const SectionStyleTwo = dynamic(() => import("../Helpers/SectionStyleTwo"));
 const BrandSection = dynamic(() => import("./BrandSection"));
 const CampaignCountDown = dynamic(() => import("./CampaignCountDown"));
+const HomeSellerPromo = dynamic(() => import("./HomeSellerPromo"));
+
+const FALLBACK_PLAY_STORE =
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_PLAY_STORE_URL) ||
+  "https://play.google.com/store/apps/details?id=com.seyfibaba.app";
+
+const FALLBACK_APP_STORE =
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_STORE_URL) ||
+  "https://apps.apple.com/tr/search?term=Seyfibaba";
+
+function resolveStoreUrl(value, fallback) {
+  const raw = String(value || "").trim();
+  return /^https?:\/\//i.test(raw) ? raw : fallback;
+}
 
 export default function Home({ homepageData }) {
   const pathname = usePathname() || "";
@@ -118,11 +132,17 @@ export default function Home({ homepageData }) {
     Number(homepage.flashSaleSidebarBanner.status) === 1
       ? homepage.flashSaleSidebarBanner
       : null;
-  const hasAppDownloadLinks = Boolean(
-    appDownloadBanner?.play_store?.trim() || appDownloadBanner?.app_store?.trim()
-  );
-  const showCampaignSection =
-    (homepage?.flashSale && isFlashSaleActive(homepage.flashSale)) || hasAppDownloadLinks;
+  const downloadData = {
+    image: appDownloadBanner?.image || null,
+    play_store: resolveStoreUrl(
+      appDownloadBanner?.play_store || appDownloadBanner?.link,
+      FALLBACK_PLAY_STORE
+    ),
+    app_store: resolveStoreUrl(
+      appDownloadBanner?.app_store,
+      FALLBACK_APP_STORE
+    ),
+  };
   const [selectedMobileCategorySlug, setSelectedMobileCategorySlug] = useState("");
 
   const ITEMS_PER_PAGE = 8;
@@ -344,16 +364,14 @@ export default function Home({ homepageData }) {
                   </section>
                 )}
                 {/* Mobil uygulama — Öne Çıkan Ürünler'in hemen altında */}
-                {showCampaignSection && (
-                  <section>
-                    <CampaignCountDown
-                      className="md:mb-4 mb-2 md:mt-5 mt-3"
-                      flashSaleData={homepage.flashSale}
-                      downloadData={hasAppDownloadLinks ? appDownloadBanner : null}
-                      lastDate={homepage.flashSale?.end_time}
-                    />
-                  </section>
-                )}
+                <section>
+                  <CampaignCountDown
+                    className="md:mb-4 mb-2 md:mt-5 mt-3"
+                    flashSaleData={homepage.flashSale}
+                    downloadData={downloadData}
+                    lastDate={homepage.flashSale?.end_time}
+                  />
+                </section>
               </div>
             );
 
@@ -361,6 +379,20 @@ export default function Home({ homepageData }) {
             return null;
         }
       })}
+
+      {/* Featured_Products admin sırasında yoksa uygulama indirme yine görünsün */}
+      {!((getsectionTitles || []).some((s) => s.key === "Featured_Products")) && (
+        <section>
+          <CampaignCountDown
+            className="md:mb-4 mb-2 md:mt-5 mt-3"
+            flashSaleData={homepage.flashSale}
+            downloadData={downloadData}
+            lastDate={homepage.flashSale?.end_time}
+          />
+        </section>
+      )}
+
+      <HomeSellerPromo />
 
     </div>
   );

@@ -28,6 +28,7 @@ class ProductDetailsProductModel extends Equatable {
   final String seoTitle;
   final String seoDescription;
   final double weight;
+  final String deliveryInfo;
   final double price;
   final double offerPrice;
   final int isFeatured;
@@ -61,6 +62,7 @@ class ProductDetailsProductModel extends Equatable {
     required this.seoTitle,
     required this.seoDescription,
     required this.weight,
+    this.deliveryInfo = '',
     required this.price,
     required this.offerPrice,
     required this.isFeatured,
@@ -95,6 +97,7 @@ class ProductDetailsProductModel extends Equatable {
     String? seoTitle,
     String? seoDescription,
     double? weight,
+    String? deliveryInfo,
     double? price,
     double? offerPrice,
     int? isFeatured,
@@ -128,6 +131,7 @@ class ProductDetailsProductModel extends Equatable {
       seoTitle: seoTitle ?? this.seoTitle,
       seoDescription: seoDescription ?? this.seoDescription,
       weight: weight ?? this.weight,
+      deliveryInfo: deliveryInfo ?? this.deliveryInfo,
       price: price ?? this.price,
       offerPrice: offerPrice ?? this.offerPrice,
       isFeatured: isFeatured ?? this.isFeatured,
@@ -166,6 +170,7 @@ class ProductDetailsProductModel extends Equatable {
       'seo_title': seoTitle,
       'seo_description': seoDescription,
       'weight': weight,
+      'delivery_info': deliveryInfo,
       'price': price,
       'offer_price': offerPrice,
       'is_featured': isFeatured,
@@ -208,6 +213,7 @@ class ProductDetailsProductModel extends Equatable {
       seoTitle: map['seo_title'] ?? '',
       seoDescription: map['seo_description'] ?? '',
       weight: map['weight'] != null ? Utils.stringToDouble(map['weight'].toString())??0.0 : 0.0,
+      deliveryInfo: (map['delivery_info'] ?? '').toString(),
       price: map['price'] != null ? double.parse(map['price'].toString()) : 0,
       offerPrice: map['offer_price'] != null
           ? double.parse(map['offer_price'].toString())
@@ -277,6 +283,7 @@ class ProductDetailsProductModel extends Equatable {
       seoTitle,
       seoDescription,
       weight,
+      deliveryInfo,
       price,
       offerPrice,
       isFeatured,

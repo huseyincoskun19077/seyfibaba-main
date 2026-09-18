@@ -18,6 +18,7 @@ import '../home/component/home_app_bar.dart';
 import '../cart/controllers/cart/cart_cubit.dart';
 import 'component/bottom_sheet_widget.dart';
 import 'component/description_component.dart';
+import 'component/delivery_info_component.dart';
 import 'component/product_details_component.dart';
 import 'component/product_header_component.dart';
 import 'component/rating_list_component.dart';
@@ -169,6 +170,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               child: ToggleButtonComponent(
                 textList: [
                   Language.description.capitalizeByWord(),
+                  'Teslimat',
                   '${Language.reviews.capitalizeByWord()} (${productDetailsModel.productReviews.length})',
                 ],
                 initialLabelIndex: 0,
@@ -198,6 +200,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     if (selectedIndex == 0) {
       return DescriptionComponent(productDetailsModel.product.longDescription);
     } else if (selectedIndex == 1) {
+      return DeliveryInfoComponent(
+        deliveryInfo: productDetailsModel.product.deliveryInfo,
+      );
+    } else if (selectedIndex == 2) {
       return ReviewListComponent(productDetailsModel.productReviews);
     }
     return const SizedBox();
