@@ -38,6 +38,7 @@ export default function ProductsFilter({
   onApplyPriceFilter = () => {},
   priceRangeMax = 100000,
 }) {
+  const [showAllBrands, setShowAllBrands] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState(new Set());
   const [expandedSubCategories, setExpandedSubCategories] = useState(new Set());
 
@@ -261,17 +262,17 @@ export default function ProductsFilter({
               </h2>
             </div>
             <ul>
-              {brands.map((brand, i) => (
-                <li key={i} className="item flex justify-between items-center mb-5">
+              {(showAllBrands ? brands : brands.slice(0, 10)).map((brand, i) => (
+                <li key={brand.id || i} className="item flex justify-between items-center mb-5">
                   <div className="flex space-x-[14px] items-center">
                     <Checkbox
-                      id={`brand-${brand.name}`}
+                      id={`brand-${brand.id || brand.name}`}
                       name={brand.id}
                       handleChange={brandsHandler}
                       checked={!!brand.selected}
                     />
                     <label
-                      htmlFor={`brand-${brand.name}`}
+                      htmlFor={`brand-${brand.id || brand.name}`}
                       className="text-xs font-400 capitalize cursor-pointer"
                     >
                       {brand.name}
@@ -280,6 +281,17 @@ export default function ProductsFilter({
                 </li>
               ))}
             </ul>
+            {brands.length > 10 && (
+              <button
+                type="button"
+                onClick={() => setShowAllBrands((v) => !v)}
+                className="text-xs font-500 text-qblack underline mt-1"
+              >
+                {showAllBrands
+                  ? "Daha az göster"
+                  : `Daha fazla gör (+${brands.length - 10})`}
+              </button>
+            )}
           </div>
         )}
 

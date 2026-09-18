@@ -867,58 +867,72 @@ function AllProductPageContent({ response, sellerInfo }) {
     useLazyGetAllProductsApiQuery();
 
   /**
-   * Handle filter changes and trigger API calls
+   * Handle filter changes and trigger API calls.
+   * Route-level category/sub/child come from SSR — do not refetch for those alone.
    */
   useEffect(() => {
     if (!response?.products?.data) return;
 
-    const hasActiveFilters =
+    const hasClientFilters =
       selectedVarientFilterItem.length > 0 ||
       selectedCategoryFilterItem.length > 0 ||
       selectedBrandsFilterItem.length > 0 ||
-      ensureArray(selectedSubCategorySlug).length > 0 ||
-      !!selectedChildCategorySlug ||
       !!appliedMinPrice ||
       !!appliedMaxPrice ||
       !!sortId ||
       String(listingSearch || "").trim().length >= 2;
 
-    if (hasActiveFilters) {
-      const query = buildClientSearchQuery();
+    // Sidebar subcategory checkboxes only when they differ from the route param
+    // (route sub_category is already applied by SSR).
+    const routeSub = searchParams.get("sub_category") || "";
+    const sidebarSubs = ensureArray(selectedSubCategorySlug).filter(
+      (slug) => slug && slug !== routeSub
+    );
+    const hasSidebarSubFilters = sidebarSubs.length > 0;
 
-      const fetchProducts = async (q) => {
-        setIsFiltering(true);
-        try {
-          const result = await getAllProductsApi(q).unwrap();
-          const data = result?.products?.data ?? [];
-          setProducts(data);
-          setProductTotal(result?.products?.total ?? data.length);
-          setNxtPage(result?.products?.next_page_url ?? null);
-        } catch {
-          setProducts([]);
-          setNxtPage(null);
-        } finally {
-          setIsFiltering(false);
-        }
-      };
-      fetchProducts(query);
-    } else {
-      // No active filters — show original products
+    if (!hasClientFilters && !hasSidebarSubFilters) {
       setProducts(response?.products?.data || []);
       setProductTotal(response?.products?.total || 0);
       setNxtPage(response?.products?.next_page_url || null);
+      return;
     }
+
+    const query = buildClientSearchQuery();
+    let cancelled = false;
+
+    const fetchProducts = async (q) => {
+      setIsFiltering(true);
+      try {
+        const result = await getAllProductsApi(q).unwrap();
+        if (cancelled) return;
+        const data = result?.products?.data ?? [];
+        setProducts(data);
+        setProductTotal(result?.products?.total ?? data.length);
+        setNxtPage(result?.products?.next_page_url ?? null);
+      } catch {
+        // Abort / cache race: keep SSR (or current) products — never wipe to empty.
+        if (cancelled) return;
+      } finally {
+        if (!cancelled) setIsFiltering(false);
+      }
+    };
+
+    fetchProducts(query);
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     selectedVarientFilterItem,
     selectedCategoryFilterItem,
     selectedBrandsFilterItem,
     selectedSubCategorySlug,
-    selectedChildCategorySlug,
     appliedMinPrice,
     appliedMaxPrice,
     sortId,
     listingSearch,
     response,
+    searchParams,
   ]);
 
   const [nextPageProductsApi, { isLoading: isLoadingNextPageProductsApi }] =

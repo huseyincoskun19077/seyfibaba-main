@@ -173,6 +173,40 @@ class HomeController extends Controller
             ->values();
     }
 
+    /**
+     * Seçili kategori/filtre kapsamındaki ürünlerde geçen markalar.
+     */
+    private function brandsForProductScope($productsQuery)
+    {
+        $brandIds = (clone $productsQuery)
+            ->reorder()
+            ->select('brand_id')
+            ->distinct()
+            ->pluck('brand_id')
+            ->filter(function ($id) {
+                return (int) $id > 0;
+            })
+            ->unique()
+            ->values();
+
+        if ($brandIds->isEmpty()) {
+            return collect();
+        }
+
+        return Brand::query()
+            ->where('status', 1)
+            ->whereIn('id', $brandIds)
+            ->orderBy('name')
+            ->select('id', 'name', 'slug', 'logo')
+            ->get()
+            ->map(function ($brand) {
+                $brand->logo = $brand->logo ?? '';
+
+                return $brand;
+            })
+            ->values();
+    }
+
     public function brandList()
     {
         return response()->json([
@@ -1454,8 +1488,6 @@ class HomeController extends Controller
 
         $categories = Category::with('activeSubCategories.activeChildCategories')->where(['status' => 1])->select('id','name','slug','description','icon')->get();
 
-        $brands = $this->activeBrandsForStorefront();
-
         $activeVariants = ProductFilterHelper::filterableVariants();
 
 
@@ -1567,6 +1599,9 @@ class HomeController extends Controller
 
 
 
+
+        // Kategori kapsamındaki ürün markaları (marka checkbox filtresinden önce)
+        $brands = $this->brandsForProductScope($products);
 
         if($request->brand) {
 
