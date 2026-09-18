@@ -31,6 +31,10 @@ use Str;
 use App\Support\ProductDeliveryInfo;
 use Auth;
 use App\Support\ProductSlug;
+use App\Services\SimpleProductColorService;
+use App\Services\ProductImageStorage;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 
 class SellerProductController extends Controller
@@ -178,6 +182,11 @@ class SellerProductController extends Controller
             'delivery_info' => 'nullable|string|max:500',
             'quantity' => 'required|numeric',
             'sale_unit_qty' => 'nullable|integer|min:1|max:9999',
+            'colors' => 'nullable|array|max:20',
+            'colors.*.name' => 'nullable|string|max:80',
+            'colors.*.price' => 'nullable|numeric|min:0',
+            'colors.*.qty' => 'nullable|integer|min:0',
+            'colors.*.image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:8192',
         ];
         $customMessages = [
             'short_name.required' => trans('Short name is required'),
@@ -200,12 +209,14 @@ class SellerProductController extends Controller
         $seller = Auth::guard('api')->user()->seller;
         $product = new Product();
         if($request->thumb_image){
-            $extention = $request->thumb_image->getClientOriginalExtension();
-            $image_name = Str::slug($request->name).date('-Y-m-d-h-i-s-').rand(999,9999).'.'.$extention;
-            $image_name = 'uploads/custom-images/'.$image_name;
-            Image::make($request->thumb_image)
-                ->save(public_path().'/'.$image_name);
-            $product->thumb_image=$image_name;
+            try {
+                $product->thumb_image = app(ProductImageStorage::class)->store(
+                    $request->thumb_image,
+                    $request->name
+                );
+            } catch (Throwable $e) {
+                return response()->json(['message' => 'Kapak görseli yüklenemedi.'], 422);
+            }
         }
 
         $product->vendor_id = $seller->id;
@@ -239,6 +250,14 @@ class SellerProductController extends Controller
         $product->is_featured = $request->is_featured ? 1 : 0;
         $product->save();
 
+        $colorResult = ['message' => null];
+        if ($request->has('colors')) {
+            $colorResult = app(SimpleProductColorService::class)->sync(
+                $product,
+                app(SimpleProductColorService::class)->payloadFromRequest($request)
+            );
+        }
+
         if($request->is_specification){
             $exist_specifications=[];
             if($request->keys){
@@ -259,7 +278,13 @@ class SellerProductController extends Controller
             }
         }
         $notification = trans('Created Successfully');
-        return response()->json(['message' => $notification],200);
+        if (! empty($colorResult['message'])) {
+            $notification .= ' ' . $colorResult['message'];
+        }
+        return response()->json([
+            'message' => $notification,
+            'product' => ['id' => $product->id, 'slug' => $product->slug],
+        ],200);
     }
 
     public function show($id)
@@ -296,7 +321,17 @@ class SellerProductController extends Controller
         $brands = Brand::query()->where('status', 1)->orderBy('name')->get();
         $specificationKeys = ProductSpecificationKey::all();
         $productSpecifications = ProductSpecification::where('product_id',$product->id)->get();
-        return response()->json(['product' => $product, 'categories' => $categories , 'brands' => $brands, 'specificationKeys' => $specificationKeys, 'productSpecifications' => $productSpecifications, 'subCategories' => $subCategories, 'childCategories' => $childCategories , ], 200);
+        $colorRows = app(SimpleProductColorService::class)->existingRows($product);
+        return response()->json([
+            'product' => $product,
+            'categories' => $categories,
+            'brands' => $brands,
+            'specificationKeys' => $specificationKeys,
+            'productSpecifications' => $productSpecifications,
+            'subCategories' => $subCategories,
+            'childCategories' => $childCategories,
+            'colorRows' => $colorRows,
+        ], 200);
 
     }
 
@@ -326,6 +361,11 @@ class SellerProductController extends Controller
             'delivery_info' => 'nullable|string|max:500',
             'quantity' => 'required|numeric',
             'sale_unit_qty' => 'nullable|integer|min:1|max:9999',
+            'colors' => 'nullable|array|max:20',
+            'colors.*.name' => 'nullable|string|max:80',
+            'colors.*.price' => 'nullable|numeric|min:0',
+            'colors.*.qty' => 'nullable|integer|min:0',
+            'colors.*.image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:8192',
         ];
         $customMessages = [
             'short_name.required' => trans('Short name is required'),
@@ -348,15 +388,20 @@ class SellerProductController extends Controller
 
         if($request->thumb_image){
             $old_thumbnail = $product->thumb_image;
-            $extention = $request->thumb_image->getClientOriginalExtension();
-            $image_name = Str::slug($request->name).date('-Y-m-d-h-i-s-').rand(999,9999).'.'.$extention;
-            $image_name = 'uploads/custom-images/'.$image_name;
-            Image::make($request->thumb_image)
-                ->save(public_path().'/'.$image_name);
-            $product->thumb_image=$image_name;
-            $product->save();
-            if($old_thumbnail){
-                if(File::exists(public_path().'/'.$old_thumbnail))unlink(public_path().'/'.$old_thumbnail);
+            try {
+                $product->thumb_image = app(ProductImageStorage::class)->store(
+                    $request->thumb_image,
+                    $request->name
+                );
+                $product->save();
+                if ($old_thumbnail && File::exists(public_path().'/'.$old_thumbnail)) {
+                    unlink(public_path().'/'.$old_thumbnail);
+                }
+            } catch (Throwable $e) {
+                Log::warning('API seller thumb update failed', [
+                    'product_id' => $product->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
@@ -391,6 +436,14 @@ class SellerProductController extends Controller
         $product->is_featured = $request->is_featured ? 1 : 0;
         $product->save();
 
+        $colorResult = ['message' => null];
+        if ($request->has('colors')) {
+            $colorResult = app(SimpleProductColorService::class)->sync(
+                $product,
+                app(SimpleProductColorService::class)->payloadFromRequest($request)
+            );
+        }
+
         $exist_specifications=[];
         if($request->keys){
             foreach($request->keys as $index => $key){
@@ -415,6 +468,9 @@ class SellerProductController extends Controller
             }
         }
         $notification = trans('Update Successfully');
+        if (! empty($colorResult['message'])) {
+            $notification .= ' ' . $colorResult['message'];
+        }
         return response()->json(['message' => $notification],200);
     }
 

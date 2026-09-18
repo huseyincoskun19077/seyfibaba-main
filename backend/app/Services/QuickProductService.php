@@ -127,8 +127,9 @@ class QuickProductService
             ]);
         }
 
+        $colorResult = ['ok' => true, 'saved' => 0, 'message' => null];
         if (!empty($uc['colors']) && is_array($uc['colors'])) {
-            app(\App\Services\SimpleProductColorService::class)->sync($product, $uc['colors']);
+            $colorResult = app(\App\Services\SimpleProductColorService::class)->sync($product, $uc['colors']);
         }
 
         // Gallery images
@@ -136,13 +137,20 @@ class QuickProductService
         if (is_array($galleryFiles)) {
             foreach ($galleryFiles as $galleryFile) {
                 if ($galleryFile instanceof UploadedFile) {
-                    $galleryPath = $this->imageStorage->store($galleryFile, $inputName . '-gallery');
-                    $product->gallery()->create(['image' => $galleryPath]);
+                    try {
+                        $galleryPath = $this->imageStorage->store($galleryFile, $inputName . '-gallery');
+                        $product->gallery()->create(['image' => $galleryPath]);
+                    } catch (\Throwable $e) {
+                        Log::warning('Quick product gallery upload failed', [
+                            'product_id' => $product->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
             }
         }
 
-        return ['product' => $product, 'ai' => $ai];
+        return ['product' => $product, 'ai' => $ai, 'color' => $colorResult];
     }
 
     /**

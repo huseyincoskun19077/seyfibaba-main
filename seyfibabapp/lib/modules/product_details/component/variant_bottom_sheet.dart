@@ -72,8 +72,16 @@ class _VariantBottomSheetState extends State<VariantBottomSheet> {
                             margin: Utils.only(right: 12.0),
                             child: CustomImage(
                               path: RemoteUrls.imageUrl(
-                                  dCubit.details?.product.thumbImage ??
-                                      Kimages.kNetworkImage),
+                                  () {
+                                    final selectedColor = state.variantItem
+                                        .where((e) => e.image.isNotEmpty)
+                                        .toList();
+                                    if (selectedColor.isNotEmpty) {
+                                      return selectedColor.last.image;
+                                    }
+                                    return dCubit.details?.product.thumbImage ??
+                                        Kimages.kNetworkImage;
+                                  }()),
                               fit: BoxFit.fill,
                             ),
                           ),
@@ -282,6 +290,11 @@ class _VariantBottomSheetState extends State<VariantBottomSheet> {
   }
 
   Widget _productVariant(ActiveVariantModel p, int pIndex, DetailsStateModel state) {
+    final isColor = RegExp(r'renk|color', caseSensitive: false).hasMatch(p.name);
+    final selected = state.variantItem.length > pIndex
+        ? state.variantItem[pIndex]
+        : (p.activeVariantsItems.isNotEmpty ? p.activeVariantsItems.first : null);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -291,41 +304,93 @@ class _VariantBottomSheetState extends State<VariantBottomSheet> {
           fontSize: 16.0,
           fontWeight: FontWeight.w500,
         ),
-        DropdownButtonFormField<ActiveVariantItemModel>(
-          isDense: true,
-          isExpanded: true,
-          value: p.activeVariantsItems.first,
-          padding: Utils.symmetric(h: 0.0, v: 6.0),
-          hint: CustomText(
-            text: Language.selectVariantItem,
-            fontWeight: FontWeight.w400,
-            fontSize: 16.0,
+        Utils.verticalSpace(8.0),
+        if (isColor)
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: p.activeVariantsItems.map((item) {
+              final active = selected?.id == item.id;
+              return GestureDetector(
+                onTap: () {
+                  dCubit.addIndex(pIndex.toString());
+                  dCubit.updateVPItems(item);
+                  setState(() {});
+                },
+                child: Container(
+                  width: 88,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: active ? Utils.dynamicPrimaryColor(context) : borderColor,
+                      width: active ? 2 : 1,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(6),
+                  child: Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: SizedBox(
+                          height: 56,
+                          width: double.infinity,
+                          child: item.image.isNotEmpty
+                              ? CustomImage(
+                                  path: RemoteUrls.imageUrl(item.image),
+                                  fit: BoxFit.cover,
+                                )
+                              : Container(color: borderColor.withOpacity(0.35)),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          )
+        else
+          DropdownButtonFormField<ActiveVariantItemModel>(
+            isDense: true,
+            isExpanded: true,
+            value: p.activeVariantsItems.isNotEmpty
+                ? (selected ?? p.activeVariantsItems.first)
+                : null,
+            padding: Utils.symmetric(h: 0.0, v: 6.0),
+            hint: CustomText(
+              text: Language.selectVariantItem,
+              fontWeight: FontWeight.w400,
+              fontSize: 16.0,
+            ),
+            onTap: () {
+              dCubit.addIndex(pIndex.toString());
+            },
+            icon: const Icon(Icons.keyboard_arrow_down_sharp, color: blackColor),
+            items: p.activeVariantsItems.isNotEmpty
+                ? p.activeVariantsItems
+                    .map<DropdownMenuItem<ActiveVariantItemModel>>(
+                        (e) => DropdownMenuItem(
+                              value: e,
+                              child: CustomText(
+                                text: e.name,
+                                fontSize: 16.0,
+                                color: blackColor,
+                              ),
+                            ))
+                    .toList()
+                : [],
+            onChanged: (val) {
+              if (val == null) return;
+              debugPrint('variant-id ${val.id}');
+              dCubit.updateVPItems(val);
+            },
           ),
-          onTap: () {
-            dCubit.addIndex(pIndex.toString());
-          },
-          icon: const Icon(Icons.keyboard_arrow_down_sharp, color: blackColor),
-          items: p.activeVariantsItems.isNotEmpty
-              ? p.activeVariantsItems
-                  .map<DropdownMenuItem<ActiveVariantItemModel>>(
-                      (e) => DropdownMenuItem(
-                            value: e,
-                            child: CustomText(
-                              text: e.name,
-                              fontSize: 16.0,
-                              color: blackColor,
-                            ),
-                          ))
-                  .toList()
-              : [],
-          onChanged: (val) {
-            if (val == null) return;
-            // debugPrint('item-id-price ${val.id} | ${val.price} | ${val.otherOptions}');
-            debugPrint('variant-id ${val.id}');
-
-            dCubit.updateVPItems(val);
-          },
-        ),
         Utils.verticalSpace(16.0),
       ],
     );

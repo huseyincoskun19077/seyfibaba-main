@@ -4,14 +4,17 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:shop_o/core/data/datasources/remote_data_source_packages.dart';
 import 'package:shop_o/widgets/capitalized_word.dart';
 
+import '../../../core/remote_urls.dart';
 import '../../../core/router_name.dart';
 import '../../../utils/constants.dart';
 import '../../../utils/language_string.dart';
 import '../../../utils/utils.dart';
+import '../../../widgets/custom_image.dart';
 import '../../../widgets/custom_text.dart';
 import '../../animated_splash_screen/controller/app_setting_cubit/app_setting_cubit.dart';
 import '../../category/component/price_card_widget.dart';
 import '../../category/model/category_navigation_args.dart';
+import '../controller/cubit/product_details_cubit.dart';
 import '../model/product_details_product_model.dart';
 import 'product_furniture_inquiry.dart';
 
@@ -191,6 +194,7 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
             ],
           ),
           const SizedBox(height: 10.0),
+          _buildColorVariants(context),
           CustomText(
               text: widget.product.shortDescription,
               textAlign: TextAlign.justify,
@@ -204,6 +208,94 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
       ),
     );
   }
+
+  Widget _buildColorVariants(BuildContext context) {
+    final hasColor = widget.product.activeVariantModel.any((v) =>
+        RegExp(r'renk|color', caseSensitive: false).hasMatch(v.name) &&
+        v.activeVariantsItems.isNotEmpty);
+    if (!hasColor) return const SizedBox.shrink();
+
+    final cubit = context.read<ProductDetailsCubit>();
+    final state = cubit.state;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var pIndex = 0; pIndex < widget.product.activeVariantModel.length; pIndex++) ...[
+          if (RegExp(r'renk|color', caseSensitive: false)
+                  .hasMatch(widget.product.activeVariantModel[pIndex].name) &&
+              widget.product.activeVariantModel[pIndex].activeVariantsItems
+                  .isNotEmpty) ...[
+            CustomText(
+              text: widget.product.activeVariantModel[pIndex].name,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: widget
+                  .product.activeVariantModel[pIndex].activeVariantsItems
+                  .map((item) {
+                final selected = state.variantItem.length > pIndex &&
+                    state.variantItem[pIndex].id == item.id;
+                return GestureDetector(
+                  onTap: () {
+                    cubit.addIndex(pIndex.toString());
+                    cubit.updateVPItems(item);
+                    setState(() {});
+                  },
+                  child: Container(
+                    width: 92,
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selected
+                            ? Utils.dynamicPrimaryColor(context)
+                            : borderColor,
+                        width: selected ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: SizedBox(
+                            height: 60,
+                            width: double.infinity,
+                            child: item.image.isNotEmpty
+                                ? CustomImage(
+                                    path: RemoteUrls.imageUrl(item.image),
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(color: borderColor.withOpacity(0.3)),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          item.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 14),
+          ],
+        ],
+      ],
+    );
+  }
+
   Widget _builtRating() {
     return Row(
       children: [

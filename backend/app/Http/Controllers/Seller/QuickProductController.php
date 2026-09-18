@@ -113,9 +113,14 @@ class QuickProductController extends Controller
                 $userContent
             );
 
+            $message = 'Ürün yayına alındı.';
+            if (! empty($result['color']['message'])) {
+                $message .= ' ' . $result['color']['message'];
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Ürün yayına alındı.',
+                'message' => $message,
                 'product' => [
                     'id' => $result['product']->id,
                     'name' => $result['product']->name,

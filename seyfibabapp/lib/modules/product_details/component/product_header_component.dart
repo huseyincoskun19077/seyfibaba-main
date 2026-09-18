@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/remote_urls.dart';
 import '../../../utils/constants.dart';
@@ -6,6 +7,8 @@ import '../../../utils/utils.dart';
 import '../../../widgets/custom_image.dart';
 import '../../../widgets/favorite_button.dart';
 import '../../category/component/price_card_widget.dart';
+import '../controller/cubit/details_state_model.dart';
+import '../controller/cubit/product_details_cubit.dart';
 import '../model/product_details_product_model.dart';
 import '../widgets/product_image_viewer.dart';
 import '../../home/model/product_model.dart';
@@ -37,36 +40,58 @@ class _ProductHeaderComponentState extends State<ProductHeaderComponent> {
         images.add(item.image);
       }
     }
+    for (final variant in widget.product.activeVariantModel) {
+      for (final item in variant.activeVariantsItems) {
+        if (item.image.isNotEmpty && !images.contains(item.image)) {
+          images.add(item.image);
+        }
+      }
+    }
     return images;
   }
 
   @override
   Widget build(BuildContext context) {
     final images = _allImages;
-    return Column(
-      children: [
-        SizedBox(
-          height: 310,
-          child: Stack(
-            alignment: Alignment.topCenter,
-            children: [
-              Container(
-                height: 270,
-                decoration: BoxDecoration(
-                  color: borderColor.withOpacity(.2),
-                  borderRadius:
-                      const BorderRadius.vertical(bottom: Radius.circular(20)),
+    return BlocListener<ProductDetailsCubit, DetailsStateModel>(
+      listenWhen: (prev, next) => prev.variantItem != next.variantItem,
+      listener: (context, state) {
+        for (final item in state.variantItem.reversed) {
+          if (item.image.isNotEmpty) {
+            setState(() {
+              productThumb = item.image;
+              final idx = images.indexOf(item.image);
+              if (idx >= 0) _selectedGalleryIndex = idx;
+            });
+            return;
+          }
+        }
+      },
+      child: Column(
+        children: [
+          SizedBox(
+            height: 310,
+            child: Stack(
+              alignment: Alignment.topCenter,
+              children: [
+                Container(
+                  height: 270,
+                  decoration: BoxDecoration(
+                    color: borderColor.withOpacity(.2),
+                    borderRadius:
+                        const BorderRadius.vertical(bottom: Radius.circular(20)),
+                  ),
                 ),
-              ),
-              _buildThumbImage(images),
-              _buildDiscountBadge(context),
-              _buildPackBadge(),
-              _buildFavBtn(widget.product.id),
-              if (widget.gallery.isNotEmpty) _buildGalleryStrip(images),
-            ],
+                _buildThumbImage(images),
+                _buildDiscountBadge(context),
+                _buildPackBadge(),
+                _buildFavBtn(widget.product.id),
+                if (images.length > 1) _buildGalleryStrip(images),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

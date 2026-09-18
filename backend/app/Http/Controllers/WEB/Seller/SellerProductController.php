@@ -260,7 +260,7 @@ class SellerProductController extends Controller
             ]);
         }
 
-        app(SimpleProductColorService::class)->sync(
+        $colorResult = app(SimpleProductColorService::class)->sync(
             $product,
             app(SimpleProductColorService::class)->payloadFromRequest($request)
         );
@@ -305,9 +305,13 @@ class SellerProductController extends Controller
                 }
             }
         }
-        $notification = 'Ürününüz başarıyla eklendi ve yayına alındı.';
-        $notification=array('messege'=>$notification,'alert-type'=>'success');
-        return redirect()->route('seller.product.index')->with($notification);
+        $message = 'Ürününüz başarıyla eklendi ve yayına alındı.';
+        if (! empty($colorResult['message'])) {
+            $message .= ' ' . $colorResult['message'];
+        }
+        $notification = ['messege' => $message, 'alert-type' => 'success'];
+
+        return redirect()->route('seller.product.edit', $product->id)->with($notification);
     }
 
     public function show($id)
@@ -492,7 +496,7 @@ class SellerProductController extends Controller
             ]);
         }
 
-        app(SimpleProductColorService::class)->sync(
+        $colorResult = app(SimpleProductColorService::class)->sync(
             $product,
             app(SimpleProductColorService::class)->payloadFromRequest($request)
         );
@@ -519,8 +523,11 @@ class SellerProductController extends Controller
                 }
             }
         }
-        $notification = trans('admin_validation.Update Successfully');
-        $notification=array('messege'=>$notification,'alert-type'=>'success');
+        $message = trans('admin_validation.Update Successfully');
+        if (! empty($colorResult['message'])) {
+            $message .= ' ' . $colorResult['message'];
+        }
+        $notification = ['messege' => $message, 'alert-type' => 'success'];
         $activeTab = in_array($request->input('active_tab'), ['content', 'images', 'seo'], true)
             ? $request->input('active_tab')
             : 'content';

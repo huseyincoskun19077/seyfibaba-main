@@ -146,14 +146,18 @@ class QuickProductController extends Controller
             );
 
             $product = $result['product'];
+            $message = 'Ürününüz yayına alındı: ' . $product->name;
+            if (! empty($result['color']['message'])) {
+                $message .= ' ' . $result['color']['message'];
+            }
 
             return redirect()
-                ->route('seller.product.quick-create')
+                ->route('seller.product.edit', $product->id)
                 ->with([
                     'quick_product_success' => true,
                     'quick_product_id' => $product->id,
                     'quick_product_name' => $product->name,
-                    'messege' => 'Ürününüz yayına alındı: ' . $product->name,
+                    'messege' => $message,
                     'alert-type' => 'success',
                 ]);
         } catch (Throwable $e) {

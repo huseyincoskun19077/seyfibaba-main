@@ -34,6 +34,7 @@
               <label>Renk fotoğrafı</label>
               <input type="file" name="colors[{{ $i }}][image]" class="form-control-file color-photo-input" accept="image/jpeg,image/png,image/webp">
               @if (!empty($row['image']))
+                <input type="hidden" name="colors[{{ $i }}][keep_image]" value="{{ $row['image'] }}">
                 <img class="mt-2" src="{{ asset($row['image']) }}" alt="">
               @endif
             </div>
