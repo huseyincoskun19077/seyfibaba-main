@@ -36,29 +36,9 @@ class HomeHorizontalListProductCard extends StatelessWidget {
         .contains(FlashSaleProductsModel(productId: productModel.id));
 
     if (productModel.offerPrice != 0) {
-      double p = 0.0;
-      if (productModel.productVariants.isNotEmpty) {
-        for (var i in productModel.productVariants) {
-          if (i.activeVariantsItems.isNotEmpty) {
-            p += Utils.toDouble(i.activeVariantsItems.first.price.toString());
-          }
-        }
-        offerPrice = p + productModel.offerPrice;
-      } else {
-        offerPrice = productModel.offerPrice;
-      }
+      offerPrice = productModel.offerPrice;
     }
-    if (productModel.productVariants.isNotEmpty) {
-      double p = 0.0;
-      for (var i in productModel.productVariants) {
-        if (i.activeVariantsItems.isNotEmpty) {
-          p += Utils.toDouble(i.activeVariantsItems.first.price.toString());
-        }
-      }
-      mainPrice = p + productModel.price;
-    } else {
-      mainPrice = productModel.price;
-    }
+    mainPrice = productModel.price;
     if (isFlashSale) {
       if (productModel.offerPrice != 0) {
         final discount =

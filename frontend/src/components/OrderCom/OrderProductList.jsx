@@ -43,6 +43,27 @@ function ProductLineStatus({ item }) {
   );
 }
 
+function OrderVariantsLine({ item }) {
+  const variants =
+    item?.order_product_variants ||
+    item?.orderProductVariants ||
+    item?.variants ||
+    [];
+  if (!Array.isArray(variants) || variants.length === 0) return null;
+
+  return (
+    <p className="mt-1 text-xs text-slate-500">
+      {variants
+        .map((v) => {
+          const name = v.variant_name || v.product_variant_name || "Seçenek";
+          const value = v.variant_value || v.name || "";
+          return value ? `${name}: ${value}` : name;
+        })
+        .join(" · ")}
+    </p>
+  );
+}
+
 function ProductActions({
   item,
   returnableItems,
@@ -264,6 +285,7 @@ export default function OrderProductList({
                     </h3>
                     <ProductLineStatus item={item} />
                   </div>
+                  <OrderVariantsLine item={item} />
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
                     <span>
                       {ServeLangItem()?.quantity}: <strong>{item.qty}</strong>
@@ -331,10 +353,11 @@ export default function OrderProductList({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                           <p className="font-medium text-qblack notranslate">{item.product_name}</p>
                           <ProductLineStatus item={item} />
                         </div>
+                        <OrderVariantsLine item={item} />
                         {(item?.shipped_at ||
                           (item?.seller_status != null &&
                             Number(item.seller_status) >= 2)) && (

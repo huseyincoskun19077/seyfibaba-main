@@ -313,13 +313,13 @@ export default function ProductsFilter({
                     <li key={j} className="item flex justify-between items-center mb-5">
                       <div className="flex space-x-[14px] items-center">
                         <Checkbox
-                          id={`variant-${item.name}`}
+                          id={`variant-${variant.name}-${item.name}`}
                           name={item.name}
                           handleChange={varientHandler}
                           checked={!!item.selected}
                         />
                         <label
-                          htmlFor={`variant-${item.name}`}
+                          htmlFor={`variant-${variant.name}-${item.name}`}
                           className="text-xs font-400 capitalize cursor-pointer"
                         >
                           {item.name}

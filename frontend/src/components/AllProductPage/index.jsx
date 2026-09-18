@@ -184,9 +184,8 @@ function AllProductPageContent({ response, sellerInfo }) {
         Array.isArray(filters.variantItems) &&
         filters.variantItems.length > 0
       ) {
-        // Limit variant items to first 3 to prevent URL from getting too long
-        const limitedVariants = filters.variantItems.slice(0, 3);
-        params.set("variantItems", limitedVariants.join(","));
+        // Keep all selected variant filters in the URL
+        params.set("variantItems", filters.variantItems.join(","));
       }
 
       if (
@@ -400,7 +399,7 @@ function AllProductPageContent({ response, sellerInfo }) {
         selectedCategoryFilterItem.length +
         selectedBrandsFilterItem.length +
         1;
-      if (totalFilters > 8) {
+      if (totalFilters > 20) {
         // alert(
         //   "Too many filters selected. Please remove some filters before adding more."
         // );
@@ -460,7 +459,7 @@ function AllProductPageContent({ response, sellerInfo }) {
         selectedCategoryFilterItem.length +
         selectedBrandsFilterItem.length +
         1;
-      if (totalFilters > 8) {
+      if (totalFilters > 20) {
         // alert(
         //   "Too many filters selected. Please remove some filters before adding more."
         // );
@@ -570,7 +569,7 @@ function AllProductPageContent({ response, sellerInfo }) {
         selectedCategoryFilterItem.length +
         selectedBrandsFilterItem.length +
         1;
-      if (totalFilters > 8) {
+      if (totalFilters > 20) {
         // alert(
         //   "Too many filters selected. Please remove some filters before adding more."
         // );

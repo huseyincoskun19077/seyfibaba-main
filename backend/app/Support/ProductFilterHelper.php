@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\ProductVariantItem;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -11,7 +12,7 @@ class ProductFilterHelper
 {
     /**
      * Sidebar'da gosterilecek varyant gruplari.
-     * Urun adiyla ayni etiketli veya tek urune ozel hatali gruplar elenir.
+     * Her grup icin katalogdaki tum secenek isimleri (distinct) listelenir.
      */
     public static function filterableVariants(): Collection
     {
@@ -33,6 +34,7 @@ class ProductFilterHelper
         $standardNames = collect([
             'Renk', 'Beden', 'Boyut', 'Model', 'Kapasite', 'Malzeme',
             'Tip', 'Numara', 'Ebat', 'Guc', 'Güç', 'Voltaj', 'Renk Seçenekleri',
+            'Ölçü', 'Olcu', 'Genişlik', 'Yükseklik',
         ]);
 
         $allowedNames = ProductVariant::query()
@@ -44,7 +46,7 @@ class ProductFilterHelper
             ->pluck('name')
             ->unique()
             ->filter(function ($name) use ($productNames) {
-                return !$productNames->contains(mb_strtolower(trim((string) $name)));
+                return ! $productNames->contains(mb_strtolower(trim((string) $name)));
             })
             ->values();
 
@@ -52,16 +54,46 @@ class ProductFilterHelper
             return collect();
         }
 
-        return ProductVariant::with(['activeVariantItems' => function ($query) {
-                $query->where('status', 1)
-                    ->select('product_variant_id', 'name', 'price', 'id');
-            }])
-            ->where('status', 1)
-            ->whereIn('name', $allowedNames)
-            ->select('id', 'name')
-            ->orderBy('name')
-            ->get()
-            ->unique('name')
+        return $allowedNames
+            ->map(function ($groupName, $index) {
+                $itemNames = ProductVariantItem::query()
+                    ->where('status', 1)
+                    ->where(function ($q) use ($groupName) {
+                        $q->where('product_variant_name', $groupName)
+                            ->orWhereHas('variant', function ($vq) use ($groupName) {
+                                $vq->where('name', $groupName)->where('status', 1);
+                            });
+                    })
+                    ->whereHas('product', function ($pq) {
+                        $pq->where('status', 1)->where('approve_by_admin', 1);
+                    })
+                    ->distinct()
+                    ->orderBy('name')
+                    ->pluck('name')
+                    ->filter(fn ($n) => trim((string) $n) !== '')
+                    ->unique(fn ($n) => mb_strtolower(trim((string) $n)))
+                    ->values();
+
+                if ($itemNames->isEmpty()) {
+                    return null;
+                }
+
+                $items = $itemNames->values()->map(function ($name, $i) use ($index) {
+                    return (object) [
+                        'id' => ($index + 1) * 1000 + $i + 1,
+                        'name' => $name,
+                        'price' => 0,
+                        'product_variant_id' => $index + 1,
+                    ];
+                });
+
+                return (object) [
+                    'id' => $index + 1,
+                    'name' => $groupName,
+                    'active_variant_items' => $items,
+                ];
+            })
+            ->filter()
             ->values();
     }
 

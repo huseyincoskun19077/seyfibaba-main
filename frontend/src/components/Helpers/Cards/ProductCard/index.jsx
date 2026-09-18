@@ -22,7 +22,7 @@ import ProductQuickView from "./ProductQuickView";
 import LoginContext from "@/components/Contexts/LoginContext";
 import { useFlyingCart } from "@/components/Contexts/FlyingCartContext";
 import appConfig from "@/appConfig";
-import { isEffectiveOfferPrice, normalizeOfferPrice } from "@/utils/productPricing";
+import { normalizeOfferPrice } from "@/utils/productPricing";
 
 /**
  * Redirect component shown after adding an item to the cart.
@@ -64,41 +64,18 @@ const useFlashSale = (datas) => {
  * @returns {Object} - Variants, selected variants, price, and offer price
  */
 const useProductPricing = (datas) => {
-  const varients = datas && datas.variants.length > 0 && datas.variants;
+  const varients = datas && datas.variants?.length > 0 && datas.variants;
   const [getFirstVarients, setFirstVarients] = useState(
-    varients && varients.map((v) => v.active_variant_items[0])
+    varients && varients.map((v) => v.active_variant_items?.[0]).filter(Boolean)
   );
   const [price, setPrice] = useState(null);
   const [offerPrice, setOffer] = useState(null);
 
   useEffect(() => {
-    if (varients) {
-      // Calculate prices for variants
-      const prices = varients.map((v) =>
-        v.active_variant_items.length > 0 && v.active_variant_items[0].price
-          ? v.active_variant_items[0].price
-          : 0
-      );
-      if (isEffectiveOfferPrice(datas.offer_price, datas.price)) {
-        const sumOfferPrice = parseFloat(
-          prices.reduce((prev, curr) => parseInt(prev) + parseInt(curr), 0) +
-            parseFloat(datas.offer_price)
-        );
-        setPrice(datas.price);
-        setOffer(sumOfferPrice);
-      } else {
-        const sumPrice = parseFloat(
-          prices.reduce((prev, curr) => parseInt(prev) + parseInt(curr), 0) +
-            parseFloat(datas.price)
-        );
-        setPrice(sumPrice);
-        setOffer(null);
-      }
-    } else {
-      setPrice(datas && datas.price);
-      setOffer(normalizeOfferPrice(datas?.offer_price, datas?.price));
-    }
-  }, [datas, varients]);
+    // Listing kartlarında her zaman ürünün standart fiyatı (varyant toplamı yok).
+    setPrice(datas?.price ?? null);
+    setOffer(normalizeOfferPrice(datas?.offer_price, datas?.price));
+  }, [datas]);
 
   return { varients, getFirstVarients, setFirstVarients, price, offerPrice };
 };

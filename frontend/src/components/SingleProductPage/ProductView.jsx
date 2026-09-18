@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
-import { useContext, useEffect, useState, useMemo, useCallback } from "react";
+import { useContext, useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { FacebookShareButton, TwitterShareButton } from "react-share";
 import { buildProductPath } from "@/utils/url";
@@ -91,6 +92,45 @@ const calculateVariantPricing = (product, selectedVariantItems = [], variants = 
     price: basePrice + extras,
     offerPrice: baseOfferPrice !== null ? baseOfferPrice + extras : null,
   };
+};
+
+const slugifyVariantParam = (value) =>
+  String(value || "")
+    .toLocaleLowerCase("tr-TR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const variantParamKey = (variantName) => {
+  const key = slugifyVariantParam(variantName);
+  return key || "secenek";
+};
+
+const resolveVariantsFromParams = (variants = [], params) => {
+  if (!variants.length || !params) return getInitialVariantItems(variants);
+
+  return variants
+    .map((variant) => {
+      const items = Array.isArray(variant?.active_variant_items)
+        ? variant.active_variant_items
+        : [];
+      if (!items.length) return null;
+      const key = variantParamKey(variant.name);
+      const wanted = String(params.get(key) || "").trim();
+      if (!wanted) return items[0];
+      return (
+        items.find((item) => slugifyVariantParam(item.name) === wanted) ||
+        items[0]
+      );
+    })
+    .filter(Boolean);
 };
 
 const StarRating = ({ rating }) => {
@@ -301,6 +341,10 @@ export default function ProductView({
   } = useWishlist(product);
   const { triggerFlyingCart } = useFlyingCart();
   const bfCacheKey = useBfCacheRemountKey();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const skipUrlSyncRef = useRef(false);
 
   // State Management
   const [more, setMore] = useState(false);
@@ -309,10 +353,11 @@ export default function ProductView({
   const [price, setPrice] = useState(null);
   const [offerPrice, setOffer] = useState(null);
   const [pricePercent, setPricePercent] = useState("");
+  const [variantFlash, setVariantFlash] = useState(false);
 
   const [varients, setVarients] = useState(safeVariants);
-  const [selectedVariantItems, setSelectedVariantItems] = useState(
-    getInitialVariantItems(safeVariants)
+  const [selectedVariantItems, setSelectedVariantItems] = useState(() =>
+    resolveVariantsFromParams(safeVariants, searchParams)
   );
 
   // State Management
@@ -348,13 +393,56 @@ export default function ProductView({
   // Update state when props change - improved synchronization
   useEffect(() => {
     const nextVariants = safeVariants;
-    const initialVariants = getInitialVariantItems(nextVariants);
+    const fromUrl = resolveVariantsFromParams(nextVariants, searchParams);
 
     setVarients(nextVariants);
-    setSelectedVariantItems(initialVariants);
+    skipUrlSyncRef.current = true;
+    setSelectedVariantItems(fromUrl);
     setSrc(safeProduct?.thumb_image || "");
     setQuantity(1);
-  }, [safeProduct?.id, safeProduct?.thumb_image, safeVariants]);
+
+    const colorItem = fromUrl.find((item) => {
+      const parent = nextVariants.find(
+        (v) => Number(v.id) === Number(item.product_variant_id)
+      );
+      return /renk|color/i.test(String(parent?.name || ""));
+    });
+    if (colorItem?.image) {
+      setSrc(colorItem.image);
+    }
+  }, [safeProduct?.id, safeProduct?.thumb_image, safeVariants, searchParams]);
+
+  useEffect(() => {
+    if (!varients?.length) return;
+    if (skipUrlSyncRef.current) {
+      skipUrlSyncRef.current = false;
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    const keys = varients.map((v) => variantParamKey(v.name));
+    keys.forEach((key) => params.delete(key));
+
+    selectedVariantItems.forEach((item) => {
+      const parent = varients.find(
+        (v) => Number(v.id) === Number(item.product_variant_id)
+      );
+      if (!parent) return;
+      params.set(variantParamKey(parent.name), slugifyVariantParam(item.name));
+    });
+
+    const next = params.toString();
+    const current = searchParams?.toString() || "";
+    if (next === current) return;
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [selectedVariantItems, varients, pathname, router, searchParams]);
+
+  useEffect(() => {
+    if (!selectedVariantItems?.length) return;
+    setVariantFlash(true);
+    const t = setTimeout(() => setVariantFlash(false), 450);
+    return () => clearTimeout(t);
+  }, [selectedVariantItems]);
 
   useEffect(() => {
     setProductsImg(safeImages);
@@ -821,11 +909,37 @@ export default function ProductView({
           {/* Availability — gizlendi (#5) */}
 
           {/* Variants */}
-          <VariantSelector
-            variants={varients || []}
-            onSelectVariant={selectVarient}
-            basePrice={parseAmount(safeProduct?.price)}
-          />
+          <div
+            className={`rounded-2xl transition duration-300 ${
+              variantFlash ? "ring-2 ring-qyellow bg-qyellow/10" : ""
+            }`}
+          >
+            {selectedVariantItems?.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-600 text-qblack">
+                  Standart ürün
+                </span>
+                {selectedVariantItems.map((item) => {
+                  const parent = (varients || []).find(
+                    (v) => Number(v.id) === Number(item.product_variant_id)
+                  );
+                  return (
+                    <span
+                      key={`${item.product_variant_id}-${item.id}`}
+                      className="inline-flex items-center rounded-full bg-qyellow/20 px-3 py-1 text-xs font-600 text-qblack"
+                    >
+                      {parent?.name || "Seçenek"}: {item.name}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            <VariantSelector
+              variants={varients || []}
+              onSelectVariant={selectVarient}
+              basePrice={parseAmount(safeProduct?.price)}
+            />
+          </div>
 
           {/* Quantity and Wishlist */}
           <div

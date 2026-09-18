@@ -67,29 +67,9 @@ class RelatedSingleProductCard extends StatelessWidget {
         .contains(FlashSaleProductsModel(productId: productModel.id));
     int flashSaleActive = appSetting.settingModel!.flashSale.status;
     if (productModel.offerPrice != 0) {
-      if (productModel.activeVariantModel.isNotEmpty) {
-        double p = 0.0;
-        for (var i in productModel.activeVariantModel) {
-          if (i.activeVariantsItems.isNotEmpty) {
-            p += Utils.toDouble(i.activeVariantsItems.first.price.toString());
-          }
-        }
-        offerPrice = p + productModel.offerPrice;
-      } else {
-        offerPrice = productModel.offerPrice;
-      }
+      offerPrice = productModel.offerPrice;
     }
-    if (productModel.activeVariantModel.isNotEmpty) {
-      double p = 0.0;
-      for (var i in productModel.activeVariantModel) {
-        if (i.activeVariantsItems.isNotEmpty) {
-          p += Utils.toDouble(i.activeVariantsItems.first.price.toString());
-        }
-      }
-      mainPrice = p + productModel.price;
-    } else {
-      mainPrice = productModel.price;
-    }
+    mainPrice = productModel.price;
 
     if (isFlashSale && flashSaleActive == 1) {
       if (productModel.offerPrice != 0) {
