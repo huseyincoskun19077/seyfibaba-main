@@ -333,21 +333,30 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
   }
 
   void calculatePrices(ProductDetailsProductModel? product) {
-      double vPrice = 0.0;
-      double productPrice = 0.0;
+    double productPrice =
+        product!.offerPrice != 0.0 ? product.offerPrice : product.price;
+    double? colorAbsolute;
+    double extras = 0.0;
 
-      for (var i = 0; i < state.itemPrice.length; i++) {
-        final price = state.itemPrice[i];
-        vPrice += price;
+    for (final item in state.variantItem) {
+      ActiveVariantModel? parent;
+      for (final v in state.variants) {
+        if (v.id == item.productVariantId) {
+          parent = v;
+          break;
+        }
       }
-      productPrice = product!.offerPrice != 0.0 ? product.offerPrice : product.price;
-      double basePrice = vPrice + productPrice;
+      final isColor = parent != null &&
+          RegExp(r'renk|color', caseSensitive: false).hasMatch(parent.name);
+      if (isColor) {
+        colorAbsolute = item.price;
+      } else {
+        extras += item.price;
+      }
+    }
 
-      double result = basePrice;
-      // double result = basePrice - discountAmount;
-      emit(state.copyWith(detailPrice: result));
-      // debugPrint('final-price ${state.detailPrice}');
-
+    final result = (colorAbsolute ?? productPrice) + extras;
+    emit(state.copyWith(detailPrice: result));
   }
 
 

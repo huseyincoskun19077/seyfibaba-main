@@ -48,10 +48,11 @@ class SimpleProductColorService
             ->where('product_variant_id', $variant->id)
             ->orderBy('id')
             ->get()
-            ->map(function (ProductVariantItem $item) use ($product) {
+            ->map(function (ProductVariantItem $item) {
                 return [
                     'name' => $item->name,
-                    'price' => round((float) $product->price + (float) $item->price, 2),
+                    // Absolute sale price for this color (not a delta).
+                    'price' => round((float) $item->price, 2),
                     'qty' => (int) ($item->qty ?? 0),
                     'image' => $item->image ?? null,
                 ];
@@ -155,7 +156,7 @@ class SimpleProductColorService
                         if ($hasVariantNameCol) {
                             $item->product_variant_name = 'Renk';
                         }
-                        $item->price = round($row['price'] - (float) $product->price, 2);
+                        $item->price = round($row['price'], 2);
                         if ($hasQtyCol) {
                             $item->qty = $row['qty'];
                         }

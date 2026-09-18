@@ -43,30 +43,32 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
 
     // print('product_offer_price ${widget.product.offerPrice}');
     if (widget.product.offerPrice != 0.0) {
-      // print('product_price_not_null');
-      if (widget.product.activeVariantModel.isNotEmpty) {
-        double p = 0.0;
-        for (var i in widget.product.activeVariantModel) {
-          if (i.activeVariantsItems.isNotEmpty) {
-            p += Utils.toDouble(i.activeVariantsItems.first.price.toString());
-          }
+      double? colorAbsolute;
+      double extras = 0.0;
+      for (var i in widget.product.activeVariantModel) {
+        if (i.activeVariantsItems.isEmpty) continue;
+        final p = Utils.toDouble(i.activeVariantsItems.first.price.toString());
+        if (RegExp(r'renk|color', caseSensitive: false).hasMatch(i.name)) {
+          colorAbsolute = p;
+        } else {
+          extras += p;
         }
-        offerPrice = p + widget.product.offerPrice;
-      } else {
-        offerPrice = widget.product.offerPrice;
       }
-    } else {
-      // print('product_price_null');
-      // print('product_price_null');
+      offerPrice = (colorAbsolute ?? widget.product.offerPrice) + extras;
     }
     if (widget.product.activeVariantModel.isNotEmpty) {
-      double p = 0.0;
+      double? colorAbsolute;
+      double extras = 0.0;
       for (var i in widget.product.activeVariantModel) {
-        if (i.activeVariantsItems.isNotEmpty) {
-          p += Utils.toDouble(i.activeVariantsItems.first.price.toString());
+        if (i.activeVariantsItems.isEmpty) continue;
+        final p = Utils.toDouble(i.activeVariantsItems.first.price.toString());
+        if (RegExp(r'renk|color', caseSensitive: false).hasMatch(i.name)) {
+          colorAbsolute = p;
+        } else {
+          extras += p;
         }
       }
-      mainPrice = p + widget.product.price;
+      mainPrice = (colorAbsolute ?? widget.product.price) + extras;
     } else {
       mainPrice = widget.product.price;
     }
@@ -281,6 +283,16 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          Utils.formatPrice(item.price, context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: iconGreyColor,
                           ),
                         ),
                       ],

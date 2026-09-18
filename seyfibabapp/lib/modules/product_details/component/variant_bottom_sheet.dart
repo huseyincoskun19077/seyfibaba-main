@@ -349,6 +349,12 @@ class _VariantBottomSheetState extends State<VariantBottomSheet> {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                       ),
+                      Text(
+                        Utils.formatPrice(item.price, context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11, color: iconGreyColor),
+                      ),
                     ],
                   ),
                 ),

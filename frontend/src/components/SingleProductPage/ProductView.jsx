@@ -58,20 +58,38 @@ const getInitialVariantItems = (variants = []) => {
     .filter(Boolean);
 };
 
-const calculateVariantPricing = (product, selectedVariantItems = []) => {
+const calculateVariantPricing = (product, selectedVariantItems = [], variants = []) => {
   const basePrice = parseAmount(product?.price);
   const baseOfferPrice = isEffectiveOfferPrice(product?.offer_price, product?.price)
     ? parseAmount(product.offer_price)
     : null;
-  const variantTotal = selectedVariantItems.reduce(
-    (total, item) => total + parseAmount(item?.price),
-    0
-  );
+
+  let colorAbsolute = null;
+  let extras = 0;
+
+  selectedVariantItems.forEach((item) => {
+    const parent = (variants || []).find(
+      (v) => Number(v?.id) === Number(item?.product_variant_id)
+    );
+    const parentName = String(parent?.name || item?.product_variant_name || "");
+    const amount = parseAmount(item?.price);
+    if (/renk|color/i.test(parentName)) {
+      colorAbsolute = amount;
+    } else {
+      extras += amount;
+    }
+  });
+
+  if (colorAbsolute !== null) {
+    return {
+      price: colorAbsolute + extras,
+      offerPrice: null,
+    };
+  }
 
   return {
-    price: basePrice + variantTotal,
-    offerPrice:
-      baseOfferPrice !== null ? baseOfferPrice + variantTotal : null,
+    price: basePrice + extras,
+    offerPrice: baseOfferPrice !== null ? baseOfferPrice + extras : null,
   };
 };
 
@@ -175,8 +193,7 @@ const VariantSelector = ({ variants, onSelectVariant, basePrice = 0 }) => {
             {isColor ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {items.map((item) => {
-                  const extra = Number(item.price || 0);
-                  const total = Number(basePrice || 0) + extra;
+                  const total = Number(item.price || 0);
                   const selected = Number(selectedId) === Number(item.id);
                   const imgSrc = item.image
                     ? item.image.startsWith("http")
@@ -356,7 +373,11 @@ export default function ProductView({
   }, [src, safeProduct?.thumb_image, safeImages]);
 
   useEffect(() => {
-    const pricing = calculateVariantPricing(safeProduct, selectedVariantItems);
+    const pricing = calculateVariantPricing(
+      safeProduct,
+      selectedVariantItems,
+      varients
+    );
     setPrice(pricing.price);
     setOffer(pricing.offerPrice);
   }, [safeProduct, selectedVariantItems]);

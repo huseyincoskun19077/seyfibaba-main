@@ -16,18 +16,28 @@ class CartPriceService
      */
     public function resolveUnitPrice(Product $product, array $variantItemIds = []): float
     {
-        $variantPrice = 0.0;
-        if ($variantItemIds !== []) {
-            $variantPrice = (float) ProductVariantItem::query()
-                ->whereIn('id', $variantItemIds)
-                ->sum('price');
-        }
-
         $base = $product->offer_price
             ? (float) $product->offer_price
             : (float) $product->price;
+        $extras = 0.0;
 
-        $price = $base + $variantPrice;
+        if ($variantItemIds !== []) {
+            $items = ProductVariantItem::query()
+                ->whereIn('id', $variantItemIds)
+                ->get(['id', 'price', 'product_variant_name']);
+
+            foreach ($items as $item) {
+                $variantName = (string) ($item->product_variant_name ?? '');
+                // Renk fiyatı mutlak satış fiyatıdır; diğer varyantlar eski delta mantığında kalır.
+                if (preg_match('/renk|color/i', $variantName)) {
+                    $base = (float) $item->price;
+                } else {
+                    $extras += (float) $item->price;
+                }
+            }
+        }
+
+        $price = $base + $extras;
 
         return round($this->applyFlashSaleDiscount($product->id, $price), 2);
     }
