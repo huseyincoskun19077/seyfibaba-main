@@ -124,7 +124,12 @@
                                             <i class="far fa-image"></i> Resim Ekle
                                         </a>
                                         <a class="btn btn-warning btn-sm" href="{{ route('seller.product-variant',$product->id) }}">
-                                            <i class="fas fa-layer-group"></i> Varyant Ekle
+                                            <i class="fas fa-layer-group"></i> Varyant
+                                            @if(($product->variant_items_count ?? 0) > 0)
+                                                <span class="badge badge-light ml-1">{{ $product->variant_items_count }}</span>
+                                            @else
+                                                <span class="badge badge-secondary ml-1">0</span>
+                                            @endif
                                         </a>
 
                                         </td>

@@ -56,6 +56,7 @@ class SellerProductController extends Controller
         $filter = (string) $request->input('filter', 'all');
 
         $query = Product::with('category', 'subCategory', 'seller', 'brand')
+            ->withCount('variantItems')
             ->where('vendor_id', $seller->id)
             ->orderByDesc('id');
 
@@ -306,10 +307,14 @@ class SellerProductController extends Controller
             }
         }
         $message = 'Ürününüz başarıyla eklendi ve yayına alındı.';
+        $alertType = 'success';
         if (! empty($colorResult['message'])) {
             $message .= ' ' . $colorResult['message'];
         }
-        $notification = ['messege' => $message, 'alert-type' => 'success'];
+        if (isset($colorResult['ok']) && $colorResult['ok'] === false) {
+            $alertType = 'warning';
+        }
+        $notification = ['messege' => $message, 'alert-type' => $alertType];
 
         return redirect()->route('seller.product.edit', $product->id)->with($notification);
     }
@@ -524,10 +529,14 @@ class SellerProductController extends Controller
             }
         }
         $message = trans('admin_validation.Update Successfully');
+        $alertType = 'success';
         if (! empty($colorResult['message'])) {
             $message .= ' ' . $colorResult['message'];
         }
-        $notification = ['messege' => $message, 'alert-type' => 'success'];
+        if (isset($colorResult['ok']) && $colorResult['ok'] === false) {
+            $alertType = 'warning';
+        }
+        $notification = ['messege' => $message, 'alert-type' => $alertType];
         $activeTab = in_array($request->input('active_tab'), ['content', 'images', 'seo'], true)
             ? $request->input('active_tab')
             : 'content';

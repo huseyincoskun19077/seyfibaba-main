@@ -19,6 +19,12 @@
             <a href="{{ route('seller.product.index') }}" class="btn btn-primary"><i class="fas fa-backward"></i> {{__('admin.Go Back')}}</a>
 
             <a href="javascript:;" data-toggle="modal" data-target="#createVariant" class="btn btn-primary"><i class="fas fa-plus"></i> {{__('admin.Add New')}}</a>
+            <a href="{{ route('seller.product.edit', $product->id) }}#simpleColorsCard" class="btn btn-outline-primary"><i class="fas fa-palette"></i> Renkleri düzenle</a>
+
+            <div class="alert alert-info mt-3 mb-0">
+              Renk eklemek için ürün düzenleme sayfasındaki <strong>Renk varsa buraya yazın</strong> bölümünü kullanın.
+              Bu sayfa beden/ölçü gibi klasik varyantlar içindir.
+            </div>
 
             <div class="row mt-4">
                 <div class="col">
@@ -32,16 +38,33 @@
                             <thead>
                                 <tr>
                                     <th width="10%">{{__('admin.SN')}}</th>
-                                    <th width="30%">{{__('admin.Name')}}</th>
-                                    <th width="30%">{{__('admin.Status')}}</th>
+                                    <th width="25%">{{__('admin.Name')}}</th>
+                                    <th width="15%">Seçenek</th>
+                                    <th width="20%">{{__('admin.Status')}}</th>
                                     <th width="30%">{{__('admin.Action')}}</th>
                                   </tr>
                             </thead>
                             <tbody>
-                                @foreach ($variants as $index => $variant)
+                                @forelse ($variants as $index => $variant)
                                     <tr>
-                                        <td>{{ ++$index }}</td>
-                                        <td>{{ $variant->name }}</td>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>
+                                          {{ $variant->name }}
+                                          @if(strtolower($variant->name) === 'renk')
+                                            <span class="badge badge-primary">renk</span>
+                                          @endif
+                                        </td>
+                                        <td>
+                                          <strong>{{ $variant->variantItems->count() }}</strong>
+                                          @if($variant->variantItems->count() > 0)
+                                            <div class="small text-muted">
+                                              {{ $variant->variantItems->pluck('name')->take(4)->implode(', ') }}
+                                              @if($variant->variantItems->count() > 4)…@endif
+                                            </div>
+                                          @else
+                                            <span class="text-danger small">Seçenek yok</span>
+                                          @endif
+                                        </td>
                                         <td>
                                             @if($variant->status == 1)
                                             <a href="javascript:;" onclick="changeVariantStatus({{ $variant->id }})">
@@ -65,7 +88,11 @@
                                         @endif
                                     </td>
                                     </tr>
-                                  @endforeach
+                                  @empty
+                                    <tr>
+                                      <td colspan="5" class="text-center text-muted py-4">Henüz varyant yok. Renk için ürün düzenlemeden ekleyin.</td>
+                                    </tr>
+                                  @endforelse
                             </tbody>
                         </table>
                       </div>
