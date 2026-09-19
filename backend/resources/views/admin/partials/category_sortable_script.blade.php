@@ -1,101 +1,122 @@
-{{-- Ortak kategori sürükle-bırak sıralama --}}
+{{-- Ortak kategori sürükle-bırak + DataTables arama --}}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 (function ($) {
     "use strict";
 
-    var tbody = document.getElementById(@json($sortableBodyId ?? 'sortable-body'));
-    if (!tbody) return;
+    $(function () {
+        // footer DataTable init'inden sonra çalış
+        setTimeout(function () {
+            var tableId = @json($tableId ?? 'dataTable');
+            var $table = $('#' + tableId);
+            var tbody = document.getElementById(@json($sortableBodyId ?? 'sortable-body'));
+            if (!$table.length || !tbody) return;
 
-    var reorderUrl = @json($reorderUrl);
-    var reorderScope = @json($reorderScope ?? []);
-    // Admin layout'ta csrf meta yok; blade token kullan
-    var csrf = @json(csrf_token());
+            var reorderUrl = @json($reorderUrl);
+            var reorderScope = @json($reorderScope ?? []);
+            var csrf = @json(csrf_token());
 
-    function collectIds() {
-        return Array.prototype.map.call(tbody.querySelectorAll('tr[data-id]'), function (row) {
-            return parseInt(row.getAttribute('data-id'), 10);
-        }).filter(Boolean);
-    }
-
-    function refreshNumbers() {
-        tbody.querySelectorAll('tr[data-id]').forEach(function (row, i) {
-            var sn = row.querySelector('.sort-number');
-            if (sn) sn.textContent = String(i + 1);
-        });
-    }
-
-    function saveOrder() {
-        var ids = collectIds();
-        if (!ids.length) {
-            if (typeof toastr !== 'undefined') toastr.warning('Sıralanacak satır yok.');
-            return;
-        }
-
-        var payload = {
-            _token: csrf,
-            ids: ids
-        };
-        Object.keys(reorderScope || {}).forEach(function (key) {
-            payload[key] = reorderScope[key];
-        });
-
-        $.ajax({
-            type: 'POST',
-            url: reorderUrl,
-            data: payload,
-            success: function (res) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.success((res && res.message) ? res.message : 'Sıralama güncellendi.');
-                }
-            },
-            error: function (xhr) {
-                var msg = 'Sıralama kaydedilemedi.';
-                if (xhr.status === 419) {
-                    msg = 'Oturum süresi doldu. Sayfayı yenileyip tekrar deneyin.';
-                } else if (xhr.responseJSON) {
-                    if (xhr.responseJSON.message) {
-                        msg = xhr.responseJSON.message;
-                    } else if (xhr.responseJSON.errors) {
-                        var first = Object.values(xhr.responseJSON.errors)[0];
-                        if (first && first[0]) msg = first[0];
-                    }
-                }
-                if (typeof toastr !== 'undefined') {
-                    toastr.error(msg);
-                }
+            if ($.fn.DataTable && $.fn.DataTable.isDataTable($table[0])) {
+                $table.DataTable().destroy();
             }
-        });
-    }
 
-    function moveRow(row, direction) {
-        if (!row) return;
-        if (direction < 0 && row.previousElementSibling) {
-            row.parentNode.insertBefore(row, row.previousElementSibling);
-        } else if (direction > 0 && row.nextElementSibling) {
-            row.parentNode.insertBefore(row.nextElementSibling, row);
-        } else {
-            return;
-        }
-        refreshNumbers();
-        saveOrder();
-    }
+            $table.DataTable({
+                ordering: false,
+                paging: false,
+                info: true,
+                autoWidth: false,
+                language: {
+                    emptyTable: "Tabloda veri bulunamadı",
+                    info: "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
+                    infoEmpty: "Kayıt bulunamadı",
+                    infoFiltered: "(_MAX_ kayıt içinden filtrelendi)",
+                    lengthMenu: "_MENU_ kayıt göster",
+                    search: "Ara:",
+                    zeroRecords: "Eşleşen kayıt bulunamadı"
+                }
+            });
 
-    Sortable.create(tbody, {
-        handle: '.drag-handle',
-        animation: 180,
-        ghostClass: 'bg-light',
-        onEnd: function () {
-            refreshNumbers();
-            saveOrder();
-        }
-    });
+            function collectIds() {
+                return Array.prototype.map.call(tbody.querySelectorAll('tr[data-id]'), function (row) {
+                    if (row.style.display === 'none') return 0;
+                    return parseInt(row.getAttribute('data-id'), 10);
+                }).filter(Boolean);
+            }
 
-    $(tbody).on('click', '.btn-move-up', function () {
-        moveRow($(this).closest('tr')[0], -1);
-    });
-    $(tbody).on('click', '.btn-move-down', function () {
-        moveRow($(this).closest('tr')[0], 1);
+            function refreshNumbers() {
+                var n = 1;
+                tbody.querySelectorAll('tr[data-id]').forEach(function (row) {
+                    if ($(row).is(':visible')) {
+                        var sn = row.querySelector('.sort-number');
+                        if (sn) sn.textContent = String(n++);
+                    }
+                });
+            }
+
+            function saveOrder() {
+                var ids = collectIds();
+                if (!ids.length) return;
+
+                var payload = { _token: csrf, ids: ids };
+                Object.keys(reorderScope || {}).forEach(function (key) {
+                    payload[key] = reorderScope[key];
+                });
+
+                $.ajax({
+                    type: 'POST',
+                    url: reorderUrl,
+                    data: payload,
+                    success: function (res) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success((res && res.message) ? res.message : 'Sıralama güncellendi.');
+                        }
+                    },
+                    error: function (xhr) {
+                        var msg = 'Sıralama kaydedilemedi.';
+                        if (xhr.status === 419) {
+                            msg = 'Oturum süresi doldu. Sayfayı yenileyip tekrar deneyin.';
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        if (typeof toastr !== 'undefined') toastr.error(msg);
+                    }
+                });
+            }
+
+            function moveRow(row, direction) {
+                if (!row) return;
+                var $row = $(row);
+                if (direction < 0) {
+                    var $prev = $row.prevAll('tr[data-id]:visible').first();
+                    if ($prev.length) $row.insertBefore($prev);
+                    else return;
+                } else {
+                    var $next = $row.nextAll('tr[data-id]:visible').first();
+                    if ($next.length) $row.insertAfter($next);
+                    else return;
+                }
+                refreshNumbers();
+                saveOrder();
+            }
+
+            Sortable.create(tbody, {
+                handle: '.drag-handle',
+                animation: 180,
+                ghostClass: 'bg-light',
+                filter: '.dataTables_empty',
+                onEnd: function () {
+                    refreshNumbers();
+                    saveOrder();
+                }
+            });
+
+            $(tbody).on('click', '.btn-move-up', function () {
+                moveRow($(this).closest('tr')[0], -1);
+            });
+            $(tbody).on('click', '.btn-move-down', function () {
+                moveRow($(this).closest('tr')[0], 1);
+            });
+        }, 80);
     });
 })(jQuery);
 </script>

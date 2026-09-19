@@ -48,7 +48,7 @@
                       @else
                       <p class="text-muted mb-3">Sıralamak için satırı sürükleyin veya ↑ ↓ kullanın.</p>
                       <div class="table-responsive table-invoice">
-                        <table class="table table-striped" id="categoryOrderTable">
+                        <table class="table table-striped" id="dataTable">
                             <thead>
                                 <tr>
                                     <th style="width:40px;"></th>

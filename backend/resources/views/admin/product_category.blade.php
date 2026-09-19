@@ -21,7 +21,7 @@
                   <div class="card">
                     <div class="card-body">
                       <div class="table-responsive table-invoice">
-                        <table class="table table-striped" id="categoryOrderTable">
+                        <table class="table table-striped" id="dataTable">
                             <thead>
                                 <tr>
                                     <th style="width:40px;"></th>

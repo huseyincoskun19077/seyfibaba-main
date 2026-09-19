@@ -107,7 +107,10 @@ class ProductChildCategoryController extends Controller
 
         $notification = trans('admin_validation.Created Successfully');
         $notification=array('messege'=>$notification,'alert-type'=>'success');
-        return redirect()->route('admin.product-child-category.index')->with($notification);
+        return redirect()->route('admin.product-child-category.index', [
+            'category_id' => $childCategory->category_id,
+            'sub_category_id' => $childCategory->sub_category_id,
+        ])->with($notification);
     }
 
 
@@ -153,17 +156,25 @@ class ProductChildCategoryController extends Controller
 
         $notification = trans('admin_validation.Update Successfully');
         $notification=array('messege'=>$notification,'alert-type'=>'success');
-        return redirect()->route('admin.product-child-category.index')->with($notification);
+        return redirect()->route('admin.product-child-category.index', [
+            'category_id' => $childCategory->category_id,
+            'sub_category_id' => $childCategory->sub_category_id,
+        ])->with($notification);
     }
 
 
     public function destroy($id)
     {
         $childCategory = ChildCategory::find($id);
+        $categoryId = $childCategory ? (int) $childCategory->category_id : 0;
+        $subCategoryId = $childCategory ? (int) $childCategory->sub_category_id : 0;
         $childCategory->delete();
         $notification = trans('admin_validation.Delete Successfully');
         $notification=array('messege'=>$notification,'alert-type'=>'success');
-        return redirect()->route('admin.product-child-category.index')->with($notification);
+        return redirect()->route('admin.product-child-category.index', array_filter([
+            'category_id' => $categoryId ?: null,
+            'sub_category_id' => $subCategoryId ?: null,
+        ]))->with($notification);
     }
 
     public function changeStatus($id){

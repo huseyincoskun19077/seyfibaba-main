@@ -82,7 +82,9 @@ class ProductSubCategoryController extends Controller
 
         $notification = trans('admin_validation.Created Successfully');
         $notification=array('messege'=>$notification,'alert-type'=>'success');
-        return redirect()->route('admin.product-sub-category.index')->with($notification);
+        return redirect()->route('admin.product-sub-category.index', [
+            'category_id' => $subCategory->category_id,
+        ])->with($notification);
     }
 
     public function show($id){
@@ -135,19 +137,24 @@ class ProductSubCategoryController extends Controller
 
         $notification = trans('admin_validation.Update Successfully');
         $notification=array('messege'=>$notification,'alert-type'=>'success');
-        return redirect()->route('admin.product-sub-category.index')->with($notification);
+        return redirect()->route('admin.product-sub-category.index', [
+            'category_id' => $subCategory->category_id,
+        ])->with($notification);
     }
 
 
     public function destroy($id)
     {
         $subCategory = SubCategory::find($id);
+        $categoryId = $subCategory ? (int) $subCategory->category_id : 0;
         $subCategory->delete();
         MegaMenuSubCategory::where('sub_category_id',$id)->delete();
 
         $notification = trans('admin_validation.Delete Successfully');
         $notification=array('messege'=>$notification,'alert-type'=>'success');
-        return redirect()->route('admin.product-sub-category.index')->with($notification);
+        return redirect()->route('admin.product-sub-category.index', array_filter([
+            'category_id' => $categoryId ?: null,
+        ]))->with($notification);
     }
 
     public function changeStatus($id){
