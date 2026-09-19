@@ -128,7 +128,7 @@ class SellerProductController extends Controller
 
     public function create()
     {
-        $categories = Category::query()->active()->orderBy('name')->get();
+        $categories = Category::query()->active()->ordered()->get();
         $brands = Brand::query()->where('status', 1)->orderBy('name')->get();
         $specificationKeys = ProductSpecificationKey::all();
 
@@ -140,7 +140,7 @@ class SellerProductController extends Controller
         $subCategories = SubCategory::query()
             ->where('category_id', $id)
             ->active()
-            ->orderBy('name')
+            ->ordered()
             ->get();
         return response()->json(['subCategories'=>$subCategories]);
     }
@@ -149,7 +149,7 @@ class SellerProductController extends Controller
         $childCategories = ChildCategory::query()
             ->where('sub_category_id', $id)
             ->active()
-            ->orderBy('name')
+            ->ordered()
             ->get();
         return response()->json(['childCategories'=>$childCategories]);
     }
@@ -319,16 +319,16 @@ class SellerProductController extends Controller
         if (! $product) {
             return response()->json(['error' => 'Something went wrong'], 403);
         }
-        $categories = Category::query()->active()->orderBy('name')->get();
+        $categories = Category::query()->active()->ordered()->get();
         $subCategories = SubCategory::query()
             ->where('category_id', $product->category_id)
             ->active()
-            ->orderBy('name')
+            ->ordered()
             ->get();
         $childCategories = ChildCategory::query()
             ->where('sub_category_id', $product->sub_category_id)
             ->active()
-            ->orderBy('name')
+            ->ordered()
             ->get();
         $brands = Brand::query()->where('status', 1)->orderBy('name')->get();
         $specificationKeys = ProductSpecificationKey::all();

@@ -62,7 +62,7 @@ class ProductController extends Controller
 
     public function create()
     {
-        $categories = Category::all();
+        $categories = Category::ordered()->get();
         $brands = Brand::all();
         $specificationKeys = ProductSpecificationKey::all();
 
@@ -180,9 +180,9 @@ class ProductController extends Controller
     public function edit($id)
     {
         $product = Product::with('category','brand','gallery','variants','variantItems')->find($id);
-        $categories = Category::all();
-        $subCategories = SubCategory::where('category_id',$product->category_id)->get();
-        $childCategories = ChildCategory::where('sub_category_id', $product->sub_category_id)->get();
+        $categories = Category::ordered()->get();
+        $subCategories = SubCategory::where('category_id', $product->category_id)->ordered()->get();
+        $childCategories = ChildCategory::where('sub_category_id', $product->sub_category_id)->ordered()->get();
         $brands = Brand::all();
         $specificationKeys = ProductSpecificationKey::all();
         $productSpecifications = ProductSpecification::where('product_id',$product->id)->get();

@@ -297,7 +297,7 @@ class HomeController extends Controller
 
         $announcementModal = AnnouncementModal::first();
 
-        $productCategories = Category::with('activeSubCategories.activeChildCategories')->where(['status' => 1])->select('id','name','slug','icon')->get();
+        $productCategories = Category::with('activeSubCategories.activeChildCategories')->where(['status' => 1])->ordered()->select('id','name','slug','icon')->get();
 
         $megaMenuCategories = MegaMenuCategory::with('category','subCategories.subCategory')->orderBy('serial','asc')->where('status',1)->get();
 
@@ -515,7 +515,7 @@ class HomeController extends Controller
 
     public function subCategoriesByCategory($id){
 
-        $subCategories = SubCategory::where(['category_id' => $id, 'status' => 1])->get();
+        $subCategories = SubCategory::where(['category_id' => $id, 'status' => 1])->ordered()->get();
 
         return response()->json(['subCategories' => $subCategories]);
 
@@ -525,7 +525,7 @@ class HomeController extends Controller
 
     public function childCategoriesBySubCategory($id){
 
-        $childCategories = ChildCategory::where(['sub_category_id' => $id, 'status' => 1])->get();
+        $childCategories = ChildCategory::where(['sub_category_id' => $id, 'status' => 1])->ordered()->get();
 
         return response()->json(['childCategories' => $childCategories]);
 
@@ -537,6 +537,7 @@ class HomeController extends Controller
 
         $categories = Category::where('status', 1)
             ->with(['activeSubCategories.activeChildCategories'])
+            ->ordered()
             ->get();
 
         return response()->json(['categories' => $categories]);
@@ -791,7 +792,7 @@ class HomeController extends Controller
 
 
 
-        $homepage_categories = Category::where(['status' => 1])->select('id','name','slug','description','icon','image')->get()->take(15);
+        $homepage_categories = Category::where(['status' => 1])->ordered()->select('id','name','slug','description','icon','image')->get()->take(15);
 
 
 
@@ -1285,7 +1286,7 @@ class HomeController extends Controller
 
         $searchBrandArr = [];
 
-        $categories = Category::with('activeSubCategories.activeChildCategories')->where(['status' => 1])->select('id','name','slug','description','icon')->get();
+        $categories = Category::with('activeSubCategories.activeChildCategories')->where(['status' => 1])->ordered()->select('id','name','slug','description','icon')->get();
 
         $brands = $this->activeBrandsForStorefront();
 
@@ -1486,7 +1487,7 @@ class HomeController extends Controller
 
         $searchBrandArr = [];
 
-        $categories = Category::with('activeSubCategories.activeChildCategories')->where(['status' => 1])->select('id','name','slug','description','icon')->get();
+        $categories = Category::with('activeSubCategories.activeChildCategories')->where(['status' => 1])->ordered()->select('id','name','slug','description','icon')->get();
 
         $activeVariants = ProductFilterHelper::filterableVariants();
 

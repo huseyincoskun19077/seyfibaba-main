@@ -59,7 +59,7 @@ class PosController extends Controller
         $data['brands'] = Brand::all();
         $data['products'] = Product::with('activeVariants')->where(['vendor_id' => 0])->where(['status' => 1])->orderBy('id','desc')->paginate(18);
         $data['setting'] = Setting::first();
-        $data['categories'] = Category::with('subCategories','products')->get();
+        $data['categories'] = Category::with('subCategories','products')->ordered()->get();
         $data['cart_products'] = ShoppingCart::where('user_id',Auth::guard('admin')->user()->id)->orderBy('id','desc')->get();
         $data['customers'] = User::where('status',1)->select('id','name')->orderBy('id','asc')->get();
         $data['coupon'] = Coupon::where(['code' => 'fdfgdfg', 'status' => 1])->first();
@@ -77,7 +77,7 @@ class PosController extends Controller
         Paginator::useBootstrap();
         $data['products'] = Product::with('activeVariants')->where(['vendor_id' => 0])->where(['status' => 1])->where(['category_id' => $id])->orderBy('id','desc')->paginate(18);
         $data['setting'] = Setting::first();
-        $data['categories'] = Category::with('subCategories','products')->get();
+        $data['categories'] = Category::with('subCategories','products')->ordered()->get();
         $data['cart_products'] = ShoppingCart::where('user_id',Auth::guard('admin')->user()->id)->orderBy('id','desc')->get();
         $data['customers'] = User::where('status',1)->select('id','name')->orderBy('id','asc')->get();
         $data['coupon'] = Coupon::where(['code' => 'fdfgdfg', 'status' => 1])->first();
@@ -105,7 +105,7 @@ class PosController extends Controller
             }
         $data['products'] = $productsQuery->paginate(18);
         $data['setting'] = Setting::first();
-        $data['categories'] = Category::with('subCategories','products')->get();
+        $data['categories'] = Category::with('subCategories','products')->ordered()->get();
         $data['cart_products'] = ShoppingCart::where('user_id',Auth::guard('admin')->user()->id)->orderBy('id','desc')->get();
         $data['customers'] = User::where('status',1)->select('id','name')->orderBy('id','asc')->get();
         $data['coupon'] = Coupon::where(['code' => 'fdfgdfg', 'status' => 1])->first();
@@ -389,7 +389,7 @@ class PosController extends Controller
         Paginator::useBootstrap();
         $data['products'] = Product::with('activeVariants')->where(['vendor_id' => 0])->where(['status' => 1])->orderBy('id','desc')->paginate(18);
         $data['setting'] = Setting::first();
-        $data['categories'] = Category::with('subCategories','products')->get();
+        $data['categories'] = Category::with('subCategories','products')->ordered()->get();
         $data['cart_products'] = ShoppingCart::where('user_id',Auth::guard('admin')->user()->id)->orderBy('id','desc')->get();
         $data['customers'] = User::where('status',1)->select('id','name')->orderBy('id','asc')->get();
         $data['shippings'] = Shipping::all();

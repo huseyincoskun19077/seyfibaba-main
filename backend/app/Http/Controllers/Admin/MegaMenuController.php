@@ -24,7 +24,7 @@ class MegaMenuController extends Controller
     }
 
     public function create(){
-        $categories = Category::where('status',1)->get();
+        $categories = Category::where('status',1)->ordered()->get();
 
         return response()->json(['categories' => $categories], 200);
 
@@ -58,7 +58,7 @@ class MegaMenuController extends Controller
 
     public function show($id){
         $megaMenuCategory = MegaMenuCategory::with('category')->find($id);
-        $categories = Category::where('status',1)->get();
+        $categories = Category::where('status',1)->ordered()->get();
 
         return response()->json(['megaMenuCategory' => $megaMenuCategory, 'categories' => $categories], 200);
 
@@ -66,7 +66,7 @@ class MegaMenuController extends Controller
 
     public function edit($id){
         $megaMenuCategory = MegaMenuCategory::find($id);
-        $categories = Category::where('status',1)->get();
+        $categories = Category::where('status',1)->ordered()->get();
         return view('admin.edit_mega_menu_category', compact('categories','megaMenuCategory'));
     }
 

@@ -56,7 +56,7 @@ class HomePageController extends Controller
     public function popularCategory(){
         $popularCategories = PopularCategory::with('category')->get();
 
-        $categories = Category::where('status', 1)->get();
+        $categories = Category::where('status', 1)->ordered()->get();
 
         $banner = Setting::select('popular_category_banner')->first();
 
@@ -125,7 +125,7 @@ class HomePageController extends Controller
 
     public function featuredCategory(){
         $featuredCategories = FeaturedCategory::with('category')->get();
-        $categories = Category::where('status', 1)->get();
+        $categories = Category::where('status', 1)->ordered()->get();
 
         $banner = Setting::select('featured_category_banner')->first();
         return view('admin.featured_category', compact('featuredCategories', 'categories','banner'));

@@ -145,7 +145,7 @@ class OrderController extends Controller
         $setting = Setting::first();
 
         $brands = Brand::all();
-        $categories = Category::with('subCategories','products')->get();
+        $categories = Category::with('subCategories','products')->ordered()->get();
         $countries = Country::all();
         return view('admin.show_order',compact('order', 'deliverymans', 'setting','products','brands','categories','countries'));
     }

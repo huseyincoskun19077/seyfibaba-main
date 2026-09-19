@@ -28,18 +28,18 @@ class ProductChildCategoryController extends Controller
 
     public function create()
     {
-        $categories=Category::all();
-        $SubCategories=SubCategory::all();
+        $categories=Category::ordered()->get();
+        $SubCategories=SubCategory::ordered()->get();
         return view('admin.create_product_child_category',compact('categories','SubCategories'));
     }
 
     public function getSubcategoryByCategory($id){
-        $subCategories=SubCategory::where('category_id',$id)->get();
+        $subCategories=SubCategory::where('category_id', $id)->ordered()->get();
         return response()->json(['subCategories'=>$subCategories]);
     }
 
     public function getChildcategoryBySubCategory($id){
-        $childCategories=ChildCategory::where('sub_category_id',$id)->get();
+        $childCategories=ChildCategory::where('sub_category_id', $id)->ordered()->get();
         return response()->json(['childCategories'=>$childCategories]);
     }
 
@@ -84,8 +84,8 @@ class ProductChildCategoryController extends Controller
     public function edit($id)
     {
         $childCategory = ChildCategory::find($id);
-        $categories = Category::all();
-        $subCategories = SubCategory::where('category_id',$childCategory->category_id)->get();
+        $categories = Category::ordered()->get();
+        $subCategories = SubCategory::where('category_id', $childCategory->category_id)->ordered()->get();
         return view('admin.edit_product_child_category',compact('childCategory','categories','subCategories'));
     }
 

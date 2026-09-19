@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\ChildCategory;
 use App\Models\Category;
 use App\Models\SubCategory;
+use App\Services\CategorySerialService;
 use Illuminate\Http\Request;
 use App\Models\PopularCategory;
 use App\Models\ThreeColumnCategory;
+use Illuminate\Support\Facades\Schema;
 class ProductChildCategoryController extends Controller
 {
     public function __construct()
@@ -18,7 +20,7 @@ class ProductChildCategoryController extends Controller
 
     public function index()
     {
-        $childCategories=ChildCategory::with('subCategory','category','products')->get();
+        $childCategories=ChildCategory::with('subCategory','category','products')->ordered()->get();
 
         return view('admin.product_child_category',compact('childCategories'));
     }
@@ -26,13 +28,13 @@ class ProductChildCategoryController extends Controller
 
     public function create()
     {
-        $categories=Category::all();
-        $SubCategories=SubCategory::all();
+        $categories=Category::ordered()->get();
+        $SubCategories=SubCategory::ordered()->get();
         return view('admin.create_product_child_category',compact('categories','SubCategories'));
     }
 
     public function getSubcategoryByCategory($id){
-        $subCategories=SubCategory::where('category_id',$id)->get();
+        $subCategories=SubCategory::where('category_id',$id)->ordered()->get();
         $response="<option value=''>".trans('admin_validation.Select sub category')."</option>";
         foreach($subCategories as $subCategory){
             $response .= "<option value=".$subCategory->id.">".$subCategory->name."</option>";
@@ -41,7 +43,7 @@ class ProductChildCategoryController extends Controller
     }
 
     public function getChildcategoryBySubCategory($id){
-        $childCategories=ChildCategory::where('sub_category_id',$id)->get();
+        $childCategories=ChildCategory::where('sub_category_id',$id)->ordered()->get();
         $response='<option value="">'.trans('admin_validation.Select Child Category').'</option>';
         foreach($childCategories as $childCategory){
             $response .= "<option value=".$childCategory->id.">".$childCategory->name."</option>";
@@ -75,6 +77,9 @@ class ProductChildCategoryController extends Controller
         $childCategory->name = $request->name;
         $childCategory->slug = $request->slug;
         $childCategory->status = $request->status;
+        if (Schema::hasColumn('child_categories', 'serial')) {
+            $childCategory->serial = app(CategorySerialService::class)->nextSerial(ChildCategory::class);
+        }
         $childCategory->save();
 
         $notification = trans('admin_validation.Created Successfully');
@@ -91,8 +96,8 @@ class ProductChildCategoryController extends Controller
     public function edit($id)
     {
         $childCategory = ChildCategory::find($id);
-        $categories = Category::all();
-        $subCategories = SubCategory::where('category_id',$childCategory->category_id)->get();
+        $categories = Category::ordered()->get();
+        $subCategories = SubCategory::where('category_id',$childCategory->category_id)->ordered()->get();
         return view('admin.edit_product_child_category',compact('childCategory','categories','subCategories'));
     }
 
@@ -150,5 +155,17 @@ class ProductChildCategoryController extends Controller
             $message = trans('admin_validation.Active Successfully');
         }
         return response()->json($message);
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:child_categories,id',
+        ]);
+
+        app(CategorySerialService::class)->reorder(ChildCategory::class, $request->input('ids', []));
+
+        return response()->json(['success' => true, 'message' => 'Sıralama güncellendi.']);
     }
 }

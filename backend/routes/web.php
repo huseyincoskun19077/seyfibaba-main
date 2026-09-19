@@ -668,12 +668,15 @@ Route::group(['middleware' => ['XSS']], function () {
 
         Route::resource('product-category', ProductCategoryController::class);
         Route::put('product-category-status/{id}', [ProductCategoryController::class, 'changeStatus'])->name('product.category.status');
+        Route::post('product-category-reorder', [ProductCategoryController::class, 'reorder'])->name('product.category.reorder');
 
         Route::resource('product-sub-category', ProductSubCategoryController::class);
         Route::put('product-sub-category-status/{id}', [ProductSubCategoryController::class, 'changeStatus'])->name('product.sub.category.status');
+        Route::post('product-sub-category-reorder', [ProductSubCategoryController::class, 'reorder'])->name('product.sub.category.reorder');
 
         Route::resource('product-child-category', ProductChildCategoryController::class);
         Route::put('product-child-category-status/{id}', [ProductChildCategoryController::class, 'changeStatus'])->name('product.child.category.status');
+        Route::post('product-child-category-reorder', [ProductChildCategoryController::class, 'reorder'])->name('product.child.category.reorder');
         Route::get('subcategory-by-category/{id}', [ProductChildCategoryController::class, 'getSubcategoryByCategory'])->name('subcategory-by-category');
         Route::get('childcategory-by-subcategory/{id}', [ProductChildCategoryController::class, 'getChildcategoryBySubCategory'])->name('childcategory-by-subcategory');
 

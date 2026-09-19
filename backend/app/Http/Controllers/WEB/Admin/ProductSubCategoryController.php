@@ -5,6 +5,7 @@ namespace App\Http\Controllers\WEB\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SubCategory;
 use App\Models\Category;
+use App\Services\CategorySerialService;
 use Illuminate\Http\Request;
 use App\Models\PopularCategory;
 use App\Models\ThreeColumnCategory;
@@ -19,7 +20,7 @@ class ProductSubCategoryController extends Controller
 
     public function index()
     {
-        $subCategories=SubCategory::with('category','childCategories','products')->get();
+        $subCategories=SubCategory::with('category','childCategories','products')->ordered()->get();
 
         return view('admin.product_sub_category',compact('subCategories'));
     }
@@ -27,7 +28,7 @@ class ProductSubCategoryController extends Controller
 
     public function create()
     {
-        $categories=Category::all();
+        $categories=Category::ordered()->get();
         return view('admin.create_product_sub_category',compact('categories'));
     }
 
@@ -58,6 +59,9 @@ class ProductSubCategoryController extends Controller
         $subCategory->name = $request->name;
         $subCategory->slug = $request->slug;
         $subCategory->status = $request->status;
+        if (Schema::hasColumn('sub_categories', 'serial')) {
+            $subCategory->serial = app(CategorySerialService::class)->nextSerial(SubCategory::class);
+        }
         if ($hasMaxInstallment) {
             if ($request->filled('max_installment')) {
                 $subCategory->max_installment = (int) $request->max_installment;
@@ -78,7 +82,7 @@ class ProductSubCategoryController extends Controller
     public function edit($id)
     {
         $subCategory = SubCategory::find($id);
-        $categories=Category::all();
+        $categories=Category::ordered()->get();
         return view('admin.edit_product_sub_category',compact('subCategory','categories'));
     }
 
@@ -147,6 +151,18 @@ class ProductSubCategoryController extends Controller
             $message = trans('admin_validation.Active Successfully');
         }
         return response()->json($message);
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:sub_categories,id',
+        ]);
+
+        app(CategorySerialService::class)->reorder(SubCategory::class, $request->input('ids', []));
+
+        return response()->json(['success' => true, 'message' => 'Sıralama güncellendi.']);
     }
 
 }

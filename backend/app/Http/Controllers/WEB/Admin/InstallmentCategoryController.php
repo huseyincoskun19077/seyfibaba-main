@@ -22,8 +22,8 @@ class InstallmentCategoryController extends Controller
             Schema::hasColumn('categories', 'max_installment')
             && Schema::hasColumn('sub_categories', 'max_installment');
 
-        $categories = Category::orderBy('name')->get();
-        $subCategories = SubCategory::orderBy('name')->get();
+        $categories = Category::ordered()->get();
+        $subCategories = SubCategory::ordered()->get();
         $iyzicoRules = CategoryInstallmentService::IYZICO_RULES;
 
         return view('admin.installment_categories', compact('hasColumns', 'categories', 'subCategories', 'iyzicoRules'));

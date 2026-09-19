@@ -138,7 +138,7 @@ class ProductController extends Controller
         $orderProducts = OrderProduct::select('id', 'product_id')->get();
         $setting = Setting::first();
         $frontend_url = rtrim($setting?->frontend_url ?? config('app.frontend_url', config('app.url')), '/').'/urun/';
-        $categories = Category::query()->orderBy('name')->get(['id', 'name']);
+        $categories = Category::query()->ordered()->get(['id', 'name']);
 
         return view('admin.seller_product', compact(
             'products',
@@ -180,7 +180,7 @@ class ProductController extends Controller
 
     public function create()
     {
-        $categories = Category::all();
+        $categories = Category::ordered()->get();
         $brands = Brand::all();
         $specificationKeys = ProductSpecificationKey::all();
         $setting = Setting::first();
@@ -310,9 +310,9 @@ class ProductController extends Controller
     public function edit($id)
     {
         $product = Product::with('category','brand','gallery','variants','variantItems')->find($id);
-        $categories = Category::all();
-        $subCategories = SubCategory::where('category_id',$product->category_id)->get();
-        $childCategories = ChildCategory::where('sub_category_id', $product->sub_category_id)->get();
+        $categories = Category::ordered()->get();
+        $subCategories = SubCategory::where('category_id', $product->category_id)->ordered()->get();
+        $childCategories = ChildCategory::where('sub_category_id', $product->sub_category_id)->ordered()->get();
         $brands = Brand::all();
         $specificationKeys = ProductSpecificationKey::all();
         $productSpecifications = ProductSpecification::where('product_id',$product->id)->get();

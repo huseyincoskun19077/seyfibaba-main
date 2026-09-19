@@ -8,6 +8,7 @@ use App\Models\PopularCategory;
 use App\Models\FeaturedCategory;
 use App\Models\MegaMenuSubCategory;
 use App\Models\MegaMenuCategory;
+use App\Services\CategorySerialService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
@@ -24,8 +25,7 @@ class ProductCategoryController extends Controller
 
     public function index()
     {
-        $categories = Category::with('subCategories','products')->get();
-
+        $categories = Category::with('subCategories','products')->ordered()->get();
 
         return view('admin.product_category',compact('categories'));
 
@@ -67,6 +67,9 @@ class ProductCategoryController extends Controller
         $category->description = $request->description;
         $category->status = $request->status;
         $category->icon = $request->icon;
+        if (Schema::hasColumn('categories', 'serial')) {
+            $category->serial = app(CategorySerialService::class)->nextSerial(Category::class);
+        }
         if ($hasMaxInstallment) {
             if ($request->filled('max_installment')) {
                 $category->max_installment = (int) $request->max_installment;
@@ -221,5 +224,17 @@ class ProductCategoryController extends Controller
             $message= trans('admin_validation.Active Successfully');
         }
         return response()->json($message);
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:categories,id',
+        ]);
+
+        app(CategorySerialService::class)->reorder(Category::class, $request->input('ids', []));
+
+        return response()->json(['success' => true, 'message' => 'Sıralama güncellendi.']);
     }
 }

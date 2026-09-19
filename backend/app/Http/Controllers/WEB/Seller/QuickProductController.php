@@ -37,7 +37,7 @@ class QuickProductController extends Controller
         $brands = Brand::query()->where('status', 1)->orderBy('name')->get(['id', 'name']);
         $categories = Category::query()
             ->active()
-            ->orderBy('name')
+            ->ordered()
             ->get(['id', 'name']);
         $commissionRate = $seller->getEffectiveCommissionRate() ?: 10;
 

@@ -28,7 +28,7 @@ class QuickRegistrationController extends Controller
     public function create()
     {
         $setting = Setting::first();
-        $categories = Category::query()->where('status', 1)->orderBy('name')->get(['id', 'name']);
+        $categories = Category::query()->where('status', 1)->ordered()->get(['id', 'name']);
         $country = Country::query()->where('slug', 'turkiye')->first();
         $states = $country
             ? CountryState::query()->where('country_id', $country->id)->where('status', 1)->orderBy('name')->get(['id', 'name'])

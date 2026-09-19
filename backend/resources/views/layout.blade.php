@@ -1,7 +1,7 @@
 @php
     $setting = App\Models\Setting::first();
     $announcementModal = App\Models\AnnouncementModal::first();
-    $productCategories = App\Models\Category::where(['status' => 1])->get();
+    $productCategories = App\Models\Category::where(['status' => 1])->ordered()->get();
     $megaMenuCategories = App\Models\MegaMenuCategory::orderBy('serial','asc')->where('status',1)->get();
     $megaMenuBanner = App\Models\BannerImage::find(1);
     $modalProducts = App\Models\Product::all();

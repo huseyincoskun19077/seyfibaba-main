@@ -28,7 +28,7 @@ class ProductSubCategoryController extends Controller
 
     public function create()
     {
-        $categories=Category::all();
+        $categories=Category::ordered()->get();
         return view('admin.create_product_sub_category',compact('categories'));
     }
 
@@ -69,7 +69,7 @@ class ProductSubCategoryController extends Controller
     public function edit($id)
     {
         $subCategory = SubCategory::find($id);
-        $categories=Category::all();
+        $categories=Category::ordered()->get();
         return view('admin.edit_product_sub_category',compact('subCategory','categories'));
     }
 

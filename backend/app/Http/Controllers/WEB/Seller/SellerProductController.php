@@ -112,7 +112,7 @@ class SellerProductController extends Controller
             return redirect()->route('seller.kyc')->with($notification);
         }
 
-        $categories = Category::query()->active()->orderBy('name')->get();
+        $categories = Category::query()->active()->ordered()->get();
         $brands = Brand::all();
         $specificationKeys = ProductSpecificationKey::all();
         $setting = Setting::first();
@@ -127,7 +127,7 @@ class SellerProductController extends Controller
         $subCategories = SubCategory::query()
             ->where('category_id', $id)
             ->active()
-            ->orderBy('name')
+            ->ordered()
             ->get();
         $response='<option value="">'.trans('admin_validation.Select Sub Category').'</option>';
         foreach($subCategories as $subCategory){
@@ -140,7 +140,7 @@ class SellerProductController extends Controller
         $childCategories = ChildCategory::query()
             ->where('sub_category_id', $id)
             ->active()
-            ->orderBy('name')
+            ->ordered()
             ->get();
         $response='<option value="">'.trans('admin_validation.Select Child Category').'</option>';
         foreach($childCategories as $childCategory){
@@ -363,16 +363,16 @@ class SellerProductController extends Controller
         if (! $product) {
             return $this->denySellerProductAccess();
         }
-        $categories = Category::query()->active()->orderBy('name')->get();
+        $categories = Category::query()->active()->ordered()->get();
         $subCategories = SubCategory::query()
             ->where('category_id', $product->category_id)
             ->active()
-            ->orderBy('name')
+            ->ordered()
             ->get();
         $childCategories = ChildCategory::query()
             ->where('sub_category_id', $product->sub_category_id)
             ->active()
-            ->orderBy('name')
+            ->ordered()
             ->get();
         $brands = Brand::all();
         $specificationKeys = ProductSpecificationKey::all();

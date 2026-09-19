@@ -25,7 +25,7 @@ class MegaMenuSubCategoryController extends Controller
 
     public function create($id){
         $megaMenuCategory = MegaMenuCategory::with('category')->find($id);
-        $subCategories = SubCategory::where(['status' => 1, 'category_id' => $megaMenuCategory->category_id])->get();
+        $subCategories = SubCategory::where(['status' => 1, 'category_id' => $megaMenuCategory->category_id])->ordered()->get();
 
         return response()->json(['megaMenuCategory' => $megaMenuCategory, 'subCategories' => $subCategories], 200);
 
@@ -63,7 +63,7 @@ class MegaMenuSubCategoryController extends Controller
     public function show($id){
         $megaMenuSubCategory = MegaMenuSubCategory::with('subCategory')->find($id);
         $categoryId = $megaMenuSubCategory->megaMenuCategory->category_id;
-        $subCategories = SubCategory::where(['status' => 1, 'category_id' => $categoryId])->get();
+        $subCategories = SubCategory::where(['status' => 1, 'category_id' => $categoryId])->ordered()->get();
         $megaMenuCategory = MegaMenuCategory::with('category')->find($megaMenuSubCategory->mega_menu_category_id);
         return response()->json(['megaMenuSubCategory' => $megaMenuSubCategory, 'categoryId' => $categoryId, 'subCategories' => $subCategories, 'megaMenuCategory' => $megaMenuCategory], 200);
 
@@ -73,7 +73,7 @@ class MegaMenuSubCategoryController extends Controller
     public function edit($id){
         $megaMenuSubCategory = MegaMenuSubCategory::with('megaMenuCategory')->find($id);
         $categoryId = $megaMenuSubCategory->megaMenuCategory->category_id;
-        $subCategories = SubCategory::where(['status' => 1, 'category_id' => $categoryId])->get();
+        $subCategories = SubCategory::where(['status' => 1, 'category_id' => $categoryId])->ordered()->get();
         return view('admin.edit_mega_menu_sub_category', compact('subCategories','megaMenuSubCategory'));
 
     }
