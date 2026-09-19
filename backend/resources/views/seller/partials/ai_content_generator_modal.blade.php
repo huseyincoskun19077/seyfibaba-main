@@ -113,12 +113,27 @@
             }
             if (data.short_description) {
                 $('textarea[name="short_description"]').val(data.short_description);
+            } else if (data.long_description) {
+                var plain = $('<div>').html(data.long_description).text().trim();
+                if (plain) {
+                    $('textarea[name="short_description"]').val(plain);
+                    data.short_description = plain;
+                }
             }
-            if (data.long_description) {
+            // Tek açıklama: kısa = detaylı
+            var shortVal = $('textarea[name="short_description"]').val() || '';
+            if (shortVal) {
+                var html = '<p>' + $('<div>').text(shortVal).html().replace(/\n/g, '<br>') + '</p>';
+                var $long = $('input[name="long_description"], textarea[name="long_description"]').first();
+                $long.val(html);
+                if ($('.summernote').summernote && $('textarea[name="long_description"]').hasClass('summernote')) {
+                    $('.summernote').summernote('code', html);
+                }
+            } else if (data.long_description) {
                 if ($('.summernote').summernote) {
                     $('.summernote').summernote('code', data.long_description);
                 } else {
-                    $('textarea[name="long_description"]').val(data.long_description);
+                    $('textarea[name="long_description"], input[name="long_description"]').val(data.long_description);
                 }
             }
             if (data.tags && $('input[name="tags"]').length) {

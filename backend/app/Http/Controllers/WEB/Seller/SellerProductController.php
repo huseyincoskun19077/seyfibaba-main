@@ -170,7 +170,7 @@ class SellerProductController extends Controller
             'images.*' => 'image|mimes:jpeg,jpg,png,webp|max:5120',
             'category' => ['required', Rule::exists('categories', 'id')->where('status', 1)],
             'short_description' => 'required',
-            'long_description' => 'required',
+            'long_description' => 'nullable',
             'price' => 'required|numeric',
             'weight' => 'nullable|numeric',
             'delivery_info' => 'nullable|string|max:500',
@@ -181,6 +181,11 @@ class SellerProductController extends Controller
             'colors.*.price' => 'nullable|numeric|min:0',
             'colors.*.qty' => 'nullable|integer|min:0',
             'colors.*.image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:8192',
+            'option_groups' => 'nullable|array|max:20',
+            'option_groups.*.name' => 'nullable|string|max:80',
+            'option_groups.*.items' => 'nullable|array|max:80',
+            'option_groups.*.items.*.name' => 'nullable|string|max:80',
+            'option_groups.*.items.*.price' => 'nullable|numeric|min:0',
         ];
         $customMessages = [
             'short_name.required' => trans('admin_validation.Short name is required'),
@@ -191,13 +196,19 @@ class SellerProductController extends Controller
             'slug.unique' => trans('admin_validation.Slug already exist'),
             'category.required' => trans('admin_validation.Category is required'),
             'thumb_image.required' => trans('admin_validation.thumbnail is required'),
-            'short_description.required' => trans('admin_validation.Short description is required'),
+            'short_description.required' => 'Açıklama zorunludur',
             'long_description.required' => trans('admin_validation.Long description is required'),
             'price.required' => trans('admin_validation.Price is required'),
             'status.required' => trans('admin_validation.Status is required'),
             'quantity.required' => trans('admin_validation.Quantity is required'),
         ];
         $this->validate($request, $rules,$customMessages);
+
+        $shortDesc = trim((string) $request->short_description);
+        $longDesc = trim((string) ($request->long_description ?? ''));
+        if ($longDesc === '' || strip_tags($longDesc) === '') {
+            $longDesc = '<p>'.e($shortDesc).'</p>';
+        }
 
 
         $seller = Auth::guard('web')->user()->seller;
@@ -238,8 +249,8 @@ class SellerProductController extends Controller
         $product->offer_price = $request->filled('offer_price') ? $request->offer_price : 0;
         $product->sale_unit_qty = max(1, (int) ($request->input('sale_unit_qty', 1) ?: 1));
         $product->qty = $request->quantity ? $request->quantity : 0;
-        $product->short_description = $request->short_description;
-        $product->long_description = clean($request->long_description);
+        $product->short_description = $shortDesc;
+        $product->long_description = clean($longDesc);
         $product->tags = $request->tags;
         // KYC onaylı satıcı ürünü doğrudan yayına alınır
         $product->status = 1;
@@ -252,8 +263,8 @@ class SellerProductController extends Controller
             $request->seo_title,
             $request->seo_description,
             (string) $request->name,
-            $request->short_description,
-            $request->long_description
+            $shortDesc,
+            $longDesc
         );
         $product->seo_title = $seo['seo_title'];
         $product->seo_description = $seo['seo_description'];
@@ -276,10 +287,9 @@ class SellerProductController extends Controller
             $product,
             app(SimpleProductColorService::class)->payloadFromRequest($request)
         );
-        $sizeResult = app(SimpleProductOptionService::class)->sync(
+        $sizeResult = app(SimpleProductOptionService::class)->replaceNonColorGroups(
             $product,
-            app(SimpleProductOptionService::class)->payloadFromRequest($request, 'sizes'),
-            'Boyut'
+            app(SimpleProductOptionService::class)->groupsFromRequest($request)
         );
 
         if ($request->hasFile('images')) {
@@ -374,9 +384,9 @@ class SellerProductController extends Controller
         $seller = Auth::guard('web')->user()->seller;
         $commissionRate = $seller ? ($seller->getEffectiveCommissionRate() ?: 10) : 10;
         $colorRows = app(SimpleProductColorService::class)->existingRows($product);
-        $sizeRows = app(SimpleProductOptionService::class)->existingRows($product, 'Boyut');
+        $optionGroups = app(SimpleProductOptionService::class)->existingNonColorGroups($product);
 
-        return view('seller.edit_product',compact('categories','brands','specificationKeys','product','subCategories','childCategories','productSpecifications','aiEnabled','commissionRate','colorRows','sizeRows'));
+        return view('seller.edit_product',compact('categories','brands','specificationKeys','product','subCategories','childCategories','productSpecifications','aiEnabled','commissionRate','colorRows','optionGroups'));
 
     }
 
@@ -533,10 +543,9 @@ class SellerProductController extends Controller
             $product,
             app(SimpleProductColorService::class)->payloadFromRequest($request)
         );
-        $sizeResult = app(SimpleProductOptionService::class)->sync(
+        $sizeResult = app(SimpleProductOptionService::class)->replaceNonColorGroups(
             $product,
-            app(SimpleProductOptionService::class)->payloadFromRequest($request, 'sizes'),
-            'Boyut'
+            app(SimpleProductOptionService::class)->groupsFromRequest($request)
         );
 
         $exist_specifications=[];

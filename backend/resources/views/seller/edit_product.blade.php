@@ -244,8 +244,26 @@
 
               </div>
 
-              @include('seller.partials.simple_color_variants', ['colorRows' => old('colors', $colorRows ?? [])])
-              @include('seller.partials.simple_size_variants', ['sizeRows' => old('sizes', $sizeRows ?? [])])
+              @include('seller.partials.simple_product_variants', [
+                'colorRows' => old('colors', $colorRows ?? []),
+                'optionGroups' => old('option_groups')
+                  ? collect(old('option_groups'))->map(function ($g) {
+                      if (! is_array($g)) {
+                          return null;
+                      }
+                      $items = $g['rows'] ?? $g['items'] ?? [];
+                      $rows = [];
+                      foreach ((array) $items as $item) {
+                          if (! is_array($item) || trim((string) ($item['name'] ?? '')) === '') {
+                              continue;
+                          }
+                          $rows[] = ['name' => $item['name'], 'price' => $item['price'] ?? ''];
+                      }
+
+                      return ['name' => $g['name'] ?? '', 'rows' => $rows];
+                  })->filter()->values()->all()
+                  : ($optionGroups ?? []),
+              ])
 
               <div class="seller-sticky-save">
                   <button class="btn btn-primary btn-lg btn-block seller-save-btn">{{__('admin.Update')}}</button>

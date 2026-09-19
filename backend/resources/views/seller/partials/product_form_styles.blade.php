@@ -115,4 +115,77 @@
     border-radius: 10px;
     display: block;
   }
+  .seller-product-form .spf-collapse-toggle {
+    cursor: pointer;
+    user-select: none;
+  }
+  .seller-product-form .spf-chevron {
+    transition: transform .2s ease;
+    color: #64748b;
+  }
+  .seller-product-form .spf-chevron.is-open {
+    transform: rotate(180deg);
+  }
+  .seller-product-form .spf-step-body.collapse:not(.show) {
+    display: none;
+  }
+  .seller-product-form .spf-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .seller-product-form .spf-chip {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .seller-product-form .spf-chip:hover {
+    border-color: #0f172a;
+    background: #f8fafc;
+  }
+  .seller-product-form .spf-chip-manual {
+    border-style: dashed;
+    color: #475569;
+  }
+  .seller-product-form .spf-variant-block {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: #fff;
+  }
+  .seller-product-form .spf-variant-block-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .seller-product-form .spf-group-name {
+    max-width: 220px;
+    font-weight: 700;
+  }
+  .seller-product-form .spf-group-name-locked {
+    background: #f1f5f9;
+    border: none;
+    pointer-events: none;
+  }
+  .seller-product-form .spf-option-row {
+    display: grid;
+    grid-template-columns: 1fr 110px 36px;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+  .seller-product-form .spf-option-row .form-control {
+    min-height: 40px;
+  }
+  .seller-product-form #simpleColorRows .color-row {
+    padding: 10px;
+  }
 </style>

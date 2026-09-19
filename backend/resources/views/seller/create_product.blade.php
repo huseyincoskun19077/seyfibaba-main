@@ -120,39 +120,44 @@
                     </div>
                     @include('seller.partials.delivery_info_field', ['deliveryInfo' => old('delivery_info'), 'wrapperClass' => 'col-12'])
                     <div class="form-group col-12">
-                        <label>Kısa açıklama <span class="spf-req">zorunlu</span></label>
-                        <textarea name="short_description" cols="30" rows="3" class="form-control" required placeholder="1-2 cümle: ürün ne işe yarar, kime hitap eder?">{{ old('short_description') }}</textarea>
-                        <div class="spf-hint">SEO bu metin + ürün adından otomatik üretilir.</div>
-                    </div>
-                    <div class="form-group col-12">
-                        <label>Detaylı açıklama <span class="spf-req">zorunlu</span></label>
-                        <textarea name="long_description" cols="30" rows="8" class="summernote">{{ old('long_description') }}</textarea>
+                        <label>Açıklama <span class="spf-req">zorunlu</span></label>
+                        <textarea name="short_description" id="short_description" cols="30" rows="4" class="form-control" required placeholder="Ürünü kısaca anlatın. Site’de “devamını gör” bu metinden açılır.">{{ old('short_description') }}</textarea>
+                        <input type="hidden" name="long_description" id="long_description" value="{{ old('long_description') }}">
+                        <div class="spf-hint">Kısa ve detaylı açıklama aynıdır; SEO de buradan üretilir.</div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="spf-step" id="simpleColorsCard">
-                <div class="spf-step-head">
-                  <span class="spf-step-num">2</span>
-                  <div>
-                    <h4>Renk varyantları <span class="spf-opt">opsiyonel</span></h4>
-                    <p>Farklı renkler aynı üründür. Fiyat boşsa ürün fiyatı kullanılır; farklıysa o rengin satış fiyatını yazın.</p>
-                  </div>
-                </div>
-                <div class="spf-step-body">
-                  @include('seller.partials.simple_color_variants_inner', ['colorRows' => old('colors', [])])
-                </div>
-              </div>
+              @include('seller.partials.simple_product_variants', [
+                'colorRows' => old('colors', []),
+                'optionGroups' => collect(old('option_groups', []))->map(function ($g) {
+                    if (! is_array($g)) {
+                        return null;
+                    }
+                    $items = $g['rows'] ?? $g['items'] ?? [];
+                    $rows = [];
+                    foreach ((array) $items as $item) {
+                        if (! is_array($item)) {
+                            continue;
+                        }
+                        $n = trim((string) ($item['name'] ?? ''));
+                        if ($n === '') {
+                            continue;
+                        }
+                        $rows[] = ['name' => $n, 'price' => $item['price'] ?? ''];
+                    }
 
-              @include('seller.partials.simple_size_variants', ['sizeRows' => old('sizes', [])])
+                    return ['name' => $g['name'] ?? '', 'rows' => $rows];
+                })->filter()->values()->all(),
+              ])
 
               <div class="spf-step">
                 <div class="spf-step-head">
-                  <span class="spf-step-num">4</span>
+                  <span class="spf-step-num">3</span>
                   <div>
                     <h4>Fotoğraflar</h4>
-                    <p>Kapak zorunlu. Renk fotoğraflarını renk satırından ekleyin.</p>
+                    <p>Kapak zorunlu. Renk fotoğraflarını varyantlardan ekleyin.</p>
                   </div>
                 </div>
                 <div class="spf-step-body">
@@ -195,6 +200,15 @@
     (function($) {
         "use strict";
         $(document).ready(function () {
+            function syncLongFromShort() {
+                var t = ($("#short_description").val() || "").trim();
+                var html = t ? ("<p>" + $("<div>").text(t).html().replace(/\n/g, "<br>") + "</p>") : "";
+                $("#long_description").val(html);
+            }
+            $("#short_description").on("input change", syncLongFromShort);
+            syncLongFromShort();
+            $("form").on("submit", syncLongFromShort);
+
             $("#name").on("input focusout",function(){
                 var n = $(this).val() || "";
                 $("#slug").val(convertToSlug(n));
