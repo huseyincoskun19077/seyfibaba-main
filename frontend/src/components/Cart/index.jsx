@@ -11,6 +11,7 @@ import ServeLangItem from "../Helpers/ServeLangItem";
 import CurrencyConvert from "../Shared/CurrencyConvert";
 import CartDeleteIco from "../Helpers/icons/CartDeleteIco";
 import { getProductImageProps } from "@/utils/productImage";
+import { resolveCartLineUnitPrice } from "@/utils/variantPricing";
 
 export default function Cart({ className }) {
   // Redux state selectors
@@ -64,17 +65,11 @@ export default function Cart({ className }) {
     if (getCarts?.length > 0) {
       setGetAllPrice(
         getCarts.map((v) => {
-          const basePrice = v.product.offer_price || v.product.price;
-          const variantPrice =
-            v.variants?.reduce(
-              (sum, item) =>
-                sum +
-                (item.variant_item ? parseInt(item.variant_item.price) : 0),
-              0
-            ) || 0;
-          const unitPrice = parseInt(basePrice) + variantPrice;
+          const unitPrice = Number(resolveCartLineUnitPrice(v) || 0);
           const totalPrice = unitPrice * (v.qty || 1);
-          return checkProductExistsInFlashSale(v.product_id, totalPrice);
+          // resolveCartLineUnitPrice already applies absolute/extra rules;
+          // flash is applied on backend checkout — avoid double flash here if unit already net.
+          return totalPrice;
         })
       );
     } else {
@@ -99,17 +94,7 @@ export default function Cart({ className }) {
    */
   const price = (item) => {
     if (!item) return 0;
-
-    const basePrice = item.product.offer_price || item.product.price;
-    const variantPrice =
-      item.variants?.reduce(
-        (sum, variant) =>
-          sum +
-          (variant.variant_item ? parseInt(variant.variant_item.price) : 0),
-        0
-      ) || 0;
-
-    return parseInt(basePrice) + variantPrice;
+    return Number(resolveCartLineUnitPrice(item) || 0);
   };
   return (
     <div
@@ -142,6 +127,19 @@ export default function Cart({ className }) {
                     <p className="title mb-2 text-[13px] font-600 text-qblack leading-4 line-clamp-2 hover:text-qyellow notranslate">
                       {item.product.name}
                     </p>
+                    {Array.isArray(item.variants) && item.variants.length > 0 && (
+                      <p className="text-[11px] text-qgray mb-1 line-clamp-2">
+                        {item.variants
+                          .map((v) => {
+                            const vi = v?.variant_item;
+                            if (!vi) return null;
+                            const g = vi.product_variant_name || "Seçenek";
+                            return `${g}: ${vi.name}`;
+                          })
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    )}
 
                     {/* Product Price */}
                     <p className="price">

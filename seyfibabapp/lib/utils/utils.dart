@@ -338,70 +338,80 @@ class Utils {
     return productPrice;
   }
 
-  static double cartProductRegularPrice(
-      BuildContext context, CartProductModel cartProductModel) {
-    double extra = 0.0;
-    for (final variant in cartProductModel.variants) {
-      if (variant.varientItem != null) {
-        extra += variant.varientItem!.price;
+  /// Renk: mutlak fiyat (0 ise ürün fiyatı). Diğer varyantlar: ek ücret.
+  static double resolveVariantAwareUnitPrice({
+    required double productPrice,
+    required double offerPrice,
+    required List<({String groupName, double price})> selected,
+  }) {
+    double base = offerPrice > 0 ? offerPrice : productPrice;
+    double? colorAbsolute;
+    double extras = 0.0;
+
+    for (final item in selected) {
+      final isColor =
+          RegExp(r'renk|color', caseSensitive: false).hasMatch(item.groupName);
+      if (isColor) {
+        if (item.price > 0) {
+          colorAbsolute = item.price;
+        }
+      } else if (item.price > 0) {
+        extras += item.price;
       }
     }
-    return extra + cartProductModel.product.price;
+
+    return (colorAbsolute ?? base) + extras;
+  }
+
+  static List<({String groupName, double price})> _selectedFromCartVariants(
+      List variants) {
+    final out = <({String groupName, double price})>[];
+    for (final v in variants) {
+      try {
+        final dynamic vi = (v as dynamic).varientItem;
+        if (vi != null) {
+          out.add((
+            groupName: (vi.productVariantName ?? '').toString(),
+            price: Utils.toDouble(vi.price.toString()),
+          ));
+          continue;
+        }
+      } catch (_) {}
+      try {
+        final dynamic vi = (v as dynamic).variantItem;
+        if (vi != null) {
+          out.add((
+            groupName: (vi.variantName ?? vi.productVariantName ?? '').toString(),
+            price: Utils.toDouble(vi.price.toString()),
+          ));
+        }
+      } catch (_) {}
+    }
+    return out;
+  }
+
+  static double cartProductRegularPrice(
+      BuildContext context, CartProductModel cartProductModel) {
+    return resolveVariantAwareUnitPrice(
+      productPrice: cartProductModel.product.price,
+      offerPrice: 0,
+      selected: _selectedFromCartVariants(cartProductModel.variants),
+    );
   }
 
   static double cartProductPrice(BuildContext context, CartProductModel cartProductModel) {
     final appSetting = context.read<AppSettingCubit>();
-    double productPrice = 0.0;
-    double flashPrice = 0.0;
-    double offerPrice = 0.0;
-    double mainPrice = 0.0;
+    double productPrice = resolveVariantAwareUnitPrice(
+      productPrice: cartProductModel.product.price,
+      offerPrice: cartProductModel.product.offerPrice,
+      selected: _selectedFromCartVariants(cartProductModel.variants),
+    );
     final isFlashSale = appSetting.settingModel!.flashSaleProducts.contains(
         FlashSaleProductsModel(productId: cartProductModel.product.id));
 
-    if (cartProductModel.product.offerPrice != 0) {
-      if (cartProductModel.variants.isNotEmpty) {
-        double p = 0.0;
-
-        for (var i in cartProductModel.variants) {
-          // print("vItem1: $i");
-          if (i.varientItem != null) {
-            p += i.varientItem!.price;
-          }
-        }
-        offerPrice = p + cartProductModel.product.offerPrice;
-      } else {
-        offerPrice = cartProductModel.product.offerPrice;
-      }
-      productPrice = offerPrice;
-    } else {
-      if (cartProductModel.variants.isNotEmpty) {
-        double p = 0.0;
-        for (var i in cartProductModel.variants) {
-          // print("vItem2: $i");
-          if (i.varientItem != null) {
-            p += i.varientItem!.price;
-          }
-        }
-        mainPrice = p + cartProductModel.product.price;
-      } else {
-        mainPrice = cartProductModel.product.price;
-      }
-      productPrice = mainPrice;
-    }
-
     if (isFlashSale) {
-      if (cartProductModel.product.offerPrice != 0) {
-        final discount =
-            appSetting.settingModel!.flashSale.offer / 100 * offerPrice;
-
-        flashPrice = offerPrice - discount;
-      } else {
-        final discount =
-            appSetting.settingModel!.flashSale.offer / 100 * mainPrice;
-
-        flashPrice = mainPrice - discount;
-      }
-      productPrice = flashPrice;
+      final offer = appSetting.settingModel!.flashSale.offer / 100 * productPrice;
+      productPrice = productPrice - offer;
     }
     return productPrice;
   }
@@ -449,75 +459,46 @@ class Utils {
 
   static double guestCart(BuildContext context, GustCartProduct? product) {
     final appSetting = context.read<AppSettingCubit>();
-    double productPrice = 0.0;
-    double flashPrice = 0.0;
-    double offerPrice = 0.0;
-    double mainPrice = 0.0;
-    final isFlashSale = appSetting.settingModel!.flashSaleProducts.contains(FlashSaleProductsModel(productId: product?.product?.id??0));
-
-    if (product?.product?.offerPrice != 0.0) {
-
-      if (product?.variants?.isNotEmpty??false) {
-        double p = 0.0;
-
-        for (int i = 0; i < (product?.variants?.length ?? 0); i++) {
-          final item = product?.variants?[i];
-          if(item?.variantItem?.price != 0.0){
-            // debugPrint('inside-variant ${item?.variantItem?.price}');
-            p += item?.variantItem?.price??0.0;
-          }
-        }
-        offerPrice = p + (product?.product?.offerPrice??0.0);
-      } else {
-        offerPrice = product?.product?.offerPrice??0.0;
-      }
-      productPrice = offerPrice;
-    } else {
-      if (product?.variants?.isNotEmpty??false) {
-        double p = 0.0;
-        for (int i = 0; i < (product?.variants?.length ?? 0); i++) {
-          final item = product?.variants?[i];
-          if(item?.variantItem?.price != 0.0){
-            // debugPrint('inside-variant ${item?.variantItem?.price}');
-            p += item?.variantItem?.price??0.0;
-          }
-        }
-
-        mainPrice = p + (product?.product?.price??0.0);
-      } else {
-        mainPrice = product?.product?.price??0.0;
-      }
-      productPrice = mainPrice;
+    final selected = <({String groupName, double price})>[];
+    for (final item in product?.variants ?? []) {
+      final vi = item.variantItem;
+      if (vi == null) continue;
+      selected.add((
+        groupName: (vi.variantName ?? '').toString(),
+        price: Utils.toDouble(vi.price.toString()),
+      ));
     }
-
+    double productPrice = resolveVariantAwareUnitPrice(
+      productPrice: product?.product?.price ?? 0.0,
+      offerPrice: product?.product?.offerPrice ?? 0.0,
+      selected: selected,
+    );
+    final isFlashSale = appSetting.settingModel!.flashSaleProducts.contains(
+        FlashSaleProductsModel(productId: product?.product?.id ?? 0));
     if (isFlashSale) {
-      if (product?.product?.offerPrice != 0.0) {
-        // debugPrint('flash-exist ${appSetting.settingModel?.flashSale.offer}');
-        final discount = appSetting.settingModel?.flashSale.offer??1.0 / 100.0 * offerPrice;
-
-        flashPrice = offerPrice - discount;
-        // debugPrint('flash-offer-price $flashPrice');
-      } else {
-        final discount = appSetting.settingModel?.flashSale.offer??1.0 / 100.0 * mainPrice;
-
-        flashPrice = mainPrice - discount;
-        // debugPrint('flash-price $flashPrice');
-      }
-      // debugPrint('flash-price $flashPrice');
-      productPrice = flashPrice;
-      // debugPrint('product-price $productPrice');
+      final discount =
+          (appSetting.settingModel?.flashSale.offer ?? 0) / 100.0 * productPrice;
+      productPrice = productPrice - discount;
     }
     return productPrice;
   }
 
   static double guestCartRegularPrice(
       BuildContext context, GustCartProduct? product) {
-    double extra = 0.0;
-    final variants = product?.variants ?? [];
-    for (final item in variants) {
-      extra += item.variantItem?.price ?? 0.0;
+    final selected = <({String groupName, double price})>[];
+    for (final item in product?.variants ?? []) {
+      final vi = item.variantItem;
+      if (vi == null) continue;
+      selected.add((
+        groupName: (vi.variantName ?? '').toString(),
+        price: Utils.toDouble(vi.price.toString()),
+      ));
     }
-    return extra + (product?.product?.price ?? 0.0);
+    return resolveVariantAwareUnitPrice(
+      productPrice: product?.product?.price ?? 0.0,
+      offerPrice: 0,
+      selected: selected,
+    );
   }
 
   static String calculatePrice(CartResponseModel cartResponseModel) {

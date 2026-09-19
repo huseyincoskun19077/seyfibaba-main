@@ -1,24 +1,29 @@
 /**
- * Varyant = aynı ürünün rengi/boyutu (açıklama aynı).
- * Fiyat asla "ürün fiyatı + varyant" olarak toplanmaz.
- * Renk/Boyut vb. seçenek fiyatı varsa o, ürünün satış fiyatıdır.
+ * Fiyat kuralları:
+ * - Renk: mutlak satış fiyatı. price <= 0 ise ürün fiyatı (aynı fiyat).
+ * - Diğer varyantlar (boyut vb.): ek ücret; ürün/renk fiyatına EKLENİR.
  */
 
-export const ABSOLUTE_VARIANT_GROUPS =
-  /renk|color|boyut|beden|ölçü|olcu|ebat|ölcu|genişlik|genislik|yükseklik|yukseklik/i;
+export const COLOR_VARIANT_GROUP = /renk|color/i;
 
 export const parseAmount = (value) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
 };
 
+export const isColorVariantGroup = (name = "") =>
+  COLOR_VARIANT_GROUP.test(String(name || ""));
+
+/** @deprecated use isColorVariantGroup — kept for older imports */
 export const isAbsoluteVariantGroup = (name = "") =>
-  ABSOLUTE_VARIANT_GROUPS.test(String(name || ""));
+  isColorVariantGroup(name);
+
+export const ABSOLUTE_VARIANT_GROUPS = COLOR_VARIANT_GROUP;
 
 /**
  * @param {object} product
- * @param {Array} selectedVariantItems - active_variant_items benzeri
- * @param {Array} variants - active_variants (id, name, ...)
+ * @param {Array} selectedVariantItems
+ * @param {Array} variants
  * @returns {{ price: number, offerPrice: number|null }}
  */
 export function resolveProductUnitPrice(
@@ -31,7 +36,8 @@ export function resolveProductUnitPrice(
   const baseOffer =
     offerRaw > 0 && (basePrice <= 0 || offerRaw < basePrice) ? offerRaw : null;
 
-  let absolutePrice = null;
+  let colorAbsolute = null;
+  let extras = 0;
 
   (selectedVariantItems || []).forEach((item) => {
     if (!item) return;
@@ -42,23 +48,30 @@ export function resolveProductUnitPrice(
       parent?.name || item?.product_variant_name || ""
     );
     const amount = parseAmount(item?.price);
-    if (amount <= 0) return;
 
-    if (isAbsoluteVariantGroup(groupName)) {
-      // Renk varsa onu esas al; yoksa ilk mutlak grup fiyatı
-      if (/renk|color/i.test(groupName) || absolutePrice === null) {
-        absolutePrice = amount;
+    if (isColorVariantGroup(groupName)) {
+      if (amount > 0) {
+        colorAbsolute = amount;
       }
+      return;
+    }
+
+    if (amount > 0) {
+      extras += amount;
     }
   });
 
-  if (absolutePrice !== null) {
-    return { price: absolutePrice, offerPrice: null };
+  if (colorAbsolute !== null) {
+    return { price: colorAbsolute + extras, offerPrice: null };
+  }
+
+  if (baseOffer != null) {
+    return { price: basePrice, offerPrice: baseOffer + extras };
   }
 
   return {
-    price: basePrice,
-    offerPrice: baseOffer,
+    price: basePrice + extras,
+    offerPrice: null,
   };
 }
 

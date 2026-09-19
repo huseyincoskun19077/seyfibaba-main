@@ -644,13 +644,26 @@ class IyzicoController extends Controller
                 }
 
                 // Reduce stock after successful payment confirmed
-                $orderProducts = $order->orderProducts;
+                $orderProducts = $order->orderProducts()->with('orderProductVariants')->get();
+                $cartPrice = app(\App\Services\CartPriceService::class);
                 foreach ($orderProducts as $orderProduct) {
                     $product = Product::find($orderProduct->product_id);
                     if ($product) {
-                        $product->qty -= $orderProduct->qty;
+                        $product->qty = max(0, (int) $product->qty - (int) $orderProduct->qty);
                         $product->save();
                     }
+                    $ids = [];
+                    foreach ($orderProduct->orderProductVariants as $v) {
+                        $item = \App\Models\ProductVariantItem::query()
+                            ->where('product_id', $orderProduct->product_id)
+                            ->where('name', $v->variant_value)
+                            ->where('product_variant_name', $v->variant_name)
+                            ->first();
+                        if ($item) {
+                            $ids[] = $item->id;
+                        }
+                    }
+                    $cartPrice->decrementVariantStock($ids, (int) $orderProduct->qty);
                 }
 
                 try {
@@ -770,19 +783,41 @@ class IyzicoController extends Controller
         $storeSubMerchantKeys = json_decode($config->store_sub_merchant_keys ?? '{}', true) ?: [];
 
         foreach ($cartProducts as $cartProduct) {
-            $product = $cartProduct->product;
-            if (!$product) continue;
-
-            $variantPrice = 0;
-            foreach (($cartProduct->variants ?? []) as $variant) {
-                $variantItemId = $variant['variant_item_id'] ?? $variant->variant_item_id ?? null;
-                if ($variantItemId) {
-                    $variantPrice += (float) ProductVariantItem::where('id', $variantItemId)->value('price');
-                }
+            $product = is_array($cartProduct)
+                ? Product::find($cartProduct['product_id'] ?? 0)
+                : ($cartProduct->product ?? null);
+            if (!$product) {
+                continue;
             }
 
-            $price = (float)($product->offer_price ?: $product->price) + $variantPrice;
-            $linePrice = number_format($price * $cartProduct->qty, 2, '.', '');
+            $qty = (int) (is_array($cartProduct)
+                ? ($cartProduct['qty'] ?? 1)
+                : ($cartProduct->qty ?? 1));
+            $variants = is_array($cartProduct)
+                ? (is_array($cartProduct['variants'] ?? null) ? $cartProduct['variants'] : [])
+                : [];
+            if (! is_array($cartProduct) && empty($variants)) {
+                $raw = $cartProduct->variants ?? [];
+                if (is_object($raw) && method_exists($raw, 'toArray')) {
+                    $raw = $raw->toArray();
+                }
+                $variants = is_array($raw) ? $raw : [];
+            }
+
+            $unitPrice = app(\App\Services\CartPriceService::class)
+                ->resolveUnitPriceFromCartLine($product, is_array($cartProduct) ? $cartProduct : [
+                    'product_id' => $product->id,
+                    'qty' => $qty,
+                    'variants' => collect($variants)->map(function ($v) {
+                        if (is_array($v)) {
+                            return $v;
+                        }
+                        return [
+                            'variant_item_id' => $v->variant_item_id ?? null,
+                        ];
+                    })->all(),
+                ]);
+            $linePrice = number_format($unitPrice * max(1, $qty), 2, '.', '');
             $iyzicoCategory = $this->installmentService->resolveIyzicoCategory($product);
 
             $item = [
@@ -1014,25 +1049,15 @@ class IyzicoController extends Controller
             return null;
         }
 
-        $variantPrice = 0.0;
+        $ids = [];
         foreach ($variants as $variant) {
-            $variantItemId = $variant['variant_item_id'] ?? null;
-            if ($variantItemId) {
-                $variantPrice += (float) ProductVariantItem::where('id', $variantItemId)->value('price');
+            $variantItemId = (int) ($variant['variant_item_id'] ?? 0);
+            if ($variantItemId > 0) {
+                $ids[] = $variantItemId;
             }
         }
 
-        $price = (float) ($product->offer_price ?: $product->price) + $variantPrice;
-
-        $isFlashSale = FlashSaleProduct::where(['product_id' => $product->id, 'status' => 1])->first();
-        if ($isFlashSale) {
-            $flashSale = FlashSale::first();
-            if ($flashSale && (int) $flashSale->status === 1 && date('Y-m-d H:i:s') <= $flashSale->end_time) {
-                $price -= ((float) $flashSale->offer / 100) * $price;
-            }
-        }
-
-        return $price;
+        return app(\App\Services\CartPriceService::class)->resolveUnitPrice($product, $ids);
     }
 
     /**
@@ -1130,13 +1155,15 @@ class IyzicoController extends Controller
     private function restoreStockForOrder(Order $order): void
     {
         try {
-            $orderProducts = $order->orderProducts;
+            $orderProducts = $order->orderProducts()->with('orderProductVariants')->get();
+            $cartPrice = app(\App\Services\CartPriceService::class);
             foreach ($orderProducts as $orderProduct) {
                 $product = Product::find($orderProduct->product_id);
                 if ($product) {
-                    $product->qty += $orderProduct->qty;
+                    $product->qty = (int) $product->qty + (int) $orderProduct->qty;
                     $product->save();
                 }
+                $cartPrice->restoreVariantStockForOrderProduct($orderProduct);
             }
             Log::info('Stock restored for failed order', [
                 'order_id' => $order->id,

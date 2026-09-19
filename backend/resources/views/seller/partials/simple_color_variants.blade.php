@@ -11,15 +11,9 @@
   </div>
   <div class="card-body">
     <p class="text-muted mb-3">
-      Ürünün farklı renkleri varsa her renk için <strong>ad, satış fiyatı, adet ve fotoğraf</strong> ekleyin.
-      Buraya yazdığınız fiyat o rengin tam satış fiyatıdır (ürün fiyatından çıkarılmaz).
-      Tek renkse boş bırakın.
-    </p>
-    <p class="text-warning mb-3" style="font-size:13px;">
-      <strong>Önemli:</strong> Her renk fotoğrafı isteği büyütür. Çok sayıda yüksek çözünürlüklü fotoğraf
-      aynı anda gönderilirse sunucu <code>413 Request Entity Too Large</code> verebilir.
-      Fotoğrafları mümkünse 1&nbsp;MB altında tutun; sorun sürerse sunucuda tüm
-      <code>server { }</code> bloklarına <code>client_max_body_size 64M;</code> eklenmelidir.
+      Farklı renkler varsa her biri için <strong>ad</strong>, isteğe bağlı <strong>fiyat</strong>, <strong>adet</strong> ve <strong>fotoğraf</strong> ekleyin.
+      Fiyatı boş bırakırsanız ürünün satış fiyatı kullanılır. Farklıysa o rengin tam satış fiyatını yazın.
+      Tek renkse bu alanı boş bırakın.
     </p>
     <div id="simpleColorRows">
       @forelse ($colorRows as $i => $row)
@@ -30,8 +24,8 @@
               <input type="text" name="colors[{{ $i }}][name]" class="form-control" value="{{ $row['name'] ?? '' }}" placeholder="Örn: Siyah">
             </div>
             <div class="form-group col-6 col-md-3 mb-2">
-              <label>Bu rengin satış fiyatı (₺)</label>
-              <input type="number" step="0.01" min="0" name="colors[{{ $i }}][price]" class="form-control" value="{{ $row['price'] ?? '' }}" placeholder="25000">
+              <label>Fiyat (₺) — aynıysa boş</label>
+              <input type="number" step="0.01" min="0" name="colors[{{ $i }}][price]" class="form-control" value="{{ !empty($row['price']) ? $row['price'] : '' }}" placeholder="Boş = ürün fiyatı">
             </div>
             <div class="form-group col-6 col-md-2 mb-2">
               <label>Adet</label>
@@ -65,8 +59,8 @@
         <input type="text" name="colors[__i__][name]" class="form-control" placeholder="Örn: Siyah">
       </div>
       <div class="form-group col-6 col-md-3 mb-2">
-        <label>Bu rengin satış fiyatı (₺)</label>
-        <input type="number" step="0.01" min="0" name="colors[__i__][price]" class="form-control" placeholder="25000">
+        <label>Fiyat (₺) — aynıysa boş</label>
+        <input type="number" step="0.01" min="0" name="colors[__i__][price]" class="form-control" placeholder="Boş = ürün fiyatı">
       </div>
       <div class="form-group col-6 col-md-2 mb-2">
         <label>Adet</label>

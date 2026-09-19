@@ -285,6 +285,8 @@ class OrderController extends Controller
                         $product->qty = (int) $product->qty + (int) $orderProduct->qty;
                         $product->save();
                     }
+                    app(\App\Services\CartPriceService::class)
+                        ->restoreVariantStockForOrderProduct($orderProduct);
                 }
             }
 

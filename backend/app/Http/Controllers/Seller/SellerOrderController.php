@@ -133,11 +133,7 @@ class SellerOrderController extends Controller
 
         $sellerLinesSubtotal = 0.0;
         foreach ($sellerProducts as $orderProduct) {
-            $line = (float) $orderProduct->unit_price * (int) $orderProduct->qty;
-            foreach ($orderProduct->orderProductVariants as $variant) {
-                $line += (float) $variant->variant_price * (int) $orderProduct->qty;
-            }
-            $sellerLinesSubtotal += $line;
+            $sellerLinesSubtotal += (float) $orderProduct->unit_price * (int) $orderProduct->qty;
         }
 
         $sellerCargo = CargoShipment::query()
@@ -315,12 +311,6 @@ class SellerOrderController extends Controller
                     continue;
                 }
                 $line = (float) $orderProduct->unit_price * (int) $orderProduct->qty;
-                $variants = $orderProduct->relationLoaded('orderProductVariants')
-                    ? $orderProduct->orderProductVariants
-                    : [];
-                foreach ($variants as $variant) {
-                    $line += (float) $variant->variant_price * (int) $orderProduct->qty;
-                }
                 $subtotal += $line;
             }
             $order->setAttribute('seller_lines_subtotal', round($subtotal, 2));

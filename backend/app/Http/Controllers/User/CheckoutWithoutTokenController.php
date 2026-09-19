@@ -16,6 +16,7 @@ use App\Models\Address;
 use App\Models\Country;
 use App\Support\OrderQuantityHelper;
 use App\Services\BuyerInvoiceService;
+use App\Services\CartPriceService;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Shipping;
@@ -360,39 +361,16 @@ class CheckoutWithoutTokenController extends Controller
             return response()->json(['message' => $notification], 403);
         }
         foreach ($cartProducts as $index => $cartProduct) {
-            $variantPrice = 0;
-
-            if (isset($cartProduct['product'])) {
-            }
-
-            if (!empty($cartProduct['variants']) && is_array($cartProduct['variants'])) {
-                foreach ($cartProduct['variants'] as $item_index => $var_item) {
-                    $item = ProductVariantItem::find($var_item['variant_item_id']);
-                    if ($item) {
-                        $variantPrice += $item->price;
-                    }
-                }
-            }
-
             $product = Product::select('id', 'price', 'offer_price', 'weight')->find($cartProduct['product_id']);
-            //  $price = $product['offer_price ']? $product['offer_price'] : $product['price'];
-            $price = $product->offer_price ? $product->offer_price : $product->price;
-            $price = $price + $variantPrice;
+            if (!$product) {
+                return response()->json([
+                    'message' => 'Sepetteki ürün bulunamadı (ID: ' . ($cartProduct['product_id'] ?? '?') . ')',
+                ], 422);
+            }
+            $price = app(CartPriceService::class)->resolveUnitPriceFromCartLine($product, $cartProduct);
             $weight = $product->weight;
             $weight = $weight * $cartProduct['qty'];
             $productWeight += $weight;
-            //  $isFlashSale = FlashSaleProduct::where(['product_id' => $product['id'],'status' => 1])->first();
-            $isFlashSale = FlashSaleProduct::where(['product_id' => $product->id, 'status' => 1])->first();
-            $today = date('Y-m-d H:i:s');
-            if ($isFlashSale) {
-                $flashSale = FlashSale::first();
-                if ($flashSale->status == 1) {
-                    if ($today <= $flashSale->end_time) {
-                        $offerPrice = ($flashSale->offer / 100) * $price;
-                        $price = $price - $offerPrice;
-                    }
-                }
-            }
 
             $price = $price * $cartProduct['qty'];
             $total_price += $price;
@@ -566,44 +544,17 @@ class CheckoutWithoutTokenController extends Controller
         $order_details = '';
         $currency = MultiCurrency::where('is_default', 'Yes')->first();
         foreach ($cartProducts as $key => $cartProduct) {
+            $cartPrice = app(CartPriceService::class);
+            $variantItemIds = $cartPrice->extractVariantItemIds($cartProduct);
 
-
-            // if (!empty($cartProduct['variants']) && is_array($cartProduct['variants'])) {
-            //     foreach ($cartProduct['variants'] as $item_index => $var_item) {
-            //         $item = ProductVariantItem::find($var_item['variant_item_id']);
-            //         if ($item) {
-            //             $variantPrice += $item->price;
-            //         }
-            //     }
-            // }
-
-            // Log::info('variants ');
-            // Log::info($cartProduct['variants']);
-
-            $variantPrice = 0;
-            if (!empty($cartProduct['variants']) && is_array($cartProduct['variants'])) {
-                foreach ($cartProduct['variants'] as $item_index => $var_item) {
-                    $item = ProductVariantItem::find($var_item['variant_item_id']);
-                    if ($item) {
-                        $variantPrice += $item->price;
-                    }
-                }
-            }
             // calculate product price
             $product = Product::select('id', 'price', 'offer_price', 'weight', 'vendor_id', 'qty', 'name')->find($cartProduct['product_id']);
-            $price = $product->offer_price ? $product->offer_price : $product->price;
-            $price = $price + $variantPrice;
-            $isFlashSale = FlashSaleProduct::where(['product_id' => $product->id, 'status' => 1])->first();
-            $today = date('Y-m-d H:i:s');
-            if ($isFlashSale) {
-                $flashSale = FlashSale::first();
-                if ($flashSale->status == 1) {
-                    if ($today <= $flashSale->end_time) {
-                        $offerPrice = ($flashSale->offer / 100) * $price;
-                        $price = $price - $offerPrice;
-                    }
-                }
+            if (!$product) {
+                return response()->json([
+                    'message' => 'Sepetteki ürün bulunamadı (ID: ' . ($cartProduct['product_id'] ?? '?') . ')',
+                ], 422);
             }
+            $price = $cartPrice->resolveUnitPrice($product, $variantItemIds);
 
             $orderProduct = new OrderProduct();
             $orderProduct->order_id = $order->id;
@@ -619,23 +570,34 @@ class CheckoutWithoutTokenController extends Controller
                 $decrementBy = (int) ($orderProduct->qty ?? 1);
                 $product->qty = max(0, (int) $product->qty - $decrementBy);
                 $product->save();
+                $cartPrice->decrementVariantStock($variantItemIds, $decrementBy);
             }
 
-            // return $cartProduct->variants;
+            $variantLabels = [];
             if (!empty($cartProduct['variants']) && is_array($cartProduct['variants'])) {
                 foreach ($cartProduct['variants'] as $index => $variant) {
                     $item = ProductVariantItem::find($variant['variant_item_id']);
+                    if (!$item) {
+                        continue;
+                    }
                     $productVariant = new OrderProductVariant();
                     $productVariant->order_product_id = $orderProduct->id;
                     $productVariant->product_id = $cartProduct['product_id'];
                     $productVariant->variant_name = $item->product_variant_name;
                     $productVariant->variant_value = $item->name;
+                    $productVariant->variant_price = $cartPrice->displayVariantPrice($item);
                     $productVariant->save();
+                    $variantLabels[] = trim(($item->product_variant_name ?: 'Seçenek').': '.$item->name);
                 }
             }
-            $order_details .= 'Product: ' . $product->name . '<br>';
-            $order_details .= 'Quantity: ' . $totalProduct . '<br>';
-            $order_details .= 'Price: ' . $currency->currency_icon . $totalProduct * $price . '<br>';
+            $order_details .= 'Product: ' . $product->name;
+            if ($variantLabels !== []) {
+                $order_details .= ' ('.implode(', ', $variantLabels).')';
+            }
+            $order_details .= '<br>';
+            $lineQty = (int) ($orderProduct->qty ?? 1);
+            $order_details .= 'Quantity: ' . $lineQty . '<br>';
+            $order_details .= 'Price: ' . $currency->currency_icon . ($lineQty * $price) . '<br>';
         }
 
 

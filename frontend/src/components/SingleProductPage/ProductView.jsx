@@ -11,7 +11,6 @@ import { addItem } from "../../redux/features/cart/cartSlice";
 import useWishlist from "../../hooks/useWishlist";
 import Star from "../Helpers/icons/Star";
 import ThinLove from "../Helpers/icons/ThinLove";
-import Selectbox from "../Helpers/Selectbox";
 import CheckProductIsExistsInFlashSale from "../Shared/CheckProductIsExistsInFlashSale";
 import ServeLangItem from "../Helpers/ServeLangItem";
 import LoginContext from "../Contexts/LoginContext";
@@ -202,12 +201,19 @@ const VariantSelector = ({
   standardSelected = true,
   thumbImage = "",
 }) => {
+  const [colorQuery, setColorQuery] = useState("");
+
   if (!Array.isArray(variants) || variants.length === 0) {
     return null;
   }
 
   const selectItem = (variant, item) => {
     onSelectVariant(item);
+  };
+
+  const colorDisplayPrice = (itemPrice) => {
+    const n = Number(itemPrice || 0);
+    return n > 0 ? n : Number(basePrice || 0);
   };
 
   return (
@@ -219,27 +225,57 @@ const VariantSelector = ({
         if (!items.length) return null;
         const name = String(variant?.name || "");
         const isColor = /renk|color/i.test(name);
-        const selectedColor = selectedVariantItems.find(
+        const selectedForGroup = selectedVariantItems.find(
           (s) => Number(s?.product_variant_id) === Number(variant.id)
         );
-        const selectedId = selectedColor?.id;
+        const selectedId = selectedForGroup?.id;
 
-        return (
-          <div key={variant.id || name}>
-            <p className="text-sm font-700 text-qblack mb-3">{name || "Seçenek"}</p>
-            {isColor ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        if (isColor) {
+          const q = colorQuery.trim().toLocaleLowerCase("tr-TR");
+          const filtered = q
+            ? items.filter((item) =>
+                String(item.name || "")
+                  .toLocaleLowerCase("tr-TR")
+                  .includes(q)
+              )
+            : items;
+          const many = items.length > 12;
+
+          return (
+            <div key={variant.id || name}>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <p className="text-sm font-700 text-qblack mb-0">
+                  {name || "Renk"}
+                  <span className="ml-2 text-xs font-normal text-qgray">
+                    ({items.length})
+                  </span>
+                </p>
+                {many && (
+                  <input
+                    type="search"
+                    value={colorQuery}
+                    onChange={(e) => setColorQuery(e.target.value)}
+                    placeholder="Renk ara…"
+                    className="h-9 w-full max-w-[200px] rounded-lg border border-qgray-border px-3 text-sm outline-none focus:border-qblack"
+                  />
+                )}
+              </div>
+              <div
+                className={`flex flex-wrap gap-2 ${
+                  many ? "max-h-[280px] overflow-y-auto pr-1" : ""
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => onSelectStandard?.(variant)}
-                  className={`text-left rounded-2xl border p-2 transition ${
+                  className={`inline-flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left transition ${
                     standardSelected
                       ? "border-qblack ring-2 ring-qyellow"
                       : "border-qgray-border hover:border-qblack"
                   }`}
                 >
                   {thumbImage ? (
-                    <span className="block relative w-full h-20 rounded-xl overflow-hidden mb-2 bg-gray-50">
+                    <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-gray-50">
                       <Image
                         src={
                           thumbImage.startsWith("http")
@@ -252,19 +288,18 @@ const VariantSelector = ({
                         unoptimized
                       />
                     </span>
-                  ) : (
-                    <span className="block h-8 rounded-xl mb-2 bg-gray-100" />
-                  )}
-                  <span className="block text-sm font-700 text-qblack">Standart</span>
-                  <span className="block text-xs text-qgray">
-                    <CurrencyConvert price={basePrice} />
+                  ) : null}
+                  <span>
+                    <span className="block text-xs font-700 text-qblack">
+                      Standart
+                    </span>
+                    <span className="block text-[11px] text-qgray">
+                      <CurrencyConvert price={basePrice} />
+                    </span>
                   </span>
                 </button>
-                {items.map((item) => {
-                  const total =
-                    Number(item.price || 0) > 0
-                      ? Number(item.price)
-                      : Number(basePrice || 0);
+                {filtered.map((item) => {
+                  const total = colorDisplayPrice(item.price);
                   const selected = Number(selectedId) === Number(item.id);
                   const imgSrc = item.image
                     ? item.image.startsWith("http")
@@ -275,15 +310,16 @@ const VariantSelector = ({
                     <button
                       key={item.id}
                       type="button"
+                      title={item.name}
                       onClick={() => selectItem(variant, item)}
-                      className={`text-left rounded-2xl border p-2 transition ${
+                      className={`inline-flex max-w-[160px] items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left transition ${
                         selected
                           ? "border-qblack ring-2 ring-qyellow"
                           : "border-qgray-border hover:border-qblack"
                       }`}
                     >
                       {imgSrc ? (
-                        <span className="block relative w-full h-20 rounded-xl overflow-hidden mb-2 bg-gray-50">
+                        <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-gray-50">
                           <Image
                             src={imgSrc}
                             alt={item.name}
@@ -293,33 +329,61 @@ const VariantSelector = ({
                           />
                         </span>
                       ) : (
-                        <span className="block h-8 rounded-xl mb-2 bg-gray-100" />
+                        <span
+                          className="h-9 w-9 shrink-0 rounded-lg border border-dashed border-qgray-border bg-gray-50"
+                          aria-hidden
+                        />
                       )}
-                      <span className="block text-sm font-700 text-qblack">
-                        {item.name}
-                      </span>
-                      <span className="block text-xs text-qgray">
-                        <CurrencyConvert price={total} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-xs font-700 text-qblack">
+                          {item.name}
+                        </span>
+                        <span className="block text-[11px] text-qgray">
+                          <CurrencyConvert price={total} />
+                        </span>
                       </span>
                     </button>
                   );
                 })}
+                {filtered.length === 0 && (
+                  <p className="text-xs text-qgray py-2">Eşleşen renk yok.</p>
+                )}
               </div>
-            ) : (
-              <div className="border border-qgray-border h-[50px] flex justify-between items-center cursor-pointer">
-                <Selectbox
-                  action={(value) => selectItem(variant, value)}
-                  className="w-full px-5"
-                  datas={items}
-                >
-                  {({ item }) => (
-                    <div className="flex justify-between items-center w-full">
-                      <span className="text-[13px] text-qblack">{item}</span>
-                    </div>
-                  )}
-                </Selectbox>
-              </div>
-            )}
+            </div>
+          );
+        }
+
+        return (
+          <div key={variant.id || name}>
+            <p className="text-sm font-700 text-qblack mb-3">
+              {name || "Seçenek"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {items.map((item) => {
+                const extra = Number(item.price || 0);
+                const selected = Number(selectedId) === Number(item.id);
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => selectItem(variant, item)}
+                    className={`rounded-xl border px-3 py-2 text-sm transition ${
+                      selected
+                        ? "border-qblack ring-2 ring-qyellow font-700"
+                        : "border-qgray-border hover:border-qblack"
+                    }`}
+                  >
+                    <span className="text-qblack">{item.name}</span>
+                    {extra > 0 && (
+                      <span className="ml-1.5 text-xs font-600 text-qred">
+                        +
+                        <CurrencyConvert price={extra} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         );
       })}

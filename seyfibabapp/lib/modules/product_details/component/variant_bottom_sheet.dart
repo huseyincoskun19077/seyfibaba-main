@@ -301,85 +301,73 @@ class _VariantBottomSheetState extends State<VariantBottomSheet> {
     final selected = state.variantItem.length > pIndex
         ? state.variantItem[pIndex]
         : (p.activeVariantsItems.isNotEmpty ? p.activeVariantsItems.first : null);
+    final productBase = (dCubit.details?.product.offerPrice ?? 0) != 0
+        ? dCubit.details!.product.offerPrice
+        : (dCubit.details?.product.price ?? 0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CustomText(
-          text: p.name,
+          text: '${p.name}${isColor ? ' (${p.activeVariantsItems.length})' : ''}',
           color: blackColor,
           fontSize: 16.0,
           fontWeight: FontWeight.w500,
         ),
         Utils.verticalSpace(8.0),
         if (isColor)
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  dCubit.addIndex(pIndex.toString());
-                  dCubit.updateVPItems(ActiveVariantItemModel(
-                    productVariantId: p.id,
-                    id: -1,
-                    name: 'Standart',
-                    image: '',
-                    price: 0,
-                  ));
-                  setState(() {});
-                },
-                child: Container(
-                  width: 88,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: (selected == null || selected.id <= 0)
-                          ? Utils.dynamicPrimaryColor(context)
-                          : borderColor,
-                      width: (selected == null || selected.id <= 0) ? 2 : 1,
-                    ),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: p.activeVariantsItems.length > 12 ? 280 : double.infinity,
+            ),
+            child: SingleChildScrollView(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _colorChip(
+                    pIndex: pIndex,
+                    selected: selected == null || selected.id <= 0,
+                    label: 'Standart',
+                    image: dCubit.details?.product.thumbImage ?? '',
+                    priceLabel: productBase,
+                    onTap: () {
+                      dCubit.addIndex(pIndex.toString());
+                      dCubit.updateVPItems(ActiveVariantItemModel(
+                        productVariantId: p.id,
+                        id: -1,
+                        name: 'Standart',
+                        image: '',
+                        price: 0,
+                      ));
+                      setState(() {});
+                    },
                   ),
-                  padding: const EdgeInsets.all(6),
-                  child: Column(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          height: 56,
-                          width: double.infinity,
-                          child: CustomImage(
-                            path: RemoteUrls.imageUrl(
-                              dCubit.details?.product.thumbImage ?? '',
-                            ),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Standart',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        Utils.formatPrice(
-                          dCubit.details?.product.offerPrice != 0
-                              ? dCubit.details!.product.offerPrice
-                              : (dCubit.details?.product.price ?? 0),
-                          context,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11, color: iconGreyColor),
-                      ),
-                    ],
-                  ),
-                ),
+                  ...p.activeVariantsItems.map((item) {
+                    return _colorChip(
+                      pIndex: pIndex,
+                      selected: selected?.id == item.id,
+                      label: item.name,
+                      image: item.image,
+                      priceLabel: item.price > 0 ? item.price : productBase,
+                      onTap: () {
+                        dCubit.addIndex(pIndex.toString());
+                        dCubit.updateVPItems(item);
+                        setState(() {});
+                      },
+                    );
+                  }),
+                ],
               ),
-              ...p.activeVariantsItems.map((item) {
+            ),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: p.activeVariantsItems.map((item) {
               final active = selected?.id == item.id;
+              final extra = item.price;
               return GestureDetector(
                 onTap: () {
                   dCubit.addIndex(pIndex.toString());
@@ -387,89 +375,101 @@ class _VariantBottomSheetState extends State<VariantBottomSheet> {
                   setState(() {});
                 },
                 child: Container(
-                  width: 88,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: active ? Utils.dynamicPrimaryColor(context) : borderColor,
+                      color: active
+                          ? Utils.dynamicPrimaryColor(context)
+                          : borderColor,
                       width: active ? 2 : 1,
                     ),
                   ),
-                  padding: const EdgeInsets.all(6),
-                  child: Column(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          height: 56,
-                          width: double.infinity,
-                          child: item.image.isNotEmpty
-                              ? CustomImage(
-                                  path: RemoteUrls.imageUrl(item.image),
-                                  fit: BoxFit.cover,
-                                )
-                              : Container(color: borderColor.withOpacity(0.35)),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
                       Text(
                         item.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight:
+                              active ? FontWeight.w700 : FontWeight.w500,
+                        ),
                       ),
-                      Text(
-                        Utils.formatPrice(item.price, context),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11, color: iconGreyColor),
-                      ),
+                      if (extra > 0) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          '+${Utils.formatPrice(extra, context)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: redColor,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               );
-            }),
-            ],
-          )
-        else
-          DropdownButtonFormField<ActiveVariantItemModel>(
-            isDense: true,
-            isExpanded: true,
-            value: p.activeVariantsItems.isNotEmpty
-                ? (selected ?? p.activeVariantsItems.first)
-                : null,
-            padding: Utils.symmetric(h: 0.0, v: 6.0),
-            hint: CustomText(
-              text: Language.selectVariantItem,
-              fontWeight: FontWeight.w400,
-              fontSize: 16.0,
-            ),
-            onTap: () {
-              dCubit.addIndex(pIndex.toString());
-            },
-            icon: const Icon(Icons.keyboard_arrow_down_sharp, color: blackColor),
-            items: p.activeVariantsItems.isNotEmpty
-                ? p.activeVariantsItems
-                    .map<DropdownMenuItem<ActiveVariantItemModel>>(
-                        (e) => DropdownMenuItem(
-                              value: e,
-                              child: CustomText(
-                                text: e.name,
-                                fontSize: 16.0,
-                                color: blackColor,
-                              ),
-                            ))
-                    .toList()
-                : [],
-            onChanged: (val) {
-              if (val == null) return;
-              debugPrint('variant-id ${val.id}');
-              dCubit.updateVPItems(val);
-            },
+            }).toList(),
           ),
         Utils.verticalSpace(16.0),
       ],
     );
   }
 
+  Widget _colorChip({
+    required int pIndex,
+    required bool selected,
+    required String label,
+    required String image,
+    required double priceLabel,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 76,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? Utils.dynamicPrimaryColor(context) : borderColor,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        padding: const EdgeInsets.all(5),
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                height: 44,
+                width: double.infinity,
+                child: image.isNotEmpty
+                    ? CustomImage(
+                        path: RemoteUrls.imageUrl(image),
+                        fit: BoxFit.cover,
+                      )
+                    : Container(color: borderColor.withOpacity(0.35)),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+            Text(
+              Utils.formatPrice(priceLabel, context),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10, color: iconGreyColor),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

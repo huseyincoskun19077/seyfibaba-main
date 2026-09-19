@@ -1,4 +1,4 @@
-"use client";
+import { resolveCartLineUnitPrice } from "@/utils/variantPricing";
 import DateFormat from "@/utils/DateFormat";
 import settings from "@/utils/settings";
 
@@ -53,25 +53,15 @@ export const calculateTotalQuantity = (cartProducts) => {
 };
 
 /**
- * Calculate product price including variants and offers
+ * Calculate product line total (renk mutlak + boyut ekstra; çift sayım yok)
  * @param {Object} item - Cart item with product and variants
  * @returns {number} Calculated price
  */
 export const calculateProductPrice = (item) => {
   if (!item) return 0;
-
-  // Calculate variant prices
-  const variantPrices = item.variants
-    .filter((variant) => variant.variant_item)
-    .map((variant) => parseInt(variant.variant_item.price) || 0);
-
-  const variantSum = variantPrices.reduce((p, c) => p + c, 0);
-
-  // Use offer price if available, otherwise use regular price
-  const basePrice = item.product.offer_price || item.product.price;
-  const totalPrice = parseFloat(basePrice) + variantSum;
-
-  return totalPrice * parseInt(item.qty);
+  const unit = Number(resolveCartLineUnitPrice(item) || 0);
+  const qty = Math.max(1, parseInt(item.qty, 10) || 1);
+  return unit * qty;
 };
 
 /**

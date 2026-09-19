@@ -38,6 +38,7 @@ use App\Models\BulkImport;
 use App\Services\BulkProductImportService;
 use App\Http\Controllers\Concerns\AuthorizesSellerProduct;
 use App\Services\ProductImageStorage;
+use App\Services\ProductSeoAutoFill;
 use App\Services\SimpleProductColorService;
 use App\Support\ProductSlug;
 
@@ -160,7 +161,7 @@ class SellerProductController extends Controller
         ]);
 
         $rules = [
-            'short_name' => 'required',
+            'short_name' => 'nullable|string|max:120',
             'name' => 'required',
             'slug' => 'required|unique:products',
             'thumb_image' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
@@ -174,7 +175,7 @@ class SellerProductController extends Controller
             'delivery_info' => 'nullable|string|max:500',
             'quantity' => 'required|numeric',
             'sale_unit_qty' => 'nullable|integer|min:1|max:9999',
-            'colors' => 'nullable|array|max:20',
+            'colors' => 'nullable|array|max:120',
             'colors.*.name' => 'nullable|string|max:80',
             'colors.*.price' => 'nullable|numeric|min:0',
             'colors.*.qty' => 'nullable|integer|min:0',
@@ -219,7 +220,9 @@ class SellerProductController extends Controller
         }
 
         $product->vendor_id = $seller->id;
-        $product->short_name = $request->short_name;
+        $product->short_name = $request->filled('short_name')
+            ? $request->short_name
+            : mb_substr((string) $request->name, 0, 80);
         $product->name = $request->name;
         $product->slug = $request->slug;
         $product->category_id = $request->category;
@@ -244,8 +247,15 @@ class SellerProductController extends Controller
         $product->delivery_info = ProductDeliveryInfo::normalize($request->input('delivery_info'));
         $product->is_undefine = 1;
         $product->is_specification = $request->is_specification ? 1 : 0;
-        $product->seo_title = $request->seo_title ? $request->seo_title : $request->name;
-        $product->seo_description = $request->seo_description ? $request->seo_description : $request->name;
+        $seo = app(ProductSeoAutoFill::class)->resolve(
+            $request->seo_title,
+            $request->seo_description,
+            (string) $request->name,
+            $request->short_description,
+            $request->long_description
+        );
+        $product->seo_title = $seo['seo_title'];
+        $product->seo_description = $seo['seo_description'];
         $product->is_top = $request->top_product ? 1 : 0;
         $product->new_product = $request->new_arrival ? 1 : 0;
         $product->is_best = $request->best_product ? 1 : 0;
@@ -374,7 +384,7 @@ class SellerProductController extends Controller
         }
 
         $rules = [
-            'short_name' => 'required',
+            'short_name' => 'nullable|string|max:120',
             'name' => 'required',
             'slug' => 'required|unique:products,slug,'.$product->id,
             'category' => ['required', Rule::exists('categories', 'id')->where('status', 1)],
@@ -385,7 +395,7 @@ class SellerProductController extends Controller
             'delivery_info' => 'nullable|string|max:500',
             'quantity' => 'required|numeric',
             'sale_unit_qty' => 'nullable|integer|min:1|max:9999',
-            'colors' => 'nullable|array|max:20',
+            'colors' => 'nullable|array|max:120',
             'colors.*.name' => 'nullable|string|max:80',
             'colors.*.price' => 'nullable|numeric|min:0',
             'colors.*.qty' => 'nullable|integer|min:0',
@@ -437,7 +447,9 @@ class SellerProductController extends Controller
         }
 
 
-        $product->short_name = $request->short_name;
+        $product->short_name = $request->filled('short_name')
+            ? $request->short_name
+            : mb_substr((string) $request->name, 0, 80);
         $product->name = $request->name;
         $product->slug = $request->slug;
 
@@ -481,8 +493,15 @@ class SellerProductController extends Controller
         $product->weight = $request->filled('weight') ? $request->weight : 0;
         $product->delivery_info = ProductDeliveryInfo::normalize($request->input('delivery_info'));
         $product->is_specification = $request->is_specification ? 1 : 0;
-        $product->seo_title = $request->seo_title ? $request->seo_title : $request->name;
-        $product->seo_description = $request->seo_description ? $request->seo_description : $request->name;
+        $seo = app(ProductSeoAutoFill::class)->resolve(
+            $request->seo_title,
+            $request->seo_description,
+            (string) $request->name,
+            $request->short_description,
+            $request->long_description
+        );
+        $product->seo_title = $seo['seo_title'];
+        $product->seo_description = $seo['seo_description'];
         $product->is_top = $request->top_product ? 1 : 0;
         $product->new_product = $request->new_arrival ? 1 : 0;
         $product->is_best = $request->best_product ? 1 : 0;

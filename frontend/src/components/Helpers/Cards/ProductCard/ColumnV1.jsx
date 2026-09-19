@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import CurrencyConvert from "@/components/Shared/CurrencyConvert";
 import CheckProductIsExistsInFlashSale from "@/components/Shared/CheckProductIsExistsInFlashSale";
 import QuickViewIco from "../../icons/QuickViewIco";
@@ -18,6 +19,22 @@ import { getProductImageProps } from "@/utils/productImage";
 
 const PRODUCT_IMAGE_FALLBACK = "/assets/images/server-error.png";
 
+function collectColorSwatches(variants = []) {
+  const list = [];
+  (variants || []).forEach((variant) => {
+    if (!/renk|color/i.test(String(variant?.name || ""))) return;
+    (variant.active_variant_items || []).forEach((item) => {
+      if (!item) return;
+      list.push({
+        id: item.id,
+        name: item.name,
+        image: item.image || "",
+      });
+    });
+  });
+  return list;
+}
+
 function ColumnV1({
   styleType,
   datas,
@@ -33,8 +50,13 @@ function ColumnV1({
   compact = false,
 }) {
   const bfCacheKey = useBfCacheRemountKey();
+  const [hoverImage, setHoverImage] = useState(null);
+  const colorSwatches = useMemo(
+    () => collectColorSwatches(datas?.variants),
+    [datas?.variants]
+  );
   const { src: productImage, unoptimized: productImageUnoptimized } =
-    getProductImageProps(datas?.image, PRODUCT_IMAGE_FALLBACK);
+    getProductImageProps(hoverImage || datas?.image, PRODUCT_IMAGE_FALLBACK);
   const packQty = getSaleUnitQty(datas);
   const hasRealDiscount = isEffectiveOfferPrice(offerPrice, price);
 
@@ -71,6 +93,51 @@ function ColumnV1({
             <span className="absolute left-1.5 bottom-1.5 z-20 rounded-full border border-[#222] bg-qyellow px-2 py-0.5 text-[10px] font-700 leading-none text-[#222] md:left-2 md:bottom-2 md:text-[11px]">
               x{packQty} adet
             </span>
+          )}
+          {Array.isArray(colorSwatches) && colorSwatches.length > 0 && (
+            <div
+              className="absolute right-1.5 bottom-1.5 z-20 flex max-w-[70%] flex-wrap justify-end gap-1"
+              onClick={(e) => e.preventDefault()}
+            >
+              {colorSwatches.slice(0, 5).map((c) => (
+                <button
+                  key={c.id || c.name}
+                  type="button"
+                  title={c.name}
+                  className="h-5 w-5 overflow-hidden rounded-full border border-white shadow-sm ring-1 ring-black/10"
+                  onMouseEnter={() => c.image && setHoverImage(c.image)}
+                  onMouseLeave={() => setHoverImage(null)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (c.image) setHoverImage(c.image);
+                  }}
+                >
+                  {c.image ? (
+                    <span className="relative block h-full w-full">
+                      <Image
+                        src={
+                          c.image.startsWith("http")
+                            ? c.image
+                            : getProductImageProps(c.image).src
+                        }
+                        alt={c.name || ""}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </span>
+                  ) : (
+                    <span className="block h-full w-full bg-gradient-to-br from-slate-200 to-slate-400" />
+                  )}
+                </button>
+              ))}
+              {colorSwatches.length > 5 && (
+                <span className="flex h-5 items-center rounded-full bg-black/70 px-1.5 text-[9px] font-700 text-white">
+                  +{colorSwatches.length - 5}
+                </span>
+              )}
+            </div>
           )}
         </Link>
         <div
@@ -111,6 +178,11 @@ function ColumnV1({
               {datas.title}
             </h3>
           </Link>
+          {colorSwatches.length > 0 && (
+            <p className="mb-1 text-[10px] font-600 text-qgray md:text-[11px]">
+              {colorSwatches.length} renk seçeneği
+            </p>
+          )}
           <p className="price flex items-baseline flex-wrap gap-x-1.5 gap-y-0.5">
             <span
               suppressHydrationWarning

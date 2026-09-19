@@ -135,11 +135,8 @@ class SellerOrderController extends Controller
 
         $sellerLinesSubtotal = 0.0;
         foreach ($order->orderProducts as $op) {
-            $line = (float) $op->unit_price * (int) $op->qty;
-            foreach ($op->orderProductVariants as $v) {
-                $line += (float) $v->variant_price * (int) $op->qty;
-            }
-            $sellerLinesSubtotal += $line;
+            // unit_price zaten renk + ekstra seçenekleri içerir; variant_price tekrar eklenmez
+            $sellerLinesSubtotal += (float) $op->unit_price * (int) $op->qty;
         }
 
         if ($order->orderAddress) {

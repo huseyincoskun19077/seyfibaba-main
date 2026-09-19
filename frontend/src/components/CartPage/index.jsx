@@ -118,18 +118,11 @@ function CartPage() {
 
     const updatedCart = cartItems.map((cartItem) => {
       if (cartItem.product.id === productId) {
-        const basePrice = Number(
-          cartItem.product.offer_price || cartItem.product.price || 0
-        );
-        const variantPrice = (cartItem.variants || []).reduce(
-          (sum, variant) => sum + Number(variant?.variant_item?.price || 0),
-          0
-        );
-
+        const unit = Number(resolveCartLineUnitPrice(cartItem) || 0);
         return {
           ...cartItem,
           qty: newQty,
-          totalPrice: (basePrice + variantPrice) * newQty,
+          totalPrice: unit * newQty,
         };
       }
       return cartItem;

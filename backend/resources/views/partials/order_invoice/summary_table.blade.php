@@ -24,8 +24,6 @@
         </tr>
         @foreach ($order->orderProducts as $index => $orderProduct)
             @php
-                $variantPrice = 0;
-                $totalVariant = $orderProduct->orderProductVariants->count();
                 $lineProduct = $orderProduct->product;
             @endphp
             <tr>
@@ -38,13 +36,16 @@
                     @endif
                 </td>
                 <td>
-                    @foreach ($orderProduct->orderProductVariants as $indx => $variant)
-                        {{ $variant->variant_name.' : '.$variant->variant_value }}{{ $totalVariant == ++$indx ? '' : ',' }}
-                        <br>
-                        @php
-                            $variantPrice += $variant->variant_price;
-                        @endphp
-                    @endforeach
+                    @forelse ($orderProduct->orderProductVariants as $variant)
+                        <span class="d-inline-block badge badge-light border mb-1 mr-1">
+                            <strong>{{ $variant->variant_name }}:</strong> {{ $variant->variant_value }}
+                            @if ((float) ($variant->variant_price ?? 0) > 0)
+                                <span class="text-muted">(+{{ $setting->currency_icon }}{{ $variant->variant_price }})</span>
+                            @endif
+                        </span>
+                    @empty
+                        <span class="text-muted">—</span>
+                    @endforelse
                 </td>
                 @if ($setting->enable_multivendor == 1)
                     <td>

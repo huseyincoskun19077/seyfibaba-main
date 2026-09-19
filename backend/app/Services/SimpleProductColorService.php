@@ -78,11 +78,15 @@ class SimpleProductColorService
                     continue;
                 }
 
+                // Boş fiyat = ürünle aynı fiyat (0 saklanır; vitrinde ürün fiyatı kullanılır)
+                $rawPrice = $row['price'] ?? null;
+                $price = ($rawPrice === '' || $rawPrice === null)
+                    ? 0.0
+                    : max(0, (float) $rawPrice);
+
                 $valid[] = [
                     'name' => mb_substr($name, 0, 80),
-                    'price' => isset($row['price']) && $row['price'] !== '' && $row['price'] !== null
-                        ? (float) $row['price']
-                        : (float) $product->price,
+                    'price' => round($price, 2),
                     'qty' => max(0, (int) ($row['qty'] ?? 0)),
                     'file' => ($row['image'] ?? null) instanceof UploadedFile ? $row['image'] : null,
                     'keep_image' => is_string($row['keep_image'] ?? null)

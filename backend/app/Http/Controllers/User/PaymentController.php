@@ -43,6 +43,7 @@ use App\Models\OrderProductVariant;
 use App\Models\ShoppingCartVariant;
 use App\Http\Controllers\Controller;
 use App\Services\CartCleanupService;
+use App\Services\CartPriceService;
 use App\Services\CommissionService;
 use App\Services\BuyerInvoiceService;
 use App\Support\OrderQuantityHelper;
@@ -380,42 +381,16 @@ class PaymentController extends Controller
             return response()->json(['message' => $notification], 403);
         }
         foreach ($cartProducts as $index => $cartProduct) {
-            $variantPrice = 0;
-
-            if (isset($cartProduct['product'])) {
-            }
-
-            if (!empty($cartProduct['variants']) && is_array($cartProduct['variants'])) {
-                foreach ($cartProduct['variants'] as $item_index => $var_item) {
-                    $item = ProductVariantItem::find($var_item['variant_item_id']);
-                    if ($item) {
-                        $variantPrice += $item->price;
-                    }
-                }
-            }
-
             $product = Product::select('id', 'price', 'offer_price', 'weight')->find($cartProduct['product_id']);
             if (!$product) {
                 return response()->json([
                     'message' => 'Sepetteki ürün bulunamadı (ID: ' . ($cartProduct['product_id'] ?? '?') . ')',
                 ], 422);
             }
-            $price = $product->offer_price ? $product->offer_price : $product->price;
-            $price = $price + $variantPrice;
+            $price = app(CartPriceService::class)->resolveUnitPriceFromCartLine($product, $cartProduct);
             $weight = $product->weight;
             $weight = $weight * $cartProduct['qty'];
             $productWeight += $weight;
-            $isFlashSale = FlashSaleProduct::where(['product_id' => $product->id, 'status' => 1])->first();
-            $today = date('Y-m-d H:i:s');
-            if ($isFlashSale) {
-                $flashSale = FlashSale::first();
-                if ($flashSale && (int) $flashSale->status === 1) {
-                    if ($today <= $flashSale->end_time) {
-                        $offerPrice = ($flashSale->offer / 100) * $price;
-                        $price = $price - $offerPrice;
-                    }
-                }
-            }
 
             $price = $price * $cartProduct['qty'];
             $total_price += $price;
@@ -586,16 +561,8 @@ class PaymentController extends Controller
         $currency = MultiCurrency::where('is_default', 'Yes')->first();
         $currencyIcon = $currency->currency_icon ?? '₺';
         foreach ($cartProducts as $key => $cartProduct) {
-
-            $variantPrice = 0;
-            if (!empty($cartProduct['variants']) && is_array($cartProduct['variants'])) {
-                foreach ($cartProduct['variants'] as $item_index => $var_item) {
-                    $item = ProductVariantItem::find($var_item['variant_item_id']);
-                    if ($item) {
-                        $variantPrice += $item->price;
-                    }
-                }
-            }
+            $cartPrice = app(CartPriceService::class);
+            $variantItemIds = $cartPrice->extractVariantItemIds($cartProduct);
 
             // calculate product price
             $product = Product::select('id', 'price', 'offer_price', 'weight', 'vendor_id', 'qty', 'name')->find($cartProduct['product_id']);
@@ -604,19 +571,7 @@ class PaymentController extends Controller
                     'message' => 'Sepetteki ürün bulunamadı (ID: ' . ($cartProduct['product_id'] ?? '?') . ')',
                 ], 422);
             }
-            $price = $product->offer_price ? $product->offer_price : $product->price;
-            $price = $price + $variantPrice;
-            $isFlashSale = FlashSaleProduct::where(['product_id' => $product->id, 'status' => 1])->first();
-            $today = date('Y-m-d H:i:s');
-            if ($isFlashSale) {
-                $flashSale = FlashSale::first();
-                if ($flashSale && (int) $flashSale->status === 1) {
-                    if ($today <= $flashSale->end_time) {
-                        $offerPrice = ($flashSale->offer / 100) * $price;
-                        $price = $price - $offerPrice;
-                    }
-                }
-            }
+            $price = $cartPrice->resolveUnitPrice($product, $variantItemIds);
 
             // store ordre product
             $orderProduct = new OrderProduct();
@@ -638,11 +593,11 @@ class PaymentController extends Controller
                 $decrementBy = (int) ($orderProduct->qty ?? 1);
                 $product->qty = max(0, (int) $product->qty - $decrementBy);
                 $product->save();
+                $cartPrice->decrementVariantStock($variantItemIds, $decrementBy);
             }
 
             // store prouct variant
-
-            // return $cartProduct->variants;
+            $variantLabels = [];
             if (!empty($cartProduct['variants']) && is_array($cartProduct['variants'])) {
                 foreach ($cartProduct['variants'] as $index => $variant) {
                     $item = ProductVariantItem::find($variant['variant_item_id']);
@@ -654,10 +609,16 @@ class PaymentController extends Controller
                     $productVariant->product_id = $cartProduct['product_id'];
                     $productVariant->variant_name = $item->product_variant_name;
                     $productVariant->variant_value = $item->name;
+                    $productVariant->variant_price = $cartPrice->displayVariantPrice($item);
                     $productVariant->save();
+                    $variantLabels[] = trim(($item->product_variant_name ?: 'Seçenek').': '.$item->name);
                 }
             }
-            $order_details .= 'Product: ' . $product->name . '<br>';
+            $order_details .= 'Product: ' . $product->name;
+            if ($variantLabels !== []) {
+                $order_details .= ' ('.implode(', ', $variantLabels).')';
+            }
+            $order_details .= '<br>';
             $lineQty = (int) ($orderProduct->qty ?? 1);
             $order_details .= 'Quantity: ' . $lineQty . '<br>';
             $order_details .= 'Price: ' . $currencyIcon . ($lineQty * $price) . '<br>';
@@ -726,7 +687,7 @@ class PaymentController extends Controller
             }
 
             MailHelper::setMailConfig();
-            $order->loadMissing(['orderProducts.product', 'user']);
+            $order->loadMissing(['orderProducts.product', 'orderProducts.orderProductVariants', 'user']);
             $sellerIds = $order->orderProducts->pluck('seller_id')->unique()->filter();
 
             foreach ($sellerIds as $sellerId) {
@@ -736,9 +697,16 @@ class PaymentController extends Controller
                 if (!$sellerUser || !$sellerUser->email) continue;
 
                 $lines = $order->orderProducts->where('seller_id', $sellerId);
-                $productList = $lines->map(fn ($l) => ($l->product->name ?? 'Ürün') . ' x' . ($l->qty ?? 1))->implode("\n");
-                $currency = MultiCurrency::where('is_default', 'Yes')->first();
-                $icon = $currency->currency_icon ?? '₺';
+                $cartPrice = app(CartPriceService::class);
+                $productList = $lines->map(function ($l) use ($cartPrice) {
+                    $name = $l->product->name ?? $l->product_name ?? 'Ürün';
+                    $opts = $cartPrice->formatVariantLabel($l->orderProductVariants ?? []);
+                    $line = $name;
+                    if ($opts !== '') {
+                        $line .= ' — '.$opts;
+                    }
+                    return $line.' x'.($l->qty ?? 1);
+                })->implode("\n");
 
                 $content = "Mağazanıza yeni sipariş geldi.\n\nSipariş No: {$order->order_id}\nMüşteri: {$order->user->name}\n\nÜrünler:\n{$productList}\n\nSatıcı panelinden siparişi onaylayabilirsiniz.";
 

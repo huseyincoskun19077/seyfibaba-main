@@ -104,8 +104,15 @@
                                 </div>
 
                                 <div class="form-group col-12">
-                                    <label>{{__('admin.Price')}} <span>{{__('admin.(Set 0 to make it free)')}}</span> <span class="text-danger">*</span></label>
-                                    <input type="text" id="price" class="form-control"  name="price" >
+                                    @php $isColorVariant = preg_match('/renk|color/iu', (string) $variant->name); @endphp
+                                    @if ($isColorVariant)
+                                        <label>Satış fiyatı (₺) <span class="text-muted">— aynıysa 0 bırakın</span></label>
+                                        <input type="text" id="price" class="form-control" name="price" placeholder="0 = ürün fiyatı">
+                                    @else
+                                        <label>Ek fiyat (₺) <span class="text-muted">— boyuta ek ücret; yoksa 0</span></label>
+                                        <input type="text" id="price" class="form-control" name="price" placeholder="Örn: 50">
+                                        <small class="text-muted">Müşteri yanında +ek fiyat görür; sepete bu tutar eklenir.</small>
+                                    @endif
                                 </div>
 
                                 <div class="form-group col-12">
@@ -161,7 +168,12 @@
                                         </div>
 
                                         <div class="form-group col-12">
-                                            <label>{{__('admin.Price')}} <span>({{__('admin.Set 0 to make it free')}})</span> <span class="text-danger">*</span></label>
+                                            @php $isColorVariantEdit = preg_match('/renk|color/iu', (string) $variant->name); @endphp
+                                            @if ($isColorVariantEdit)
+                                                <label>Satış fiyatı (₺) <span class="text-muted">— aynıysa 0</span></label>
+                                            @else
+                                                <label>Ek fiyat (₺) <span class="text-muted">— ürüne eklenecek tutar</span></label>
+                                            @endif
                                             <input type="text" id="price" class="form-control"  name="price" value="{{ $variantItem->price }}">
                                         </div>
 

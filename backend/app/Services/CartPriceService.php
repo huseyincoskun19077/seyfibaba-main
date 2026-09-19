@@ -4,11 +4,52 @@ namespace App\Services;
 
 use App\Models\FlashSale;
 use App\Models\FlashSaleProduct;
+use App\Models\OrderProduct;
 use App\Models\Product;
 use App\Models\ProductVariantItem;
+use Illuminate\Support\Facades\Schema;
 
 class CartPriceService
 {
+    /**
+     * Sepet satırından variant_item_id listesi.
+     *
+     * @param  array<string, mixed>|object  $cartProduct
+     * @return array<int, int>
+     */
+    public function extractVariantItemIds($cartProduct): array
+    {
+        $variants = [];
+        if (is_array($cartProduct)) {
+            $variants = $cartProduct['variants'] ?? [];
+        } elseif (is_object($cartProduct)) {
+            $variants = $cartProduct->variants ?? [];
+            if (is_object($variants) && method_exists($variants, 'toArray')) {
+                $variants = $variants->toArray();
+            }
+        }
+
+        if (! is_array($variants)) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($variants as $row) {
+            if (is_array($row)) {
+                $id = (int) ($row['variant_item_id'] ?? $row['variantItemId'] ?? 0);
+            } elseif (is_object($row)) {
+                $id = (int) ($row->variant_item_id ?? $row->variantItemId ?? 0);
+            } else {
+                $id = 0;
+            }
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
     /**
      * Güncel birim fiyat (varyant + flash sale dahil).
      *
@@ -25,27 +66,140 @@ class CartPriceService
                 ->whereIn('id', $variantItemIds)
                 ->get(['id', 'price', 'product_variant_name']);
 
-            $absolute = null;
+            // Renk: mutlak satış fiyatı (0 = ürün fiyatı). Diğerleri: ek ücret.
+            $colorAbsolute = null;
+            $extras = 0.0;
             foreach ($items as $item) {
                 $variantName = (string) ($item->product_variant_name ?? '');
                 $amount = (float) $item->price;
-                if ($amount <= 0) {
+                if (preg_match('/renk|color/iu', $variantName)) {
+                    if ($amount > 0) {
+                        $colorAbsolute = $amount;
+                    }
                     continue;
                 }
-                // Renk/Boyut vb. fiyatı ürün fiyatına EKLENMEZ; o seçeneğin satış fiyatıdır.
-                if (preg_match('/renk|color|boyut|beden|ölçü|olcu|ebat|genişlik|yükseklik/iu', $variantName)) {
-                    if (preg_match('/renk|color/iu', $variantName) || $absolute === null) {
-                        $absolute = $amount;
-                    }
+                if ($amount > 0) {
+                    $extras += $amount;
                 }
             }
 
-            if ($absolute !== null) {
-                $base = $absolute;
+            if ($colorAbsolute !== null) {
+                $base = $colorAbsolute + $extras;
+            } else {
+                $base += $extras;
             }
         }
 
         return round($this->applyFlashSaleDiscount($product->id, $base), 2);
+    }
+
+    /**
+     * @param  array<string, mixed>|object  $cartProduct
+     */
+    public function resolveUnitPriceFromCartLine(Product $product, $cartProduct): float
+    {
+        return $this->resolveUnitPrice($product, $this->extractVariantItemIds($cartProduct));
+    }
+
+    /**
+     * Sipariş satırında saklanacak varyant ek ücreti (renk mutlak değil, 0).
+     * Satır tutarı unit_price'tadır; bu alan sadece bilgi / ekstra kaydıdır.
+     */
+    public function displayVariantPrice(ProductVariantItem $item): float
+    {
+        $name = (string) ($item->product_variant_name ?? '');
+        $amount = (float) $item->price;
+        if (preg_match('/renk|color/iu', $name)) {
+            return 0.0;
+        }
+
+        return max(0, round($amount, 2));
+    }
+
+    /**
+     * @param  iterable<int, object>  $orderProductVariants
+     */
+    public function formatVariantLabel($orderProductVariants): string
+    {
+        $parts = [];
+        foreach ($orderProductVariants as $v) {
+            $name = trim((string) ($v->variant_name ?? ''));
+            $value = trim((string) ($v->variant_value ?? ''));
+            if ($name === '' && $value === '') {
+                continue;
+            }
+            $parts[] = $name !== '' ? "{$name}: {$value}" : $value;
+        }
+
+        return implode(', ', $parts);
+    }
+
+    /**
+     * Renk varyant stokunu düş.
+     *
+     * @param  array<int, int|string>  $variantItemIds
+     */
+    public function decrementVariantStock(array $variantItemIds, int $qty): void
+    {
+        if ($variantItemIds === [] || $qty <= 0) {
+            return;
+        }
+        if (! Schema::hasColumn('product_variant_items', 'qty')) {
+            return;
+        }
+
+        $items = ProductVariantItem::query()->whereIn('id', $variantItemIds)->get();
+        foreach ($items as $item) {
+            $name = (string) ($item->product_variant_name ?? '');
+            if (! preg_match('/renk|color/iu', $name)) {
+                continue;
+            }
+            $item->qty = max(0, (int) $item->qty - $qty);
+            $item->save();
+        }
+    }
+
+    /**
+     * @param  array<int, int|string>  $variantItemIds
+     */
+    public function restoreVariantStock(array $variantItemIds, int $qty): void
+    {
+        if ($variantItemIds === [] || $qty <= 0) {
+            return;
+        }
+        if (! Schema::hasColumn('product_variant_items', 'qty')) {
+            return;
+        }
+
+        $items = ProductVariantItem::query()->whereIn('id', $variantItemIds)->get();
+        foreach ($items as $item) {
+            $name = (string) ($item->product_variant_name ?? '');
+            if (! preg_match('/renk|color/iu', $name)) {
+                continue;
+            }
+            $item->qty = (int) $item->qty + $qty;
+            $item->save();
+        }
+    }
+
+    /**
+     * İptal/red için sipariş satırındaki renk stoklarını geri yükle.
+     */
+    public function restoreVariantStockForOrderProduct(OrderProduct $orderProduct): void
+    {
+        $orderProduct->loadMissing('orderProductVariants');
+        $ids = [];
+        foreach ($orderProduct->orderProductVariants as $v) {
+            $item = ProductVariantItem::query()
+                ->where('product_id', $orderProduct->product_id)
+                ->where('name', $v->variant_value)
+                ->where('product_variant_name', $v->variant_name)
+                ->first();
+            if ($item) {
+                $ids[] = $item->id;
+            }
+        }
+        $this->restoreVariantStock($ids, (int) $orderProduct->qty);
     }
 
     /**

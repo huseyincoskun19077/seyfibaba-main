@@ -401,7 +401,7 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
         if (item.price > 0) {
           colorAbsolute = item.price;
         }
-      } else {
+      } else if (item.price > 0) {
         extras += item.price;
       }
     }

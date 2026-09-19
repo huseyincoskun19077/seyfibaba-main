@@ -76,18 +76,28 @@ const VariantsDisplay = ({ variants }) => {
 
   return (
     <div className="border-t border-qyellow w-full pt-2">
-      <p className="font-medium text-sm mb-1">Varyantlar:</p>
+      <p className="font-medium text-sm mb-1">Seçenekler:</p>
       <ul>
-        {variants.map((variant, index) => (
-          <li key={index} className="flex justify-between items-center">
-            <span className="text-qblack text-xs">
-              {variant?.variant_item.name}{" "}
-            </span>
-            <span className="text-qblack text-xs font-medium">
-              <CurrencyConvert price={Number(variant?.variant_item.price)} />
-            </span>
-          </li>
-        ))}
+        {variants.map((variant, index) => {
+          const vi = variant?.variant_item;
+          if (!vi) return null;
+          const group = String(vi.product_variant_name || "Seçenek");
+          const isColor = /renk|color/i.test(group);
+          const amount = Number(vi.price || 0);
+          return (
+            <li key={index} className="flex justify-between items-center gap-2">
+              <span className="text-qblack text-xs">
+                {group}: {vi.name}
+              </span>
+              {!isColor && amount > 0 ? (
+                <span className="text-qblack text-xs font-medium whitespace-nowrap">
+                  +
+                  <CurrencyConvert price={amount} />
+                </span>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

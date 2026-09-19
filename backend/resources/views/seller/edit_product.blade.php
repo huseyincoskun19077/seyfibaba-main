@@ -32,19 +32,14 @@
               <input type="hidden" name="active_tab" id="active_tab" value="{{ $activeTab }}">
 
               <ul class="nav nav-tabs" id="productTabs" role="tablist">
-                <li class="nav-item">
+                <li className="nav-item">
                   <a class="nav-link {{ $activeTab === 'content' ? 'active' : '' }}" id="content-tab" data-toggle="tab" href="#tab-content" role="tab" data-tab-key="content">
                     <i class="fas fa-edit mr-1"></i> İçerik
                   </a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link {{ $activeTab === 'images' ? 'active' : '' }}" id="images-tab" data-toggle="tab" href="#tab-images" role="tab" data-tab-key="images">
-                    <i class="fas fa-images mr-1"></i> Görseller
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link {{ $activeTab === 'seo' ? 'active' : '' }}" id="seo-tab" data-toggle="tab" href="#tab-seo" role="tab" data-tab-key="seo">
-                    <i class="fas fa-search mr-1"></i> SEO
+                    <i class="fas fa-images mr-1"></i> Fotoğraflar
                   </a>
                 </li>
               </ul>
@@ -239,22 +234,10 @@
                   </div>
                 </div>
 
-                {{-- TAB: SEO --}}
-                <div class="tab-pane fade {{ $activeTab === 'seo' ? 'show active' : '' }}" id="tab-seo" role="tabpanel">
-                  <div class="card">
-                    <div class="card-body">
-                      <div class="row">
-                        <div class="form-group col-12">
-                          <label>SEO Başlığı</label>
-                          <input type="text" class="form-control" name="seo_title" value="{{ $product->seo_title }}" placeholder="Arama motorları için başlık (opsiyonel — boş bırakılırsa ürün adı kullanılır)">
-                        </div>
-                        <div class="form-group col-12">
-                          <label>SEO Açıklaması</label>
-                          <textarea name="seo_description" cols="30" rows="5" class="form-control" placeholder="Arama motorları için açıklama (opsiyonel)">{{ $product->seo_description }}</textarea>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                {{-- SEO otomatik (ProductSeoAutoFill); manuel sekme kaldırıldı --}}
+                <div class="d-none" aria-hidden="true">
+                  <input type="hidden" name="seo_title" value="{{ $product->seo_title }}">
+                  <input type="hidden" name="seo_description" value="{{ $product->seo_description }}">
                 </div>
 
               </div>
