@@ -18,11 +18,32 @@ class ProductChildCategoryController extends Controller
         $this->middleware('auth:admin');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $childCategories=ChildCategory::with('subCategory','category','products')->ordered()->get();
+        $categories = Category::ordered()->get(['id', 'name']);
+        $categoryId = (int) $request->query('category_id', 0);
+        $subCategoryId = (int) $request->query('sub_category_id', 0);
 
-        return view('admin.product_child_category',compact('childCategories'));
+        $subCategories = collect();
+        if ($categoryId > 0) {
+            $subCategories = SubCategory::where('category_id', $categoryId)->ordered()->get(['id', 'name', 'category_id']);
+        }
+
+        $childCategories = collect();
+        if ($subCategoryId > 0) {
+            $childCategories = ChildCategory::with('subCategory', 'category', 'products')
+                ->where('sub_category_id', $subCategoryId)
+                ->ordered()
+                ->get();
+        }
+
+        return view('admin.product_child_category', compact(
+            'childCategories',
+            'categories',
+            'subCategories',
+            'categoryId',
+            'subCategoryId'
+        ));
     }
 
 
@@ -78,7 +99,9 @@ class ProductChildCategoryController extends Controller
         $childCategory->slug = $request->slug;
         $childCategory->status = $request->status;
         if (Schema::hasColumn('child_categories', 'serial')) {
-            $childCategory->serial = app(CategorySerialService::class)->nextSerial(ChildCategory::class);
+            $childCategory->serial = app(CategorySerialService::class)->nextSerial(ChildCategory::class, [
+                'sub_category_id' => (int) $request->sub_category,
+            ]);
         }
         $childCategory->save();
 
@@ -162,9 +185,28 @@ class ProductChildCategoryController extends Controller
         $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer|exists:child_categories,id',
+            'sub_category_id' => 'required|integer|exists:sub_categories,id',
         ]);
 
-        app(CategorySerialService::class)->reorder(ChildCategory::class, $request->input('ids', []));
+        if (! Schema::hasColumn('child_categories', 'serial')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'serial kolonu yok. Sunucuda php artisan migrate çalıştırın.',
+            ], 422);
+        }
+
+        try {
+            app(CategorySerialService::class)->reorder(
+                ChildCategory::class,
+                $request->input('ids', []),
+                ['sub_category_id' => (int) $request->input('sub_category_id')]
+            );
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sıralama kaydedilemedi: '.$e->getMessage(),
+            ], 500);
+        }
 
         return response()->json(['success' => true, 'message' => 'Sıralama güncellendi.']);
     }

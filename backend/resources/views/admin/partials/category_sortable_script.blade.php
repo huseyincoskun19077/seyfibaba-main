@@ -8,7 +8,9 @@
     if (!tbody) return;
 
     var reorderUrl = @json($reorderUrl);
-    var csrf = $('meta[name="csrf-token"]').attr('content');
+    var reorderScope = @json($reorderScope ?? []);
+    // Admin layout'ta csrf meta yok; blade token kullan
+    var csrf = @json(csrf_token());
 
     function collectIds() {
         return Array.prototype.map.call(tbody.querySelectorAll('tr[data-id]'), function (row) {
@@ -24,21 +26,43 @@
     }
 
     function saveOrder() {
+        var ids = collectIds();
+        if (!ids.length) {
+            if (typeof toastr !== 'undefined') toastr.warning('Sıralanacak satır yok.');
+            return;
+        }
+
+        var payload = {
+            _token: csrf,
+            ids: ids
+        };
+        Object.keys(reorderScope || {}).forEach(function (key) {
+            payload[key] = reorderScope[key];
+        });
+
         $.ajax({
             type: 'POST',
             url: reorderUrl,
-            data: {
-                _token: csrf,
-                ids: collectIds()
-            },
+            data: payload,
             success: function (res) {
                 if (typeof toastr !== 'undefined') {
                     toastr.success((res && res.message) ? res.message : 'Sıralama güncellendi.');
                 }
             },
-            error: function () {
+            error: function (xhr) {
+                var msg = 'Sıralama kaydedilemedi.';
+                if (xhr.status === 419) {
+                    msg = 'Oturum süresi doldu. Sayfayı yenileyip tekrar deneyin.';
+                } else if (xhr.responseJSON) {
+                    if (xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    } else if (xhr.responseJSON.errors) {
+                        var first = Object.values(xhr.responseJSON.errors)[0];
+                        if (first && first[0]) msg = first[0];
+                    }
+                }
                 if (typeof toastr !== 'undefined') {
-                    toastr.error('Sıralama kaydedilemedi.');
+                    toastr.error(msg);
                 }
             }
         });

@@ -233,7 +233,21 @@ class ProductCategoryController extends Controller
             'ids.*' => 'integer|exists:categories,id',
         ]);
 
-        app(CategorySerialService::class)->reorder(Category::class, $request->input('ids', []));
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('categories', 'serial')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'serial kolonu yok. Sunucuda php artisan migrate çalıştırın.',
+            ], 422);
+        }
+
+        try {
+            app(CategorySerialService::class)->reorder(Category::class, $request->input('ids', []));
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sıralama kaydedilemedi: '.$e->getMessage(),
+            ], 500);
+        }
 
         return response()->json(['success' => true, 'message' => 'Sıralama güncellendi.']);
     }

@@ -18,11 +18,20 @@ class ProductSubCategoryController extends Controller
         $this->middleware('auth:admin');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $subCategories=SubCategory::with('category','childCategories','products')->ordered()->get();
+        $categories = Category::ordered()->get(['id', 'name']);
+        $categoryId = (int) $request->query('category_id', 0);
 
-        return view('admin.product_sub_category',compact('subCategories'));
+        $subCategories = collect();
+        if ($categoryId > 0) {
+            $subCategories = SubCategory::with('category', 'childCategories', 'products')
+                ->where('category_id', $categoryId)
+                ->ordered()
+                ->get();
+        }
+
+        return view('admin.product_sub_category', compact('subCategories', 'categories', 'categoryId'));
     }
 
 
@@ -60,7 +69,9 @@ class ProductSubCategoryController extends Controller
         $subCategory->slug = $request->slug;
         $subCategory->status = $request->status;
         if (Schema::hasColumn('sub_categories', 'serial')) {
-            $subCategory->serial = app(CategorySerialService::class)->nextSerial(SubCategory::class);
+            $subCategory->serial = app(CategorySerialService::class)->nextSerial(SubCategory::class, [
+                'category_id' => (int) $request->category,
+            ]);
         }
         if ($hasMaxInstallment) {
             if ($request->filled('max_installment')) {
@@ -158,9 +169,28 @@ class ProductSubCategoryController extends Controller
         $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer|exists:sub_categories,id',
+            'category_id' => 'required|integer|exists:categories,id',
         ]);
 
-        app(CategorySerialService::class)->reorder(SubCategory::class, $request->input('ids', []));
+        if (! Schema::hasColumn('sub_categories', 'serial')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'serial kolonu yok. Sunucuda php artisan migrate çalıştırın.',
+            ], 422);
+        }
+
+        try {
+            app(CategorySerialService::class)->reorder(
+                SubCategory::class,
+                $request->input('ids', []),
+                ['category_id' => (int) $request->input('category_id')]
+            );
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sıralama kaydedilemedi: '.$e->getMessage(),
+            ], 500);
+        }
 
         return response()->json(['success' => true, 'message' => 'Sıralama güncellendi.']);
     }

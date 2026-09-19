@@ -14,12 +14,39 @@
           </div>
 
           <div class="section-body">
-            <a href="{{ route('admin.product-sub-category.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> {{__('admin.Add New')}}</a>
-            <p class="text-muted mt-2 mb-0">Sıralamak için satırı sürükleyin veya ↑ ↓ kullanın.</p>
-            <div class="row mt-3">
+            <div class="d-flex flex-wrap align-items-center mb-3" style="gap:10px;">
+              <a href="{{ route('admin.product-sub-category.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> {{__('admin.Add New')}}</a>
+            </div>
+
+            <div class="card mb-3">
+              <div class="card-body">
+                <form method="GET" action="{{ route('admin.product-sub-category.index') }}" class="form-inline flex-wrap" style="gap:10px;">
+                  <label class="mr-2 mb-0 font-weight-bold">Kategori seç</label>
+                  <select name="category_id" class="form-control" style="min-width:260px;" onchange="this.form.submit()">
+                    <option value="">— Kategori seçin —</option>
+                    @foreach ($categories as $cat)
+                      <option value="{{ $cat->id }}" {{ (int) $categoryId === (int) $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                    @endforeach
+                  </select>
+                  @if ($categoryId)
+                    <a href="{{ route('admin.product-sub-category.index') }}" class="btn btn-light">Filtreyi temizle</a>
+                  @endif
+                </form>
+                <p class="text-muted small mb-0 mt-2">Önce kategori seçin; yalnızca o kategorinin alt kategorilerini sıralarsınız.</p>
+              </div>
+            </div>
+
+            @if (!$categoryId)
+              <div class="alert alert-info mb-0">Sıralama için yukarıdan bir kategori seçin.</div>
+            @else
+            <div class="row">
                 <div class="col">
                   <div class="card">
                     <div class="card-body">
+                      @if ($subCategories->isEmpty())
+                        <p class="text-muted mb-0">Bu kategoride alt kategori yok.</p>
+                      @else
+                      <p class="text-muted mb-3">Sıralamak için satırı sürükleyin veya ↑ ↓ kullanın.</p>
                       <div class="table-responsive table-invoice">
                         <table class="table table-striped" id="categoryOrderTable">
                             <thead>
@@ -67,9 +94,12 @@
                             </tbody>
                         </table>
                       </div>
+                      @endif
                     </div>
                   </div>
                 </div>
+            </div>
+            @endif
           </div>
         </section>
       </div>
@@ -108,7 +138,10 @@
         })
     }
 </script>
+@if ($categoryId && $subCategories->isNotEmpty())
 @include('admin.partials.category_sortable_script', [
   'reorderUrl' => route('admin.product.sub.category.reorder'),
+  'reorderScope' => ['category_id' => (int) $categoryId],
 ])
+@endif
 @endsection
