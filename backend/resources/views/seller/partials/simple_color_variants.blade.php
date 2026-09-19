@@ -15,6 +15,12 @@
       Buraya yazdığınız fiyat o rengin tam satış fiyatıdır (ürün fiyatından çıkarılmaz).
       Tek renkse boş bırakın.
     </p>
+    <p class="text-warning mb-3" style="font-size:13px;">
+      <strong>Önemli:</strong> Her renk fotoğrafı isteği büyütür. Çok sayıda yüksek çözünürlüklü fotoğraf
+      aynı anda gönderilirse sunucu <code>413 Request Entity Too Large</code> verebilir.
+      Fotoğrafları mümkünse 1&nbsp;MB altında tutun; sorun sürerse sunucuda tüm
+      <code>server { }</code> bloklarına <code>client_max_body_size 64M;</code> eklenmelidir.
+    </p>
     <div id="simpleColorRows">
       @forelse ($colorRows as $i => $row)
         <div class="color-row">

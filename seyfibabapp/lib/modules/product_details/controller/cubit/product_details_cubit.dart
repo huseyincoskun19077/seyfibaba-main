@@ -96,18 +96,34 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
     }
 
     for (var av in state.variants) {
-      final updatedItem = List.of(state.variantItem)..add(av.activeVariantsItems.first);
+      final isColor =
+          RegExp(r'renk|color', caseSensitive: false).hasMatch(av.name);
+      // Renk seçilmeden standart ürün fiyatı; diğer varyantlarda ilk seçenek
+      final ActiveVariantItemModel initial;
+      if (isColor) {
+        initial = ActiveVariantItemModel(
+          productVariantId: av.id,
+          id: -1,
+          name: 'Standart',
+          image: '',
+          price: 0,
+        );
+      } else {
+        initial = av.activeVariantsItems.first;
+      }
+      final updatedItem = List.of(state.variantItem)..add(initial);
       emit(state.copyWith(variantItem: updatedItem));
     }
 
     for (var av in state.variants) {
-      // final vp = state.variants.map((p) => p.activeVariantsItems.first.price).toList();
-      // debugPrint('all-variant-price $vp');
-      final updatedItem = List.of(state.itemPrice)..add(av.activeVariantsItems.first.price);
+      final isColor =
+          RegExp(r'renk|color', caseSensitive: false).hasMatch(av.name);
+      final price = isColor ? 0.0 : av.activeVariantsItems.first.price;
+      final updatedItem = List.of(state.itemPrice)..add(price);
       emit(state.copyWith(itemPrice: updatedItem));
-      final prices = state.itemPrice.map((p) => p).toList();
-      // debugPrint('all-variant-price $prices');
     }
+
+    calculatePrices(details?.product);
   }
 
   void addQty(String type) {
@@ -169,7 +185,7 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
     }
 
     if (state.variants.isNotEmpty && state.variantItem.isNotEmpty) {
-      variants = state.variantItem.map((variantItem) {
+      variants = state.variantItem.where((variantItem) => variantItem.id > 0).map((variantItem) {
         // debugPrint('product-from-variant ${state.productId}');
         return GuestVariant(
           variantId: variantItem.productVariantId,
@@ -332,6 +348,38 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
     }
   }
 
+  void selectVariantByImage(String imagePath) {
+    if (imagePath.isEmpty || details == null) return;
+    final thumb = details!.product.thumbImage;
+
+    for (var i = 0; i < state.variants.length; i++) {
+      final variant = state.variants[i];
+      final isColor =
+          RegExp(r'renk|color', caseSensitive: false).hasMatch(variant.name);
+      if (!isColor) continue;
+
+      if (imagePath == thumb) {
+        addIndex(i.toString());
+        updateVPItems(ActiveVariantItemModel(
+          productVariantId: variant.id,
+          id: -1,
+          name: 'Standart',
+          image: '',
+          price: 0,
+        ));
+        return;
+      }
+
+      for (final item in variant.activeVariantsItems) {
+        if (item.image == imagePath) {
+          addIndex(i.toString());
+          updateVPItems(item);
+          return;
+        }
+      }
+    }
+  }
+
   void calculatePrices(ProductDetailsProductModel? product) {
     double productPrice =
         product!.offerPrice != 0.0 ? product.offerPrice : product.price;
@@ -339,6 +387,7 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
     double extras = 0.0;
 
     for (final item in state.variantItem) {
+      if (item.id <= 0) continue;
       ActiveVariantModel? parent;
       for (final v in state.variants) {
         if (v.id == item.productVariantId) {
@@ -349,7 +398,9 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
       final isColor = parent != null &&
           RegExp(r'renk|color', caseSensitive: false).hasMatch(parent.name);
       if (isColor) {
-        colorAbsolute = item.price;
+        if (item.price > 0) {
+          colorAbsolute = item.price;
+        }
       } else {
         extras += item.price;
       }

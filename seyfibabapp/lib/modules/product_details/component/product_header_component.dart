@@ -57,6 +57,21 @@ class _ProductHeaderComponentState extends State<ProductHeaderComponent> {
       listenWhen: (prev, next) => prev.variantItem != next.variantItem,
       listener: (context, state) {
         for (final item in state.variantItem.reversed) {
+          var isColor = false;
+          for (final v in widget.product.activeVariantModel) {
+            if (v.id == item.productVariantId) {
+              isColor = RegExp(r'renk|color', caseSensitive: false)
+                  .hasMatch(v.name);
+              break;
+            }
+          }
+          if (isColor && item.id <= 0) {
+            setState(() {
+              productThumb = widget.product.thumbImage;
+              _selectedGalleryIndex = 0;
+            });
+            return;
+          }
           if (item.image.isNotEmpty) {
             setState(() {
               productThumb = item.image;
@@ -140,10 +155,13 @@ class _ProductHeaderComponentState extends State<ProductHeaderComponent> {
             final image = images[index];
             final selected = productThumb == image;
             return GestureDetector(
-              onTap: () => setState(() {
-                productThumb = image;
-                _selectedGalleryIndex = index;
-              }),
+              onTap: () {
+                setState(() {
+                  productThumb = image;
+                  _selectedGalleryIndex = index;
+                });
+                context.read<ProductDetailsCubit>().selectVariantByImage(image);
+              },
               child: Container(
                 width: 64,
                 decoration: BoxDecoration(

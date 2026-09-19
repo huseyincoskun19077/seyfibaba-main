@@ -254,6 +254,24 @@ nginx -t
 
 > ⚠️ **DİKKAT:** `nginx -t` başarısız olursa `reload` yapma! Mevcut sunucu çökebilir.
 
+### Renkli / toplu ürün eklerken 413 Request Entity Too Large
+
+Standart üründe tek kapak fotoğrafı vardır; renk eklenince her renk fotoğrafı aynı POST’a eklenir ve gövde büyür. Nginx varsayılan limiti aşınca `413` döner.
+
+`/etc/nginx/sites-available/seyfibaba` içinde **her** `server { ... }` bloğuna (80 ve 443) şunu ekleyin:
+
+```nginx
+client_max_body_size 64M;
+```
+
+Sonra:
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+PHP tarafında da (ör. `/etc/php/8.3/fpm/php.ini`) `upload_max_filesize` ve `post_max_size` en az `64M` olmalı; değişince `systemctl reload php8.3-fpm`.
+
 ---
 
 ## 6. HIZLI DEPLOYMENT (TÜMÜ)

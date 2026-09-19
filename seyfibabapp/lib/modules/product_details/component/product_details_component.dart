@@ -43,35 +43,9 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
 
     // print('product_offer_price ${widget.product.offerPrice}');
     if (widget.product.offerPrice != 0.0) {
-      double? colorAbsolute;
-      double extras = 0.0;
-      for (var i in widget.product.activeVariantModel) {
-        if (i.activeVariantsItems.isEmpty) continue;
-        final p = Utils.toDouble(i.activeVariantsItems.first.price.toString());
-        if (RegExp(r'renk|color', caseSensitive: false).hasMatch(i.name)) {
-          colorAbsolute = p;
-        } else {
-          extras += p;
-        }
-      }
-      offerPrice = (colorAbsolute ?? widget.product.offerPrice) + extras;
+      offerPrice = widget.product.offerPrice;
     }
-    if (widget.product.activeVariantModel.isNotEmpty) {
-      double? colorAbsolute;
-      double extras = 0.0;
-      for (var i in widget.product.activeVariantModel) {
-        if (i.activeVariantsItems.isEmpty) continue;
-        final p = Utils.toDouble(i.activeVariantsItems.first.price.toString());
-        if (RegExp(r'renk|color', caseSensitive: false).hasMatch(i.name)) {
-          colorAbsolute = p;
-        } else {
-          extras += p;
-        }
-      }
-      mainPrice = (colorAbsolute ?? widget.product.price) + extras;
-    } else {
-      mainPrice = widget.product.price;
-    }
+    mainPrice = widget.product.price;
 
     if (isFlashSale && flashSaleActive == 1) {
       if (widget.product.offerPrice != 0) {

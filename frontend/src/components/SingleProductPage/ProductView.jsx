@@ -4,7 +4,6 @@ import { useContext, useEffect, useState, useMemo, useCallback, useRef } from "r
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { FacebookShareButton, TwitterShareButton } from "react-share";
-import { buildProductPath } from "@/utils/url";
 import { toast } from "react-toastify";
 import auth from "../../utils/auth";
 import settings from "../../utils/settings";
@@ -49,9 +48,19 @@ const resolveImageSrc = (value) => {
   return `${appConfig.BASE_URL}${raw.replace(/^\/+/, "")}`;
 };
 
-const getInitialVariantItems = (variants = []) => {
+const getInitialVariantItems = (variants = [], options = {}) => {
+  const { includeColor = false } = options;
   return variants
-    .map((variant) => variant?.active_variant_items?.[0] || null)
+    .map((variant) => {
+      const items = Array.isArray(variant?.active_variant_items)
+        ? variant.active_variant_items
+        : [];
+      if (!items.length) return null;
+      const isColor = /renk|color/i.test(String(variant?.name || ""));
+      // Renk seçilmeden standart ürün fiyatı görünsün
+      if (isColor && !includeColor) return null;
+      return items[0];
+    })
     .filter(Boolean);
 };
 
@@ -75,7 +84,7 @@ const variantParamKey = (variantName) => {
 };
 
 const resolveVariantsFromParams = (variants = [], params) => {
-  if (!variants.length || !params) return getInitialVariantItems(variants);
+  if (!variants.length) return getInitialVariantItems(variants, { includeColor: false });
 
   return variants
     .map((variant) => {
@@ -83,15 +92,34 @@ const resolveVariantsFromParams = (variants = [], params) => {
         ? variant.active_variant_items
         : [];
       if (!items.length) return null;
+      const isColor = /renk|color/i.test(String(variant?.name || ""));
       const key = variantParamKey(variant.name);
-      const wanted = String(params.get(key) || "").trim();
-      if (!wanted) return items[0];
+      const wanted = params ? String(params.get(key) || "").trim() : "";
+      if (isColor && !wanted) return null;
+      if (!wanted) return isColor ? null : items[0];
       return (
         items.find((item) => slugifyVariantParam(item.name) === wanted) ||
-        items[0]
+        (isColor ? null : items[0])
       );
     })
     .filter(Boolean);
+};
+
+const collectColorGalleryItems = (variants = [], thumb = "") => {
+  const colors = [];
+  (variants || []).forEach((variant) => {
+    if (!/renk|color/i.test(String(variant?.name || ""))) return;
+    (variant.active_variant_items || []).forEach((item) => {
+      if (!item?.image) return;
+      colors.push({
+        image: item.image,
+        label: item.name,
+        variantItem: item,
+        variantId: variant.id,
+      });
+    });
+  });
+  return colors;
 };
 
 const StarRating = ({ rating }) => {
@@ -165,15 +193,20 @@ const QuantitySelector = ({ quantity, onIncrement, onDecrement }) => (
   </div>
 );
 
-const VariantSelector = ({ variants, onSelectVariant, basePrice = 0 }) => {
-  const [selectedIds, setSelectedIds] = useState({});
-
+const VariantSelector = ({
+  variants,
+  onSelectVariant,
+  onSelectStandard,
+  basePrice = 0,
+  selectedVariantItems = [],
+  standardSelected = true,
+  thumbImage = "",
+}) => {
   if (!Array.isArray(variants) || variants.length === 0) {
     return null;
   }
 
   const selectItem = (variant, item) => {
-    setSelectedIds((prev) => ({ ...prev, [variant.id]: item.id }));
     onSelectVariant(item);
   };
 
@@ -186,18 +219,52 @@ const VariantSelector = ({ variants, onSelectVariant, basePrice = 0 }) => {
         if (!items.length) return null;
         const name = String(variant?.name || "");
         const isColor = /renk|color/i.test(name);
-        const selectedId = selectedIds[variant.id] ?? items[0]?.id;
+        const selectedColor = selectedVariantItems.find(
+          (s) => Number(s?.product_variant_id) === Number(variant.id)
+        );
+        const selectedId = selectedColor?.id;
 
         return (
           <div key={variant.id || name}>
             <p className="text-sm font-700 text-qblack mb-3">{name || "Seçenek"}</p>
             {isColor ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => onSelectStandard?.(variant)}
+                  className={`text-left rounded-2xl border p-2 transition ${
+                    standardSelected
+                      ? "border-qblack ring-2 ring-qyellow"
+                      : "border-qgray-border hover:border-qblack"
+                  }`}
+                >
+                  {thumbImage ? (
+                    <span className="block relative w-full h-20 rounded-xl overflow-hidden mb-2 bg-gray-50">
+                      <Image
+                        src={
+                          thumbImage.startsWith("http")
+                            ? thumbImage
+                            : `${appConfig.BASE_URL}${thumbImage}`
+                        }
+                        alt="Standart"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </span>
+                  ) : (
+                    <span className="block h-8 rounded-xl mb-2 bg-gray-100" />
+                  )}
+                  <span className="block text-sm font-700 text-qblack">Standart</span>
+                  <span className="block text-xs text-qgray">
+                    <CurrencyConvert price={basePrice} />
+                  </span>
+                </button>
                 {items.map((item) => {
-                  // Varyant fiyatı mutlak satış fiyatıdır; ürün fiyatına eklenmez.
-                  const total = Number(item.price || 0) > 0
-                    ? Number(item.price)
-                    : Number(basePrice || 0);
+                  const total =
+                    Number(item.price || 0) > 0
+                      ? Number(item.price)
+                      : Number(basePrice || 0);
                   const selected = Number(selectedId) === Number(item.id);
                   const imgSrc = item.image
                     ? item.image.startsWith("http")
@@ -217,12 +284,20 @@ const VariantSelector = ({ variants, onSelectVariant, basePrice = 0 }) => {
                     >
                       {imgSrc ? (
                         <span className="block relative w-full h-20 rounded-xl overflow-hidden mb-2 bg-gray-50">
-                          <Image src={imgSrc} alt={item.name} fill className="object-cover" unoptimized />
+                          <Image
+                            src={imgSrc}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
                         </span>
                       ) : (
                         <span className="block h-8 rounded-xl mb-2 bg-gray-100" />
                       )}
-                      <span className="block text-sm font-700 text-qblack">{item.name}</span>
+                      <span className="block text-sm font-700 text-qblack">
+                        {item.name}
+                      </span>
                       <span className="block text-xs text-qgray">
                         <CurrencyConvert price={total} />
                       </span>
@@ -255,8 +330,8 @@ const VariantSelector = ({ variants, onSelectVariant, basePrice = 0 }) => {
 const SocialShareButtons = ({ product }) => {
   const safeProduct = product || {};
   const shareUrl =
-    typeof window !== "undefined" && window.location.origin
-      ? `${window.location.origin}${buildProductPath(safeProduct.slug || "")}`
+    typeof window !== "undefined" && window.location?.href
+      ? window.location.href
       : "";
 
   return (
@@ -472,22 +547,72 @@ export default function ProductView({
       }
 
       setSelectedVariantItems((previousItems) => {
-        const baselineItems = previousItems.length
-          ? previousItems
-          : getInitialVariantItems(varients);
-
-        return baselineItems.map((item) => {
-          if (
-            parseInt(item?.product_variant_id, 10) ===
+        const withoutGroup = previousItems.filter(
+          (item) =>
+            parseInt(item?.product_variant_id, 10) !==
             parseInt(value?.product_variant_id, 10)
-          ) {
-            return value;
-          }
-          return item;
-        });
+        );
+        // Renk yokken sadece standart seçili olabilir; diğer grupları koru
+        const others = withoutGroup.length
+          ? withoutGroup
+          : getInitialVariantItems(varients, { includeColor: false }).filter(
+              (item) =>
+                parseInt(item?.product_variant_id, 10) !==
+                parseInt(value?.product_variant_id, 10)
+            );
+        return [...others, value];
       });
     },
     [varients, changeImgHandler]
+  );
+
+  const selectStandardColor = useCallback(
+    (variant) => {
+      changeImgHandler(safeProduct?.thumb_image || "");
+      if (!variant?.id) return;
+      setSelectedVariantItems((previousItems) =>
+        previousItems.filter(
+          (item) =>
+            parseInt(item?.product_variant_id, 10) !==
+            parseInt(variant.id, 10)
+        )
+      );
+    },
+    [changeImgHandler, safeProduct?.thumb_image]
+  );
+
+  const colorGalleryItems = useMemo(
+    () => collectColorGalleryItems(varients, safeProduct?.thumb_image),
+    [varients, safeProduct?.thumb_image]
+  );
+
+  const hasColorVariantSelected = useMemo(
+    () =>
+      selectedVariantItems.some((item) => {
+        const parent = (varients || []).find(
+          (v) => Number(v.id) === Number(item.product_variant_id)
+        );
+        return /renk|color/i.test(String(parent?.name || ""));
+      }),
+    [selectedVariantItems, varients]
+  );
+
+  const selectGalleryImage = useCallback(
+    (imagePath, colorItem = null) => {
+      changeImgHandler(imagePath || "");
+      if (colorItem?.variantItem) {
+        selectVarient(colorItem.variantItem);
+        return;
+      }
+      // Ana ürün görseli → standart (renk seçimini kaldır)
+      const colorVariant = (varients || []).find((v) =>
+        /renk|color/i.test(String(v?.name || ""))
+      );
+      if (colorVariant) {
+        selectStandardColor(colorVariant);
+      }
+    },
+    [changeImgHandler, selectVarient, selectStandardColor, varients]
   );
 
   const addToCard = useCallback(
@@ -720,21 +845,42 @@ export default function ProductView({
           <div className="flex gap-2 flex-wrap">
             <ProductImage
               src={safeProduct?.thumb_image}
-              alt=""
-              className={src !== safeProduct?.thumb_image ? "opacity-50" : ""}
-              onClick={() => changeImgHandler(safeProduct?.thumb_image || "")}
+              alt="Standart"
+              className={
+                src !== safeProduct?.thumb_image || hasColorVariantSelected
+                  ? "opacity-50"
+                  : ""
+              }
+              onClick={() =>
+                selectGalleryImage(safeProduct?.thumb_image || "", null)
+              }
             />
+            {colorGalleryItems.map((colorItem) => (
+              <ProductImage
+                key={`color-${colorItem.variantItem?.id || colorItem.image}`}
+                src={colorItem.image}
+                alt={colorItem.label || ""}
+                className={src !== colorItem.image ? "opacity-50" : ""}
+                onClick={() => selectGalleryImage(colorItem.image, colorItem)}
+              />
+            ))}
             {productsImg &&
               productsImg.length > 0 &&
-              productsImg.map((img, i) => (
-                <ProductImage
-                  key={i}
-                  src={img.image}
-                  alt=""
-                  className={src !== img.image ? "opacity-50" : ""}
-                  onClick={() => changeImgHandler(img.image)}
-                />
-              ))}
+              productsImg.map((img, i) => {
+                const isColorDup = colorGalleryItems.some(
+                  (c) => c.image === img.image
+                );
+                if (isColorDup) return null;
+                return (
+                  <ProductImage
+                    key={`gal-${i}`}
+                    src={img.image}
+                    alt=""
+                    className={src !== img.image ? "opacity-50" : ""}
+                    onClick={() => changeImgHandler(img.image)}
+                  />
+                );
+              })}
           </div>
         </div>
       </div>
@@ -878,11 +1024,15 @@ export default function ProductView({
               variantFlash ? "ring-2 ring-qyellow bg-qyellow/10" : ""
             }`}
           >
-            {selectedVariantItems?.length > 0 && (
+            {(varients || []).some((v) =>
+              /renk|color/i.test(String(v?.name || ""))
+            ) && (
               <div className="mb-3 flex flex-wrap gap-2">
-                <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-600 text-qblack">
-                  Standart ürün
-                </span>
+                {!hasColorVariantSelected && (
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-600 text-qblack">
+                    Standart ürün
+                  </span>
+                )}
                 {selectedVariantItems.map((item) => {
                   const parent = (varients || []).find(
                     (v) => Number(v.id) === Number(item.product_variant_id)
@@ -901,7 +1051,11 @@ export default function ProductView({
             <VariantSelector
               variants={varients || []}
               onSelectVariant={selectVarient}
+              onSelectStandard={selectStandardColor}
               basePrice={parseAmount(safeProduct?.price)}
+              selectedVariantItems={selectedVariantItems}
+              standardSelected={!hasColorVariantSelected}
+              thumbImage={safeProduct?.thumb_image || ""}
             />
           </div>
 

@@ -229,6 +229,7 @@ class _VariantBottomSheetState extends State<VariantBottomSheet> {
   Set<ActiveVariantModel> _selectedVariants(DetailsStateModel state) {
     final selected = <ActiveVariantModel>{};
     for (final item in state.variantItem) {
+      if (item.id <= 0) continue;
       final parent = state.variants.cast<ActiveVariantModel?>().firstWhere(
             (variant) => variant?.id == item.productVariantId,
             orElse: () => null,
@@ -260,7 +261,13 @@ class _VariantBottomSheetState extends State<VariantBottomSheet> {
     }
 
     final variants = _selectedVariants(dCubit.state);
-    if (dCubit.state.variants.isNotEmpty && variants.isEmpty) {
+    final requiredGroups = dCubit.state.variants.where((v) {
+      return !RegExp(r'renk|color', caseSensitive: false).hasMatch(v.name);
+    }).toList();
+    final selectedRequired = variants.where((v) {
+      return !RegExp(r'renk|color', caseSensitive: false).hasMatch(v.name);
+    }).length;
+    if (requiredGroups.isNotEmpty && selectedRequired < requiredGroups.length) {
       Utils.errorSnackBar(context, Language.fieldRequired);
       return;
     }
@@ -309,7 +316,69 @@ class _VariantBottomSheetState extends State<VariantBottomSheet> {
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: p.activeVariantsItems.map((item) {
+            children: [
+              GestureDetector(
+                onTap: () {
+                  dCubit.addIndex(pIndex.toString());
+                  dCubit.updateVPItems(ActiveVariantItemModel(
+                    productVariantId: p.id,
+                    id: -1,
+                    name: 'Standart',
+                    image: '',
+                    price: 0,
+                  ));
+                  setState(() {});
+                },
+                child: Container(
+                  width: 88,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: (selected == null || selected.id <= 0)
+                          ? Utils.dynamicPrimaryColor(context)
+                          : borderColor,
+                      width: (selected == null || selected.id <= 0) ? 2 : 1,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(6),
+                  child: Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: SizedBox(
+                          height: 56,
+                          width: double.infinity,
+                          child: CustomImage(
+                            path: RemoteUrls.imageUrl(
+                              dCubit.details?.product.thumbImage ?? '',
+                            ),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Standart',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        Utils.formatPrice(
+                          dCubit.details?.product.offerPrice != 0
+                              ? dCubit.details!.product.offerPrice
+                              : (dCubit.details?.product.price ?? 0),
+                          context,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11, color: iconGreyColor),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              ...p.activeVariantsItems.map((item) {
               final active = selected?.id == item.id;
               return GestureDetector(
                 onTap: () {
@@ -359,7 +428,8 @@ class _VariantBottomSheetState extends State<VariantBottomSheet> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
+            ],
           )
         else
           DropdownButtonFormField<ActiveVariantItemModel>(
