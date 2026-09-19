@@ -3,6 +3,7 @@
 <title>{{__('admin.Products')}}</title>
 @endsection
 @section('seller-content')
+@include('seller.partials.product_form_styles')
       <div class="main-content seller-product-form">
         <section class="section">
           <div class="section-header">
@@ -236,13 +237,15 @@
 
                 {{-- SEO otomatik (ProductSeoAutoFill); manuel sekme kaldırıldı --}}
                 <div class="d-none" aria-hidden="true">
-                  <input type="hidden" name="seo_title" value="{{ $product->seo_title }}">
-                  <input type="hidden" name="seo_description" value="{{ $product->seo_description }}">
+                  <input type="hidden" name="seo_title" id="seo_title" value="{{ $product->seo_title }}">
+                  <input type="hidden" name="seo_description" id="seo_description" value="{{ $product->seo_description }}">
+                  <input type="hidden" name="tags" id="tags" value="{{ $product->tags }}">
                 </div>
 
               </div>
 
               @include('seller.partials.simple_color_variants', ['colorRows' => old('colors', $colorRows ?? [])])
+              @include('seller.partials.simple_size_variants', ['sizeRows' => old('sizes', $sizeRows ?? [])])
 
               <div class="seller-sticky-save">
                   <button class="btn btn-primary btn-lg btn-block seller-save-btn">{{__('admin.Update')}}</button>

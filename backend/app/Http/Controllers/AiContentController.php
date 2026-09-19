@@ -109,71 +109,60 @@ class AiContentController extends Controller
         $existingContent = $params['existing_content'] ?? [];
         $targetLang = $params['target_lang'] ?? 'en';
 
-        $systemBase = "Sen profesyonel bir berber, kuaför ve güzellik salonu ekipmanları içerik yazarısın. SEO uyumlu, çekici ve satış odaklı ürün içerikleri yazarsın. Türkiye'deki salon profesyonellerine yönelik içerik üretirsin. Berber koltuğu, kuaför malzemesi, tıraş ve bakım ekipmanları gibi ürünlere odaklan. Tüm içerikleri sadece Türkçe olarak yaz, kesinlikle başka dil kullanma.\n";
+        $systemBase = "Sen Seyfibaba pazaryeri için içerik yazarısın.\n"
+            ."Platform: Türkiye’de berber, kuaför, güzellik salonu ve profesyonel kuaför malzemeleri satılan B2B/B2C pazaryeri (seyfibaba.com).\n"
+            ."Hedef kitle: berberler, kuaförler, salon sahipleri, profesyonel kullanıcılar.\n"
+            ."Kurallar:\n"
+            ."- Sadece Türkçe yaz.\n"
+            ."- Abartılı, uydurma marka/özellik veya alakasız ürün (telefon, kıyafet, gıda vb.) yazma.\n"
+            ."- Kullanıcının verdiği ürün adını bozma; netleştir, profesyonel hale getir.\n"
+            ."- Kategori varsa ona uy.\n"
+            ."- Fiyat, stok, kargo vaadi uydurma.\n"
+            ."- SEO başlığı max 60, SEO açıklaması max 155 karakter; Seyfibaba ve salon/kuaför bağlamı doğal geçsin.\n"
+            ."- long_description HTML olsun (<p>, <ul>, <li>, <strong>); sade ve satışa yardımcı olsun.\n";
 
         $jsonStructure = '{"name":"","short_description":"","long_description":"","seo_title":"","seo_description":"","tags":"","return_policy_text":"","delivery_time_text":""}';
 
         switch ($action) {
             case 'full':
-                $categoryCtx = $categoryName ? "\nÜrün kategorisi: {$categoryName}" : '';
-                return $systemBase . "\"{$productName}\" ürünü için eksiksiz ürün içeriği oluştur.{$categoryCtx}
-
-Aşağıdaki alanların HEPSİNİ Türkçe olarak doldur (hiçbiri boş kalamaz):
-- name: Ürün adı (SEO uyumlu, çekici)
-- short_description: Kısa açıklama (1-2 cümle, ürünün öne çıkan özellikleri)
-- long_description: Uzun HTML açıklama (3-5 paragraf, <p>, <ul>, <li>, <strong> etiketleri kullan. Ürün özellikleri, kullanım alanları, avantajları detaylı anlat)
-- seo_title: SEO başlığı (max 60 karakter, ana anahtar kelimeyi içersin)
-- seo_description: SEO açıklaması (max 155 karakter, eylem çağrısı içersin)
-- tags: Virgülle ayrılmış 5-8 anahtar kelime
-- return_policy_text: İade politikası metni (1-2 cümle)
-- delivery_time_text: Teslimat süresi açıklaması (örn: \"2-4 iş günü\")
-
-SADECE geçerli JSON döndür, markdown veya açıklama ekleme. Şema:
-{$jsonStructure}";
+                $categoryCtx = $categoryName ? "\nSeçili kategori: {$categoryName}" : '';
+                return $systemBase . "Satıcının girdiği ürün adı: \"{$productName}\".{$categoryCtx}\n\n"
+                    ."Bu ürün için Seyfibaba’ya uygun eksiksiz içerik üret.\n"
+                    ."Alanlar:\n"
+                    ."- name: Profesyonel, aranabilir ürün adı (orijinal anlamı koru)\n"
+                    ."- short_description: 1-2 cümle, salon/profesyonel fayda\n"
+                    ."- long_description: HTML, 3-5 kısa paragraf + madde işaretli özellikler\n"
+                    ."- seo_title: max 60 karakter, ana kelime + isteğe bağlı | Seyfibaba\n"
+                    ."- seo_description: max 155 karakter, net fayda + arama niyeti\n"
+                    ."- tags: 5-8 Türkçe anahtar kelime (virgülle)\n"
+                    ."- return_policy_text: kısa, genel (1 cümle)\n"
+                    ."- delivery_time_text: örn. \"2-4 iş günü\" (uydurma kargo firması yok)\n\n"
+                    ."SADECE geçerli JSON döndür. Şema:\n{$jsonStructure}";
 
             case 'enhance':
                 $existingJson = json_encode($existingContent, JSON_UNESCAPED_UNICODE);
-                return $systemBase . "Aşağıdaki ürün içeriğini iyileştir ve zenginleştir. Açıklamaları daha çekici yap, SEO'yu optimize et, dilbilgisi hatalarını düzelt.
-
-Mevcut içerik:
-{$existingJson}
-
-Aynı yapıyı koru. Kaliteyi artır, kısa açıklamaları genişlet, meta etiketlerini SEO için optimize et.
-Tüm alanlar dolu olmalı.
-SADECE geçerli JSON döndür, markdown veya açıklama ekleme. Şema:
-{$jsonStructure}";
+                return $systemBase . "Aşağıdaki Seyfibaba ürün içeriğini iyileştir. Anlamı bozma, abartma, alakasız sektör ekleme.\n\n"
+                    ."Mevcut içerik:\n{$existingJson}\n\n"
+                    ."Aynı JSON şemasında daha net, SEO uyumlu ve profesyonel metin üret.\n"
+                    ."SADECE geçerli JSON döndür. Şema:\n{$jsonStructure}";
 
             case 'translate':
                 $existingJson = json_encode($existingContent, JSON_UNESCAPED_UNICODE);
                 $langNames = ['en' => 'İngilizce', 'de' => 'Almanca', 'fr' => 'Fransızca', 'ar' => 'Arapça', 'tr' => 'Türkçe'];
                 $targetName = $langNames[$targetLang] ?? $targetLang;
-                return $systemBase . "Aşağıdaki ürün içeriğini {$targetName} diline çevir.
-
-Kaynak içerik:
-{$existingJson}
-
-ÖNEMLİ: Tüm alanları {$targetName} dilinde yaz. HTML etiketlerini koru.
-Tüm alanlar dolu olmalı.
-SADECE geçerli JSON döndür, markdown veya açıklama ekleme. Şema:
-{$jsonStructure}";
+                return $systemBase . "Aşağıdaki ürün içeriğini {$targetName} diline çevir. HTML etiketlerini koru.\n\n"
+                    ."Kaynak:\n{$existingJson}\n\nSADECE geçerli JSON döndür. Şema:\n{$jsonStructure}";
 
             case 'generate_meta':
                 $existingJson = json_encode($existingContent, JSON_UNESCAPED_UNICODE);
-                return $systemBase . "Aşağıdaki ürün içeriğine dayalı olarak SEO meta etiketleri oluştur.
-
-Ürün içeriği:
-{$existingJson}
-
-Sadece şu alanları güncelle (diğerlerini mevcut içerikten koru):
-- seo_title: SEO başlığı (max 60 karakter, ana anahtar kelimeyi içersin)
-- seo_description: SEO açıklaması (max 155 karakter, eylem çağrısı içersin)
-- tags: Virgülle ayrılmış 5-8 anahtar kelime
-
-SADECE geçerli JSON döndür, markdown veya açıklama ekleme. Şema:
-{$jsonStructure}";
+                return $systemBase . "Aşağıdaki ürün adı ve açıklamaya göre SADECE SEO alanlarını üret.\n"
+                    ."seo_title ve seo_description ürünün gerçek içeriğine dayansın; genel spam yazma.\n\n"
+                    ."İçerik:\n{$existingJson}\n\n"
+                    ."Doldur: seo_title, seo_description, tags. Diğer alanları mümkünse mevcuttan koru.\n"
+                    ."SADECE geçerli JSON döndür. Şema:\n{$jsonStructure}";
 
             default:
-                return "\"{$productName}\" için ürün içeriği oluştur.";
+                return "\"{$productName}\" için Seyfibaba ürün içeriği oluştur.";
         }
     }
 
@@ -256,7 +245,7 @@ SADECE geçerli JSON döndür, markdown veya açıklama ekleme. Şema:
                     ['role' => 'user', 'content' => $prompt],
                 ],
                 'max_tokens' => $maxTokens,
-                'temperature' => 0.7,
+                'temperature' => 0.45,
             ]);
 
         $data = $response->json();

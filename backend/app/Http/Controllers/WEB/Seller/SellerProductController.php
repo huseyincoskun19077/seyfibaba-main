@@ -40,6 +40,7 @@ use App\Http\Controllers\Concerns\AuthorizesSellerProduct;
 use App\Services\ProductImageStorage;
 use App\Services\ProductSeoAutoFill;
 use App\Services\SimpleProductColorService;
+use App\Services\SimpleProductOptionService;
 use App\Support\ProductSlug;
 
 class SellerProductController extends Controller
@@ -275,6 +276,11 @@ class SellerProductController extends Controller
             $product,
             app(SimpleProductColorService::class)->payloadFromRequest($request)
         );
+        $sizeResult = app(SimpleProductOptionService::class)->sync(
+            $product,
+            app(SimpleProductOptionService::class)->payloadFromRequest($request, 'sizes'),
+            'Boyut'
+        );
 
         if ($request->hasFile('images')) {
             $storage = app(ProductImageStorage::class);
@@ -318,11 +324,13 @@ class SellerProductController extends Controller
         }
         $message = 'Ürününüz başarıyla eklendi ve yayına alındı.';
         $alertType = 'success';
-        if (! empty($colorResult['message'])) {
-            $message .= ' ' . $colorResult['message'];
-        }
-        if (isset($colorResult['ok']) && $colorResult['ok'] === false) {
-            $alertType = 'warning';
+        foreach ([$colorResult, $sizeResult] as $variantResult) {
+            if (! empty($variantResult['message'])) {
+                $message .= ' ' . $variantResult['message'];
+            }
+            if (isset($variantResult['ok']) && $variantResult['ok'] === false) {
+                $alertType = 'warning';
+            }
         }
         $notification = ['messege' => $message, 'alert-type' => $alertType];
 
@@ -366,8 +374,9 @@ class SellerProductController extends Controller
         $seller = Auth::guard('web')->user()->seller;
         $commissionRate = $seller ? ($seller->getEffectiveCommissionRate() ?: 10) : 10;
         $colorRows = app(SimpleProductColorService::class)->existingRows($product);
+        $sizeRows = app(SimpleProductOptionService::class)->existingRows($product, 'Boyut');
 
-        return view('seller.edit_product',compact('categories','brands','specificationKeys','product','subCategories','childCategories','productSpecifications','aiEnabled','commissionRate','colorRows'));
+        return view('seller.edit_product',compact('categories','brands','specificationKeys','product','subCategories','childCategories','productSpecifications','aiEnabled','commissionRate','colorRows','sizeRows'));
 
     }
 
@@ -524,6 +533,11 @@ class SellerProductController extends Controller
             $product,
             app(SimpleProductColorService::class)->payloadFromRequest($request)
         );
+        $sizeResult = app(SimpleProductOptionService::class)->sync(
+            $product,
+            app(SimpleProductOptionService::class)->payloadFromRequest($request, 'sizes'),
+            'Boyut'
+        );
 
         $exist_specifications=[];
         if ($request->boolean('is_specification') && is_array($request->keys)) {
@@ -549,11 +563,13 @@ class SellerProductController extends Controller
         }
         $message = trans('admin_validation.Update Successfully');
         $alertType = 'success';
-        if (! empty($colorResult['message'])) {
-            $message .= ' ' . $colorResult['message'];
-        }
-        if (isset($colorResult['ok']) && $colorResult['ok'] === false) {
-            $alertType = 'warning';
+        foreach ([$colorResult, $sizeResult] as $variantResult) {
+            if (! empty($variantResult['message'])) {
+                $message .= ' ' . $variantResult['message'];
+            }
+            if (isset($variantResult['ok']) && $variantResult['ok'] === false) {
+                $alertType = 'warning';
+            }
         }
         $notification = ['messege' => $message, 'alert-type' => $alertType];
         $activeTab = in_array($request->input('active_tab'), ['content', 'images', 'seo'], true)

@@ -5,7 +5,7 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="aiContentModalLabel">
-                    <i class="fas fa-robot mr-2"></i> Yapay Zeka ile Otomatik İçerik Üret
+                    <i class="fas fa-robot mr-2"></i> Yapay zeka ile içerik üret
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -16,20 +16,22 @@
 
                 <div class="d-flex flex-column" style="gap: 10px;">
                     <button type="button" class="btn btn-primary btn-block ai-action-btn" data-action="full">
-                        <i class="fas fa-magic mr-1"></i> Tam İçerik Üret
+                        <i class="fas fa-magic mr-1"></i> Tam içerik üret
+                        <small class="d-block font-weight-normal opacity-75">Başlık, kısa/uzun açıklama ve SEO</small>
                     </button>
                     <button type="button" class="btn btn-outline-primary btn-block ai-action-btn" data-action="enhance">
-                        <i class="fas fa-arrow-up mr-1"></i> Mevcut İçeriği İyileştir
+                        <i class="fas fa-arrow-up mr-1"></i> Mevcut içeriği iyileştir
                     </button>
                     <button type="button" class="btn btn-outline-primary btn-block ai-action-btn" data-action="generate_meta">
-                        <i class="fas fa-search mr-1"></i> Sadece SEO Üret
+                        <i class="fas fa-search mr-1"></i> Sadece SEO üret
+                        <small class="d-block font-weight-normal text-muted">Başlık + açıklamaya göre meta</small>
                     </button>
                 </div>
 
                 <div class="d-none mt-3" id="ai-loading">
                     <div class="alert alert-info d-flex align-items-center mb-0">
                         <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
-                        <span>Yapay zeka içerik üretiyor, lütfen bekleyin... (10-30 saniye sürer)</span>
+                        <span>Yapay zeka içerik üretiyor, lütfen bekleyin... (10-30 saniye)</span>
                     </div>
                 </div>
 
@@ -56,13 +58,15 @@
 
     var aiPreviousValues = {};
 
-    // Sayfa tipini otomatik algıla
     function detectContentType() {
-        // Blog sayfasında "title" input'u var, "name" yok
         if ($('input[name="title"]').length > 0 && $('input[name="name"]').length === 0) {
             return 'blog';
         }
         return 'product';
+    }
+
+    function seoField(name) {
+        return $('input[name="' + name + '"], textarea[name="' + name + '"]').first();
     }
 
     function getFormValues() {
@@ -71,8 +75,8 @@
             return {
                 title: $('input[name="title"]').val(),
                 description: $('.summernote').summernote ? $('.summernote').summernote('code') : $('textarea[name="description"]').val(),
-                seo_title: $('input[name="seo_title"]').val(),
-                seo_description: $('textarea[name="seo_description"]').val(),
+                seo_title: seoField('seo_title').val(),
+                seo_description: seoField('seo_description').val(),
             };
         }
         return {
@@ -80,8 +84,9 @@
             short_name: $('input[name="short_name"]').val(),
             short_description: $('textarea[name="short_description"]').val(),
             long_description: $('.summernote').summernote ? $('.summernote').summernote('code') : $('textarea[name="long_description"]').val(),
-            seo_title: $('input[name="seo_title"]').val(),
-            seo_description: $('textarea[name="seo_description"]').val(),
+            seo_title: seoField('seo_title').val(),
+            seo_description: seoField('seo_description').val(),
+            tags: $('input[name="tags"]').val() || '',
         };
     }
 
@@ -116,23 +121,25 @@
                     $('textarea[name="long_description"]').val(data.long_description);
                 }
             }
+            if (data.tags && $('input[name="tags"]').length) {
+                $('input[name="tags"]').val(data.tags);
+            }
         }
 
         if (data.seo_title) {
-            $('input[name="seo_title"]').val(data.seo_title);
+            seoField('seo_title').val(data.seo_title);
         }
         if (data.seo_description) {
-            $('textarea[name="seo_description"]').val(data.seo_description);
+            seoField('seo_description').val(data.seo_description);
         }
     }
 
-    // Modal açılınca açıklama metnini güncelle
     $('#aiContentModal').on('show.bs.modal', function () {
         var type = detectContentType();
         if (type === 'blog') {
-            $('#ai-modal-description').text('Blog başlığını girin ve aşağıdaki butonlardan birini seçin. Yapay zeka otomatik olarak blog içeriği ve SEO etiketleri oluşturur.');
+            $('#ai-modal-description').text('Blog başlığını girin. Yapay zeka içerik ve SEO üretir.');
         } else {
-            $('#ai-modal-description').text('Ürün adını girin (örn. Profesyonel Berber Makası Seti) ve aşağıdaki butonlardan birini seçin. Yapay zeka otomatik olarak salon ekipmanına uygun açıklama, SEO etiketleri ve kategori önerisi oluşturur.');
+            $('#ai-modal-description').text('Önce ürün adını yazın. İçerik Seyfibaba’ya (berber, kuaför, salon malzemeleri) göre üretilir; SEO başlık ve açıklamadan otomatik dolar.');
         }
     });
 
@@ -145,17 +152,25 @@
             ? $('input[name="title"]').val()
             : ($('input[name="name"]').val() || $('input[name="short_name"]').val());
         var categoryName = $('#category option:selected').text();
+        var selectPlaceholder = @json(__('admin.Select Category'));
 
-        if (!contentName) {
+        if (!contentName || !String(contentName).trim()) {
             var label = type === 'blog' ? 'blog başlığını' : 'ürün adını';
             toastr.warning('Lütfen en az ' + label + ' girin.');
             $('#aiContentModal').modal('hide');
             if (type === 'blog') {
                 $('input[name="title"]').focus();
             } else {
-                $('input[name="short_name"]').focus();
+                $('input[name="name"]').focus();
             }
             return;
+        }
+
+        if (action === 'generate_meta' || action === 'enhance') {
+            var shortDesc = $('textarea[name="short_description"]').val() || '';
+            if (type === 'product' && action === 'generate_meta' && !String(shortDesc).trim()) {
+                toastr.warning('SEO için kısa açıklama da yazın veya önce “Tam içerik üret” kullanın.');
+            }
         }
 
         aiPreviousValues = getFormValues();
@@ -168,6 +183,8 @@
         var existingContent = {};
         if (action !== 'full') {
             existingContent = getFormValues();
+        } else {
+            existingContent = { name: contentName };
         }
 
         $.ajax({
@@ -178,7 +195,7 @@
                 action: action,
                 content_type: type,
                 product_name: contentName,
-                category_name: categoryName,
+                category_name: (categoryName && categoryName !== selectPlaceholder) ? categoryName : '',
                 existing_content: existingContent,
             },
             timeout: 120000,
@@ -190,7 +207,7 @@
                     setFormValues(response.results);
                     $('#ai-success').removeClass('d-none');
                     toastr.success('İçerik başarıyla üretildi!');
-                    setTimeout(function() { $('#aiContentModal').modal('hide'); }, 1500);
+                    setTimeout(function() { $('#aiContentModal').modal('hide'); }, 1200);
                 } else {
                     $('#ai-error-message').text(response.message || 'Bilinmeyen hata.');
                     $('#ai-error').removeClass('d-none');

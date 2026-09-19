@@ -32,6 +32,7 @@ use App\Support\ProductDeliveryInfo;
 use Auth;
 use App\Support\ProductSlug;
 use App\Services\SimpleProductColorService;
+use App\Services\SimpleProductOptionService;
 use App\Services\ProductImageStorage;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -257,6 +258,14 @@ class SellerProductController extends Controller
                 app(SimpleProductColorService::class)->payloadFromRequest($request)
             );
         }
+        $sizeResult = ['message' => null];
+        if ($request->has('sizes')) {
+            $sizeResult = app(SimpleProductOptionService::class)->sync(
+                $product,
+                app(SimpleProductOptionService::class)->payloadFromRequest($request, 'sizes'),
+                'Boyut'
+            );
+        }
 
         if($request->is_specification){
             $exist_specifications=[];
@@ -280,6 +289,9 @@ class SellerProductController extends Controller
         $notification = trans('Created Successfully');
         if (! empty($colorResult['message'])) {
             $notification .= ' ' . $colorResult['message'];
+        }
+        if (! empty($sizeResult['message'])) {
+            $notification .= ' ' . $sizeResult['message'];
         }
         return response()->json([
             'message' => $notification,
@@ -443,6 +455,14 @@ class SellerProductController extends Controller
                 app(SimpleProductColorService::class)->payloadFromRequest($request)
             );
         }
+        $sizeResult = ['message' => null];
+        if ($request->has('sizes')) {
+            $sizeResult = app(SimpleProductOptionService::class)->sync(
+                $product,
+                app(SimpleProductOptionService::class)->payloadFromRequest($request, 'sizes'),
+                'Boyut'
+            );
+        }
 
         $exist_specifications=[];
         if($request->keys){
@@ -470,6 +490,9 @@ class SellerProductController extends Controller
         $notification = trans('Update Successfully');
         if (! empty($colorResult['message'])) {
             $notification .= ' ' . $colorResult['message'];
+        }
+        if (! empty($sizeResult['message'])) {
+            $notification .= ' ' . $sizeResult['message'];
         }
         return response()->json(['message' => $notification],200);
     }

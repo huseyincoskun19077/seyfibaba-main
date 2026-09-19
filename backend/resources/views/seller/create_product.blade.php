@@ -3,6 +3,7 @@
 <title>{{__('admin.Products')}}</title>
 @endsection
 @section('seller-content')
+@include('seller.partials.product_form_styles')
       <div class="main-content seller-product-form">
         <section class="section">
           <div class="section-header">
@@ -26,25 +27,45 @@
 
             <div class="d-flex flex-wrap align-items-center mb-3" style="gap:8px;">
               <a href="{{ route('seller.product.index') }}" class="btn btn-primary"><i class="fas fa-list"></i> {{__('admin.Products')}}</a>
-              @include('seller.partials.ai_content_generator_button')
             </div>
+
+            @if (isset($aiEnabled) && $aiEnabled)
+            <div class="spf-ai-card">
+              <div class="d-flex flex-wrap align-items-center justify-content-between" style="gap:12px;">
+                <div>
+                  <h5><i class="fas fa-robot mr-1"></i> Yapay zeka ile doldur</h5>
+                  <p class="mb-0 spf-hint">Önce ürün adını yazın. Seyfibaba (berber / kuaför / salon) pazaryerine uygun başlık, açıklama ve SEO üretir.</p>
+                </div>
+                @include('seller.partials.ai_content_generator_button')
+              </div>
+            </div>
+            @endif
 
             <form action="{{ route('seller.product.store') }}" method="POST" enctype="multipart/form-data">
               @csrf
+              <input type="hidden" id="short_name" name="short_name" value="{{ old('short_name') }}">
+              <input type="hidden" id="slug" name="slug" value="{{ old('slug') }}">
+              <input type="hidden" name="seo_title" id="seo_title" value="{{ old('seo_title') }}">
+              <input type="hidden" name="seo_description" id="seo_description" value="{{ old('seo_description') }}">
+              <input type="hidden" name="tags" id="tags" value="{{ old('tags') }}">
 
-              <div class="card mb-3">
-                <div class="card-header"><h4 class="mb-0">Ürün bilgileri</h4></div>
-                <div class="card-body">
+              <div class="spf-step">
+                <div class="spf-step-head">
+                  <span class="spf-step-num">1</span>
+                  <div>
+                    <h4>Temel bilgiler</h4>
+                    <p>Zorunlu alanlar kırmızı etiketli. Ad yazınca bağlantı adresi otomatik oluşur.</p>
+                  </div>
+                </div>
+                <div class="spf-step-body">
                   <div class="row">
                     <div class="form-group col-12">
-                        <label>Ürün adı <span class="text-danger">*</span></label>
+                        <label>Ürün adı <span class="spf-req">zorunlu</span></label>
                         <input type="text" id="name" class="form-control" name="name" value="{{ old('name') }}" placeholder="Örn: Profesyonel Erkek Berber Koltuğu — Hidrolik" required>
-                        <small class="text-muted">Liste ve aramada görünen ad. Kısa ad ve bağlantı adresi bundan otomatik oluşur.</small>
-                        <input type="hidden" id="short_name" name="short_name" value="{{ old('short_name') }}">
-                        <input type="hidden" id="slug" name="slug" value="{{ old('slug') }}">
+                        <div class="spf-hint">Liste ve aramada görünen ad.</div>
                     </div>
                     <div class="form-group col-12 col-md-6">
-                        <label>{{__('admin.Category')}} <span class="text-danger">*</span></label>
+                        <label>{{__('admin.Category')}} <span class="spf-req">zorunlu</span></label>
                         <select name="category" class="form-control select2" id="category" required>
                             <option value="">{{__('admin.Select Category')}}</option>
                             @foreach ($categories as $category)
@@ -53,19 +74,19 @@
                         </select>
                     </div>
                     <div class="form-group col-12 col-md-6">
-                        <label>{{__('admin.Sub Category')}}</label>
+                        <label>{{__('admin.Sub Category')}} <span class="spf-opt">opsiyonel</span></label>
                         <select name="sub_category" class="form-control select2" id="sub_category">
                             <option value="">{{__('admin.Select Sub Category')}}</option>
                         </select>
                     </div>
                     <div class="form-group col-12 col-md-6">
-                        <label>{{__('admin.Child Category')}}</label>
+                        <label>{{__('admin.Child Category')}} <span class="spf-opt">opsiyonel</span></label>
                         <select name="child_category" class="form-control select2" id="child_category">
                             <option value="">{{__('admin.Select Child Category')}}</option>
                         </select>
                     </div>
                     <div class="form-group col-12 col-md-6">
-                        <label>{{__('admin.Brand')}}</label>
+                        <label>{{__('admin.Brand')}} <span class="spf-opt">opsiyonel</span></label>
                         <select name="brand" class="form-control select2" id="brand">
                             <option value="">{{__('admin.Select Brand')}}</option>
                             @foreach ($brands as $brand)
@@ -74,50 +95,67 @@
                         </select>
                     </div>
                     <div class="form-group col-12 col-md-4">
-                        <label>{{__('admin.SKU')}} <small class="text-muted">(opsiyonel)</small></label>
-                        <input type="text" class="form-control" name="sku" value="{{ old('sku') }}">
-                    </div>
-                    <div class="form-group col-12 col-md-4">
-                        <label>Satış Fiyatı <span class="text-danger">* (TL)</span></label>
+                        <label>Satış fiyatı (₺) <span class="spf-req">zorunlu</span></label>
                         <input type="text" inputmode="decimal" class="form-control" name="price" value="{{ old('price') }}" required>
-                        <small class="text-muted">Paket satış fiyatı. Örn: 5’li paket 600 TL.</small>
+                        <div class="spf-hint">Paket satış fiyatı. Örn: 5’li paket 600 TL.</div>
                     </div>
                     <div class="form-group col-12 col-md-4">
-                        <label>İndirimli Fiyat (TL)</label>
+                        <label>İndirimli fiyat (₺) <span class="spf-opt">opsiyonel</span></label>
                         <input type="text" inputmode="decimal" class="form-control" name="offer_price" value="{{ old('offer_price', '0') }}" placeholder="0">
-                        <small class="text-muted">İndirim yoksa <strong>0</strong> bırakın.</small>
+                        <div class="spf-hint">İndirim yoksa 0 bırakın.</div>
+                    </div>
+                    <div class="form-group col-12 col-md-4">
+                        <label>Stok (paket) <span class="spf-req">zorunlu</span></label>
+                        <input type="number" inputmode="numeric" class="form-control" name="quantity" value="{{ old('quantity') }}" required>
                     </div>
                     @include('seller.partials.sale_unit_fields', ['saleUnitQty' => old('sale_unit_qty', 1)])
                     @include('seller.partials.seller_earnings_preview', ['commissionRate' => $commissionRate ?? 10])
                     <div class="form-group col-12 col-md-6">
-                        <label>Stok (kaç paket) <span class="text-danger">*</span></label>
-                        <input type="number" inputmode="numeric" class="form-control" name="quantity" value="{{ old('quantity') }}" required>
-                        <small class="text-muted">Satışa sunacağınız paket adedi.</small>
+                        <label>{{__('admin.SKU')}} <span class="spf-opt">opsiyonel</span></label>
+                        <input type="text" class="form-control" name="sku" value="{{ old('sku') }}">
                     </div>
                     <div class="form-group col-12 col-md-6">
-                        <label>{{__('admin.Weight')}}(g) <small class="text-muted">(opsiyonel)</small></label>
+                        <label>{{__('admin.Weight')}}(g) <span class="spf-opt">opsiyonel</span></label>
                         <input type="text" inputmode="decimal" class="form-control" name="weight" value="{{ old('weight') }}">
                     </div>
                     @include('seller.partials.delivery_info_field', ['deliveryInfo' => old('delivery_info'), 'wrapperClass' => 'col-12'])
                     <div class="form-group col-12">
-                        <label>{{__('admin.Short Description')}} <span class="text-danger">*</span></label>
-                        <textarea name="short_description" cols="30" rows="4" class="form-control" required>{{ old('short_description') }}</textarea>
-                        <small class="text-muted">SEO açıklaması ürün adı + bu metinden otomatik üretilir.</small>
+                        <label>Kısa açıklama <span class="spf-req">zorunlu</span></label>
+                        <textarea name="short_description" cols="30" rows="3" class="form-control" required placeholder="1-2 cümle: ürün ne işe yarar, kime hitap eder?">{{ old('short_description') }}</textarea>
+                        <div class="spf-hint">SEO bu metin + ürün adından otomatik üretilir.</div>
                     </div>
                     <div class="form-group col-12">
-                        <label>{{__('admin.Long Description')}} <span class="text-danger">*</span></label>
-                        <textarea name="long_description" cols="30" rows="10" class="summernote">{{ old('long_description') }}</textarea>
+                        <label>Detaylı açıklama <span class="spf-req">zorunlu</span></label>
+                        <textarea name="long_description" cols="30" rows="8" class="summernote">{{ old('long_description') }}</textarea>
                     </div>
                   </div>
                 </div>
               </div>
 
-              @include('seller.partials.simple_color_variants', ['colorRows' => old('colors', [])])
+              <div class="spf-step" id="simpleColorsCard">
+                <div class="spf-step-head">
+                  <span class="spf-step-num">2</span>
+                  <div>
+                    <h4>Renk varyantları <span class="spf-opt">opsiyonel</span></h4>
+                    <p>Farklı renkler aynı üründür. Fiyat boşsa ürün fiyatı kullanılır; farklıysa o rengin satış fiyatını yazın.</p>
+                  </div>
+                </div>
+                <div class="spf-step-body">
+                  @include('seller.partials.simple_color_variants_inner', ['colorRows' => old('colors', [])])
+                </div>
+              </div>
 
-              <div class="card mb-3">
-                <div class="card-header"><h4 class="mb-0">Fotoğraflar <span class="text-danger">*</span></h4></div>
-                <div class="card-body">
-                  <p class="text-muted mb-3">Kapak fotoğrafı zorunludur. Ek fotoğraflar isteğe bağlıdır. Renk fotoğraflarını yukarıdaki renk satırlarından ekleyin.</p>
+              @include('seller.partials.simple_size_variants', ['sizeRows' => old('sizes', [])])
+
+              <div class="spf-step">
+                <div class="spf-step-head">
+                  <span class="spf-step-num">4</span>
+                  <div>
+                    <h4>Fotoğraflar</h4>
+                    <p>Kapak zorunlu. Renk fotoğraflarını renk satırından ekleyin.</p>
+                  </div>
+                </div>
+                <div class="spf-step-body">
                   <div class="row">
                     <div class="form-group col-12 col-md-4 text-center">
                         <img id="preview-img" class="admin-img img-fluid rounded mb-3" src="{{ asset('uploads/website-images/preview.png') }}" alt="">
@@ -128,8 +166,9 @@
                           'inputId' => 'thumb_image',
                           'previewId' => 'preview-img',
                           'required' => true,
-                          'label' => 'Kapak fotoğrafı (zorunlu)',
+                          'label' => 'Kapak fotoğrafı',
                         ])
+                        <span class="spf-req">zorunlu</span>
                     </div>
                   </div>
                   <hr>
@@ -143,7 +182,7 @@
               </div>
 
               <div class="seller-sticky-save">
-                  <button class="btn btn-primary btn-lg btn-block seller-save-btn">{{__('admin.Save')}}</button>
+                  <button class="btn btn-primary btn-lg btn-block seller-save-btn">Ürünü kaydet ve yayınla</button>
               </div>
             </form>
           </div>
@@ -155,14 +194,12 @@
 <script>
     (function($) {
         "use strict";
-        var specification = true;
         $(document).ready(function () {
-            $("#name").on("input focusout",function(e){
+            $("#name").on("input focusout",function(){
                 var n = $(this).val() || "";
                 $("#slug").val(convertToSlug(n));
                 $("#short_name").val(n.substring(0, 80));
             });
-            // first paint from old()
             if ($("#name").val()) {
                 $("#slug").val(convertToSlug($("#name").val()));
                 if (!$("#short_name").val()) {
@@ -178,16 +215,12 @@
                         url:"{{url('/seller/subcategory-by-category/')}}"+"/"+categoryId,
                         success:function(response){
                             $("#sub_category").html(response.subCategories);
-                            var response= "<option value=''>{{__('admin.Select Child Category')}}</option>";
-                            $("#child_category").html(response);
-                        },
-                        error:function(err){ console.log(err); }
+                            $("#child_category").html("<option value=''>{{__('admin.Select Child Category')}}</option>");
+                        }
                     })
                 }else{
-                    var response= "<option value=''>{{__('admin.Select Sub Category')}}</option>";
-                    $("#sub_category").html(response);
-                    var response= "<option value=''>{{__('admin.Select Child Category')}}</option>";
-                    $("#child_category").html(response);
+                    $("#sub_category").html("<option value=''>{{__('admin.Select Sub Category')}}</option>");
+                    $("#child_category").html("<option value=''>{{__('admin.Select Child Category')}}</option>");
                 }
             })
 
@@ -199,34 +232,20 @@
                         url:"{{url('/seller/childcategory-by-subcategory/')}}"+"/"+SubCategoryId,
                         success:function(response){
                             $("#child_category").html(response.childCategories);
-                        },
-                        error:function(err){ console.log(err); }
+                        }
                     })
                 }else{
-                    var response= "<option value=''>{{__('admin.Select Child Category')}}</option>";
-                    $("#child_category").html(response);
-                }
-            })
-
-            $("#addNewSpecificationRow").on('click',function(){
-                var html = $("#hidden-specification-box").html();
-                $("#specification-box").append(html);
-            })
-
-            $(document).on('click', '.deleteSpeceficationBtn', function () {
-                $(this).closest('.delete-specification-row').remove();
-            });
-
-            $("#manageSpecificationBox").on("click",function(){
-                if(specification){
-                    specification = false;
-                    $("#specification-box").addClass('d-none');
-                }else{
-                    specification = true;
-                    $("#specification-box").removeClass('d-none');
+                    $("#child_category").html("<option value=''>{{__('admin.Select Child Category')}}</option>");
                 }
             })
         });
     })(jQuery);
+
+    function convertToSlug(Text){
+        Text = Text.toLowerCase();
+        Text = Text.replace(/[^a-zA-ZğüşöçıİĞÜŞÖÇ0-9]+/g,'-');
+        Text = Text.replace(/^-+|-+$/g,'');
+        return Text;
+    }
 </script>
 @endsection
