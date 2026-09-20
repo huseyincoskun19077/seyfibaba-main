@@ -435,7 +435,7 @@
 
 
 
-          <li class="nav-item dropdown {{ Route::is('admin.payment-method') || Route::is('admin.currency.*') || Route::is('admin.email-configuration') || Route::is('admin.email-template') || Route::is('admin.edit-email-template') || Route::is('admin.sms-notification') || Route::is('admin.sms-template') || Route::is('admin.edit-sms-template') || Route::is('admin.admin-language') || Route::is('admin.admin-validation-language') || Route::is('admin.website-language') || Route::is('admin.website-validation-language') || Route::is('admin.ai-settings') || Route::is('admin.ai-chat-settings') || Route::is('admin.ad-assistant*') || Route::is('admin.general-setting') || Route::is('admin.shipping.*') || Route::is('admin.shipping-import-page') || Route::is('admin.geliver-settings') ? 'active' : '' }}">
+          <li class="nav-item dropdown {{ Route::is('admin.payment-method') || Route::is('admin.currency.*') || Route::is('admin.email-configuration') || Route::is('admin.email-template') || Route::is('admin.edit-email-template') || Route::is('admin.sms-notification') || Route::is('admin.sms-template') || Route::is('admin.edit-sms-template') || Route::is('admin.admin-language') || Route::is('admin.admin-validation-language') || Route::is('admin.website-language') || Route::is('admin.website-validation-language') || Route::is('admin.ai-settings') || Route::is('admin.ai-chat-settings') || Route::is('admin.general-setting') || Route::is('admin.shipping.*') || Route::is('admin.shipping-import-page') || Route::is('admin.geliver-settings') ? 'active' : '' }}">
            <p class="s-divide">{{__('admin.Configuration')}}</p>
             <a href="#" class="nav-link has-dropdown">
             <div class="icon">
@@ -459,10 +459,16 @@
                 <li class="{{ Route::is('admin.website-validation-language') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.website-validation-language') }}">{{__('admin.Frontend Validation')}}</a></li>
                 <li class="{{ Route::is('admin.ai-settings') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.ai-settings') }}">AI Ayarları</a></li>
                 <li class="{{ Route::is('admin.ai-chat-settings') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.ai-chat-settings') }}">AI Chat</a></li>
-                <li class="{{ Route::is('admin.ad-assistant*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.ad-assistant') }}">Reklam Asistanı</a></li>
                 <li class="{{ Route::is('admin.general-setting') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.general-setting') }}">{{__('admin.Setting')}}</a></li>
             </ul>
 
+          </li>
+
+          <li class="{{ Route::is('admin.ad-assistant') || Route::is('admin.ad-assistant.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.ad-assistant') }}">
+              <div class="icon"><i class="fas fa-bullhorn"></i></div>
+              <span>Reklam Asistanı</span>
+            </a>
           </li>
 
           <li class="nav-item dropdown {{ Route::is('admin.sms-campaigns.*') ? 'active' : '' }}">
