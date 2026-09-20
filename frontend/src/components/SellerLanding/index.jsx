@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { sellerFaqIntro, sellerFaqSections } from "@/data/sellerFaq";
+import { sellerInfoPageList } from "@/data/sellerInfoPages";
 
 const WHATSAPP_DIGITS = "908503035073";
 const WHATSAPP_TEXT =
@@ -21,6 +22,7 @@ const SECTIONS = [
   { id: "urunler", label: "Hangi ürünleri satabilirsiniz?" },
   { id: "avantajlar", label: "Satıcı avantajları" },
   { id: "surec", label: "Nasıl katılırım?" },
+  { id: "rehber", label: "Satıcı rehberi" },
   { id: "sss", label: "Sıkça sorulan sorular" },
   { id: "basvuru", label: "Başvuru ve iletişim" },
 ];
@@ -556,6 +558,35 @@ export default function SellerLanding() {
                 ))}
               </ol>
               <CtaRow className="mt-8" />
+            </section>
+
+            <section
+              id="rehber"
+              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-white p-5 md:p-8"
+            >
+              <SectionHeading>Satıcı rehberi — merak edilenler</SectionHeading>
+              <Body>
+                Satıcı olmak, satış akışı, komisyon, kargo ve ürün ekleme gibi
+                konulara özel sayfalar hazırladık. Her biri ayrı adresle
+                yayınlanır; kayıt öncesi merak ettiklerinizi buradan okuyabilirsiniz.
+              </Body>
+              <ul className="mt-6 grid sm:grid-cols-2 gap-3">
+                {sellerInfoPageList.map((item) => (
+                  <li key={item.slug}>
+                    <Link
+                      href={item.href}
+                      className="block h-full rounded-xl border border-[#ece3cf] bg-[#fffdf8] px-4 py-3.5 hover:border-qyellow transition"
+                    >
+                      <span className="font-700 text-qblacktext text-sm md:text-base">
+                        {item.title}
+                      </span>
+                      <span className="mt-1 block text-xs md:text-sm text-[#666] leading-snug">
+                        {item.description}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </section>
 
             <section

@@ -31,6 +31,17 @@ function syncGoogleConsent({ marketing, analytics }) {
   });
 }
 
+function sendGaPageView(measurementId, path) {
+  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
+  if (!measurementId || !String(measurementId).match(/^(G|AW|UA)-/i)) return;
+  const pagePath = path || window.location.pathname + window.location.search;
+  window.gtag("config", measurementId, {
+    page_path: pagePath,
+    page_location: window.location.href,
+    page_title: typeof document !== "undefined" ? document.title : undefined,
+  });
+}
+
 export default function DefaultLayoutClient({ children }) {
   const [gtagId, setGtagId] = useState(null);
   const [fbPixel, setFbPixel] = useState(null);
@@ -51,12 +62,23 @@ export default function DefaultLayoutClient({ children }) {
   const websiteSetupData = websiteSetup?.payload || fallbackSetupData;
 
   const refreshConsentFlags = useCallback(() => {
+    const consentOn =
+      Number(websiteSetupData?.cookie_consent?.status ?? 1) === 1;
+
+    // Çerez banner kapalıysa ölçümü engelleme
+    if (!consentOn) {
+      setAllowMarketing(true);
+      setAllowAnalytics(true);
+      syncGoogleConsent({ marketing: true, analytics: true });
+      return;
+    }
+
     const marketing = hasMarketingConsent();
     const analytics = hasAnalyticsConsent();
     setAllowMarketing(marketing);
     setAllowAnalytics(analytics);
     syncGoogleConsent({ marketing, analytics });
-  }, []);
+  }, [websiteSetupData]);
 
   useEffect(() => {
     refreshConsentFlags();
@@ -64,6 +86,12 @@ export default function DefaultLayoutClient({ children }) {
     window.addEventListener("seyfibaba:cookie-prefs", onPrefs);
     return () => window.removeEventListener("seyfibaba:cookie-prefs", onPrefs);
   }, [refreshConsentFlags]);
+
+  // Onay sonrası + SPA sayfa değişiminde GA page_view
+  useEffect(() => {
+    if (!allowAnalytics || !gtagId) return;
+    sendGaPageView(gtagId, pathname);
+  }, [allowAnalytics, gtagId, pathname]);
 
   const initializeMessageWidget = useCallback(
     (pusherInfo) => {

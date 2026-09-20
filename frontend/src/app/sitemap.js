@@ -2,21 +2,29 @@ import appConfig from "@/appConfig";
 import { buildProductUrl } from "@/utils/url";
 import { getSecondHandListingSeoPath } from "@/api/secondHandPublic";
 import { secondHandPublicOrigin } from "@/utils/secondHandSite";
+import { getSellerInfoSlugs } from "@/data/sellerInfoPages";
 
 const baseUrl = appConfig.APPLICATION_URL || "https://seyfibaba.com";
 const secondHandBaseUrl = secondHandPublicOrigin();
 
 export default async function sitemap() {
+  const sellerGuideRoutes = [
+    "/satici",
+    "/satici-kayit",
+    ...getSellerInfoSlugs().map((slug) => `/satici/${slug}`),
+  ];
+
   const routes = [
     "", "/products", "/about", "/contact", "/faq",
     "/salon-crm",
     "/terms-condition", "/privacy-policy",
     "/flash-sale",
+    ...sellerGuideRoutes,
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: route === "" ? "daily" : "weekly",
-    priority: route === "" ? 1 : 0.7,
+    priority: route === "" ? 1 : route.startsWith("/satici") ? 0.85 : 0.7,
   }));
 
   let categories = [];
