@@ -1134,6 +1134,12 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::post('test-ai-connection', [AiSettingsController::class, 'testConnection'])->name('test-ai-connection');
         Route::post('ai-generate-content', [AiSettingsController::class, 'generateContent'])->name('ai-generate-content');
 
+        // Admin reklam asistanı (Astra — yalnızca pazarlama, proje yazma yok)
+        Route::get('ad-assistant', [App\Http\Controllers\WEB\Admin\AdAssistantController::class, 'index'])->name('ad-assistant');
+        Route::post('ad-assistant/chat', [App\Http\Controllers\WEB\Admin\AdAssistantController::class, 'chat'])->name('ad-assistant.chat');
+        Route::post('ad-assistant/image', [App\Http\Controllers\WEB\Admin\AdAssistantController::class, 'generateImage'])->name('ad-assistant.image');
+        Route::post('ad-assistant/clear', [App\Http\Controllers\WEB\Admin\AdAssistantController::class, 'clear'])->name('ad-assistant.clear');
+
         // AI Chat Routes
         Route::get('ai-chat-settings', [App\Http\Controllers\WEB\Admin\AiChatController::class, 'settings'])->name('ai-chat-settings');
         Route::put('update-ai-chat-settings', [App\Http\Controllers\WEB\Admin\AiChatController::class, 'updateSettings'])->name('update-ai-chat-settings');

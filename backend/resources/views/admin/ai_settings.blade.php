@@ -61,6 +61,7 @@
                                     <label>Model</label>
                                     <select class="form-control" name="openai_model">
                                         <optgroup label="OpenAI">
+                                            <option value="gpt-6-astra" {{ ($setting->openai_model ?? '') == 'gpt-6-astra' ? 'selected' : '' }}>GPT-6 Astra</option>
                                             <option value="gpt-4o-mini" {{ ($setting->openai_model ?? 'gpt-4o-mini') == 'gpt-4o-mini' ? 'selected' : '' }}>GPT-4o Mini (Hızlı, Ekonomik)</option>
                                             <option value="gpt-4o" {{ ($setting->openai_model ?? '') == 'gpt-4o' ? 'selected' : '' }}>GPT-4o (Yüksek Kalite)</option>
                                             <option value="gpt-4.1-mini" {{ ($setting->openai_model ?? '') == 'gpt-4.1-mini' ? 'selected' : '' }}>GPT-4.1 Mini</option>
