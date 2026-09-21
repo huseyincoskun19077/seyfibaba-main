@@ -28,6 +28,10 @@ class Setting extends Model
         'netgsm_password',
         'netgsm_msgheader',
         'netgsm_enabled',
+        'netsantral_usercode',
+        'netsantral_password',
+        'netsantral_enabled',
+        'netsipp_api_key',
         'return_window_days',
         'auto_complete_days',
         'payout_hold_days',
@@ -41,6 +45,7 @@ class Setting extends Model
         'claude_timeout' => 'integer',
         'claude_enabled' => 'boolean',
         'netgsm_enabled' => 'boolean',
+        'netsantral_enabled' => 'boolean',
         'return_window_days' => 'integer',
         'auto_complete_days' => 'integer',
         'payout_hold_days' => 'integer',
@@ -53,6 +58,8 @@ class Setting extends Model
         'geliver_api_token',
         'geliver_webhook_header_secret',
         'netgsm_password',
+        'netsantral_password',
+        'netsipp_api_key',
     ];
 
     public function currency(){

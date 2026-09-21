@@ -1140,6 +1140,13 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::post('ad-assistant/image', [App\Http\Controllers\WEB\Admin\AdAssistantController::class, 'generateImage'])->name('ad-assistant.image');
         Route::post('ad-assistant/clear', [App\Http\Controllers\WEB\Admin\AdAssistantController::class, 'clear'])->name('ad-assistant.clear');
 
+        // Netgsm / Netsipp çağrı ses kayıtları (CDR + lokal indirme)
+        Route::get('call-recordings', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'index'])->name('call-recordings');
+        Route::post('call-recordings/settings', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'updateSettings'])->name('call-recordings.settings');
+        Route::post('call-recordings/sync', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'sync'])->name('call-recordings.sync');
+        Route::get('call-recordings/{id}/download', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'download'])->name('call-recordings.download');
+        Route::get('call-recordings/{id}/play', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'play'])->name('call-recordings.play');
+
         // AI Chat Routes
         Route::get('ai-chat-settings', [App\Http\Controllers\WEB\Admin\AiChatController::class, 'settings'])->name('ai-chat-settings');
         Route::put('update-ai-chat-settings', [App\Http\Controllers\WEB\Admin\AiChatController::class, 'updateSettings'])->name('update-ai-chat-settings');

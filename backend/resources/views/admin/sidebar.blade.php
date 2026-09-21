@@ -471,6 +471,13 @@
             </a>
           </li>
 
+          <li class="{{ Route::is('admin.call-recordings*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.call-recordings') }}">
+              <div class="icon"><i class="fas fa-headset"></i></div>
+              <span>Çağrı Kayıtları</span>
+            </a>
+          </li>
+
           <li class="nav-item dropdown {{ Route::is('admin.sms-campaigns.*') ? 'active' : '' }}">
             <a href="#" class="nav-link has-dropdown">
               <div class="icon"><i class="fas fa-sms"></i></div>
