@@ -139,12 +139,110 @@ class NetsantralCallRecordingService
         ];
 
         if ($downloaded === 0 && $classicError) {
-            $result['message'] = "{$upserted} çağrı Netsipp’ten alındı; ses URL için klasik CDR kapalı ({$classicError}). Netgsm’den netsantral/report izni isteyin.";
+            $result['message'] = 'Ses API kapalı (331). Satırdan mp3 yükleyin veya Netgsm’den netsantral/report / FTP yedek açtırın.';
         } elseif ($downloaded === 0 && $sourceNote === 'Netsipp call-details') {
-            $result['message'] = "{$upserted} çağrı listelendi. Netsipp Public API ses dosyası vermiyor; dinlemek için Netgsm’in klasik CDR (netsantral/report) iznini açtırmanız gerekir.";
+            $result['message'] = 'Netsipp liste verdi; ses URL yok. Satırdan dosya yükleyin veya Netgsm FTP yedek / klasik CDR izni kullanın.';
         }
 
         return $result;
+    }
+
+    public function attachUploadedFile(CallRecording $recording, \Illuminate\Http\UploadedFile $file): CallRecording
+    {
+        $dir = public_path('uploads/call-recordings');
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $ext = strtolower($file->getClientOriginalExtension() ?: 'mp3');
+        if (! in_array($ext, ['mp3', 'wav', 'ogg', 'm4a', 'gsm'], true)) {
+            $ext = 'mp3';
+        }
+
+        $safeId = preg_replace('/[^a-zA-Z0-9._-]/', '_', $recording->uniqueid) ?: Str::random(12);
+        $filename = $safeId . '-upload-' . date('YmdHis') . '.' . $ext;
+        $relative = 'uploads/call-recordings/' . $filename;
+        $file->move($dir, $filename);
+
+        if ($recording->local_path && is_file(public_path($recording->local_path))) {
+            @unlink(public_path($recording->local_path));
+        }
+
+        $recording->update([
+            'local_path' => $relative,
+            'file_size' => @filesize(public_path($relative)) ?: null,
+            'sync_status' => 'downloaded',
+            'sync_error' => null,
+        ]);
+
+        return $recording->fresh();
+    }
+
+    /**
+     * Netgsm FTP / manuel kopyalanan sesleri uniqueid ile eşleştir.
+     * Klasör: storage/app/netsipp-audio
+     *
+     * @return array{matched:int, skipped:int}
+     */
+    public function importFromInbox(): array
+    {
+        $dir = storage_path('app/netsipp-audio');
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $matched = 0;
+        $skipped = 0;
+        $files = array_merge(
+            glob($dir . '/*.mp3') ?: [],
+            glob($dir . '/*.wav') ?: [],
+            glob($dir . '/*.ogg') ?: [],
+            glob($dir . '/*.m4a') ?: [],
+            glob($dir . '/*.gsm') ?: [],
+            glob($dir . '/*.MP3') ?: [],
+            glob($dir . '/*.WAV') ?: []
+        );
+
+        foreach ($files as $full) {
+            $base = pathinfo($full, PATHINFO_FILENAME);
+            $recording = CallRecording::query()
+                ->where(function ($q) use ($base) {
+                    $q->where('uniqueid', $base)
+                        ->orWhere('uniqueid', 'like', '%' . addcslashes($base, '%_') . '%')
+                        ->orWhereRaw('? LIKE CONCAT("%", uniqueid, "%")', [$base]);
+                })
+                ->orderByDesc('id')
+                ->first();
+
+            if (! $recording) {
+                $skipped++;
+                continue;
+            }
+
+            $ext = strtolower(pathinfo($full, PATHINFO_EXTENSION) ?: 'mp3');
+            $destDir = public_path('uploads/call-recordings');
+            if (! is_dir($destDir)) {
+                mkdir($destDir, 0755, true);
+            }
+            $safeId = preg_replace('/[^a-zA-Z0-9._-]/', '_', $recording->uniqueid) ?: Str::random(12);
+            $filename = $safeId . '-inbox-' . date('YmdHis') . '.' . $ext;
+            $relative = 'uploads/call-recordings/' . $filename;
+            if (! @rename($full, public_path($relative)) && ! @copy($full, public_path($relative))) {
+                $skipped++;
+                continue;
+            }
+            @unlink($full);
+
+            $recording->update([
+                'local_path' => $relative,
+                'file_size' => @filesize(public_path($relative)) ?: null,
+                'sync_status' => 'downloaded',
+                'sync_error' => null,
+            ]);
+            $matched++;
+        }
+
+        return compact('matched', 'skipped');
     }
 
     public function downloadAudio(CallRecording $recording): CallRecording

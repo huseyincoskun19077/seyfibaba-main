@@ -115,7 +115,13 @@
               <i class="fas fa-sync mr-1"></i> Çek
             </button>
           </form>
-          <small class="text-muted">Tek seferde en fazla 31 gün. Büyük aralıklarda parçalayın. İşlem 1–2 dk sürebilir.</small>
+          <form method="POST" action="{{ route('admin.call-recordings.import-inbox') }}" class="d-inline ml-2">
+            @csrf
+            <button type="submit" class="btn btn-outline-secondary mb-2" title="storage/app/netsipp-audio klasöründeki sesleri uniqueid ile eşleştir">
+              <i class="fas fa-folder-open mr-1"></i> Klasörden ses bağla
+            </button>
+          </form>
+          <small class="text-muted d-block">Tek seferde en fazla 31 gün. Netsipp ses URL vermez (331); dinlemek için satırdan mp3 yükleyin veya Netgsm FTP → <code>storage/app/netsipp-audio</code>.</small>
         </div>
       </div>
 
@@ -163,19 +169,21 @@
                         <br><small class="text-danger">{{ \Illuminate\Support\Str::limit($row->sync_error, 80) }}</small>
                       @endif
                     </td>
-                    <td style="min-width:220px;">
+                    <td style="min-width:240px;">
                       @if($row->hasLocalAudio())
                         <audio controls preload="none" style="max-width:200px;height:32px;">
                           <source src="{{ route('admin.call-recordings.play', $row->id) }}" type="audio/mpeg">
                         </audio>
-                      @elseif($row->remote_recording_url)
-                        <span class="text-muted">Uzak URL var, henüz indirilmedi</span>
                       @else
-                        <span class="text-muted">Yok</span>
+                        <form method="POST" action="{{ route('admin.call-recordings.upload', $row->id) }}" enctype="multipart/form-data" class="form-inline">
+                          @csrf
+                          <input type="file" name="audio" accept=".mp3,.wav,.ogg,.m4a,audio/*" class="form-control-file form-control-sm mb-1" required>
+                          <button type="submit" class="btn btn-sm btn-success">Yükle</button>
+                        </form>
                       @endif
                     </td>
                     <td class="text-nowrap">
-                      @if($row->remote_recording_url || $row->hasLocalAudio())
+                      @if($row->hasLocalAudio())
                         <a href="{{ route('admin.call-recordings.download', $row->id) }}" class="btn btn-sm btn-outline-primary">
                           <i class="fas fa-download"></i>
                         </a>

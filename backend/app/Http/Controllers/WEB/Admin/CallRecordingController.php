@@ -187,6 +187,43 @@ class CallRecordingController extends Controller
         ]);
     }
 
+    public function upload(Request $request, int $id, NetsantralCallRecordingService $service)
+    {
+        $request->validate([
+            'audio' => 'required|file|max:51200|mimes:mp3,wav,ogg,m4a,mpeg,x-wav',
+        ]);
+
+        $recording = CallRecording::findOrFail($id);
+
+        try {
+            $service->attachUploadedFile($recording, $request->file('audio'));
+        } catch (\Throwable $e) {
+            return redirect()->back()->with([
+                'messege' => 'Ses yüklenemedi: ' . $e->getMessage(),
+                'alert-type' => 'error',
+            ]);
+        }
+
+        return redirect()->back()->with([
+            'messege' => 'Ses dosyası yüklendi; artık dinleyebilirsiniz.',
+            'alert-type' => 'success',
+        ]);
+    }
+
+    public function importInbox(NetsantralCallRecordingService $service)
+    {
+        $result = $service->importFromInbox();
+
+        return redirect()->back()->with([
+            'messege' => sprintf(
+                'Klasör eşleştirme: %d ses bağlandı, %d atlandı. Klasör: storage/app/netsipp-audio',
+                $result['matched'],
+                $result['skipped']
+            ),
+            'alert-type' => ($result['matched'] ?? 0) > 0 ? 'success' : 'warning',
+        ]);
+    }
+
     public function download(int $id, NetsantralCallRecordingService $service)
     {
         $recording = CallRecording::findOrFail($id);
@@ -205,7 +242,7 @@ class CallRecordingController extends Controller
 
         if (! $recording->hasLocalAudio()) {
             return redirect()->back()->with([
-                'messege' => 'Yerel ses dosyası yok.',
+                'messege' => 'Yerel ses dosyası yok. Satırdan mp3 yükleyin.',
                 'alert-type' => 'error',
             ]);
         }
