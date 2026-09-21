@@ -30,7 +30,7 @@ class NetsantralCallRecordingService
                 'upserted' => 0,
                 'downloaded' => 0,
                 'failed' => 0,
-                'message' => 'Netgsm kullanıcı kodu / şifre eksik (Admin → SMS Yapılandırması).',
+                'message' => 'Netgsm kullanıcı kodu / şifre eksik veya Netsantral senkron kapalı (Çağrı Kayıtları → API Ayarları).',
             ];
         }
 
@@ -178,9 +178,20 @@ class NetsantralCallRecordingService
             ->asJson()
             ->post(self::REPORT_URL, $body);
 
+        if (! $response->successful()) {
+            Log::warning('Netsantral CDR HTTP error', [
+                'status' => $response->status(),
+                'body' => Str::limit($response->body(), 500),
+            ]);
+            throw new \RuntimeException('CDR HTTP ' . $response->status() . ': ' . Str::limit(strip_tags($response->body()), 180));
+        }
+
         $data = $response->json();
         if (! is_array($data)) {
-            throw new \RuntimeException('CDR yanıtı JSON değil (HTTP ' . $response->status() . ').');
+            // Bazen düz metin/hata kodu döner
+            $raw = trim($response->body());
+            Log::warning('Netsantral CDR non-JSON', ['body' => Str::limit($raw, 500)]);
+            throw new \RuntimeException('CDR yanıtı JSON değil: ' . Str::limit($raw, 180));
         }
 
         return $data;

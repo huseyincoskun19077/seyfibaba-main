@@ -72,16 +72,23 @@
         </div>
       </div>
 
+      @if(session('messege'))
+        <div class="alert alert-{{ session('alert-type') === 'error' ? 'danger' : (session('alert-type') === 'warning' ? 'warning' : 'success') }}">
+          {{ session('messege') }}
+        </div>
+      @endif
+
       @if(!$credsOk)
         <div class="alert alert-warning">
           Senkron için yukarıdan kullanıcı kodu + şifre girip <strong>aktif</strong> edin (veya SMS Netgsm bilgisi tanımlı olsun).
+          Şu an API hazır değil; “Çek”e basınca hata mesajı göreceksiniz.
         </div>
       @endif
 
       <div class="card">
         <div class="card-header"><h4>Senkronize et</h4></div>
         <div class="card-body">
-          <form method="POST" action="{{ route('admin.call-recordings.sync') }}" class="form-inline flex-wrap">
+          <form method="POST" action="{{ route('admin.call-recordings.sync') }}" class="form-inline flex-wrap" id="call-sync-form">
             @csrf
             <div class="form-group mr-2 mb-2">
               <label class="mr-1">Başlangıç</label>
@@ -97,11 +104,11 @@
                 <label class="custom-control-label" for="download_audio">Ses dosyalarını indir</label>
               </div>
             </div>
-            <button type="submit" class="btn btn-primary mb-2" @disabled(!$credsOk)>
+            <button type="submit" class="btn btn-primary mb-2" id="call-sync-btn">
               <i class="fas fa-sync mr-1"></i> Çek
             </button>
           </form>
-          <small class="text-muted">Tek seferde en fazla 31 gün. Büyük aralıklarda parçalayın.</small>
+          <small class="text-muted">Tek seferde en fazla 31 gün. Büyük aralıklarda parçalayın. İşlem 1–2 dk sürebilir.</small>
         </div>
       </div>
 
@@ -181,4 +188,15 @@
     </div>
   </section>
 </div>
+@endsection
+
+@section('script')
+<script>
+(function ($) {
+  $('#call-sync-form').on('submit', function () {
+    var $btn = $('#call-sync-btn');
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Çekiliyor...');
+  });
+})(jQuery);
+</script>
 @endsection

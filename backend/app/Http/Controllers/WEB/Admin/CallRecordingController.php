@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Services\NetsantralCallRecordingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CallRecordingController extends Controller
 {
@@ -54,7 +55,6 @@ class CallRecordingController extends Controller
         $setting = Setting::firstOrFail();
 
         $password = $request->input('netsantral_password');
-        // Maskelenmiş şifreyi ezme
         if ($password === null || $password === '' || str_contains((string) $password, '****')) {
             $password = $setting->netsantral_password;
         }
@@ -71,7 +71,10 @@ class CallRecordingController extends Controller
             'netsipp_api_key' => $apiKey,
         ]);
 
-        return redirect()->route('admin.call-recordings')->withSuccess('Netsantral / Netsipp API ayarları kaydedildi.');
+        return redirect()->route('admin.call-recordings')->with([
+            'messege' => 'Netsantral / Netsipp API ayarları kaydedildi.',
+            'alert-type' => 'success',
+        ]);
     }
 
     private function credentialsReady(?Setting $setting): bool
@@ -98,11 +101,21 @@ class CallRecordingController extends Controller
             'download_audio' => 'nullable',
         ]);
 
+        if (! $this->credentialsReady(Setting::first())) {
+            return redirect()->back()->with([
+                'messege' => 'API ayarları eksik veya pasif. Üstteki formdan kullanıcı kodu/şifre girip aktif edin.',
+                'alert-type' => 'error',
+            ]);
+        }
+
         $from = Carbon::parse($request->input('date_from'))->startOfDay();
         $to = Carbon::parse($request->input('date_to'))->endOfDay();
 
         if ($from->diffInDays($to) > 31) {
-            return redirect()->back()->withError('Tek seferde en fazla 31 günlük aralık senkronlayın.');
+            return redirect()->back()->with([
+                'messege' => 'Tek seferde en fazla 31 günlük aralık senkronlayın.',
+                'alert-type' => 'error',
+            ]);
         }
 
         try {
@@ -112,11 +125,19 @@ class CallRecordingController extends Controller
                 $request->has('download_audio')
             );
         } catch (\Throwable $e) {
-            return redirect()->back()->withError('Senkron hatası: ' . $e->getMessage());
+            Log::error('Call recording sync failed', ['message' => $e->getMessage()]);
+
+            return redirect()->back()->with([
+                'messege' => 'Senkron hatası: ' . $e->getMessage(),
+                'alert-type' => 'error',
+            ]);
         }
 
         if (! empty($result['message']) && ($result['fetched'] ?? 0) === 0) {
-            return redirect()->back()->withError($result['message']);
+            return redirect()->back()->with([
+                'messege' => $result['message'],
+                'alert-type' => 'error',
+            ]);
         }
 
         $msg = sprintf(
@@ -127,7 +148,15 @@ class CallRecordingController extends Controller
             $result['failed']
         );
 
-        return redirect()->back()->withSuccess($msg);
+        $type = (($result['fetched'] ?? 0) === 0) ? 'warning' : 'success';
+        if (($result['fetched'] ?? 0) === 0) {
+            $msg = 'Bu tarih aralığında CDR kaydı gelmedi. Tarihleri, usercode/şifreyi ve Netgsm santral rapor erişimini kontrol edin.';
+        }
+
+        return redirect()->back()->with([
+            'messege' => $msg,
+            'alert-type' => $type,
+        ]);
     }
 
     public function download(int $id, NetsantralCallRecordingService $service)
@@ -140,11 +169,17 @@ class CallRecordingController extends Controller
                 $recording->refresh();
             }
         } catch (\Throwable $e) {
-            return redirect()->back()->withError('Ses indirilemedi: ' . $e->getMessage());
+            return redirect()->back()->with([
+                'messege' => 'Ses indirilemedi: ' . $e->getMessage(),
+                'alert-type' => 'error',
+            ]);
         }
 
         if (! $recording->hasLocalAudio()) {
-            return redirect()->back()->withError('Yerel ses dosyası yok.');
+            return redirect()->back()->with([
+                'messege' => 'Yerel ses dosyası yok.',
+                'alert-type' => 'error',
+            ]);
         }
 
         return response()->download(public_path($recording->local_path));
