@@ -105,6 +105,7 @@ class NetsantralCallRecordingService
         $upserted = 0;
         $downloaded = 0;
         $failed = 0;
+        $uniqueLookupBudget = 10;
 
         foreach ($list as $item) {
             $recording = $this->upsertFromCdrItem($item);
@@ -128,6 +129,24 @@ class NetsantralCallRecordingService
                         'message' => $e->getMessage(),
                     ]);
                 }
+            } elseif (
+                $downloadAudio
+                && ! $recording->hasLocalAudio()
+                && ! $recording->remote_recording_url
+                && ! empty($creds['usercode'])
+                && $uniqueLookupBudget > 0
+            ) {
+                $uniqueLookupBudget--;
+                try {
+                    $this->tryFetchAudioForRecording($recording);
+                    $downloaded++;
+                } catch (\Throwable $e) {
+                    // 331 vb. beklenen; kayıt listede kalsın
+                    Log::info('Uniqueid audio lookup skipped', [
+                        'uniqueid' => $recording->uniqueid,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
             }
         }
 
@@ -139,9 +158,9 @@ class NetsantralCallRecordingService
         ];
 
         if ($downloaded === 0 && $classicError) {
-            $result['message'] = 'Ses API kapalı (331). Satırdan mp3 yükleyin veya Netgsm’den netsantral/report / FTP yedek açtırın.';
+            $result['message'] = 'Ses API kapalı (331). Satırdaki «Ses çek» veya mp3 yükleme kullanın; Netgsm’den netsantral/report / FTP açtırın.';
         } elseif ($downloaded === 0 && $sourceNote === 'Netsipp call-details') {
-            $result['message'] = 'Netsipp liste verdi; ses URL yok. Satırdan dosya yükleyin veya Netgsm FTP yedek / klasik CDR izni kullanın.';
+            $result['message'] = 'Netsipp liste verdi; ses yok. Satırdan «Ses çek» deneyin veya mp3 yükleyin.';
         }
 
         return $result;
@@ -243,6 +262,54 @@ class NetsantralCallRecordingService
         }
 
         return compact('matched', 'skipped');
+    }
+
+    /**
+     * Tek çağrı için uniqueid ile klasik CDR’dan ses URL dene ve indir.
+     */
+    public function tryFetchAudioForRecording(CallRecording $recording): CallRecording
+    {
+        if ($recording->hasLocalAudio()) {
+            return $recording;
+        }
+
+        $creds = $this->credentials();
+        if (empty($creds['usercode']) || empty($creds['password'])) {
+            throw new \RuntimeException('Ses çekmek için Netgsm usercode/şifre gerekli (Netsipp key yetmez).');
+        }
+
+        if (! $recording->remote_recording_url) {
+            $rows = $this->fetchReportByUniqueId(
+                $creds['usercode'],
+                $creds['password'],
+                $recording->uniqueid,
+                $creds['pbxnum'] ?? null
+            );
+
+            if ($this->isHardError($rows)) {
+                throw new \RuntimeException($this->explainError(
+                    $rows['code'] ?? null,
+                    (string) ($rows['error'] ?? $rows['message'] ?? 'uniqueid CDR başarısız')
+                ));
+            }
+
+            $list = $this->normalizeReportList($rows);
+            $item = $list[0] ?? null;
+            $url = $item ? trim((string) ($item['recording'] ?? $item['seskaydi'] ?? '')) : '';
+            if ($url === '') {
+                throw new \RuntimeException('Bu uniqueid için Netgsm ses URL döndürmedi (kayıt yok veya yetki yok).');
+            }
+
+            $recording->update([
+                'remote_recording_url' => $url,
+                'sync_status' => 'pending',
+                'sync_error' => null,
+                'raw_payload' => array_merge((array) $recording->raw_payload, ['_classic' => $item]),
+            ]);
+            $recording->refresh();
+        }
+
+        return $this->downloadAudio($recording);
     }
 
     public function downloadAudio(CallRecording $recording): CallRecording
@@ -495,9 +562,6 @@ class NetsantralCallRecordingService
     }
 
     /**
-     * Resmi Netgsm paketi pbxnum göndermez; bazı hesaplarda eklemek 331/72 üretebiliyor.
-     * Bu yüzden birkaç kombinasyonu sırayla deneriz.
-     *
      * @return array<string, mixed>
      */
     private function fetchReport(
@@ -507,17 +571,38 @@ class NetsantralCallRecordingService
         string $stopdate,
         ?string $pbxnum
     ): array {
-        $base = [
+        return $this->executeReportAttempts([
             'usercode' => $usercode,
             'password' => $password,
             'startdate' => $startdate,
             'stopdate' => $stopdate,
-        ];
+        ], $pbxnum);
+    }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function fetchReportByUniqueId(
+        string $usercode,
+        string $password,
+        string $uniqueid,
+        ?string $pbxnum
+    ): array {
+        return $this->executeReportAttempts([
+            'usercode' => $usercode,
+            'password' => $password,
+            'uniqueid' => $uniqueid,
+        ], $pbxnum);
+    }
+
+    /**
+     * @param  array<string, mixed>  $base
+     * @return array<string, mixed>
+     */
+    private function executeReportAttempts(array $base, ?string $pbxnum): array
+    {
         $attempts = [];
-        // 1) Resmi: sadece tarih (netgsm/netsantral Package::gorusmeDetay)
         $attempts[] = ['label' => 'json-no-pbx', 'mode' => 'json', 'body' => $base];
-        // 2) pbxnum ile (bazı çoklu santral hesapları)
         if ($pbxnum) {
             $attempts[] = ['label' => 'json-pbx', 'mode' => 'json', 'body' => $base + ['pbxnum' => $pbxnum]];
         }
@@ -542,6 +627,7 @@ class NetsantralCallRecordingService
                 Log::warning('Netsantral CDR attempt failed', [
                     'attempt' => $attempt['label'],
                     'message' => $e->getMessage(),
+                    'keys' => array_keys($attempt['body']),
                 ]);
                 $lastError = ['code' => null, 'error' => $e->getMessage()];
                 continue;
@@ -553,7 +639,6 @@ class NetsantralCallRecordingService
                 return $data;
             }
 
-            // 60 = kayıt yok → başarı sayılır, boş liste
             if ((string) ($data['code'] ?? '') === '60') {
                 return [];
             }
@@ -562,9 +647,7 @@ class NetsantralCallRecordingService
                 'attempt' => $attempt['label'],
                 'code' => $data['code'] ?? null,
                 'error' => $data['error'] ?? $data['message'] ?? null,
-                'has_pbx' => isset($attempt['body']['pbxnum']),
-                'startdate' => $startdate,
-                'stopdate' => $stopdate,
+                'keys' => array_keys($attempt['body']),
             ]);
             $lastError = $data;
         }

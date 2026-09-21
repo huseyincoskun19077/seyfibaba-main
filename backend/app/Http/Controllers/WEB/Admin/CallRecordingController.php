@@ -187,10 +187,31 @@ class CallRecordingController extends Controller
         ]);
     }
 
+    public function fetchAudio(int $id, NetsantralCallRecordingService $service)
+    {
+        $recording = CallRecording::findOrFail($id);
+
+        try {
+            $service->tryFetchAudioForRecording($recording);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with([
+                'messege' => 'Ses çekilemedi: ' . $e->getMessage(),
+                'alert-type' => 'error',
+            ]);
+        }
+
+        return redirect()->back()->with([
+            'messege' => 'Ses indirildi; artık dinleyebilirsiniz.',
+            'alert-type' => 'success',
+        ]);
+    }
+
     public function upload(Request $request, int $id, NetsantralCallRecordingService $service)
     {
         $request->validate([
             'audio' => 'required|file|max:51200|mimes:mp3,wav,ogg,m4a,mpeg,x-wav',
+        ], [
+            'audio.required' => 'Önce «Dosya seç» ile mp3 seçin, sonra Yükle’ye basın.',
         ]);
 
         $recording = CallRecording::findOrFail($id);

@@ -1146,6 +1146,7 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::post('call-recordings/sync', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'sync'])->name('call-recordings.sync');
         Route::post('call-recordings/import-inbox', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'importInbox'])->name('call-recordings.import-inbox');
         Route::post('call-recordings/{id}/upload', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'upload'])->name('call-recordings.upload');
+        Route::post('call-recordings/{id}/fetch-audio', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'fetchAudio'])->name('call-recordings.fetch-audio');
         Route::get('call-recordings/{id}/download', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'download'])->name('call-recordings.download');
         Route::get('call-recordings/{id}/play', [App\Http\Controllers\WEB\Admin\CallRecordingController::class, 'play'])->name('call-recordings.play');
 
