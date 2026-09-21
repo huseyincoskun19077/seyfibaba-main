@@ -57,13 +57,13 @@
               </div>
               <div class="col-md-3">
                 <div class="form-group">
-                  <label>Netsipp API key (opsiyonel)</label>
+                  <label>Netsipp API key</label>
                   @php
                     $ak = $setting->netsipp_api_key ?? '';
                     $akMask = $ak !== '' ? (substr($ak, 0, 4) . '****' . substr($ak, -4)) : '';
                   @endphp
                   <input type="password" name="netsipp_api_key" class="form-control" value="{{ $akMask }}" placeholder="Bearer API key" autocomplete="new-password">
-                  <small class="text-muted">Ses CDR için zorunlu değil.</small>
+                  <small class="text-muted">Netsipp hesabı için asıl kaynak. Çağrı listesi: /v1/reports/call-details</small>
                 </div>
               </div>
             </div>
@@ -71,9 +71,9 @@
               <i class="fas fa-save mr-1"></i> API ayarlarını kaydet
             </button>
             <p class="text-muted mt-3 mb-0 small">
-              CDR / ses için Netgsm panelindeki kullanıcı kodu ve şifre kullanılır
-              (<code>api.netgsm.com.tr/netsantral/report</code>).
-              Bu alanlar boşsa SMS Yapılandırması’ndaki Netgsm bilgisine düşülür.
+              <strong>Netsipp:</strong> API key + Aktif → çağrı listesini çeker (ses URL vermez).
+              <strong>Klasik Netgsm:</strong> usercode/şifre ile <code>netsantral/report</code> → ses dosyası (çoğu Netsipp hesabında 331).
+              Ses dinlemek için Netgsm’den klasik CDR izni gerekir.
             </p>
           </form>
         </div>

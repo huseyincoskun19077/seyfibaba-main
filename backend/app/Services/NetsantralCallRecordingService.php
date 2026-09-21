@@ -10,13 +10,16 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
- * Netgsm Netsantral / Netsipp görüşme detayı (CDR) + ses kaydı indirme.
- * Endpoint: POST https://api.netgsm.com.tr/netsantral/report
+ * Netsipp Public API (çağrı listesi) + klasik Netgsm Netsantral CDR (ses URL).
+ * Netsipp: GET https://api.netsipp.com/v1/reports/call-details
+ * Netgsm ses: POST https://api.netgsm.com.tr/netsantral/report
  * AI Transkript kullanılmaz; ses dosyası lokal saklanır.
  */
 class NetsantralCallRecordingService
 {
     private const REPORT_URL = 'https://api.netgsm.com.tr/netsantral/report';
+
+    private const NETSIPP_CALL_DETAILS_URL = 'https://api.netsipp.com/v1/reports/call-details';
 
     /**
      * @return array{fetched:int, upserted:int, downloaded:int, failed:int, message?:string}
@@ -30,32 +33,75 @@ class NetsantralCallRecordingService
                 'upserted' => 0,
                 'downloaded' => 0,
                 'failed' => 0,
-                'message' => 'Netgsm kullanıcı kodu / şifre eksik veya Netsantral senkron kapalı (Çağrı Kayıtları → API Ayarları).',
+                'message' => 'API ayarı yok: Netsipp API key veya Netgsm kullanıcı/şifre girin ve senkronu aktif edin.',
             ];
         }
 
-        $rows = $this->fetchReport(
-            $creds['usercode'],
-            $creds['password'],
-            $from->format('dmYHi'),
-            $to->format('dmYHi'),
-            $creds['pbxnum'] ?? null
-        );
+        $list = [];
+        $sourceNote = null;
+        $netsippKey = $creds['netsipp_api_key'] ?? null;
 
-        if ($this->isHardError($rows)) {
-            $code = $rows['code'] ?? null;
-            $raw = (string) ($rows['error'] ?? $rows['message'] ?? $rows['durum'] ?? 'CDR sorgusu başarısız');
+        // 1) Netsipp Public API — hesap Netsipp ise asıl kaynak bu
+        if ($netsippKey) {
+            $netsipp = $this->fetchNetsippCallDetails($netsippKey, $from, $to);
+            if (isset($netsipp['error'])) {
+                // Netsipp başarısızsa klasik dene; yoksa hatayı döndür
+                if (empty($creds['usercode'])) {
+                    return [
+                        'fetched' => 0,
+                        'upserted' => 0,
+                        'downloaded' => 0,
+                        'failed' => 0,
+                        'message' => (string) $netsipp['error'],
+                    ];
+                }
+                $sourceNote = (string) $netsipp['error'];
+            } else {
+                $list = $netsipp['items'];
+                $sourceNote = 'Netsipp call-details';
+            }
+        }
 
+        // 2) Klasik Netgsm CDR (ses URL için; Netsipp listesi yoksa ana kaynak)
+        $classicError = null;
+        if (! empty($creds['usercode']) && ! empty($creds['password'])) {
+            $rows = $this->fetchReport(
+                $creds['usercode'],
+                $creds['password'],
+                $from->format('dmYHi'),
+                $to->format('dmYHi'),
+                $creds['pbxnum'] ?? null
+            );
+
+            if ($this->isHardError($rows)) {
+                $classicError = $this->explainError(
+                    $rows['code'] ?? null,
+                    (string) ($rows['error'] ?? $rows['message'] ?? $rows['durum'] ?? 'CDR sorgusu başarısız')
+                );
+            } else {
+                $classicList = $this->normalizeReportList($rows);
+                if ($list === []) {
+                    $list = $classicList;
+                    $sourceNote = 'Netgsm netsantral/report';
+                } else {
+                    $list = $this->mergeClassicRecordingsIntoList($list, $classicList);
+                    $sourceNote = 'Netsipp + Netgsm ses URL';
+                }
+            }
+        }
+
+        if ($list === []) {
             return [
                 'fetched' => 0,
                 'upserted' => 0,
                 'downloaded' => 0,
                 'failed' => 0,
-                'message' => $this->explainError($code, $raw),
+                'message' => $classicError
+                    ?? $sourceNote
+                    ?? 'Bu aralıkta çağrı bulunamadı.',
             ];
         }
 
-        $list = $this->normalizeReportList($rows);
         $upserted = 0;
         $downloaded = 0;
         $failed = 0;
@@ -85,12 +131,20 @@ class NetsantralCallRecordingService
             }
         }
 
-        return [
+        $result = [
             'fetched' => count($list),
             'upserted' => $upserted,
             'downloaded' => $downloaded,
             'failed' => $failed,
         ];
+
+        if ($downloaded === 0 && $classicError) {
+            $result['message'] = "{$upserted} çağrı Netsipp’ten alındı; ses URL için klasik CDR kapalı ({$classicError}). Netgsm’den netsantral/report izni isteyin.";
+        } elseif ($downloaded === 0 && $sourceNote === 'Netsipp call-details') {
+            $result['message'] = "{$upserted} çağrı listelendi. Netsipp Public API ses dosyası vermiyor; dinlemek için Netgsm’in klasik CDR (netsantral/report) iznini açtırmanız gerekir.";
+        }
+
+        return $result;
     }
 
     public function downloadAudio(CallRecording $recording): CallRecording
@@ -137,7 +191,7 @@ class NetsantralCallRecordingService
     }
 
     /**
-     * @return array{usercode:string,password:string,pbxnum?:string}|null
+     * @return array{usercode?:string,password?:string,pbxnum?:string,netsipp_api_key?:string}|null
      */
     private function credentials(): ?array
     {
@@ -146,37 +200,183 @@ class NetsantralCallRecordingService
             return null;
         }
 
+        $out = [];
+        $netsippKey = trim((string) ($setting->netsipp_api_key ?? ''));
         $santralUser = trim((string) ($setting->netsantral_usercode ?? ''));
         $santralPass = trim((string) ($setting->netsantral_password ?? ''));
-        $pbxnum = trim((string) ($setting->netsantral_pbxnum ?? ''));
+        $pbxnum = $this->normalizePbxnum($setting->netsantral_pbxnum ?? '');
 
-        if ($santralUser !== '' && $santralPass !== '') {
-            if (! $setting->netsantral_enabled) {
-                return null;
+        if ($setting->netsantral_enabled) {
+            if ($santralUser !== '' && $santralPass !== '') {
+                $out['usercode'] = $santralUser;
+                $out['password'] = $santralPass;
             }
-
-            $out = ['usercode' => $santralUser, 'password' => $santralPass];
-            $normalized = $this->normalizePbxnum($pbxnum);
-            if ($normalized) {
-                $out['pbxnum'] = $normalized;
+            if ($netsippKey !== '') {
+                $out['netsipp_api_key'] = $netsippKey;
             }
-
-            return $out;
         }
 
-        $usercode = trim((string) ($setting->netgsm_usercode ?? ''));
-        $password = trim((string) ($setting->netgsm_password ?? ''));
-        if ($usercode === '' || $password === '') {
+        if (empty($out['usercode'])) {
+            $usercode = trim((string) ($setting->netgsm_usercode ?? ''));
+            $password = trim((string) ($setting->netgsm_password ?? ''));
+            if ($usercode !== '' && $password !== '') {
+                $out['usercode'] = $usercode;
+                $out['password'] = $password;
+            }
+        }
+
+        if ($pbxnum) {
+            $out['pbxnum'] = $pbxnum;
+        }
+
+        if (empty($out['usercode']) && empty($out['netsipp_api_key'])) {
             return null;
         }
 
-        $out = compact('usercode', 'password');
-        $normalized = $this->normalizePbxnum($pbxnum);
-        if ($normalized) {
-            $out['pbxnum'] = $normalized;
+        return $out;
+    }
+
+    /**
+     * @return array{items:list<array<string,mixed>}>|array{error:string}
+     */
+    private function fetchNetsippCallDetails(string $apiKey, Carbon $from, Carbon $to): array
+    {
+        $items = [];
+        $page = 1;
+        $maxPages = 50;
+
+        do {
+            $response = Http::timeout(90)
+                ->withToken($apiKey)
+                ->acceptJson()
+                ->get(self::NETSIPP_CALL_DETAILS_URL, [
+                    'date_from' => $from->toDateString(),
+                    'date_to' => $to->toDateString(),
+                    'page' => $page,
+                    'limit' => 100,
+                ]);
+
+            if ($response->status() === 401) {
+                return ['error' => 'Netsipp API key geçersiz veya süresi dolmuş (401).'];
+            }
+            if ($response->status() === 403) {
+                return ['error' => 'Netsipp API kullanıcısında report_call_detail_view izni yok (403). Netsipp panelinden bu izni açın.'];
+            }
+            if ($response->status() === 503) {
+                return ['error' => 'Netsipp rapor backend’i geçici olarak erişilemiyor veya organizasyona PBX atanmamış (503).'];
+            }
+            if (! $response->successful()) {
+                Log::warning('Netsipp call-details HTTP error', [
+                    'status' => $response->status(),
+                    'body' => Str::limit($response->body(), 400),
+                ]);
+
+                return ['error' => 'Netsipp call-details HTTP ' . $response->status() . ': ' . Str::limit(strip_tags($response->body()), 160)];
+            }
+
+            $json = $response->json();
+            if (! is_array($json) || ($json['status'] ?? false) !== true) {
+                $msg = is_array($json) ? (string) ($json['message'] ?? 'Netsipp yanıtı başarısız') : 'Netsipp yanıtı JSON değil';
+
+                return ['error' => $msg];
+            }
+
+            $batch = $json['data'] ?? [];
+            if (! is_array($batch)) {
+                break;
+            }
+
+            foreach ($batch as $row) {
+                $mapped = $this->mapNetsippCallDetail((array) $row);
+                if ($mapped) {
+                    $items[] = $mapped;
+                }
+            }
+
+            $meta = is_array($json['meta'] ?? null) ? $json['meta'] : [];
+            $lastPage = (int) ($meta['last_page'] ?? $meta['lastPage'] ?? $page);
+            $hasMore = $page < $lastPage && count($batch) > 0;
+            $page++;
+        } while ($hasMore && $page <= $maxPages);
+
+        return ['items' => $items];
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array<string, mixed>|null
+     */
+    private function mapNetsippCallDetail(array $row): ?array
+    {
+        $linkedid = trim((string) ($row['linkedid'] ?? ''));
+        if ($linkedid === '') {
+            return null;
         }
 
-        return $out;
+        $direction = match ((string) ($row['direction'] ?? '')) {
+            'in' => 1,
+            'out' => 0,
+            default => null,
+        };
+
+        return [
+            'uniqueid' => $linkedid,
+            'source' => $row['src'] ?? null,
+            'destination' => $row['dst'] ?? null,
+            'direction' => $direction,
+            'duration' => $row['total_duration_sec'] ?? $row['agent_talk_sec'] ?? null,
+            'date' => $row['call_start_time'] ?? $row['call_date'] ?? null,
+            'directory' => $row['answered_by_name'] ?? $row['queue_name'] ?? null,
+            'line' => null,
+            'recording' => null,
+            'commonID' => null,
+            '_netsipp' => $row,
+        ];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $netsippList
+     * @param  list<array<string, mixed>>  $classicList
+     * @return list<array<string, mixed>>
+     */
+    private function mergeClassicRecordingsIntoList(array $netsippList, array $classicList): array
+    {
+        $byId = [];
+        foreach ($classicList as $item) {
+            $id = trim((string) ($item['uniqueid'] ?? ''));
+            if ($id !== '') {
+                $byId[$id] = $item;
+            }
+        }
+
+        foreach ($netsippList as &$item) {
+            $id = trim((string) ($item['uniqueid'] ?? ''));
+            if ($id === '' || ! isset($byId[$id])) {
+                continue;
+            }
+            $classic = $byId[$id];
+            $url = trim((string) ($classic['recording'] ?? $classic['seskaydi'] ?? ''));
+            if ($url !== '') {
+                $item['recording'] = $url;
+            }
+            if (empty($item['line']) && ! empty($classic['line'])) {
+                $item['line'] = $classic['line'];
+            }
+        }
+        unset($item);
+
+        $seen = [];
+        foreach ($netsippList as $item) {
+            $seen[trim((string) ($item['uniqueid'] ?? ''))] = true;
+        }
+        foreach ($classicList as $item) {
+            $id = trim((string) ($item['uniqueid'] ?? ''));
+            if ($id !== '' && empty($seen[$id])) {
+                $netsippList[] = $item;
+            }
+        }
+
+        return $netsippList;
     }
 
     /**
@@ -316,7 +516,7 @@ class NetsantralCallRecordingService
             '72' => 'Netgsm 72: Santral/CDR isteği reddedildi. Genelde yanlış sabit hat (pbxnum), desteklenmeyen parametre veya santral rapor yetkisi. Sabit hattı 850…/312… formatında (başında 0 veya 90 olmadan) kaydedin; yine olmazsa Netgsm’den “netsantral/report” izni isteyin.',
             '80' => 'Sorgulama limiti aşıldı; birkaç dakika bekleyip tekrar deneyin.',
             '100' => 'Netgsm sistem hatası; sonra tekrar deneyin.',
-            '331' => 'Netgsm 331: Bu hesap için klasik Netsantral CDR servisi kabul etmedi. Genelde (1) santral numarası (850…) eksik, (2) API’de santral rapor izni yok, (3) Netsipp hesabı farklı yetki istiyor. API ayarlarına santral numaranızı ekleyin; Netgsm destekten “netsantral/report + ses kaydı API” izni isteyin. Netsipp API key tek başına bu CDR endpoint’ini açmaz.',
+            '331' => 'Netgsm 331: Klasik netsantral/report bu hesapta kapalı. Netsipp API key (/v1/me) çalışsa bile ses URL bu endpoint’ten gelmez. Çağrı listesi için Netsipp API key + Aktif yeterli; ses için Netgsm destekten netsantral/report izni isteyin.',
         ];
 
         $hint = $map[$codeStr] ?? null;

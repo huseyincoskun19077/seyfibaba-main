@@ -99,6 +99,11 @@ class CallRecordingController extends Controller
             return false;
         }
 
+        $netsippKey = trim((string) ($setting->netsipp_api_key ?? ''));
+        if ($setting->netsantral_enabled && $netsippKey !== '') {
+            return true;
+        }
+
         $santralUser = trim((string) ($setting->netsantral_usercode ?? ''));
         $santralPass = trim((string) ($setting->netsantral_password ?? ''));
         if ($santralUser !== '' && $santralPass !== '') {
@@ -164,9 +169,16 @@ class CallRecordingController extends Controller
             $result['failed']
         );
 
+        if (! empty($result['message'])) {
+            $msg .= ' ' . $result['message'];
+        }
+
         $type = (($result['fetched'] ?? 0) === 0) ? 'warning' : 'success';
         if (($result['fetched'] ?? 0) === 0) {
-            $msg = 'Bu tarih aralığında CDR kaydı gelmedi. Tarihleri, usercode/şifreyi ve Netgsm santral rapor erişimini kontrol edin.';
+            $msg = 'Bu tarih aralığında CDR kaydı gelmedi. Netsipp API key + Aktif veya Netgsm usercode/şifreyi kontrol edin.';
+        }
+        if (($result['downloaded'] ?? 0) === 0 && ($result['fetched'] ?? 0) > 0 && ! empty($result['message'])) {
+            $type = 'warning';
         }
 
         return redirect()->back()->with([
