@@ -34,13 +34,15 @@ class NetsantralCallRecordingService
             ];
         }
 
-        $rows = $this->fetchReport($creds['usercode'], $creds['password'], array_filter([
-            'startdate' => $from->format('dmYHi'),
-            'stopdate' => $to->format('dmYHi'),
-            'pbxnum' => $creds['pbxnum'] ?? null,
-        ], fn ($v) => $v !== null && $v !== ''));
+        $rows = $this->fetchReport(
+            $creds['usercode'],
+            $creds['password'],
+            $from->format('dmYHi'),
+            $to->format('dmYHi'),
+            $creds['pbxnum'] ?? null
+        );
 
-        if (isset($rows['error']) || isset($rows['code'])) {
+        if ($this->isHardError($rows)) {
             $code = $rows['code'] ?? null;
             $raw = (string) ($rows['error'] ?? $rows['message'] ?? $rows['durum'] ?? 'CDR sorgusu başarısız');
 
@@ -154,8 +156,9 @@ class NetsantralCallRecordingService
             }
 
             $out = ['usercode' => $santralUser, 'password' => $santralPass];
-            if ($pbxnum !== '') {
-                $out['pbxnum'] = $pbxnum;
+            $normalized = $this->normalizePbxnum($pbxnum);
+            if ($normalized) {
+                $out['pbxnum'] = $normalized;
             }
 
             return $out;
@@ -168,46 +171,107 @@ class NetsantralCallRecordingService
         }
 
         $out = compact('usercode', 'password');
-        if ($pbxnum !== '') {
-            $out['pbxnum'] = $pbxnum;
+        $normalized = $this->normalizePbxnum($pbxnum);
+        if ($normalized) {
+            $out['pbxnum'] = $normalized;
         }
 
         return $out;
     }
 
     /**
-     * @param  array<string, mixed>  $filters
+     * Netgsm örnekleri: 850xxxxxxx / 312xxxxxxx (başında 0 veya 90 yok).
+     */
+    private function normalizePbxnum(?string $raw): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $raw);
+        if ($digits === null || $digits === '') {
+            return null;
+        }
+        if (str_starts_with($digits, '90') && strlen($digits) >= 12) {
+            $digits = substr($digits, 2);
+        }
+        $digits = ltrim($digits, '0');
+
+        return $digits !== '' ? $digits : null;
+    }
+
+    /**
+     * Resmi Netgsm paketi pbxnum göndermez; bazı hesaplarda eklemek 331/72 üretebiliyor.
+     * Bu yüzden birkaç kombinasyonu sırayla deneriz.
+     *
      * @return array<string, mixed>
      */
-    private function fetchReport(string $usercode, string $password, array $filters): array
-    {
-        $body = array_merge([
+    private function fetchReport(
+        string $usercode,
+        string $password,
+        string $startdate,
+        string $stopdate,
+        ?string $pbxnum
+    ): array {
+        $base = [
             'usercode' => $usercode,
             'password' => $password,
-        ], $filters);
+            'startdate' => $startdate,
+            'stopdate' => $stopdate,
+        ];
 
-        // 1) Resmi paket gibi JSON POST
-        $response = Http::timeout(90)
-            ->acceptJson()
-            ->asJson()
-            ->post(self::REPORT_URL, $body);
+        $attempts = [];
+        // 1) Resmi: sadece tarih (netgsm/netsantral Package::gorusmeDetay)
+        $attempts[] = ['label' => 'json-no-pbx', 'mode' => 'json', 'body' => $base];
+        // 2) pbxnum ile (bazı çoklu santral hesapları)
+        if ($pbxnum) {
+            $attempts[] = ['label' => 'json-pbx', 'mode' => 'json', 'body' => $base + ['pbxnum' => $pbxnum]];
+        }
+        $attempts[] = ['label' => 'form-no-pbx', 'mode' => 'form', 'body' => $base];
+        if ($pbxnum) {
+            $attempts[] = ['label' => 'form-pbx', 'mode' => 'form', 'body' => $base + ['pbxnum' => $pbxnum]];
+            $attempts[] = ['label' => 'get-pbx', 'mode' => 'get', 'body' => $base + ['pbxnum' => $pbxnum]];
+        }
+        $attempts[] = ['label' => 'get-no-pbx', 'mode' => 'get', 'body' => $base];
 
-        $data = $this->decodeReportResponse($response);
-        if ($this->isHardError($data) && (string) ($data['code'] ?? '') === '331') {
-            // 2) Form POST dene (bazı hesaplarda JSON reddediliyor)
-            $response = Http::timeout(90)
-                ->asForm()
-                ->post(self::REPORT_URL, $body);
-            $data = $this->decodeReportResponse($response);
+        $lastError = ['code' => null, 'error' => 'CDR sorgusu başarısız'];
+
+        foreach ($attempts as $attempt) {
+            try {
+                $response = match ($attempt['mode']) {
+                    'form' => Http::timeout(90)->asForm()->post(self::REPORT_URL, $attempt['body']),
+                    'get' => Http::timeout(90)->get(self::REPORT_URL, $attempt['body']),
+                    default => Http::timeout(90)->acceptJson()->asJson()->post(self::REPORT_URL, $attempt['body']),
+                };
+                $data = $this->decodeReportResponse($response);
+            } catch (\Throwable $e) {
+                Log::warning('Netsantral CDR attempt failed', [
+                    'attempt' => $attempt['label'],
+                    'message' => $e->getMessage(),
+                ]);
+                $lastError = ['code' => null, 'error' => $e->getMessage()];
+                continue;
+            }
+
+            if (! $this->isHardError($data)) {
+                Log::info('Netsantral CDR ok', ['attempt' => $attempt['label']]);
+
+                return $data;
+            }
+
+            // 60 = kayıt yok → başarı sayılır, boş liste
+            if ((string) ($data['code'] ?? '') === '60') {
+                return [];
+            }
+
+            Log::warning('Netsantral CDR soft-fail', [
+                'attempt' => $attempt['label'],
+                'code' => $data['code'] ?? null,
+                'error' => $data['error'] ?? $data['message'] ?? null,
+                'has_pbx' => isset($attempt['body']['pbxnum']),
+                'startdate' => $startdate,
+                'stopdate' => $stopdate,
+            ]);
+            $lastError = $data;
         }
 
-        if ($this->isHardError($data) && (string) ($data['code'] ?? '') === '331' && ! empty($filters['pbxnum'])) {
-            // 3) GET query (eski doküman örnekleri)
-            $response = Http::timeout(90)->get(self::REPORT_URL, $body);
-            $data = $this->decodeReportResponse($response);
-        }
-
-        return $data;
+        return $lastError;
     }
 
     /**
@@ -248,7 +312,8 @@ class NetsantralCallRecordingService
             '30' => 'Geçersiz kullanıcı/şifre, API izni yok veya sunucu IP’si Netgsm’de kısıtlı. Netgsm → Ayarlar → API işlemleri kontrol edin.',
             '40' => 'Geçersiz santral bilgileri. Santral numarası (pbxnum / 850…) doğru mu bakın.',
             '60' => 'Bu aralıkta listelenecek kayıt yok.',
-            '70' => 'Hatalı veya eksik parametre (tarih formatı / zorunlu alan).',
+            '70' => 'Hatalı veya eksik parametre (tarih formatı / zorunlu alan). Kısa bir gün aralığı (ör. bugün) deneyin.',
+            '72' => 'Netgsm 72: Santral/CDR isteği reddedildi. Genelde yanlış sabit hat (pbxnum), desteklenmeyen parametre veya santral rapor yetkisi. Sabit hattı 850…/312… formatında (başında 0 veya 90 olmadan) kaydedin; yine olmazsa Netgsm’den “netsantral/report” izni isteyin.',
             '80' => 'Sorgulama limiti aşıldı; birkaç dakika bekleyip tekrar deneyin.',
             '100' => 'Netgsm sistem hatası; sonra tekrar deneyin.',
             '331' => 'Netgsm 331: Bu hesap için klasik Netsantral CDR servisi kabul etmedi. Genelde (1) santral numarası (850…) eksik, (2) API’de santral rapor izni yok, (3) Netsipp hesabı farklı yetki istiyor. API ayarlarına santral numaranızı ekleyin; Netgsm destekten “netsantral/report + ses kaydı API” izni isteyin. Netsipp API key tek başına bu CDR endpoint’ini açmaz.',

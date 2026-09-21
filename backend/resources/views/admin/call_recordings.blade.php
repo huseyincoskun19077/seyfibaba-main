@@ -50,9 +50,9 @@
               </div>
               <div class="col-md-3">
                 <div class="form-group">
-                  <label>Santral no (pbxnum) <span class="text-danger">*</span></label>
+                  <label>Santral no (pbxnum)</label>
                   <input type="text" name="netsantral_pbxnum" class="form-control" value="{{ old('netsantral_pbxnum', $setting->netsantral_pbxnum ?? '') }}" placeholder="850xxxxxxx veya 312xxxxxxx" autocomplete="off">
-                  <small class="text-muted">Netsipp / Netsantral’deki ana numara. Kod 331 için kritik.</small>
+                  <small class="text-muted">Başında 0 veya 90 olmadan yazın. Sistem önce pbxnum’suz resmi CDR isteğini dener.</small>
                 </div>
               </div>
               <div class="col-md-3">

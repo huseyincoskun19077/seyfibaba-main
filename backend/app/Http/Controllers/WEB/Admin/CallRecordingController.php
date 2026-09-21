@@ -68,7 +68,7 @@ class CallRecordingController extends Controller
         $setting->update([
             'netsantral_usercode' => $request->input('netsantral_usercode'),
             'netsantral_password' => $password,
-            'netsantral_pbxnum' => preg_replace('/\D+/', '', (string) $request->input('netsantral_pbxnum')) ?: null,
+            'netsantral_pbxnum' => $this->normalizePbxnum($request->input('netsantral_pbxnum')),
             'netsantral_enabled' => $request->boolean('netsantral_enabled'),
             'netsipp_api_key' => $apiKey,
         ]);
@@ -77,6 +77,20 @@ class CallRecordingController extends Controller
             'messege' => 'Netsantral / Netsipp API ayarları kaydedildi.',
             'alert-type' => 'success',
         ]);
+    }
+
+    private function normalizePbxnum(mixed $raw): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $raw);
+        if ($digits === null || $digits === '') {
+            return null;
+        }
+        if (str_starts_with($digits, '90') && strlen($digits) >= 12) {
+            $digits = substr($digits, 2);
+        }
+        $digits = ltrim($digits, '0');
+
+        return $digits !== '' ? $digits : null;
     }
 
     private function credentialsReady(?Setting $setting): bool
