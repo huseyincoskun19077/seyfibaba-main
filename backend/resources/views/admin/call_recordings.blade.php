@@ -31,13 +31,13 @@
               </div>
             </div>
             <div class="row">
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <div class="form-group">
                   <label>Netgsm kullanıcı kodu (usercode)</label>
                   <input type="text" name="netsantral_usercode" class="form-control" value="{{ old('netsantral_usercode', $setting->netsantral_usercode ?? '') }}" placeholder="Netgsm abone / kullanıcı kodu" autocomplete="off">
                 </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <div class="form-group">
                   <label>Netgsm şifre</label>
                   @php
@@ -48,15 +48,22 @@
                   <small class="text-muted">Değiştirmek istemiyorsanız alana dokunmayın.</small>
                 </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label>Santral no (pbxnum) <span class="text-danger">*</span></label>
+                  <input type="text" name="netsantral_pbxnum" class="form-control" value="{{ old('netsantral_pbxnum', $setting->netsantral_pbxnum ?? '') }}" placeholder="850xxxxxxx veya 312xxxxxxx" autocomplete="off">
+                  <small class="text-muted">Netsipp / Netsantral’deki ana numara. Kod 331 için kritik.</small>
+                </div>
+              </div>
+              <div class="col-md-3">
                 <div class="form-group">
                   <label>Netsipp API key (opsiyonel)</label>
                   @php
                     $ak = $setting->netsipp_api_key ?? '';
                     $akMask = $ak !== '' ? (substr($ak, 0, 4) . '****' . substr($ak, -4)) : '';
                   @endphp
-                  <input type="password" name="netsipp_api_key" class="form-control" value="{{ $akMask }}" placeholder="Bearer API key (ileride)" autocomplete="new-password">
-                  <small class="text-muted">Public Netsipp API için; ses için zorunlu değil.</small>
+                  <input type="password" name="netsipp_api_key" class="form-control" value="{{ $akMask }}" placeholder="Bearer API key" autocomplete="new-password">
+                  <small class="text-muted">Ses CDR için zorunlu değil.</small>
                 </div>
               </div>
             </div>

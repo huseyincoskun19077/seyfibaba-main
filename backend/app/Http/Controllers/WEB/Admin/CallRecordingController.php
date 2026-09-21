@@ -49,6 +49,7 @@ class CallRecordingController extends Controller
         $request->validate([
             'netsantral_usercode' => 'nullable|string|max:100',
             'netsantral_password' => 'nullable|string|max:255',
+            'netsantral_pbxnum' => 'nullable|string|max:32',
             'netsipp_api_key' => 'nullable|string|max:2000',
         ]);
 
@@ -67,6 +68,7 @@ class CallRecordingController extends Controller
         $setting->update([
             'netsantral_usercode' => $request->input('netsantral_usercode'),
             'netsantral_password' => $password,
+            'netsantral_pbxnum' => preg_replace('/\D+/', '', (string) $request->input('netsantral_pbxnum')) ?: null,
             'netsantral_enabled' => $request->boolean('netsantral_enabled'),
             'netsipp_api_key' => $apiKey,
         ]);

@@ -30,6 +30,7 @@ class Setting extends Model
         'netgsm_enabled',
         'netsantral_usercode',
         'netsantral_password',
+        'netsantral_pbxnum',
         'netsantral_enabled',
         'netsipp_api_key',
         'return_window_days',
