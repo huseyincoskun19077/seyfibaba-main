@@ -143,7 +143,7 @@
               <i class="fas fa-folder-open mr-1"></i> Klasörden ses bağla
             </button>
           </form>
-          <small class="text-muted d-block">Tek seferde en fazla 31 gün. Netsipp ses URL vermez (331); dinlemek için satırdan mp3 yükleyin veya Netgsm FTP → <code>storage/app/netsipp-audio</code>.</small>
+          <small class="text-muted d-block">«Çek» sadece çağrı listesini getirir (ses yok). Ses: üstteki Webhook CDR URL’sini Netsipp’e kaydedin; yeni aramalar otomatik iner.</small>
         </div>
       </div>
 
@@ -197,13 +197,9 @@
                           <source src="{{ route('admin.call-recordings.play', $row->id) }}" type="audio/mpeg">
                         </audio>
                       @else
-                        <form method="POST" action="{{ route('admin.call-recordings.fetch-audio', $row->id) }}" class="d-inline mb-1">
-                          @csrf
-                          <button type="submit" class="btn btn-sm btn-warning mb-1">Ses çek</button>
-                        </form>
                         <form method="POST" action="{{ route('admin.call-recordings.upload', $row->id) }}" enctype="multipart/form-data" class="mb-0">
                           @csrf
-                          <label class="small d-block mb-1">1) mp3 seç → 2) Yükle</label>
+                          <label class="small d-block mb-1">Eski çağrı: mp3 seç → Yükle</label>
                           <input type="file" name="audio" accept=".mp3,.wav,.ogg,.m4a,audio/*" class="form-control-file form-control-sm" required>
                           <button type="submit" class="btn btn-sm btn-success mt-1">Yükle</button>
                         </form>

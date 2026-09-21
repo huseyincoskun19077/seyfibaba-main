@@ -157,10 +157,8 @@ class NetsantralCallRecordingService
             'failed' => $failed,
         ];
 
-        if ($downloaded === 0 && $classicError) {
-            $result['message'] = 'Ses API kapalı (331). Satırdaki «Ses çek» veya mp3 yükleme kullanın; Netgsm’den netsantral/report / FTP açtırın.';
-        } elseif ($downloaded === 0 && $sourceNote === 'Netsipp call-details') {
-            $result['message'] = 'Netsipp liste verdi; ses yok. Satırdan «Ses çek» deneyin veya mp3 yükleyin.';
+        if ($downloaded === 0 && ($classicError || $sourceNote === 'Netsipp call-details')) {
+            $result['message'] = 'Liste geldi; ses Netsipp’te API ile gelmez. Yeni çağrılar için Webhook CDR kurun; eski çağrı için satıra mp3 yükleyin.';
         }
 
         return $result;
@@ -738,7 +736,7 @@ class NetsantralCallRecordingService
             '72' => 'Netgsm 72: Santral/CDR isteği reddedildi. Genelde yanlış sabit hat (pbxnum), desteklenmeyen parametre veya santral rapor yetkisi. Sabit hattı 850…/312… formatında (başında 0 veya 90 olmadan) kaydedin; yine olmazsa Netgsm’den “netsantral/report” izni isteyin.',
             '80' => 'Sorgulama limiti aşıldı; birkaç dakika bekleyip tekrar deneyin.',
             '100' => 'Netgsm sistem hatası; sonra tekrar deneyin.',
-            '331' => 'Netgsm 331: Klasik netsantral/report bu hesapta kapalı. Netsipp API key (/v1/me) çalışsa bile ses URL bu endpoint’ten gelmez. Çağrı listesi için Netsipp API key + Aktif yeterli; ses için Netgsm destekten netsantral/report izni isteyin.',
+            '331' => 'Bu hesap Netsipp; klasik netsantral/report kapalı (331). Ses için Netsipp Webhook CDR kullanın (Ürün Mağazası → cdr senaryosu).',
         ];
 
         $hint = $map[$codeStr] ?? null;
