@@ -15,65 +15,87 @@
 
     <div class="section-body">
       <div class="alert alert-info">
-        Netgsm Netsantral CDR API ile görüşmeleri çeker, ses varsa <code>uploads/call-recordings</code> altına kaydeder.
-        AI Transkript kullanılmaz. API bilgilerini aşağıdaki formdan girin.
+        <strong>Netsipp:</strong> Ses kayıtları klasik API ile gelmez. Netgsm’in dediği gibi
+        <strong>Netsipp Webhook → CDR</strong> senaryosu kullanılır; çağrı bitince <code>seskaydi</code> linki buraya düşer ve dosya indirilir.
       </div>
 
       <div class="card">
-        <div class="card-header"><h4><i class="fas fa-key mr-2"></i>API Ayarları (Netsantral / Netsipp)</h4></div>
+        <div class="card-header"><h4><i class="fas fa-key mr-2"></i>API / Webhook Ayarları</h4></div>
         <div class="card-body">
+          @php
+            $whSecret = $setting->netsipp_webhook_secret ?? '';
+            $webhookUrl = $whSecret !== ''
+              ? url('/api/webhooks/netsipp') . '?token=' . urlencode($whSecret)
+              : null;
+          @endphp
+          @if($webhookUrl)
+            <div class="alert alert-success">
+              <strong>Netsipp’e yapıştırılacak Webhook URL:</strong>
+              <div class="input-group mt-2">
+                <input type="text" class="form-control" readonly value="{{ $webhookUrl }}" id="netsipp-webhook-url" onclick="this.select()">
+              </div>
+              <small class="d-block mt-2">
+                Netsipp → Ürün Mağazası → Webhook → senaryo: <code>cdr</code> → bu URL.
+                Doküman: <a href="https://docs.netsipp.com/api/webhook/cdr" target="_blank" rel="noopener">docs.netsipp.com/api/webhook/cdr</a>
+              </small>
+            </div>
+          @else
+            <div class="alert alert-warning">Webhook URL için aşağıdan bir kez <strong>Kaydet</strong> basın (gizli anahtar üretilecek).</div>
+          @endif
+
           <form method="POST" action="{{ route('admin.call-recordings.settings') }}">
             @csrf
             <div class="form-group">
               <div class="custom-control custom-switch">
                 <input type="checkbox" class="custom-control-input" id="netsantral_enabled" name="netsantral_enabled" value="1" {{ ($setting->netsantral_enabled ?? false) ? 'checked' : '' }}>
-                <label class="custom-control-label" for="netsantral_enabled">Netsantral CDR senkronunu aktif et</label>
+                <label class="custom-control-label" for="netsantral_enabled">Senkron / ayarları aktif et</label>
               </div>
             </div>
             <div class="row">
               <div class="col-md-3">
                 <div class="form-group">
-                  <label>Netgsm kullanıcı kodu (usercode)</label>
-                  <input type="text" name="netsantral_usercode" class="form-control" value="{{ old('netsantral_usercode', $setting->netsantral_usercode ?? '') }}" placeholder="Netgsm abone / kullanıcı kodu" autocomplete="off">
+                  <label>Netgsm kullanıcı kodu (opsiyonel)</label>
+                  <input type="text" name="netsantral_usercode" class="form-control" value="{{ old('netsantral_usercode', $setting->netsantral_usercode ?? '') }}" placeholder="usercode" autocomplete="off">
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="form-group">
-                  <label>Netgsm şifre</label>
+                  <label>Netgsm şifre (opsiyonel)</label>
                   @php
                     $pw = $setting->netsantral_password ?? '';
                     $pwMask = $pw !== '' ? (substr($pw, 0, 2) . '****' . substr($pw, -2)) : '';
                   @endphp
                   <input type="password" name="netsantral_password" class="form-control" value="{{ $pwMask }}" placeholder="Şifre" autocomplete="new-password">
-                  <small class="text-muted">Değiştirmek istemiyorsanız alana dokunmayın.</small>
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="form-group">
-                  <label>Santral no (pbxnum)</label>
-                  <input type="text" name="netsantral_pbxnum" class="form-control" value="{{ old('netsantral_pbxnum', $setting->netsantral_pbxnum ?? '') }}" placeholder="850xxxxxxx veya 312xxxxxxx" autocomplete="off">
-                  <small class="text-muted">Başında 0 veya 90 olmadan yazın. Sistem önce pbxnum’suz resmi CDR isteğini dener.</small>
+                  <label>Santral no</label>
+                  <input type="text" name="netsantral_pbxnum" class="form-control" value="{{ old('netsantral_pbxnum', $setting->netsantral_pbxnum ?? '') }}" placeholder="850xxxxxxx" autocomplete="off">
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="form-group">
-                  <label>Netsipp API key</label>
+                  <label>Netsipp API key (liste için)</label>
                   @php
                     $ak = $setting->netsipp_api_key ?? '';
                     $akMask = $ak !== '' ? (substr($ak, 0, 4) . '****' . substr($ak, -4)) : '';
                   @endphp
                   <input type="password" name="netsipp_api_key" class="form-control" value="{{ $akMask }}" placeholder="Bearer API key" autocomplete="new-password">
-                  <small class="text-muted">Netsipp hesabı için asıl kaynak. Çağrı listesi: /v1/reports/call-details</small>
                 </div>
               </div>
             </div>
+            <div class="form-group">
+              <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="regenerate_webhook_secret" name="regenerate_webhook_secret" value="1">
+                <label class="custom-control-label" for="regenerate_webhook_secret">Webhook anahtarını yenile (URL değişir)</label>
+              </div>
+            </div>
             <button type="submit" class="btn btn-success">
-              <i class="fas fa-save mr-1"></i> API ayarlarını kaydet
+              <i class="fas fa-save mr-1"></i> Kaydet
             </button>
             <p class="text-muted mt-3 mb-0 small">
-              <strong>Netsipp:</strong> API key + Aktif → çağrı listesini çeker (ses URL vermez).
-              <strong>Klasik Netgsm:</strong> usercode/şifre ile <code>netsantral/report</code> → ses dosyası (çoğu Netsipp hesabında 331).
-              Ses dinlemek için Netgsm’den klasik CDR izni gerekir.
+              <strong>Ses:</strong> Webhook CDR. <strong>Eski çağrı listesi:</strong> Çek butonu (Netsipp call-details). Geçmiş sesler için Netgsm panelinden indirip satıra yükleyin.
             </p>
           </form>
         </div>

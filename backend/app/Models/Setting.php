@@ -33,6 +33,7 @@ class Setting extends Model
         'netsantral_pbxnum',
         'netsantral_enabled',
         'netsipp_api_key',
+        'netsipp_webhook_secret',
         'return_window_days',
         'auto_complete_days',
         'payout_hold_days',
@@ -61,6 +62,7 @@ class Setting extends Model
         'netgsm_password',
         'netsantral_password',
         'netsipp_api_key',
+        'netsipp_webhook_secret',
     ];
 
     public function currency(){

@@ -468,6 +468,47 @@ class NetsantralCallRecordingService
     }
 
     /**
+     * Netsipp Webhook CDR senaryosu (Türkçe alanlar + seskaydi).
+     * @see https://docs.netsipp.com/api/webhook/cdr
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function upsertFromNetsippCdrWebhook(array $payload): ?CallRecording
+    {
+        $uniqueid = trim((string) ($payload['asteriskId'] ?? ''));
+        if ($uniqueid === '') {
+            throw new \InvalidArgumentException('asteriskId eksik');
+        }
+
+        $remoteUrl = trim((string) ($payload['seskaydi'] ?? ''));
+        $calledAt = $this->parseCallDate($payload['bas'] ?? null);
+
+        $attrs = [
+            'common_id' => isset($payload['ortakkimlik']) ? (string) $payload['ortakkimlik'] : null,
+            'source' => isset($payload['arayan']) ? (string) $payload['arayan'] : null,
+            'destination' => isset($payload['aranan']) ? (string) $payload['aranan'] : null,
+            'direction' => isset($payload['yon']) ? (int) $payload['yon'] : null,
+            'duration_sec' => isset($payload['sure']) ? (int) $payload['sure'] : null,
+            'called_at' => $calledAt,
+            'line' => isset($payload['santral']) ? (string) $payload['santral'] : (isset($payload['trunk']) ? (string) $payload['trunk'] : null),
+            'directory' => null,
+            'remote_recording_url' => $remoteUrl !== '' ? $remoteUrl : null,
+            'raw_payload' => $payload,
+        ];
+
+        if ($remoteUrl === '') {
+            $attrs['sync_status'] = 'no_recording';
+        } elseif (! CallRecording::where('uniqueid', $uniqueid)->whereNotNull('local_path')->exists()) {
+            $attrs['sync_status'] = 'pending';
+        }
+
+        return CallRecording::updateOrCreate(
+            ['uniqueid' => $uniqueid],
+            $attrs
+        );
+    }
+
+    /**
      * @param  array<string, mixed>  $row
      * @return array<string, mixed>|null
      */

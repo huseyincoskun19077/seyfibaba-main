@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\PublicSellerRegistrationController;
 use App\Http\Controllers\API\Webhooks\GeliverWebhookController;
+use App\Http\Controllers\API\Webhooks\NetsippWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -1067,3 +1068,5 @@ Route::group(['middleware' => ['auth:api'], 'prefix' => 'user/ai-chat'], functio
 });
 Route::post('webhooks/geliver', [GeliverWebhookController::class, 'handle'])
     ->middleware('geliver.enabled');
+Route::post('webhooks/netsipp', [NetsippWebhookController::class, 'handle'])
+    ->middleware('throttle:120,1');

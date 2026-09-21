@@ -65,16 +65,22 @@ class CallRecordingController extends Controller
             $apiKey = $setting->netsipp_api_key;
         }
 
+        $webhookSecret = trim((string) ($setting->netsipp_webhook_secret ?? ''));
+        if ($webhookSecret === '' || $request->boolean('regenerate_webhook_secret')) {
+            $webhookSecret = bin2hex(random_bytes(24));
+        }
+
         $setting->update([
             'netsantral_usercode' => $request->input('netsantral_usercode'),
             'netsantral_password' => $password,
             'netsantral_pbxnum' => $this->normalizePbxnum($request->input('netsantral_pbxnum')),
             'netsantral_enabled' => $request->boolean('netsantral_enabled'),
             'netsipp_api_key' => $apiKey,
+            'netsipp_webhook_secret' => $webhookSecret,
         ]);
 
         return redirect()->route('admin.call-recordings')->with([
-            'messege' => 'Netsantral / Netsipp API ayarları kaydedildi.',
+            'messege' => 'Netsipp ayarları kaydedildi. Webhook URL’sini Netsipp Ürün Mağazası’na yapıştırın.',
             'alert-type' => 'success',
         ]);
     }
