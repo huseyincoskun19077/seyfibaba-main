@@ -16,6 +16,20 @@
 
 
           <div class="section-body">
+            <div class="card mb-3">
+              <div class="card-body">
+                <form action="{{ route('admin.update-col-title', $column) }}" method="POST" class="form-inline">
+                  @csrf
+                  @method('PUT')
+                  <div class="form-group mr-2 mb-0">
+                    <label class="mr-2 mb-0">Sütun başlığı (sitede görünür)</label>
+                    <input type="text" name="title" class="form-control" value="{{ $columnTitle }}" style="min-width:280px">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">Başlığı Kaydet</button>
+                </form>
+                <small class="text-muted d-block mt-2">Bu listedeki linkler footer&rsquo;daki &ldquo;{{ $title }}&rdquo; bölümünde görünür.</small>
+              </div>
+            </div>
             <a href="javascript:;" data-toggle="modal" data-target="#createIcon" class="btn btn-primary"><i class="fas fa-plus"></i> {{__('admin.Add New')}}</a>
             <div class="row mt-4">
                 <div class="col">

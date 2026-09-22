@@ -337,49 +337,30 @@ class HomeController extends Controller
 
         $footer = Footer::first();
 
-        $columnTitle = $footer->first_column;
+        $columnTitle = $footer?->first_column ?: 'Popüler Marka ve Mağazalar';
 
-        $footer_first_col = array(
-
+        $footer_first_col = (object) array(
             'col_links' => $first_col_links,
-
             'columnTitle' => $columnTitle
-
         );
-
-        $footer_first_col = (object)$footer_first_col;
-
-
 
         $second_col_links = FooterLink::where('column',2)->get();
 
-        $columnTitle = $footer->second_column;
+        $columnTitle = $footer?->second_column ?: 'Popüler Sayfalar';
 
-        $footer_second_col = array(
-
+        $footer_second_col = (object) array(
             'col_links' => $second_col_links,
-
             'columnTitle' => $columnTitle
-
         );
-
-        $footer_second_col = (object)$footer_second_col;
-
-
 
         $third_col_links = FooterLink::where('column',3)->get();
 
-        $columnTitle = $footer->third_column;
+        $columnTitle = $footer?->third_column ?: 'Yardım';
 
-        $footer_third_col = array(
-
+        $footer_third_col = (object) array(
             'col_links' => $third_col_links,
-
             'columnTitle' => $columnTitle
-
         );
-
-        $footer_third_col = (object)$footer_third_col;
 
 
 

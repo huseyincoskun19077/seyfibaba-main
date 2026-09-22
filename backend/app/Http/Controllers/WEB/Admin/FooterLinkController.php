@@ -15,9 +15,9 @@ class FooterLinkController extends Controller
     public function index(){
         $links = FooterLink::where('column',1)->get();
         $column = 1;
-        $title = trans('admin_validation.First Column Link');
+        $title = 'Popüler Marka ve Mağazalar';
         $footer = Footer::first();
-        $columnTitle = $footer->first_column;
+        $columnTitle = $footer->first_column ?: $title;
 
         return view('admin.footer_link', compact('links','column','title','columnTitle'));
 
@@ -26,9 +26,9 @@ class FooterLinkController extends Controller
     public function secondColFooterLink(){
         $links = FooterLink::where('column',2)->get();
         $column = 2;
-        $title = trans('admin_validation.Second Column Link');
+        $title = 'Popüler Sayfalar';
         $footer = Footer::first();
-        $columnTitle = $footer->second_column;
+        $columnTitle = $footer->second_column ?: $title;
 
         return view('admin.footer_link', compact('links','column','title','columnTitle'));
     }
@@ -36,9 +36,9 @@ class FooterLinkController extends Controller
     public function thirdColFooterLink(){
         $links = FooterLink::where('column',3)->get();
         $column = 3;
-        $title = trans('admin_validation.Third Column Link');
+        $title = 'Yardım Linkleri';
         $footer = Footer::first();
-        $columnTitle = $footer->third_column;
+        $columnTitle = $footer->third_column ?: $title;
 
         return view('admin.footer_link', compact('links','column','title','columnTitle'));
     }
