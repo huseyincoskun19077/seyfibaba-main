@@ -3,15 +3,17 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\ChildCategory;
 use App\Models\Product;
 use App\Models\SubCategory;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
  * Iyzico kategori bazlı taksit kuralları.
  *
- * Öncelik: SubCategory.max_installment → Category.max_installment → 1 (tek çekim)
- * SubCategory.max_installment = 0 → ana kategoriye düş
+ * Öncelik: ChildCategory → SubCategory → Category → 1 (tek çekim)
+ * Bir seviyede max_installment boş veya 0 ise bir üst seviyeye düşülür.
  * Sepet: en kısıtlayıcı ürünün max taksiti tüm ödemeye uygulanır.
  */
 class CategoryInstallmentService
@@ -72,29 +74,81 @@ class CategoryInstallmentService
         return min(12, $n);
     }
 
+    /**
+     * Boş veya 0 = bir üst seviyeden devral.
+     */
+    private function hasExplicitInstallment(mixed $value): bool
+    {
+        if ($value === null || $value === '') {
+            return false;
+        }
+
+        return (int) $value !== 0;
+    }
+
     public function maxInstallmentForProduct(Product $product): int
+    {
+        return (int) $this->resolveInstallmentForProduct($product)['max_installment'];
+    }
+
+    /**
+     * @return array{max_installment: int, source: string, category_name: string}
+     */
+    public function resolveInstallmentForProduct(Product $product): array
     {
         $category = $product->relationLoaded('category')
             ? $product->category
             : Category::query()->find($product->category_id);
 
-        $subCategoryId = (int) ($product->sub_category_id ?? 0);
-        if ($subCategoryId > 0) {
-            $sub = SubCategory::query()->find($subCategoryId);
-            if ($sub && $sub->max_installment !== null) {
-                // 0 = ana kategoriden devral
-                if ((int) $sub->max_installment !== 0) {
-                    return $this->normalizeMaxInstallment($sub->max_installment);
-                }
+        // 1) Child kategori
+        $childCategoryId = (int) ($product->child_category_id ?? 0);
+        if (
+            $childCategoryId > 0
+            && Schema::hasColumn('child_categories', 'max_installment')
+        ) {
+            $child = $product->relationLoaded('childCategory')
+                ? $product->childCategory
+                : ChildCategory::query()->find($childCategoryId);
+
+            if ($child && $this->hasExplicitInstallment($child->max_installment ?? null)) {
+                return [
+                    'max_installment' => $this->normalizeMaxInstallment($child->max_installment),
+                    'source' => 'child',
+                    'category_name' => (string) ($child->name ?? ''),
+                ];
             }
         }
 
-        if ($category && $category->max_installment !== null) {
-            return $this->normalizeMaxInstallment($category->max_installment);
+        // 2) Alt kategori (SubCategory)
+        $subCategoryId = (int) ($product->sub_category_id ?? 0);
+        if ($subCategoryId > 0) {
+            $sub = $product->relationLoaded('subCategory')
+                ? $product->subCategory
+                : SubCategory::query()->find($subCategoryId);
+
+            if ($sub && $this->hasExplicitInstallment($sub->max_installment ?? null)) {
+                return [
+                    'max_installment' => $this->normalizeMaxInstallment($sub->max_installment),
+                    'source' => 'sub',
+                    'category_name' => (string) ($sub->name ?? ''),
+                ];
+            }
         }
 
-        // Iyzico onayı için bilinmeyen kategori → tek çekim (ihtiyatlı)
-        return 1;
+        // 3) En üst kategori (Category)
+        if ($category && $this->hasExplicitInstallment($category->max_installment ?? null)) {
+            return [
+                'max_installment' => $this->normalizeMaxInstallment($category->max_installment),
+                'source' => 'category',
+                'category_name' => (string) ($category->name ?? ''),
+            ];
+        }
+
+        return [
+            'max_installment' => 1,
+            'source' => 'default',
+            'category_name' => (string) ($category?->name ?? ''),
+        ];
     }
 
     /**
@@ -115,7 +169,7 @@ class CategoryInstallmentService
             }
 
             $product = Product::query()
-                ->with(['category'])
+                ->with(['category', 'subCategory', 'childCategory'])
                 ->find($productId);
 
             if (! $product) {
@@ -133,9 +187,6 @@ class CategoryInstallmentService
         ));
     }
 
-    /**
-     * Kategori adına göre Iyzico kural anahtarı.
-     */
     public function classifyRule(?string $name, ?string $slug, ?Category $parentCategory = null): string
     {
         if ($this->isKozmetikLike($name, $slug)) {
@@ -174,9 +225,15 @@ class CategoryInstallmentService
             $sub = SubCategory::query()->find($subCategoryId);
         }
 
+        $child = null;
+        $childCategoryId = (int) ($product->child_category_id ?? 0);
+        if ($childCategoryId > 0) {
+            $child = ChildCategory::query()->find($childCategoryId);
+        }
+
         $ruleKey = $this->classifyRule(
-            $sub?->name ?? $category?->name,
-            $sub?->slug ?? $category?->slug,
+            $child?->name ?? $sub?->name ?? $category?->name,
+            $child?->slug ?? $sub?->slug ?? $category?->slug,
             $category
         );
 
@@ -198,9 +255,6 @@ class CategoryInstallmentService
             || str_contains($haystack, 'parfum');
     }
 
-    /**
-     * Mobilya ana kategori veya alt isimde "ekipman" olsa bile mobilya kalır.
-     */
     private function isMobilyaLike(?string $name, ?string $slug, ?Category $parentCategory = null): bool
     {
         $haystack = $this->normalizeHaystack($name, $slug);
@@ -218,7 +272,6 @@ class CategoryInstallmentService
             ? $this->normalizeHaystack($parentCategory->name, $parentCategory->slug)
             : '';
 
-        // Ana kategori mobilya ise alt kategoride "ekipman" geçse bile Mobilya kuralı
         if ($parentHaystack !== '' && str_contains($parentHaystack, 'mobilya')) {
             return true;
         }
@@ -232,8 +285,6 @@ class CategoryInstallmentService
     }
 
     /**
-     * Admin / seeder için önerilen max_installment değerleri (kategori adına göre).
-     *
      * @return array{max_installment: int, rule: string}
      */
     public function suggestedInstallmentsByCategoryName(string $categoryName): array

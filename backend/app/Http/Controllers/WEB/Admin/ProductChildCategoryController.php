@@ -98,6 +98,10 @@ class ProductChildCategoryController extends Controller
         $childCategory->name = $request->name;
         $childCategory->slug = $request->slug;
         $childCategory->status = $request->status;
+        if (Schema::hasColumn('child_categories', 'max_installment')) {
+            $val = $request->input('max_installment');
+            $childCategory->max_installment = ($val === '' || $val === null) ? null : (int) $val;
+        }
         if (Schema::hasColumn('child_categories', 'serial')) {
             $childCategory->serial = app(CategorySerialService::class)->nextSerial(ChildCategory::class, [
                 'sub_category_id' => (int) $request->sub_category,
@@ -152,6 +156,10 @@ class ProductChildCategoryController extends Controller
         $childCategory->name = $request->name;
         $childCategory->slug = $request->slug;
         $childCategory->status = $request->status;
+        if (Schema::hasColumn('child_categories', 'max_installment')) {
+            $val = $request->input('max_installment');
+            $childCategory->max_installment = ($val === '' || $val === null) ? null : (int) $val;
+        }
         $childCategory->save();
 
         $notification = trans('admin_validation.Update Successfully');

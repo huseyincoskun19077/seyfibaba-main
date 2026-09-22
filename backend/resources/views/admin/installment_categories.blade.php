@@ -26,7 +26,7 @@
       @else
         <div class="alert alert-info">
           <strong>Iyzico onay tablosu → Seyfibaba eşlemesi</strong>
-          <p class="mb-2 mt-2">Ödeme sırasında Iyzico'ya hem <code>enabledInstallments</code> hem sepetteki ürün kategorisi gönderilir. Sepette en düşük taksit limiti tüm siparişe uygulanır.</p>
+          <p class="mb-2 mt-2">Ödeme sırasında taksit limiti şu sırayla bakılır: <strong>Child kategori → Alt kategori → Ana kategori</strong>. Boş/0 olan seviye bir üste düşer. Sepette en düşük taksit limiti tüm siparişe uygulanır.</p>
           <div class="table-responsive">
             <table class="table table-sm table-bordered mb-0 bg-white">
               <thead>
@@ -102,7 +102,7 @@
                 <thead>
                   <tr>
                     <th>Alt Kategori</th>
-                    <th style="width:220px;">Max Taksit (0=Tek Çekim)</th>
+                    <th style="width:220px;">Max Taksit (0/boş = ana kategori)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -126,6 +126,53 @@
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <div class="card mt-4">
+          <div class="card-header">
+            <h4>Child Kategoriler (ChildCategory) — önce buraya bakılır</h4>
+          </div>
+          <div class="card-body">
+            @if(empty($hasChildColumn))
+              <div class="alert alert-warning mb-0">
+                Child kategori için <code>max_installment</code> kolonu yok. Migrate çalıştırın:
+                <code>php artisan migrate --path=database/migrations/2026_09_22_200000_add_max_installment_to_child_categories.php</code>
+              </div>
+            @else
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Child Kategori</th>
+                      <th style="width:220px;">Max Taksit (0/boş = alt kategori)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @forelse(($childCategories ?? []) as $child)
+                      <tr>
+                        <td>{{ $child->name }}</td>
+                        <td>
+                          <input
+                            type="number"
+                            min="0"
+                            max="12"
+                            class="form-control"
+                            name="child_categories[{{ $child->id }}]"
+                            value="{{ old('child_categories.'.$child->id, $child->max_installment) }}"
+                            placeholder="Boş = alt kategori"
+                          >
+                        </td>
+                      </tr>
+                    @empty
+                      <tr>
+                        <td colspan="2" class="text-muted">Child kategori kaydı yok.</td>
+                      </tr>
+                    @endforelse
+                  </tbody>
+                </table>
+              </div>
+            @endif
           </div>
         </div>
 

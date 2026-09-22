@@ -220,6 +220,7 @@ class CartPriceService
             ));
 
             $product = Product::query()
+                ->with(['category', 'subCategory', 'childCategory'])
                 ->where('id', $productId)
                 ->where('status', 1)
                 ->where('approve_by_admin', 1)
@@ -275,6 +276,9 @@ class CartPriceService
                 }
             }
 
+            $installment = app(CategoryInstallmentService::class)
+                ->resolveInstallmentForProduct($product);
+
             $result[] = [
                 'product_id' => $productId,
                 'available' => true,
@@ -292,6 +296,12 @@ class CartPriceService
                     'thumb_image' => $product->thumb_image,
                     'vendor_id' => $product->vendor_id,
                     'qty' => (int) $product->qty,
+                    'barcode' => $product->barcode ?? null,
+                    'sku' => $product->sku ?? null,
+                    'sale_unit_qty' => max(1, (int) ($product->sale_unit_qty ?? 1)),
+                    'max_installment' => (int) $installment['max_installment'],
+                    'category_name' => (string) ($installment['category_name'] ?? ''),
+                    'installment_source' => (string) ($installment['source'] ?? ''),
                 ],
                 'variants' => $variants,
             ];

@@ -50,6 +50,14 @@
                                     <input type="text" id="slug" class="form-control"  name="slug">
                                 </div>
 
+                                @if(\Illuminate\Support\Facades\Schema::hasColumn('child_categories', 'max_installment'))
+                                <div class="form-group col-12">
+                                    <label>Max Taksit</label>
+                                    <input type="number" min="0" max="12" class="form-control" name="max_installment" value="{{ old('max_installment') }}" placeholder="Boş = alt kategori kuralı">
+                                    <small class="text-muted">0 veya boş bırakılırsa alt kategoriye, orası da boşsa ana kategoriye bakılır.</small>
+                                </div>
+                                @endif
+
                                 <div class="form-group col-12">
                                     <label>{{__('admin.Status')}} <span class="text-danger">*</span></label>
                                     <select name="status" class="form-control">
