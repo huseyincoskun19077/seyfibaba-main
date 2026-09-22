@@ -31,12 +31,12 @@
                                     </div>
                                     <div class="form-group">
                                         <label for="">{{__('admin.Topbar Phone')}}</label>
-                                        <input type="text" name="topbar_phone" class="form-control" value="{{ old('topbar_phone', $setting->topbar_phone) }}">
+                                        <input type="text" name="topbar_phone" class="form-control" value="{{ old('topbar_phone', $setting->topbar_phone ?? '') }}">
                                         <small class="text-muted">Müşteri hizmetleri numarası olarak üst barda gösterilir.</small>
                                     </div>
                                     <div class="form-group">
                                         <label for="">{{__('admin.Topbar Email')}}</label>
-                                        <input type="text" name="topbar_email" class="form-control" value="{{ old('topbar_email', $setting->topbar_email) }}">
+                                        <input type="text" name="topbar_email" class="form-control" value="{{ old('topbar_email', $setting->topbar_email ?? '') }}">
                                     </div>
                                     <div class="form-group">
                                         <label for="">{{__('admin.Menu Phone')}}</label>

@@ -111,19 +111,26 @@ class ContentController extends Controller
     }
 
     public function headerPhoneNumber(){
-        $columns = ['topbar_phone', 'topbar_email', 'menu_phone'];
-        if (\Schema::hasColumn('settings', 'topbar_announcement')) {
-            $columns[] = 'topbar_announcement';
+        $candidates = ['topbar_phone', 'topbar_email', 'menu_phone', 'topbar_announcement'];
+        $columns = [];
+        foreach ($candidates as $column) {
+            if (\Schema::hasColumn('settings', $column)) {
+                $columns[] = $column;
+            }
         }
-        $setting = Setting::select($columns)->first();
+        if (empty($columns)) {
+            $columns = ['id'];
+        }
+
+        $setting = Setting::select($columns)->first() ?: new Setting();
 
         $slogansText = '';
-        if ($setting && !empty($setting->topbar_announcement)) {
+        if (!empty($setting->topbar_announcement)) {
             $decoded = json_decode($setting->topbar_announcement, true);
             if (is_array($decoded)) {
                 $slogansText = implode("\n", $decoded);
             } else {
-                $slogansText = $setting->topbar_announcement;
+                $slogansText = (string) $setting->topbar_announcement;
             }
         }
         if ($slogansText === '') {
