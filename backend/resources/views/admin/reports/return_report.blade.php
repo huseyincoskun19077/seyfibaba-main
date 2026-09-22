@@ -56,7 +56,7 @@
         <div class="col-lg-3 col-md-6">
           <div class="card card-statistic-1">
             <div class="card-icon bg-info"><i class="fas fa-money-bill-alt"></i></div>
-            <div class="card-wrap"><div class="card-header"><h4>İade Tutarı</h4></div><div class="card-body">{{ $setting->currency_icon }}{{ number_format($summary->total_refund, 2) }}</div></div>
+            <div class="card-wrap"><div class="card-header"><h4>İade Tutarı</h4></div><div class="card-body">{{ sb_money($summary->total_refund) }}</div></div>
           </div>
         </div>
         <div class="col-lg-3 col-md-6">
@@ -105,7 +105,7 @@
                     <tr>
                       <td>{{ $s->shop_name ?? 'Admin' }}</td>
                       <td class="text-right">{{ $s->return_count }}</td>
-                      <td class="text-right">{{ $setting->currency_icon }}{{ number_format($s->total_refund, 2) }}</td>
+                      <td class="text-right">{{ sb_money($s->total_refund) }}</td>
                     </tr>
                     @empty
                     <tr><td colspan="3" class="text-center text-muted">Veri yok</td></tr>
@@ -150,7 +150,7 @@
                   </td>
                   <td>{{ $r->shop_name ?? 'Admin' }}</td>
                   <td>{{ $r->reason }}</td>
-                  <td class="text-right">{{ $setting->currency_icon }}{{ number_format($r->refund_amount, 2) }}</td>
+                  <td class="text-right">{{ sb_money($r->refund_amount) }}</td>
                   <td>
                     @switch($r->status)
                       @case(0) <span class="badge badge-warning">Bekliyor</span> @break

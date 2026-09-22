@@ -323,7 +323,9 @@
   }
 
   function money(n) {
-    return Number(n || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var abs = Math.abs(Number(n) || 0);
+    var formatted = abs.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return '₺' + formatted;
   }
   function text(el) { return (el && el.value ? el.value : '').trim(); }
   function selectedText(sel) {
@@ -378,14 +380,14 @@
       ['Ad', text(document.getElementById('qpName'))],
       ['Kısa açıklama', text(document.getElementById('qpShortDesc')) || 'AI tamamlayacak'],
       ['Paket', units + ' adet'],
-      ['Birim fiyat', money(unit) + ' ₺'],
-      ['Toplam fiyat', money(totalPrice) + ' ₺'],
+      ['Birim fiyat', money(unit)],
+      ['Toplam fiyat', money(totalPrice)],
       ['Stok', (document.getElementById('qpQty').value || '1') + ' paket'],
       ['Kategori', selectedText(document.getElementById('qpCategory'))],
       ['Alt kategori', selectedText(document.getElementById('qpSubCategory'))],
       ['Alt alt kategori', selectedText(document.getElementById('qpChildCategory'))],
       ['Marka', selectedText(document.getElementById('qpBrandSelect')) || text(document.getElementById('qpBrandName')) || '—'],
-      ['İndirimli fiyat', offer > 0 ? money(offer) + ' ₺' : 'Yok']
+      ['İndirimli fiyat', offer > 0 ? money(offer) : 'Yok']
     ];
     document.getElementById('qpSummary').innerHTML = rows.map(function(r) {
       if (!r[1] || r[1].indexOf('—') === 0) return '';
@@ -429,7 +431,7 @@
     var unitP = parseMoney(unitEl.value);
     if (totalP <= 0 && unitP <= 0) { hintEl.style.display = 'none'; return; }
     hintEl.style.display = 'block';
-    hintEl.innerHTML = '<strong>' + units + ' adet</strong> paket · birim <strong>' + money(unitP || (totalP / units)) + ' ₺</strong> · toplam <strong>' + money(totalP || (unitP * units)) + ' ₺</strong>';
+    hintEl.innerHTML = '<strong>' + units + ' adet</strong> paket · birim <strong>' + money(unitP || (totalP / units)) + '</strong> · toplam <strong>' + money(totalP || (unitP * units)) + '</strong>';
   }
   function syncFromUnit() {
     if (syncing) return;

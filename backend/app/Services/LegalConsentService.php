@@ -10,9 +10,11 @@ use Illuminate\Support\Carbon;
 class LegalConsentService
 {
     public const SELLER_REGISTER_REQUIRED_SLUGS = [
-        'seller-terms',
-        'privacy-policy',
+        'privacy-agreement',
         'kvkk-aydinlatma',
+        'terms',
+        'privacy-policy',
+        'seller-terms',
     ];
 
     /**

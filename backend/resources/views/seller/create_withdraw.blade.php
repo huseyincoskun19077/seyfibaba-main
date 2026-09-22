@@ -24,17 +24,17 @@
                     <h6 class="text-primary mb-3">{{ __('admin.Earnings breakdown') }}</h6>
                     <div class="row">
                       <div class="col-md-3 col-6 mb-2"><strong>Platformdaki toplam</strong><br>
-                        {{ $setting->currency_icon }}{{ number_format($earnings['total_in_platform'] ?? 0, 2, ',', '.') }}</div>
+                        {{ sb_money($earnings['total_in_platform'] ?? 0) }}</div>
                       <div class="col-md-3 col-6 mb-2"><strong>İyzico havuzu</strong><br>
-                        {{ $setting->currency_icon }}{{ number_format($earnings['iyzico_pool_balance'] ?? 0, 2, ',', '.') }}</div>
+                        {{ sb_money($earnings['iyzico_pool_balance'] ?? 0) }}</div>
                       <div class="col-md-3 col-6 mb-2"><strong>{{ __('admin.Withdrawable balance') }} (havale)</strong><br>
-                        <span class="text-success">{{ $setting->currency_icon }}{{ number_format($earnings['withdrawable_balance'], 2, ',', '.') }}</span></div>
+                        <span class="text-success">{{ sb_money($earnings['withdrawable_balance']) }}</span></div>
                       <div class="col-md-3 col-6 mb-2"><strong>Havale beklemede</strong><br>
-                        {{ $setting->currency_icon }}{{ number_format($earnings['bank_pending_hold_balance'] ?? 0, 2, ',', '.') }}</div>
+                        {{ sb_money($earnings['bank_pending_hold_balance'] ?? 0) }}</div>
                       <div class="col-md-3 col-6 mb-2"><strong>{{ __('admin.Net from completed orders') }}</strong><br>
-                        {{ $setting->currency_icon }}{{ number_format($earnings['settled_net'], 2, ',', '.') }}</div>
+                        {{ sb_money($earnings['settled_net']) }}</div>
                       <div class="col-md-3 col-6 mb-2"><strong>{{ __('admin.Approved withdrawals total') }}</strong><br>
-                        {{ $setting->currency_icon }}{{ number_format($earnings['approved_withdraw_total'], 2, ',', '.') }}</div>
+                        {{ sb_money($earnings['approved_withdraw_total']) }}</div>
                     </div>
                     <div class="alert alert-info border mt-3 mb-0">
                       <small>{{ $earnings['channel_note'] ?? '' }}</small>
@@ -67,7 +67,7 @@
 
                         <div class="form-group">
                             <label for="">{{__('admin.Withdraw Amount')}}</label>
-                            <input type="number" step="0.01" min="0.01" @if($earnings['withdrawable_balance'] > 0) max="{{ $earnings['withdrawable_balance'] }}" @endif class="form-control" name="withdraw_amount" placeholder="{{ __('admin.Max') }}: {{ number_format($earnings['withdrawable_balance'], 2, ',', '.') }}">
+                            <input type="number" step="0.01" min="0.01" @if($earnings['withdrawable_balance'] > 0) max="{{ $earnings['withdrawable_balance'] }}" @endif class="form-control" name="withdraw_amount" placeholder="{{ __('admin.Max') }}: {{ sb_money($earnings['withdrawable_balance']) }}">
                             <small class="form-text text-muted">{{ __('admin.Request cannot exceed withdrawable balance') }}</small>
                         </div>
 

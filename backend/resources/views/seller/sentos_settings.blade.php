@@ -273,9 +273,9 @@
                                                 <td><code>{{ $p?->sku ?: ($map->sentos_sku ?: '—') }}</code></td>
                                                 <td>
                                                     @if($p)
-                                                        {{ number_format((float) $p->price, 2, ',', '.') }}
+                                                        {{ sb_money($p->price) }}
                                                         @if((float) $p->offer_price > 0)
-                                                            <small class="text-success d-block">İnd: {{ number_format((float) $p->offer_price, 2, ',', '.') }}</small>
+                                                            <small class="text-success d-block">İnd: {{ sb_money($p->offer_price) }}</small>
                                                         @endif
                                                     @else
                                                         —

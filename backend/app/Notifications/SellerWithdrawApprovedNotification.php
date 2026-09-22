@@ -19,25 +19,25 @@ class SellerWithdrawApprovedNotification extends Notification
 
     public function toArray($notifiable): array
     {
-        $amount = number_format((float) $this->withdraw->withdraw_amount, 2, ',', '.');
+        $amount = \App\Helpers\PriceFormat::money($this->withdraw->withdraw_amount);
 
         return [
             'type' => 'seller_withdraw_approved',
             'withdraw_id' => $this->withdraw->id,
             'amount' => (float) $this->withdraw->withdraw_amount,
             'method' => (string) $this->withdraw->method,
-            'message' => "Paranız transfer edilmiştir: {$amount} ₺",
+            'message' => "Paranız transfer edilmiştir: {$amount}",
         ];
     }
 
     public function toFcm($notifiable): array
     {
-        $amount = number_format((float) $this->withdraw->withdraw_amount, 2, ',', '.');
+        $amount = \App\Helpers\PriceFormat::money($this->withdraw->withdraw_amount);
         $method = (string) ($this->withdraw->method ?: 'EFT/Havale');
 
         return [
             'title' => 'Para transferi tamamlandı',
-            'body' => "Paranız transfer edilmiştir. Tutar: {$amount} ₺ ({$method})",
+            'body' => "Paranız transfer edilmiştir. Tutar: {$amount} ({$method})",
             'data' => [
                 'type' => 'seller_withdraw_approved',
                 'withdraw_id' => (string) $this->withdraw->id,

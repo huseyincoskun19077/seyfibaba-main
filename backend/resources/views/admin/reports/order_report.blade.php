@@ -62,19 +62,19 @@
         <div class="col-lg-3 col-md-6">
           <div class="card card-statistic-1">
             <div class="card-icon bg-success"><i class="fas fa-coins"></i></div>
-            <div class="card-wrap"><div class="card-header"><h4>Ödenen Tutar</h4></div><div class="card-body">{{ $setting->currency_icon }}{{ number_format($summary->paid_amount ?? $summary->total_amount, 2) }}</div></div>
+            <div class="card-wrap"><div class="card-header"><h4>Ödenen Tutar</h4></div><div class="card-body">{{ sb_money($summary->paid_amount ?? $summary->total_amount) }}</div></div>
           </div>
         </div>
         <div class="col-lg-3 col-md-6">
           <div class="card card-statistic-1">
             <div class="card-icon bg-info"><i class="fas fa-truck"></i></div>
-            <div class="card-wrap"><div class="card-header"><h4>Toplam Kargo</h4></div><div class="card-body">{{ $setting->currency_icon }}{{ number_format($summary->total_shipping, 2) }}</div></div>
+            <div class="card-wrap"><div class="card-header"><h4>Toplam Kargo</h4></div><div class="card-body">{{ sb_money($summary->total_shipping) }}</div></div>
           </div>
         </div>
         <div class="col-lg-3 col-md-6">
           <div class="card card-statistic-1">
             <div class="card-icon bg-warning"><i class="fas fa-ticket-alt"></i></div>
-            <div class="card-wrap"><div class="card-header"><h4>Toplam Kupon</h4></div><div class="card-body">{{ $setting->currency_icon }}{{ number_format($summary->total_coupon, 2) }}</div></div>
+            <div class="card-wrap"><div class="card-header"><h4>Toplam Kupon</h4></div><div class="card-body">{{ sb_money($summary->total_coupon) }}</div></div>
           </div>
         </div>
       </div>
@@ -104,8 +104,8 @@
                   <td>{{ $order->created_at->format('d.m.Y H:i') }}</td>
                   <td>{{ $order->user->name ?? '-' }}</td>
                   <td class="text-right">{{ $order->displayProductQty() }}</td>
-                  <td class="text-right">{{ $setting->currency_icon }}{{ number_format($order->total_amount, 2) }}</td>
-                  <td class="text-right">{{ $setting->currency_icon }}{{ number_format($order->shipping_cost, 2) }}</td>
+                  <td class="text-right">{{ sb_money($order->total_amount) }}</td>
+                  <td class="text-right">{{ sb_money($order->shipping_cost) }}</td>
                   <td>
                     @if($order->payment_status == 1)
                       <span class="badge badge-success">Ödendi</span>

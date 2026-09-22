@@ -128,7 +128,7 @@
                       <span class="text-muted">{{ \App\Models\ReturnRequest::reasonLabel($return->reason) }}</span>
                     </td>
                     <td>{{ $return->qty }}</td>
-                    <td>{{ $setting->currency_icon }}{{ number_format((float) ($return->seller_impact['seller_net'] ?? 0), 2) }}</td>
+                    <td>{{ sb_money($return->seller_impact['seller_net'] ?? 0) }}</td>
                     <td>
                       <span class="badge badge-{{ \App\Models\ReturnRequest::statusBadgeClass((int) $return->status) }}">
                         {{ $statusLabels[(int) $return->status] ?? 'Bilinmiyor' }}

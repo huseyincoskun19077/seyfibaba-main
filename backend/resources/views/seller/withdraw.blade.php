@@ -25,7 +25,7 @@
                   <div class="card-icon bg-primary"><i class="fas fa-coins"></i></div>
                   <div class="card-wrap">
                     <div class="card-header"><h4>Platformdaki toplam</h4></div>
-                    <div class="card-body">{{ $setting->currency_icon }}{{ number_format($earnings['total_in_platform'] ?? 0, 2, ',', '.') }}</div>
+                    <div class="card-body">{{ sb_money($earnings['total_in_platform'] ?? 0) }}</div>
                   </div>
                 </div>
               </div>
@@ -34,7 +34,7 @@
                   <div class="card-icon bg-warning"><i class="fas fa-clock"></i></div>
                   <div class="card-wrap">
                     <div class="card-header"><h4>İyzico havuzu (otomatik aktarım)</h4></div>
-                    <div class="card-body">{{ $setting->currency_icon }}{{ number_format($earnings['iyzico_pool_balance'] ?? 0, 2, ',', '.') }}</div>
+                    <div class="card-body">{{ sb_money($earnings['iyzico_pool_balance'] ?? 0) }}</div>
                   </div>
                 </div>
               </div>
@@ -43,7 +43,7 @@
                   <div class="card-icon bg-success"><i class="fas fa-wallet"></i></div>
                   <div class="card-wrap">
                     <div class="card-header"><h4>{{ __('admin.Withdrawable balance') }} (havale)</h4></div>
-                    <div class="card-body">{{ $setting->currency_icon }}{{ number_format($earnings['withdrawable_balance'], 2, ',', '.') }}</div>
+                    <div class="card-body">{{ sb_money($earnings['withdrawable_balance']) }}</div>
                   </div>
                 </div>
               </div>
@@ -52,7 +52,7 @@
                   <div class="card-icon bg-info"><i class="fas fa-hourglass-half"></i></div>
                   <div class="card-wrap">
                     <div class="card-header"><h4>Havale beklemede</h4></div>
-                    <div class="card-body">{{ $setting->currency_icon }}{{ number_format($earnings['bank_pending_hold_balance'] ?? 0, 2, ',', '.') }}</div>
+                    <div class="card-body">{{ sb_money($earnings['bank_pending_hold_balance'] ?? 0) }}</div>
                   </div>
                 </div>
               </div>

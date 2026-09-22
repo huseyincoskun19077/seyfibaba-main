@@ -198,7 +198,7 @@
                                             <td>{{ $p?->subCategory?->name ?: '—' }}</td>
                                             <td>{{ $p?->childCategory?->name ?: '—' }}</td>
                                             <td><code>{{ $p?->sku ?: ($map->softtr_sku ?: '—') }}</code></td>
-                                            <td>{{ $p ? number_format((float)$p->price, 2, ',', '.') : '—' }}</td>
+                                            <td>{{ $p ? sb_money($p->price) : '—' }}</td>
                                             <td>
                                                 @if($p)
                                                     @if((int)$p->qty < 1)

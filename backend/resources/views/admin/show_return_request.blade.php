@@ -64,7 +64,7 @@
                                 <div class="col-md-4 mb-3">
                                     <div class="border rounded p-3 h-100">
                                         <small class="text-muted d-block">İade Tutarı</small>
-                                        <strong>{{ $setting->currency_icon }}{{ number_format((float) ($return->refund_amount ?? 0), 2) }}</strong><br>
+                                        <strong>{{ sb_money($return->refund_amount ?? 0) }}</strong><br>
                                         <span class="text-muted">İade yöntemi: {{ $refundMethodLabel }}</span><br>
                                         <span class="text-muted">Talep #{{ $return->id }}</span>
                                     </div>
@@ -106,9 +106,9 @@
                                                     </div>
                                                 @endif
                                             </td>
-                                            <td>{{ $setting->currency_icon }}{{ number_format((float) optional($return->orderProduct)->unit_price, 2) }}</td>
+                                            <td>{{ sb_money(optional($return->orderProduct)->unit_price) }}</td>
                                             <td>{{ $return->qty }}</td>
-                                            <td>{{ $setting->currency_icon }}{{ number_format((float) ($return->refund_amount ?? 0), 2) }}</td>
+                                            <td>{{ sb_money($return->refund_amount ?? 0) }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -236,14 +236,14 @@
                                         <input type="number" step="0.01" min="0" name="refund_amount" class="form-control" value="{{ old('refund_amount', $return->refund_amount) }}" required>
                                         @if(!empty($suggestedRefund))
                                             <small class="form-text text-muted d-block">
-                                                Önerilen tutar: {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['refund_amount'], 2) }}
-                                                (ürün {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['line_gross'], 2) }}
-                                                − kupon payı {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['coupon_share'], 2) }}
+                                                Önerilen tutar: {{ sb_money((float) $suggestedRefund['refund_amount']) }}
+                                                (ürün {{ sb_money((float) $suggestedRefund['line_gross']) }}
+                                                − kupon payı {{ sb_money((float) $suggestedRefund['coupon_share']) }}
                                                 @if(!empty($suggestedRefund['bank_discount_share']) && (float) $suggestedRefund['bank_discount_share'] > 0)
-                                                    − havale indirimi {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['bank_discount_share'], 2) }}
+                                                    − havale indirimi {{ sb_money((float) $suggestedRefund['bank_discount_share']) }}
                                                 @endif
                                                 @if(!empty($suggestedRefund['shipping_included']))
-                                                    + kargo {{ $setting->currency_icon }}{{ number_format((float) $suggestedRefund['shipping'], 2) }}
+                                                    + kargo {{ sb_money((float) $suggestedRefund['shipping']) }}
                                                 @endif
                                                 ).
                                             </small>

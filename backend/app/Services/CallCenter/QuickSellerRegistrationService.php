@@ -199,7 +199,19 @@ class QuickSellerRegistrationService
             $vendor->slug = $this->uniqueShopSlug($shopName);
             $vendor->email = $hasRealEmail ? $email : null;
             $vendor->phone = $phone;
-            $vendor->address = $address !== '' ? $address : 'Adres bilgisi sonra tamamlanacak';
+            $hqAddress = trim((string) ($data['hq_address'] ?? ''));
+            $vendor->address = $hqAddress !== ''
+                ? ($address !== '' ? $hqAddress.' — '.$address : $hqAddress)
+                : ($address !== '' ? $address : 'Adres bilgisi sonra tamamlanacak');
+            if (Schema::hasColumn('vendors', 'tax_number') && ! empty($data['tax_number'])) {
+                $vendor->tax_number = trim((string) $data['tax_number']);
+            }
+            if (Schema::hasColumn('vendors', 'tax_office') && ! empty($data['tax_office'])) {
+                $vendor->tax_office = trim((string) $data['tax_office']);
+            }
+            if (Schema::hasColumn('vendors', 'legal_company_title')) {
+                $vendor->legal_company_title = $shopName;
+            }
             $vendor->greeting_msg = 'Hoş geldiniz — '.$shopName;
             $vendor->open_at = '09:00';
             $vendor->closed_at = '18:00';
@@ -208,7 +220,7 @@ class QuickSellerRegistrationService
             $vendor->status = 1;
             $vendor->registration_source = $registrationSource;
             $vendor->registered_by_admin_id = $registeredByAdminId;
-            $vendor->quick_registration_note = isset($data['note']) ? trim((string) $data['note']) : null;
+            $vendor->quick_registration_note = $this->buildRegistrationNote($data);
             $categoryIds = $this->resolveCategoryIds($data);
             $vendor->primary_category_id = $categoryIds[0] ?? null;
             if (Schema::hasColumn('vendors', 'registration_category_ids')) {
@@ -934,6 +946,48 @@ class QuickSellerRegistrationService
         $ids = array_values(array_unique(array_filter($ids, static fn ($id) => $id > 0)));
 
         return $ids;
+    }
+
+    protected function buildRegistrationNote(array $data): ?string
+    {
+        $lines = [];
+
+        $map = [
+            'company_type' => 'Firma Tipi',
+            'kep_address' => 'KEP Adresi',
+            'reference_code' => 'Referans Kodu',
+            'marketplaces' => 'Pazaryerleri / Portallar',
+            'integrators' => 'Entegratör Firma',
+            'brands_portfolio' => 'Portföy Markaları',
+            'cargo_prefs' => 'Kargo Tercihleri',
+            'stock_continuous' => 'Stoklar devamlı mı',
+        ];
+
+        foreach ($map as $key => $label) {
+            $value = $data[$key] ?? null;
+            if ($value === null || $value === '') {
+                continue;
+            }
+            if ($key === 'stock_continuous') {
+                $value = $value === 'yes' ? 'Evet' : 'Hayır';
+            }
+            $lines[] = $label.': '.trim((string) $value);
+        }
+
+        $profiles = $data['seller_profiles'] ?? null;
+        if (is_array($profiles) && $profiles !== []) {
+            $lines[] = 'Satıcı Profili: '.implode(', ', array_map('strval', $profiles));
+        }
+
+        if (! empty($data['note'])) {
+            $lines[] = trim((string) $data['note']);
+        }
+
+        if ($lines === []) {
+            return null;
+        }
+
+        return implode("\n", $lines);
     }
 
     protected function buildAddress(?int $stateId, ?int $cityId): string

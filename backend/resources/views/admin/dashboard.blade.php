@@ -49,7 +49,7 @@
             <div class="card-icon bg-success"><i class="fas fa-coins"></i></div>
             <div class="card-wrap">
               <div class="card-header"><h4>Satış ({{ $periodLabel }})</h4></div>
-              <div class="card-body">{{ $setting->currency_icon }}{{ number_format($filteredEarning, 2) }}</div>
+              <div class="card-body">{{ sb_money($filteredEarning) }}</div>
             </div>
           </div>
         </div>
@@ -58,7 +58,7 @@
             <div class="card-icon bg-primary"><i class="fas fa-hand-holding-usd"></i></div>
             <div class="card-wrap">
               <div class="card-header"><h4>Admin Komisyonu (Ödenen)</h4></div>
-              <div class="card-body">{{ $setting->currency_icon }}{{ number_format($commissionStats->settled_commission, 2) }}</div>
+              <div class="card-body">{{ sb_money($commissionStats->settled_commission) }}</div>
             </div>
           </div>
         </div>
@@ -67,7 +67,7 @@
             <div class="card-icon bg-info"><i class="fas fa-store"></i></div>
             <div class="card-wrap">
               <div class="card-header"><h4>Satıcı Payı (Ödenen)</h4></div>
-              <div class="card-body">{{ $setting->currency_icon }}{{ number_format($commissionStats->settled_seller_net, 2) }}</div>
+              <div class="card-body">{{ sb_money($commissionStats->settled_seller_net) }}</div>
             </div>
           </div>
         </div>
@@ -76,7 +76,7 @@
             <div class="card-icon bg-warning"><i class="fas fa-undo"></i></div>
             <div class="card-wrap">
               <div class="card-header"><h4>İadeler</h4></div>
-              <div class="card-body">{{ $setting->currency_icon }}{{ number_format($commissionStats->refunded_commission, 2) }}</div>
+              <div class="card-body">{{ sb_money($commissionStats->refunded_commission) }}</div>
             </div>
           </div>
         </div>
@@ -90,7 +90,7 @@
             <div class="card-icon bg-primary"><i class="fas fa-percentage"></i></div>
             <div class="card-wrap">
               <div class="card-header"><h4>Toplam Komisyon</h4></div>
-              <div class="card-body">{{ $setting->currency_icon }}{{ number_format($commissionStats->total_commission, 2) }}</div>
+              <div class="card-body">{{ sb_money($commissionStats->total_commission) }}</div>
             </div>
           </div>
         </div>
@@ -99,7 +99,7 @@
             <div class="card-icon bg-warning"><i class="fas fa-clock"></i></div>
             <div class="card-wrap">
               <div class="card-header"><h4>Bekleyen Komisyon</h4></div>
-              <div class="card-body">{{ $setting->currency_icon }}{{ number_format($commissionStats->pending_commission, 2) }}</div>
+              <div class="card-body">{{ sb_money($commissionStats->pending_commission) }}</div>
             </div>
           </div>
         </div>
@@ -108,7 +108,7 @@
             <div class="card-icon bg-success"><i class="fas fa-check-circle"></i></div>
             <div class="card-wrap">
               <div class="card-header"><h4>Ödenen Komisyon</h4></div>
-              <div class="card-body">{{ $setting->currency_icon }}{{ number_format($commissionStats->settled_commission, 2) }}</div>
+              <div class="card-body">{{ sb_money($commissionStats->settled_commission) }}</div>
             </div>
           </div>
         </div>
@@ -117,7 +117,7 @@
             <div class="card-icon bg-danger"><i class="fas fa-calendar-alt"></i></div>
             <div class="card-wrap">
               <div class="card-header"><h4>İade Komisyon</h4></div>
-              <div class="card-body">{{ $setting->currency_icon }}{{ number_format($commissionStats->refunded_commission, 2) }}</div>
+              <div class="card-body">{{ sb_money($commissionStats->refunded_commission) }}</div>
             </div>
           </div>
         </div>
@@ -190,7 +190,7 @@
             <div class="card-icon bg-dark"><i class="fas fa-chart-line"></i></div>
             <div class="card-wrap">
               <div class="card-header"><h4>Toplam Satış</h4></div>
-              <div class="card-body">{{ $setting->currency_icon }}{{ number_format($allTimeEarning, 2) }}</div>
+              <div class="card-body">{{ sb_money($allTimeEarning) }}</div>
             </div>
           </div>
         </div>
@@ -199,7 +199,7 @@
             <div class="card-icon bg-dark"><i class="fas fa-hand-holding-usd"></i></div>
             <div class="card-wrap">
               <div class="card-header"><h4>Toplam Komisyon (Ödenen)</h4></div>
-              <div class="card-body">{{ $setting->currency_icon }}{{ number_format($allTimeStats->settled_commission, 2) }}</div>
+              <div class="card-body">{{ sb_money($allTimeStats->settled_commission) }}</div>
             </div>
           </div>
         </div>
@@ -224,7 +224,7 @@
       </div>
       <div class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between py-2 px-3 mb-4">
         <div><strong>Tüm Sipariş:</strong> {{ $allTimeTotalOrder }}</div>
-        <div><strong>Bekleyen Ödeme Tutarı:</strong> {{ $setting->currency_icon }}{{ number_format($filteredPendingEarning, 2) }}</div>
+        <div><strong>Bekleyen Ödeme Tutarı:</strong> {{ sb_money($filteredPendingEarning) }}</div>
       </div>
 
       </div>
@@ -268,7 +268,7 @@
                           <span class="text-truncate" style="max-width:180px;">{{ $p->name }}</span>
                         </td>
                         <td class="text-right">{{ $p->total_sold }} adet</td>
-                        <td class="text-right">{{ $setting->currency_icon }}{{ number_format($p->total_revenue, 2) }}</td>
+                        <td class="text-right">{{ sb_money($p->total_revenue) }}</td>
                       </tr>
                       @empty
                       <tr><td colspan="3" class="text-center text-muted">Henüz satış yok</td></tr>
@@ -299,8 +299,8 @@
                       @forelse($topSellers as $s)
                       <tr>
                         <td>{{ $s->shop_name }}</td>
-                        <td class="text-right">{{ $setting->currency_icon }}{{ number_format($s->total_sales, 2) }}</td>
-                        <td class="text-right">{{ $setting->currency_icon }}{{ number_format($s->total_commission, 2) }}</td>
+                        <td class="text-right">{{ sb_money($s->total_sales) }}</td>
+                        <td class="text-right">{{ sb_money($s->total_commission) }}</td>
                         <td class="text-right">{{ $s->order_count }}</td>
                       </tr>
                       @empty

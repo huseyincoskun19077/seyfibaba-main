@@ -41,19 +41,19 @@
         <div class="col-lg-3 col-md-6">
           <div class="card card-statistic-1">
             <div class="card-icon bg-success"><i class="fas fa-coins"></i></div>
-            <div class="card-wrap"><div class="card-header"><h4>Ödenen Hacim</h4></div><div class="card-body">{{ $setting->currency_icon }}{{ number_format($summary->total_paid, 2) }}</div></div>
+            <div class="card-wrap"><div class="card-header"><h4>Ödenen Hacim</h4></div><div class="card-body">{{ sb_money($summary->total_paid) }}</div></div>
           </div>
         </div>
         <div class="col-lg-3 col-md-6">
           <div class="card card-statistic-1">
             <div class="card-icon bg-info"><i class="fas fa-check-circle"></i></div>
-            <div class="card-wrap"><div class="card-header"><h4>Ödenen</h4></div><div class="card-body">{{ $setting->currency_icon }}{{ number_format($summary->total_paid, 2) }}</div></div>
+            <div class="card-wrap"><div class="card-header"><h4>Ödenen</h4></div><div class="card-body">{{ sb_money($summary->total_paid) }}</div></div>
           </div>
         </div>
         <div class="col-lg-3 col-md-6">
           <div class="card card-statistic-1">
             <div class="card-icon bg-warning"><i class="fas fa-clock"></i></div>
-            <div class="card-wrap"><div class="card-header"><h4>Bekleyen</h4></div><div class="card-body">{{ $setting->currency_icon }}{{ number_format($summary->total_pending, 2) }}</div></div>
+            <div class="card-wrap"><div class="card-header"><h4>Bekleyen</h4></div><div class="card-body">{{ sb_money($summary->total_pending) }}</div></div>
           </div>
         </div>
       </div>
@@ -74,9 +74,9 @@
                     <tr>
                       <td><strong>{{ $p->payment_method ?: 'Belirtilmemiş' }}</strong></td>
                       <td class="text-right">{{ $p->order_count }}</td>
-                      <td class="text-right">{{ $setting->currency_icon }}{{ number_format($p->total_amount, 2) }}</td>
-                      <td class="text-right text-success">{{ $setting->currency_icon }}{{ number_format($p->paid_amount, 2) }}</td>
-                      <td class="text-right text-warning">{{ $setting->currency_icon }}{{ number_format($p->pending_amount, 2) }}</td>
+                      <td class="text-right">{{ sb_money($p->total_amount) }}</td>
+                      <td class="text-right text-success">{{ sb_money($p->paid_amount) }}</td>
+                      <td class="text-right text-warning">{{ sb_money($p->pending_amount) }}</td>
                     </tr>
                     @empty
                     <tr><td colspan="5" class="text-center text-muted">Veri yok</td></tr>
@@ -113,7 +113,7 @@
                 <tr>
                   <td>{{ \Carbon\Carbon::parse($d->date)->format('d.m.Y') }}</td>
                   <td class="text-right">{{ $d->order_count }}</td>
-                  <td class="text-right">{{ $setting->currency_icon }}{{ number_format($d->total_amount, 2) }}</td>
+                  <td class="text-right">{{ sb_money($d->total_amount) }}</td>
                   <td class="text-right text-success">{{ $d->paid_count }}</td>
                   <td class="text-right text-warning">{{ $d->pending_count }}</td>
                 </tr>

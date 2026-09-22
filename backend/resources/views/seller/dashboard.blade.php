@@ -509,7 +509,7 @@
                           @endif
                         </td>
                         <td>{{ $tp->total_qty }}</td>
-                        <td>{{ $setting->currency_icon }}{{ number_format($tp->total_revenue, 2) }}</td>
+                        <td>{{ sb_money($tp->total_revenue) }}</td>
                       </tr>
                     @empty
                       <tr><td colspan="4" class="text-center text-muted">Bu ay henüz satış yok.</td></tr>

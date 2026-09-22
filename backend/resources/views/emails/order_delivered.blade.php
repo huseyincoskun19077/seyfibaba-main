@@ -16,13 +16,13 @@
             <p><strong>Sipariş No:</strong> {{ $order_number }}</p>
             <p><strong>Sipariş Tarihi:</strong> {{ $order_date }}</p>
             <p><strong>Teslim Tarihi:</strong> {{ $completed_date }}</p>
-            <p><strong>Toplam Tutar:</strong> {{ number_format($total_price, 2) }} TL</p>
+            <p><strong>Toplam Tutar:</strong> {{ sb_money($total_price) }}</p>
         </div>
         
         <p>Alışverişiniz için teşekkür ederiz. Size en iyi hizmeti sunmaya devam edeceğiz.</p>
         
         <p>Saygılarımızla,<br>
-        <strong>Seyfibaba Pazaryeri</strong></p>
+        <strong>Seyfibaba Kuaför ve Güzellik Salonları İçin Online Alışveriş Platformu</strong></p>
         
         <hr style="border: 1px solid #eee; margin: 20px 0;">
         <p style="color: #777; font-size: 12px;">

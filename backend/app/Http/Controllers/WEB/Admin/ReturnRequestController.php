@@ -268,7 +268,7 @@ class ReturnRequestController extends Controller
                     $productName = $return->orderProduct->product->name
                         ?? $return->orderProduct->product_name
                         ?? 'Ürün';
-                    $amount = number_format((float) $return->refund_amount, 2, ',', '.') . ' ₺';
+                    $amount = \App\Helpers\PriceFormat::money($return->refund_amount);
                     $method = (string) ($return->refund_method ?? '');
                     $isBank = $method === 'bank_transfer' || $paymentMethod === 'bankpayment';
                     $timing = $isBank

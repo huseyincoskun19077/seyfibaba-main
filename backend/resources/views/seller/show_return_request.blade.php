@@ -65,7 +65,7 @@
                 <div class="col-md-4 mb-3">
                   <div class="border rounded p-3 h-100">
                     <small class="text-muted d-block">Kazanç etkisi (net)</small>
-                    <strong>{{ $setting->currency_icon }}{{ number_format((float) ($sellerImpact['seller_net'] ?? 0), 2) }}</strong><br>
+                    <strong>{{ sb_money($sellerImpact['seller_net'] ?? 0) }}</strong><br>
                     <span class="text-muted">Komisyon %{{ number_format((float) ($sellerImpact['commission_rate'] ?? 0), 1) }} düşülmüş</span><br>
                     <span class="text-muted">Talep No #{{ $return->id }}</span>
                   </div>
@@ -88,7 +88,7 @@
                         <span class="text-muted">İade nedeni: {{ $reasonLabel }}</span>
                       </td>
                       <td>{{ $return->qty }}</td>
-                      <td>{{ $setting->currency_icon }}{{ number_format((float) ($sellerImpact['seller_net'] ?? 0), 2) }}</td>
+                      <td>{{ sb_money($sellerImpact['seller_net'] ?? 0) }}</td>
                     </tr>
                   </tbody>
                 </table>

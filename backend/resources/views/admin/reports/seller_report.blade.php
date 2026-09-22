@@ -43,19 +43,19 @@
         <div class="col-lg-3 col-md-6">
           <div class="card card-statistic-1">
             <div class="card-icon bg-success"><i class="fas fa-coins"></i></div>
-            <div class="card-wrap"><div class="card-header"><h4>Toplam Satış</h4></div><div class="card-body">{{ $setting->currency_icon }}{{ number_format($summary->total_sales, 2) }}</div></div>
+            <div class="card-wrap"><div class="card-header"><h4>Toplam Satış</h4></div><div class="card-body">{{ sb_money($summary->total_sales) }}</div></div>
           </div>
         </div>
         <div class="col-lg-3 col-md-6">
           <div class="card card-statistic-1">
             <div class="card-icon bg-info"><i class="fas fa-percentage"></i></div>
-            <div class="card-wrap"><div class="card-header"><h4>Toplam Komisyon</h4></div><div class="card-body">{{ $setting->currency_icon }}{{ number_format($summary->total_commission, 2) }}</div></div>
+            <div class="card-wrap"><div class="card-header"><h4>Toplam Komisyon</h4></div><div class="card-body">{{ sb_money($summary->total_commission) }}</div></div>
           </div>
         </div>
         <div class="col-lg-3 col-md-6">
           <div class="card card-statistic-1">
             <div class="card-icon bg-warning"><i class="fas fa-hand-holding-usd"></i></div>
-            <div class="card-wrap"><div class="card-header"><h4>Satıcı Net</h4></div><div class="card-body">{{ $setting->currency_icon }}{{ number_format($summary->total_net, 2) }}</div></div>
+            <div class="card-wrap"><div class="card-header"><h4>Satıcı Net</h4></div><div class="card-body">{{ sb_money($summary->total_net) }}</div></div>
           </div>
         </div>
       </div>
@@ -83,11 +83,11 @@
                   <td><strong>{{ $s->shop_name }}</strong></td>
                   <td>{{ $s->email }}</td>
                   <td class="text-right">{{ $s->order_count }}</td>
-                  <td class="text-right">{{ $setting->currency_icon }}{{ number_format($s->total_sales, 2) }}</td>
-                  <td class="text-right">{{ $setting->currency_icon }}{{ number_format($s->total_commission, 2) }}</td>
-                  <td class="text-right">{{ $setting->currency_icon }}{{ number_format($s->total_net, 2) }}</td>
-                  <td class="text-right text-warning">{{ $setting->currency_icon }}{{ number_format($s->pending_net, 2) }}</td>
-                  <td class="text-right text-success">{{ $setting->currency_icon }}{{ number_format($s->settled_net, 2) }}</td>
+                  <td class="text-right">{{ sb_money($s->total_sales) }}</td>
+                  <td class="text-right">{{ sb_money($s->total_commission) }}</td>
+                  <td class="text-right">{{ sb_money($s->total_net) }}</td>
+                  <td class="text-right text-warning">{{ sb_money($s->pending_net) }}</td>
+                  <td class="text-right text-success">{{ sb_money($s->settled_net) }}</td>
                 </tr>
                 @empty
                 <tr><td colspan="8" class="text-center text-muted py-4">Bu dönemde satıcı verisi bulunamadı.</td></tr>

@@ -133,7 +133,7 @@
                       <strong>{{ optional($l->user)->name ?? '-' }}</strong><br>
                       <span class="text-muted">{{ optional($l->user)->email ?? '-' }}</span>
                     </td>
-                    <td><strong>{{ number_format((float)$l->price, 2, ',', '.') }}</strong></td>
+                    <td><strong>{{ sb_money($l->price) }}</strong></td>
                     <td class="small">
                       {{ optional($l->city)->name ?? '-' }}<br>
                       <span class="text-muted">{{ $l->district ?: '-' }}</span>

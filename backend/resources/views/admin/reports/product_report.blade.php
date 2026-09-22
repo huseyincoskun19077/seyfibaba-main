@@ -54,9 +54,9 @@
                     <img src="{{ asset($p->thumb_image) }}" width="35" height="35" class="rounded mr-2" style="object-fit:cover;">
                     <span class="text-truncate" style="max-width:250px;">{{ $p->name }}</span>
                   </td>
-                  <td class="text-right">{{ $setting->currency_icon }}{{ number_format($p->price, 2) }}</td>
+                  <td class="text-right">{{ sb_money($p->price) }}</td>
                   <td class="text-right"><strong>{{ $p->total_sold }}</strong></td>
-                  <td class="text-right">{{ $setting->currency_icon }}{{ number_format($p->total_revenue, 2) }}</td>
+                  <td class="text-right">{{ sb_money($p->total_revenue) }}</td>
                   <td class="text-right">{{ $p->order_count }}</td>
                 </tr>
                 @empty

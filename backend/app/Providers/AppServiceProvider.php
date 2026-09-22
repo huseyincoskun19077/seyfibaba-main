@@ -2,12 +2,10 @@
 
 namespace App\Providers;
 
-use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\Product;
 use App\Notifications\Channels\FcmChannel;
-use App\Observers\CouponObserver;
 use App\Observers\OrderObserver;
 use App\Observers\OrderProductObserver;
 use App\Observers\ProductObserver;
@@ -54,6 +52,5 @@ class AppServiceProvider extends ServiceProvider
         Product::observe(ProductObserver::class);
         Order::observe(OrderObserver::class);
         OrderProduct::observe(OrderProductObserver::class);
-        Coupon::observe(CouponObserver::class);
     }
 }
