@@ -165,6 +165,7 @@ Route::group([], function () {
     Route::get('/product-by-category/{id}', [HomeController::class, 'productByCategory'])->name('product-by-category');
 
     Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::get('/story-products', [HomeController::class, 'storyProducts'])->name('story-products');
     Route::get('/about-us', [HomeController::class, 'aboutUs'])->name('about-us');
     Route::get('/contact-us', [HomeController::class, 'contactUs'])->name('contact-us');
     Route::post('/send-contact-message', [HomeController::class, 'sendContactMessage'])->middleware('throttle:public-form')->name('send-contact-message');

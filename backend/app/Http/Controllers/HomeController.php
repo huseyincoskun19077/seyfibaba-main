@@ -11,6 +11,7 @@ use App\Models\Brand;
 
 use App\Models\Slider;
 use App\Models\MobileSlider;
+use App\Models\Story;
 
 use App\Models\Category;
 
@@ -409,6 +410,24 @@ class HomeController extends Controller
             'title as app_store'
         )->find(24);
 
+        $stories = [];
+        if (Schema::hasTable('stories')) {
+            $stories = Story::query()
+                ->where('status', true)
+                ->orderBy('serial')
+                ->orderBy('id')
+                ->get([
+                    'id',
+                    'title',
+                    'image',
+                    'type',
+                    'feed',
+                    'link',
+                    'see_all_url',
+                    'serial',
+                ]);
+        }
+
 
         return response()->json([
 
@@ -496,6 +515,8 @@ class HomeController extends Controller
             'subscriptionBanner' => $subscriptionBanner,
 
             'flashSaleSidebarBanner' => $flashSaleSidebarBanner,
+
+            'stories' => $stories,
 
         ]);
 
@@ -611,6 +632,40 @@ class HomeController extends Controller
             ->get();
 
         return $picked->concat($extra)->values();
+    }
+
+    /**
+     * Story şeridi için ürün vitrini (popular / bestseller / discounted / ...).
+     */
+    public function storyProducts(Request $request)
+    {
+        $feed = (string) $request->query('feed', 'popular');
+        $limit = min(20, max(1, (int) $request->query('limit', 12)));
+        $select = ['id','name', 'short_name', 'slug', 'thumb_image','qty','sale_unit_qty','sold_qty', 'price', 'offer_price','is_undefine','is_featured','new_product', 'is_top', 'is_best','category_id','sub_category_id','child_category_id','brand_id'];
+
+        if ($feed === 'discounted') {
+            $products = Product::with('activeVariants.activeVariantItems')
+                ->select($select)
+                ->where('status', 1)
+                ->where('approve_by_admin', 1);
+            $products = ProductFilterHelper::applyDiscountedFilter($products)
+                ->orderByDesc('id')
+                ->take($limit)
+                ->get();
+
+            return response()->json(['products' => $products, 'feed' => $feed]);
+        }
+
+        $columnMap = [
+            'popular' => 'is_top',
+            'bestseller' => 'is_best',
+            'featured' => 'is_featured',
+            'new_arrival' => 'new_product',
+        ];
+        $column = $columnMap[$feed] ?? 'is_top';
+        $products = $this->homepageFlagProducts($column, $limit);
+
+        return response()->json(['products' => $products, 'feed' => $feed]);
     }
 
     public function index()
