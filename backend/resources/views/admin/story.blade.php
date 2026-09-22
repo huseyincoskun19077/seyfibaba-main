@@ -22,6 +22,7 @@
           <p class="text-muted mb-3">
             Ürün vitrini tipinde hover/tıklamada ürünler yatay kayar. Bağlantı tipinde doğrudan sayfaya gider.
             Görsel yüklemezseniz sarı halka içinde başlık harfi gösterilir.
+            Listedeki satırları <strong>sürükle-bırak</strong> ile sıralayabilirsiniz; site üst şeridinde aynı sıra görünür.
           </p>
 
           <form method="POST" action="{{ route('admin.story.store') }}" enctype="multipart/form-data" class="mb-4">
@@ -78,8 +79,8 @@
               </div>
               <div class="col-md-2">
                 <div class="form-group">
-                  <label>Sıra</label>
-                  <input type="number" name="serial" class="form-control" min="0" value="{{ old('serial', !empty($editStory) ? $editStory->serial : 1) }}">
+                  <label>Sıra <small class="text-muted">(veya sürükle)</small></label>
+                  <input type="number" name="serial" class="form-control" min="0" value="{{ old('serial', !empty($editStory) ? $editStory->serial : (($stories->max('serial') ?? 0) + 1)) }}">
                 </div>
               </div>
               <div class="col-md-4">
@@ -114,10 +115,11 @@
           </form>
 
           <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-striped" id="storyTable">
               <thead>
                 <tr>
-                  <th>Sıra</th>
+                  <th style="width:36px;"></th>
+                  <th style="width:56px;">Sıra</th>
                   <th>Görsel</th>
                   <th>Başlık</th>
                   <th>Tip</th>
@@ -126,10 +128,11 @@
                   <th></th>
                 </tr>
               </thead>
-              <tbody>
-                @forelse($stories as $story)
-                  <tr>
-                    <td>{{ $story->serial }}</td>
+              <tbody id="sortable-body">
+                @forelse($stories as $index => $story)
+                  <tr data-id="{{ $story->id }}">
+                    <td class="drag-handle" title="Sürükle"><i class="fas fa-grip-vertical"></i></td>
+                    <td class="sort-number">{{ $index + 1 }}</td>
                     <td>
                       @if($story->image)
                         <img src="{{ asset($story->image) }}" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
@@ -147,7 +150,9 @@
                       @endif
                     </td>
                     <td>{{ $story->status ? 'Aktif' : 'Pasif' }}</td>
-                    <td class="text-right">
+                    <td class="text-right sort-actions">
+                      <button type="button" class="btn btn-light btn-sm btn-move-up" title="Yukarı"><i class="fas fa-arrow-up"></i></button>
+                      <button type="button" class="btn btn-light btn-sm btn-move-down" title="Aşağı"><i class="fas fa-arrow-down"></i></button>
                       <a href="{{ route('admin.story.index', ['edit' => $story->id]) }}" class="btn btn-sm btn-primary">Düzenle</a>
                       <form action="{{ route('admin.story.destroy', $story->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Silinsin mi?')">
                         @csrf
@@ -157,7 +162,7 @@
                     </td>
                   </tr>
                 @empty
-                  <tr><td colspan="7" class="text-center text-muted">Kayıt yok</td></tr>
+                  <tr class="dataTables_empty"><td colspan="8" class="text-center text-muted">Kayıt yok</td></tr>
                 @endforelse
               </tbody>
             </table>
@@ -181,4 +186,8 @@
   }
 })();
 </script>
+@include('admin.partials.category_sortable_script', [
+  'tableId' => 'storyTable',
+  'reorderUrl' => route('admin.story.reorder'),
+])
 @endsection

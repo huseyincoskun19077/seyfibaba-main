@@ -1055,6 +1055,7 @@ Route::group(['middleware' => ['XSS']], function () {
 
         Route::get('story', [StoryController::class, 'index'])->name('story.index');
         Route::post('story', [StoryController::class, 'store'])->name('story.store');
+        Route::post('story-reorder', [StoryController::class, 'reorder'])->name('story.reorder');
         Route::delete('story/{id}', [StoryController::class, 'destroy'])->name('story.destroy');
 
 

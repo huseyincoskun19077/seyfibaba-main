@@ -110,4 +110,28 @@ class StoryController extends Controller
             'alert-type' => 'success',
         ]);
     }
+
+    public function reorder(Request $request)
+    {
+        if (! Schema::hasTable('stories')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'stories tablosu yok.',
+            ], 422);
+        }
+
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:stories,id',
+        ]);
+
+        foreach (array_values($request->input('ids', [])) as $index => $id) {
+            Story::query()->where('id', (int) $id)->update(['serial' => $index + 1]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sıralama güncellendi.',
+        ]);
+    }
 }
