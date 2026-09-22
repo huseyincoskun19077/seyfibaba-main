@@ -278,6 +278,7 @@ class HomeController extends Controller
             // map_key ve bank_transfer_info public API'de yok — gizli tutulur
         ];
         foreach ([
+            'topbar_announcement',
             'mobile_hub_bg_top', 'mobile_hub_bg_bottom', 'mobile_hub_feature_start',
             'mobile_hub_feature_end', 'mobile_hub_shop_image', 'mobile_hub_crm_image',
             'mobile_hub_secondhand_image',

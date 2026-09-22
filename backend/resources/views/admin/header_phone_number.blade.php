@@ -1,16 +1,15 @@
 @extends('admin.master_layout')
 @section('title')
-<title>{{__('admin.Topbar Contact')}}</title>
+<title>Üst Bar (Topbar)</title>
 @endsection
 @section('admin-content')
-      <!-- Main Content -->
       <div class="main-content">
         <section class="section">
           <div class="section-header">
-            <h1>{{__('admin.Topbar Contact')}}</h1>
+            <h1>Üst Bar (Topbar)</h1>
             <div class="section-header-breadcrumb">
               <div class="breadcrumb-item active"><a href="{{ route('admin.dashboard') }}">{{__('admin.Dashboard')}}</a></div>
-              <div class="breadcrumb-item">{{__('admin.Topbar Contact')}}</div>
+              <div class="breadcrumb-item">Üst Bar</div>
             </div>
           </div>
 
@@ -23,17 +22,25 @@
                                     @csrf
                                     @method('PUT')
                                     <div class="form-group">
+                                        <label for="">Üst bar sloganları</label>
+                                        <textarea name="topbar_announcement" class="form-control" rows="6" placeholder="Her satıra bir slogan yazın">{{ old('topbar_announcement', $slogansText) }}</textarea>
+                                        <small class="text-muted">
+                                            Her satıra <strong>bir slogan</strong> yazın. Sitede üst barda sırayla döner (ör. kargo, kampanya, güvenli ödeme).
+                                            Boş bırakırsanız duyuru gizlenir.
+                                        </small>
+                                    </div>
+                                    <div class="form-group">
                                         <label for="">{{__('admin.Topbar Phone')}}</label>
-                                        <input type="text" name="topbar_phone" class="form-control" value="{{ $setting->topbar_phone }}">
+                                        <input type="text" name="topbar_phone" class="form-control" value="{{ old('topbar_phone', $setting->topbar_phone) }}">
+                                        <small class="text-muted">Müşteri hizmetleri numarası olarak üst barda gösterilir.</small>
                                     </div>
                                     <div class="form-group">
                                         <label for="">{{__('admin.Topbar Email')}}</label>
-                                        <input type="text" name="topbar_email" class="form-control" value="{{ $setting->topbar_email }}">
+                                        <input type="text" name="topbar_email" class="form-control" value="{{ old('topbar_email', $setting->topbar_email) }}">
                                     </div>
-
                                     <div class="form-group">
                                         <label for="">{{__('admin.Menu Phone')}}</label>
-                                        <input type="text" name="menu_phone" class="form-control" value="{{ $setting->menu_phone }}">
+                                        <input type="text" name="menu_phone" class="form-control" value="{{ old('menu_phone', $setting->menu_phone ?? '') }}">
                                     </div>
                                     <button type="submit" class="btn btn-primary">{{__('admin.Update')}}</button>
                                 </form>

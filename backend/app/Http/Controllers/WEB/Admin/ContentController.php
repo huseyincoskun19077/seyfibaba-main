@@ -111,29 +111,62 @@ class ContentController extends Controller
     }
 
     public function headerPhoneNumber(){
-        $setting = Setting::select('topbar_phone','topbar_email')->first();
+        $columns = ['topbar_phone', 'topbar_email', 'menu_phone'];
+        if (\Schema::hasColumn('settings', 'topbar_announcement')) {
+            $columns[] = 'topbar_announcement';
+        }
+        $setting = Setting::select($columns)->first();
 
-        return response()->json(['setting' => $setting], 200);
+        $slogansText = '';
+        if ($setting && !empty($setting->topbar_announcement)) {
+            $decoded = json_decode($setting->topbar_announcement, true);
+            if (is_array($decoded)) {
+                $slogansText = implode("\n", $decoded);
+            } else {
+                $slogansText = $setting->topbar_announcement;
+            }
+        }
+        if ($slogansText === '') {
+            $slogansText = "Her Satıcıda 1000 TL Üzeri KARGO ÜCRETSİZ";
+        }
+
+        return view('admin.header_phone_number', compact('setting', 'slogansText'));
     }
 
     public function updateHeaderPhoneNumber(Request $request){
         $rules = [
-            'topbar_phone'=>'required',
-            'topbar_email'=>'required',
+            'topbar_phone' => 'required',
+            'topbar_announcement' => 'nullable|string|max:5000',
         ];
         $customMessages = [
             'topbar_phone.required' => trans('admin_validation.Topbar phone is required'),
-            'topbar_email.required' => trans('admin_validation.Topbar email is required'),
         ];
-        $this->validate($request, $rules,$customMessages);
+        $this->validate($request, $rules, $customMessages);
 
         $setting = Setting::first();
         $setting->topbar_phone = $request->topbar_phone;
-        $setting->topbar_email = $request->topbar_email;
+        if ($request->filled('topbar_email')) {
+            $setting->topbar_email = $request->topbar_email;
+        }
+        if (\Schema::hasColumn('settings', 'menu_phone') && $request->has('menu_phone')) {
+            $setting->menu_phone = $request->menu_phone;
+        }
+        if (\Schema::hasColumn('settings', 'topbar_announcement')) {
+            $lines = preg_split("/\r\n|\n|\r/", (string) $request->topbar_announcement);
+            $slogans = [];
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line !== '') {
+                    $slogans[] = mb_substr($line, 0, 255);
+                }
+            }
+            $setting->topbar_announcement = json_encode(array_values($slogans), JSON_UNESCAPED_UNICODE);
+        }
         $setting->save();
 
-        $notification= trans('admin_validation.Update Successfully');
-        return response()->json(['notification' => $notification], 200);
+        $notification = trans('admin_validation.Updated Successfully');
+        $notification = array('messege' => $notification, 'alert-type' => 'success');
+        return redirect()->back()->with($notification);
     }
 
     public function loginPage(){
