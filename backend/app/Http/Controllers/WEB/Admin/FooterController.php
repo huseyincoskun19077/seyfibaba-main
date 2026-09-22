@@ -51,26 +51,55 @@ class FooterController extends Controller
         $footer->first_column = $request->first_column;
         $footer->second_column = $request->second_column;
         $footer->third_column = $request->third_column;
+        if (\Schema::hasColumn('footers', 'etbis_url')) {
+            $footer->etbis_url = trim((string) $request->input('etbis_url', '')) ?: null;
+        }
+        if (\Schema::hasColumn('footers', 'app_store_url')) {
+            $footer->app_store_url = trim((string) $request->input('app_store_url', '')) ?: null;
+        }
+        if (\Schema::hasColumn('footers', 'play_store_url')) {
+            $footer->play_store_url = trim((string) $request->input('play_store_url', '')) ?: null;
+        }
         $footer->save();
-        if($request->card_image){
-            $old_logo=$footer->payment_image;
-            $image=$request->card_image;
-            $ext=$image->getClientOriginalExtension();
-            $logo_name= 'payment-card-'.date('Y-m-d-h-i-s-').rand(999,9999).'.'.$ext;
-            $logo_name='uploads/website-images/'.$logo_name;
-            $logo=Image::make($image)
-                    ->save(public_path().'/'.$logo_name);
-            $footer->payment_image=$logo_name;
+
+        if ($request->card_image) {
+            $old_logo = $footer->payment_image;
+            $image = $request->card_image;
+            $ext = $image->getClientOriginalExtension();
+            $logo_name = 'payment-card-'.date('Y-m-d-h-i-s-').rand(999, 9999).'.'.$ext;
+            $logo_name = 'uploads/website-images/'.$logo_name;
+            Image::make($image)->save(public_path().'/'.$logo_name);
+            $footer->payment_image = $logo_name;
             $footer->save();
-            if($old_logo){
-                if(File::exists(public_path().'/'.$old_logo))unlink(public_path().'/'.$old_logo);
+            if ($old_logo && File::exists(public_path().'/'.$old_logo)) {
+                unlink(public_path().'/'.$old_logo);
             }
         }
 
+        $this->storeFooterImage($request, $footer, 'etbis_image', 'etbis');
+        $this->storeFooterImage($request, $footer, 'app_store_image', 'app-store');
+        $this->storeFooterImage($request, $footer, 'play_store_image', 'play-store');
 
         $notification = trans('admin_validation.Update Successfully');
-        $notification=array('messege'=>$notification,'alert-type'=>'success');
+        $notification = array('messege' => $notification, 'alert-type' => 'success');
         return redirect()->back()->with($notification);
+    }
 
+    private function storeFooterImage(Request $request, Footer $footer, string $field, string $prefix): void
+    {
+        if (! \Schema::hasColumn('footers', $field) || ! $request->hasFile($field)) {
+            return;
+        }
+        $old = $footer->{$field};
+        $image = $request->file($field);
+        $ext = $image->getClientOriginalExtension();
+        $name = $prefix.'-'.date('Y-m-d-h-i-s-').rand(999, 9999).'.'.$ext;
+        $path = 'uploads/website-images/'.$name;
+        Image::make($image)->save(public_path().'/'.$path);
+        $footer->{$field} = $path;
+        $footer->save();
+        if ($old && File::exists(public_path().'/'.$old)) {
+            unlink(public_path().'/'.$old);
+        }
     }
 }

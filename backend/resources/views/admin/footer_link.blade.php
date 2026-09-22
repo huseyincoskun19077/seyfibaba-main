@@ -27,31 +27,60 @@
                   </div>
                   <button type="submit" class="btn btn-primary btn-sm">Başlığı Kaydet</button>
                 </form>
-                <small class="text-muted d-block mt-2">Bu listedeki linkler footer&rsquo;daki &ldquo;{{ $title }}&rdquo; bölümünde görünür.</small>
+                <small class="text-muted d-block mt-2">
+                  Tikli olanlar sitede görünür. Sürükleyerek sırayı değiştirin.
+                  @if((int)$column === 1)
+                    Markalar otomatik eklenir; istemediğinizin tikini kaldırın.
+                  @endif
+                </small>
               </div>
             </div>
-            <a href="javascript:;" data-toggle="modal" data-target="#createIcon" class="btn btn-primary"><i class="fas fa-plus"></i> {{__('admin.Add New')}}</a>
-            <div class="row mt-4">
+
+            <div class="d-flex flex-wrap align-items-center mb-3" style="gap:8px;">
+              <a href="javascript:;" data-toggle="modal" data-target="#createIcon" class="btn btn-primary"><i class="fas fa-plus"></i> {{__('admin.Add New')}}</a>
+              @if((int)$column === 1)
+                <form action="{{ route('admin.footer-link.sync-brands') }}" method="POST" class="d-inline">
+                  @csrf
+                  <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-sync"></i> Tüm Markaları Senkronize Et
+                  </button>
+                </form>
+              @endif
+            </div>
+
+            <div class="row mt-2">
                 <div class="col">
                   <div class="card">
                     <div class="card-body">
                       <div class="table-responsive table-invoice">
-                        <table class="table table-striped" id="dataTable">
+                        <table class="table table-striped" id="footerLinkTable">
                             <thead>
                                 <tr>
-                                    <th>{{__('admin.SN')}}</th>
+                                    <th style="width:36px;"></th>
+                                    <th style="width:56px;">{{__('admin.SN')}}</th>
+                                    <th style="width:90px;">Göster</th>
                                     <th>{{__('admin.Name')}}</th>
                                     <th>{{__('admin.link')}}</th>
                                     <th>{{__('admin.Action')}}</th>
                                   </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="sortable-body">
                                 @foreach ($links as $index => $link)
-                                    <tr>
-                                        <td>{{ ++$index }}</td>
+                                    <tr data-id="{{ $link->id }}">
+                                        <td class="drag-handle" title="Sürükle" style="cursor:grab;"><i class="fas fa-grip-vertical text-muted"></i></td>
+                                        <td class="sort-number">{{ $index + 1 }}</td>
+                                        <td>
+                                          <label class="custom-switch mb-0" title="Sitede göster / gizle">
+                                            <input type="checkbox"
+                                              class="custom-switch-input footer-link-status"
+                                              data-id="{{ $link->id }}"
+                                              {{ !empty($link->status) || !\Schema::hasColumn('footer_links','status') ? 'checked' : '' }}>
+                                            <span class="custom-switch-indicator"></span>
+                                          </label>
+                                        </td>
                                         <td>{{ $link->title }}</td>
                                         <td>{{ $link->link }}</td>
-                                        <td>
+                                        <td class="sort-actions">
                                         <a href="javascript:;" data-toggle="modal" data-target="#editIcon-{{ $link->id }}" class="btn btn-primary btn-sm"><i class="fa fa-edit" aria-hidden="true"></i></a>
 
                                         <a href="javascript:;" data-toggle="modal" data-target="#deleteModal" class="btn btn-danger btn-sm" onclick="deleteData({{ $link->id }})"><i class="fa fa-trash" aria-hidden="true"></i></a>
@@ -90,7 +119,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="">{{__('admin.Link')}}</label>
-                                <input type="text" class="form-control" name="link">
+                                <input type="text" class="form-control" name="link" placeholder="/products?brand=ornek">
                             </div>
                             <button type="button" class="btn btn-danger" data-dismiss="modal">{{__('admin.Close')}}</button>
                             <button type="submit" class="btn btn-primary">{{__('admin.Save')}}</button>
@@ -139,5 +168,40 @@
     function deleteData(id){
         $("#deleteForm").attr("action",'{{ url("admin/footer-link/") }}'+"/"+id)
     }
+
+    (function ($) {
+      $(function () {
+        var toggleUrlBase = @json(url('admin/footer-link-toggle'));
+        var csrf = @json(csrf_token());
+
+        $(document).on('change', '.footer-link-status', function () {
+          var $el = $(this);
+          var id = $el.data('id');
+          var status = $el.is(':checked') ? 1 : 0;
+          $.ajax({
+            type: 'POST',
+            url: toggleUrlBase + '/' + id,
+            data: { _token: csrf, status: status },
+            success: function (res) {
+              if (typeof toastr !== 'undefined') {
+                toastr.success((res && res.message) ? res.message : 'Güncellendi.');
+              }
+            },
+            error: function () {
+              $el.prop('checked', !status);
+              if (typeof toastr !== 'undefined') {
+                toastr.error('Durum kaydedilemedi. Migration çalıştırıldı mı?');
+              }
+            }
+          });
+        });
+      });
+    })(jQuery);
 </script>
+
+@include('admin.partials.category_sortable_script', [
+  'tableId' => 'footerLinkTable',
+  'reorderUrl' => route('admin.footer-link.reorder'),
+  'reorderScope' => ['column' => (int) $column],
+])
 @endsection

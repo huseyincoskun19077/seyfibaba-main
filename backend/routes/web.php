@@ -1184,6 +1184,9 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::get('second-col-footer-link', [FooterLinkController::class, 'secondColFooterLink'])->name('second-col-footer-link');
         Route::get('third-col-footer-link', [FooterLinkController::class, 'thirdColFooterLink'])->name('third-col-footer-link');
         Route::put('update-col-title/{id}', [FooterLinkController::class, 'updateColTitle'])->name('update-col-title');
+        Route::post('footer-link-reorder', [FooterLinkController::class, 'reorder'])->name('footer-link.reorder');
+        Route::post('footer-link-toggle/{id}', [FooterLinkController::class, 'toggleStatus'])->name('footer-link.toggle');
+        Route::post('footer-link-sync-brands', [FooterLinkController::class, 'syncBrands'])->name('footer-link.sync-brands');
 
 
         Route::get('admin-language', [LanguageController::class, 'adminLnagugae'])->name('admin-language');

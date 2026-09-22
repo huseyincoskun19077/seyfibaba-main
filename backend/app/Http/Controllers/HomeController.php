@@ -333,7 +333,20 @@ class HomeController extends Controller
 
 
 
-        $first_col_links = FooterLink::where('column',1)->get();
+        $footerLinkQuery = function (int $column) {
+            $q = FooterLink::where('column', $column);
+            if (\Schema::hasColumn('footer_links', 'status')) {
+                $q->where('status', 1);
+            }
+            if (\Schema::hasColumn('footer_links', 'sort_order')) {
+                $q->orderBy('sort_order')->orderBy('id');
+            } else {
+                $q->orderBy('id');
+            }
+            return $q->get();
+        };
+
+        $first_col_links = $footerLinkQuery(1);
 
         $footer = Footer::first();
 
@@ -344,7 +357,7 @@ class HomeController extends Controller
             'columnTitle' => $columnTitle
         );
 
-        $second_col_links = FooterLink::where('column',2)->get();
+        $second_col_links = $footerLinkQuery(2);
 
         $columnTitle = $footer?->second_column ?: 'Popüler Sayfalar';
 
@@ -353,7 +366,7 @@ class HomeController extends Controller
             'columnTitle' => $columnTitle
         );
 
-        $third_col_links = FooterLink::where('column',3)->get();
+        $third_col_links = $footerLinkQuery(3);
 
         $columnTitle = $footer?->third_column ?: 'Yardım';
 
