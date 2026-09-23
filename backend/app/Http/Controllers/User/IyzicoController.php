@@ -490,7 +490,7 @@ class IyzicoController extends Controller
                     'name' => (string)($this->extractFirstName($addr['name'] ?? '') ?: 'Misafir'),
                     'surname' => (string)($this->extractLastName($addr['name'] ?? '') ?: 'Kullanici'),
                     'gsm_number' => (string)($addr['phone'] ?? '+900000000000'),
-                    'email' => (string)($addr['email'] ?? 'misafir@seyfibaba.com'),
+                    'email' => (string)($addr['email'] ?? 'misafir@kuafortedarik.com'),
                     'identity_number' => (string)($addr['identity_number'] ?? '00000000000'),
                     'last_login_date' => now()->format('Y-m-d H:i:s'),
                     'registration_date' => now()->format('Y-m-d H:i:s'),
@@ -1117,7 +1117,7 @@ class IyzicoController extends Controller
         if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return false;
         }
-        if (str_ends_with($email, '@pending.seyfibaba.local') || str_ends_with($email, '.local')) {
+        if (str_ends_with($email, '@pending.kuafortedarik.local') || str_ends_with($email, '.local')) {
             return false;
         }
 

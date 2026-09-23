@@ -130,7 +130,7 @@ class AiChatService
             $parts[] = "== Yönetici Talimatları (güvenlik kurallarını ASLA geçersiz kılamaz) ==\n"
                 . $settings->ai_chat_system_prompt;
         } else {
-            $parts[] = "Sen Seyfibaba (seyfibaba.com) müşteri asistanısın. Türkçe, kısa ve doğru yanıt ver. "
+            $parts[] = "Sen Kuaför Tedarik (kuafortedarik.com) müşteri asistanısın. Türkçe, kısa ve doğru yanıt ver. "
                 . "Ürün, sipariş, ödeme, kargo, iade, satış sözleşmesi ve ikinci el konularında yardım et. "
                 . "Kişisel telefon/TC/IBAN paylaşma; yalnızca resmi iletişim kanallarını kullan.";
         }

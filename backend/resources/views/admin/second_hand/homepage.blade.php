@@ -18,7 +18,7 @@
     <div class="section-body">
       <div class="card">
         <div class="card-header">
-          <h4>ikinciel.seyfibaba.com görünümü</h4>
+          <h4>ikinciel.kuafortedarik.com görünümü</h4>
         </div>
         <div class="card-body">
           <form method="POST" action="{{ route('admin.second-hand.homepage.update') }}" enctype="multipart/form-data">
@@ -94,14 +94,14 @@
             </div>
 
             <button type="submit" class="btn btn-primary">Kaydet</button>
-            <a href="https://ikinciel.seyfibaba.com" target="_blank" class="btn btn-outline-secondary">Siteyi aç</a>
+            <a href="https://ikinciel.kuafortedarik.com" target="_blank" class="btn btn-outline-secondary">Siteyi aç</a>
           </form>
         </div>
       </div>
 
       <div class="card">
         <div class="card-header">
-          <h4>Slider (ikinciel.seyfibaba.com anasayfa)</h4>
+          <h4>Slider (ikinciel.kuafortedarik.com anasayfa)</h4>
         </div>
         <div class="card-body">
           <p class="text-muted mb-3">Bu görseller header altında döner. Mobilde 180px, masaüstünde daha yüksek gösterilir. Sıra numarası küçükten büyüğe.</p>

@@ -77,7 +77,7 @@
                 <div class="form-group mb-0">
                   <textarea name="ai_chat_system_prompt" class="form-control" rows="30" style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.8; background: #f8f9fa; border: 1px solid #e4e6fc; min-height: 600px; resize: vertical; padding: 20px; white-space: pre-wrap; word-wrap: break-word;" placeholder="AI asistanın davranış talimatlarını buraya yazın...">{{ $setting->ai_chat_system_prompt }}</textarea>
                   <div class="d-flex justify-content-between mt-2">
-                    <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Boş bırakılırsa varsayılan Seyfibaba asistan promptu kullanılır. <strong>Güvenlik kuralları</strong> (prompt injection, altyapı sızıntısı) sunucu tarafında her zaman uygulanır ve bu alandan geçersiz kılınamaz.</small>
+                    <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Boş bırakılırsa varsayılan Kuaför Tedarik asistan promptu kullanılır. <strong>Güvenlik kuralları</strong> (prompt injection, altyapı sızıntısı) sunucu tarafında her zaman uygulanır ve bu alandan geçersiz kılınamaz.</small>
                     <small class="text-muted" id="promptCharCount"></small>
                   </div>
                 </div>

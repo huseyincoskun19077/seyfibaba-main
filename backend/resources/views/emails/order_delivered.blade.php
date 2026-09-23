@@ -22,7 +22,7 @@
         <p>Alışverişiniz için teşekkür ederiz. Size en iyi hizmeti sunmaya devam edeceğiz.</p>
         
         <p>Saygılarımızla,<br>
-        <strong>Seyfibaba Kuaför ve Güzellik Salonları İçin Online Alışveriş Platformu</strong></p>
+        <strong>Kuaför Tedarik Kuaför ve Güzellik Salonları İçin Online Alışveriş Platformu</strong></p>
         
         <hr style="border: 1px solid #eee; margin: 20px 0;">
         <p style="color: #777; font-size: 12px;">

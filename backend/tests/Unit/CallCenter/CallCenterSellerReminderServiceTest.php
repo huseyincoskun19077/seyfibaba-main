@@ -133,7 +133,7 @@ class CallCenterSellerReminderServiceTest extends TestCase
     {
         $user = new User();
         $user->name = $overrides['contact_name'] ?? 'Ali Veli';
-        $user->email = 'satici.532@pending.seyfibaba.local';
+        $user->email = 'satici.532@pending.kuafortedarik.local';
         $user->phone = $overrides['phone'] ?? '+905321112233';
         $user->password = Hash::make('secret');
         $user->must_change_password = $overrides['must_change_password'] ?? 1;
@@ -182,7 +182,7 @@ class CallCenterSellerReminderServiceTest extends TestCase
         $this->assertStringContainsString('Ali Veli', $this->sentSmsMessages[0]['message']);
         $this->assertStringContainsString('654321', $this->sentSmsMessages[0]['message']);
         $this->assertStringContainsString('5321112233', $this->sentSmsMessages[0]['message']);
-        $this->assertStringContainsString('seyfibaba.com/satici-giris', $this->sentSmsMessages[0]['message']);
+        $this->assertStringContainsString('kuafortedarik.com/satici-giris', $this->sentSmsMessages[0]['message']);
     }
 
     public function test_offers_kyc_reminder_after_password_change(): void

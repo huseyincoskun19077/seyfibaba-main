@@ -7,7 +7,7 @@ return [
         'netgsm' => [
             'usercode' => env('NETGSM_USERCODE'),
             'password' => env('NETGSM_PASSWORD'),
-            'msgheader' => env('NETGSM_MSGHEADER', 'SEYFIBABA'),
+            'msgheader' => env('NETGSM_MSGHEADER', 'KUAFÖR TEDARİK'),
             'endpoint' => env('NETGSM_ENDPOINT', 'https://api.netgsm.com.tr/sms/send/get'),
             'transactional_endpoint' => env(
                 'NETGSM_TRANSACTIONAL_ENDPOINT',

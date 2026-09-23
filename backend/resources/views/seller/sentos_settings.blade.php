@@ -18,9 +18,9 @@
         <div class="section-body">
             <div class="alert alert-info">
                 <strong>Sentos entegrasyonu (tek yön ürün):</strong>
-                Ürünler <strong>Sentos → Seyfibaba</strong> çekilir. Seyfibaba’da ürün düzenlemek Sentos kataloğunu değiştirmez.
+                Ürünler <strong>Sentos → Kuaför Tedarik</strong> çekilir. Kuaför Tedarik’te ürün düzenlemek Sentos kataloğunu değiştirmez.
                 Saatlik otomatik senkron yeni ürünleri de alır; fiyat/stok günceller.
-                Ödenen siparişler (ve kargo) Seyfibaba → Sentos’a gider. Checkout/Iyzico Sentos hatasında bozulmaz.
+                Ödenen siparişler (ve kargo) Kuaför Tedarik → Sentos’a gider. Checkout/Iyzico Sentos hatasında bozulmaz.
                 <br><strong>Not:</strong> Sentos açıkken Softtr veya başka katalog entegrasyonu açılamaz.
             </div>
 
@@ -235,7 +235,7 @@
                         </div>
                         <div class="card-body">
                             <p class="text-muted small mb-3">
-                                Kategori / alt kategori / alt-alt kategori Seyfibaba eşleşmesidir.
+                                Kategori / alt kategori / alt-alt kategori Kuaför Tedarik eşleşmesidir.
                                 Ürün detayı Ürünler menüsünden; Sentos kataloğuna yazılmaz.
                             </p>
                             <div class="table-responsive">

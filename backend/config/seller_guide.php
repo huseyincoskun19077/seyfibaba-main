@@ -3,7 +3,7 @@
 return [
     'title' => 'Satıcı Şartlar ve Tanıtım',
     'subtitle' => 'Satıcı ol → doğrula → ürün ekle → kargola → hakediş al. Komisyon, kargo, ödeme ve iade burada net.',
-    'hero' => 'Seyfibaba; berber, kuaför ve güzellik salonu ekipmanlarına özel Türkiye pazaryeridir. Amacımız doğru müşteriyle buluşmanız, ödemenin Iyzico güvencesinde kalması ve süreçlerin şeffaf olmasıdır. Aşağıdaki yol haritası, satışa başlamadan bilmeniz gerekenlerin özetidir.',
+    'hero' => 'Kuaför Tedarik; berber, kuaför ve güzellik salonu ekipmanlarına özel Türkiye pazaryeridir. Amacımız doğru müşteriyle buluşmanız, ödemenin Iyzico güvencesinde kalması ve süreçlerin şeffaf olmasıdır. Aşağıdaki yol haritası, satışa başlamadan bilmeniz gerekenlerin özetidir.',
 
     'highlights' => [
         [
@@ -86,14 +86,14 @@ return [
             'bullets' => [
                 'Örnek: 1.000 TL satış → ~100 TL komisyon, ~900 TL satıcı payı (kargo hariç)',
                 'Komisyon, hakediş hesaplanırken düşülür',
-                'Kart ödemesi Iyzico’da işlenir; kart bilgisi Seyfibaba’da tutulmaz',
+                'Kart ödemesi Iyzico’da işlenir; kart bilgisi Kuaför Tedarik’te tutulmaz',
             ],
         ],
         [
             'id' => 'shipping',
             'title' => '5) Kargoya Ver — Ücret Satıcıya Aittir',
             'icon' => 'fa-truck',
-            'body' => '<strong>Kargo tamamen satıcıya aittir.</strong> Ürünü siz paketler, kargoya verir ve takip numarasını panele işlersiniz. Seyfibaba ürünü depolamaz ve sizin yerinize taşımaz.',
+            'body' => '<strong>Kargo tamamen satıcıya aittir.</strong> Ürünü siz paketler, kargoya verir ve takip numarasını panele işlersiniz. Kuaför Tedarik ürünü depolamaz ve sizin yerinize taşımaz.',
             'bullets' => [
                 'Geliver entegrasyonu veya kendi kargo anlaşmanızı kullanabilirsiniz',
                 'Kargo bedeli satıcıya aittir; platform kargo ücreti ödemez',
@@ -115,7 +115,7 @@ return [
             'id' => 'payout',
             'title' => '7) Alıcı Onayı Sonrası Hesaba Yatırma',
             'icon' => 'fa-university',
-            'body' => 'Müşteri ödediğinde tutar Seyfibaba kasasında tutulmaz; <strong>Iyzico pazaryeri havuzunda</strong> işlenir. Ürün alıcıya ulaşır ve <strong>alıcı onayı</strong> sonrası (iade süreci de sorunsuzsa) Iyzico’ya talimat verilir. Havuzdaki sipariş ödemesinden %10 komisyon düşülür; kalan net tutar satıcının doğrulanmış <strong>IBAN hesabına</strong> yatar.',
+            'body' => 'Müşteri ödediğinde tutar Kuaför Tedarik kasasında tutulmaz; <strong>Iyzico pazaryeri havuzunda</strong> işlenir. Ürün alıcıya ulaşır ve <strong>alıcı onayı</strong> sonrası (iade süreci de sorunsuzsa) Iyzico’ya talimat verilir. Havuzdaki sipariş ödemesinden %10 komisyon düşülür; kalan net tutar satıcının doğrulanmış <strong>IBAN hesabına</strong> yatar.',
             'bullets' => [
                 'Alıcı onayı / teslimat onayı kritik adımdır',
                 'KYC + IBAN + Iyzico kaydı tamamlanmış olmalıdır',
@@ -154,6 +154,6 @@ return [
         'title' => 'Destek',
         'text' => 'Detaylı sorular için SSS’ye bakın veya bize ulaşın. Bu sayfa satıcı süreçlerinin özet yol haritasıdır.',
         'phone' => '0850 303 5073',
-        'email' => 'info@seyfibaba.com',
+        'email' => 'info@kuafortedarik.com',
     ],
 ];

@@ -10,14 +10,14 @@ return [
             'items' => [
                 [
                     'q' => 'Satış yaptığımda param nereye düşer, ne zaman hesabıma geçer?',
-                    'a' => 'Müşteri kredi kartıyla ödeme yaptığında tutar Seyfibaba kasasında tutulmaz — ödeme doğrudan <strong>Iyzico pazaryeri sisteminin güvenli havuzuna</strong> aktarılır. Ürünü kargolayıp teslimat tamamlandıktan sonra, müşteriden iade talebi gelmezse sistem süreci otomatik tamamlar. Ardından <strong>%10 platform komisyonu</strong> kesilir ve kalan tutar Iyzico tarafından kayıtlı <strong>IBAN hesabınıza</strong> gönderilir. Ödeme takvimini satıcı panelinizdeki sipariş ve ödeme bölümlerinden izleyebilirsiniz.',
+                    'a' => 'Müşteri kredi kartıyla ödeme yaptığında tutar Kuaför Tedarik kasasında tutulmaz — ödeme doğrudan <strong>Iyzico pazaryeri sisteminin güvenli havuzuna</strong> aktarılır. Ürünü kargolayıp teslimat tamamlandıktan sonra, müşteriden iade talebi gelmezse sistem süreci otomatik tamamlar. Ardından <strong>%10 platform komisyonu</strong> kesilir ve kalan tutar Iyzico tarafından kayıtlı <strong>IBAN hesabınıza</strong> gönderilir. Ödeme takvimini satıcı panelinizdeki sipariş ve ödeme bölümlerinden izleyebilirsiniz.',
                 ],
                 [
                     'q' => 'Hakedişimi manuel mi çekmem gerekiyor?',
                     'a' => 'Hayır. Iyzico pazaryeri modelinde ödeme, sipariş koşulları sağlandığında <strong>otomatik olarak IBAN\'ınıza</strong> yönlendirilir. Ayrıca bir “para çek” talebi oluşturmanız gerekmez. IBAN ve KYC bilgilerinizin güncel olduğundan emin olun; ödeme bu hesaba gider.',
                 ],
                 [
-                    'q' => 'Seyfibaba müşterinin kartından çekilen parayı elinde tutuyor mu?',
+                    'q' => 'Kuaför Tedarik müşterinin kartından çekilen parayı elinde tutuyor mu?',
                     'a' => 'Hayır. Kredi kartı ödemeleri <strong>Iyzico altyapısında</strong> işlenir ve yasal pazaryeri kurallarına uygun şekilde dağıtılır. Bu sayede hem alıcı hem satıcı için şeffaf ve güvenli bir ödeme akışı sağlanır.',
                 ],
             ],
@@ -28,7 +28,7 @@ return [
             'items' => [
                 [
                     'q' => 'Kargoyu nasıl gönderirim?',
-                    'a' => 'İki seçeneğiniz var:<br><br><strong>1) Geliver anlaşması:</strong> Seyfibaba\'nın Geliver ile entegrasyonu vardır. Sipariş sonrası uygun kargo fiyatı panel üzerinden görülebilir. Ürün boyutu/ağırlığı önceden girilmediyse Geliver anlaşmalı kargo firması adresinize gelir, ölçüm yapar, ücreti belirler — <strong>bu tutar satıcıya aittir</strong> ve Seyfibaba satıcı bakiyesinden kesilir.<br><br><strong>2) Kendi kargo anlaşmanız:</strong> Anlaşmalı olduğunuz kargo firmasıyla da gönderim yapabilirsiniz; kargo bedelini yine siz ödersiniz. Takip numarasını satıcı panelinden siparişe işlemeniz yeterlidir.',
+                    'a' => 'İki seçeneğiniz var:<br><br><strong>1) Geliver anlaşması:</strong> Kuaför Tedarik\'nın Geliver ile entegrasyonu vardır. Sipariş sonrası uygun kargo fiyatı panel üzerinden görülebilir. Ürün boyutu/ağırlığı önceden girilmediyse Geliver anlaşmalı kargo firması adresinize gelir, ölçüm yapar, ücreti belirler — <strong>bu tutar satıcıya aittir</strong> ve Kuaför Tedarik satıcı bakiyesinden kesilir.<br><br><strong>2) Kendi kargo anlaşmanız:</strong> Anlaşmalı olduğunuz kargo firmasıyla da gönderim yapabilirsiniz; kargo bedelini yine siz ödersiniz. Takip numarasını satıcı panelinden siparişe işlemeniz yeterlidir.',
                 ],
                 [
                     'q' => 'Kargo ücretini kim öder?',
@@ -36,7 +36,7 @@ return [
                 ],
                 [
                     'q' => 'Geliver kullanırsam ücret nasıl kesilir?',
-                    'a' => 'Geliver üzerinden gönderim yaptığınızda, o gönderi için belirlenen kargo tutarı kadar <strong>Seyfibaba satıcı hesabınızdan otomatik kesilir</strong>. Panelde görünen Geliver fiyatı ne ise, kesinti de o tutar üzerinden yapılır. Boyut/ağırlık sonradan ölçülürse fark yansıyabilir; bu nedenle ürün kartlarında doğru ölçü bilgisi girmeniz önemlidir.',
+                    'a' => 'Geliver üzerinden gönderim yaptığınızda, o gönderi için belirlenen kargo tutarı kadar <strong>Kuaför Tedarik satıcı hesabınızdan otomatik kesilir</strong>. Panelde görünen Geliver fiyatı ne ise, kesinti de o tutar üzerinden yapılır. Boyut/ağırlık sonradan ölçülürse fark yansıyabilir; bu nedenle ürün kartlarında doğru ölçü bilgisi girmeniz önemlidir.',
                 ],
                 [
                     'q' => 'Sipariş geldikten sonra ne yapmalıyım?',
@@ -68,11 +68,11 @@ return [
             'items' => [
                 [
                     'q' => 'Hangi kesintiler uygulanır? (Iyzico ve IBAN tarafı)',
-                    'a' => 'Kesintiler iki hat üzerinden düşünülebilir:<br><br><strong>1) Seyfibaba platform komisyonu:</strong> Her satışta <strong>sabit %10</strong> hizmet komisyonu kesilir. Bu, pazaryeri kullanım bedelidir.<br><br><strong>2) Iyzico ödeme altyapısı:</strong> Müşterinin kart ödemesi Iyzico pazaryeri sisteminde işlenir. Alt üye işyeri kaydı, ödeme güvenliği ve hakediş dağıtımı Iyzico tarafından yürütülür.<br><br><strong>3) IBAN hakediş aktarımı:</strong> Komisyon ve iade kontrollerinden sonra kalan net tutar, doğruladığınız <strong>IBAN hesabınıza</strong> otomatik aktarılır. IBAN, KYC ve Iyzico kaydındaki bilgilerle eşleşmelidir.',
+                    'a' => 'Kesintiler iki hat üzerinden düşünülebilir:<br><br><strong>1) Kuaför Tedarik platform komisyonu:</strong> Her satışta <strong>sabit %10</strong> hizmet komisyonu kesilir. Bu, pazaryeri kullanım bedelidir.<br><br><strong>2) Iyzico ödeme altyapısı:</strong> Müşterinin kart ödemesi Iyzico pazaryeri sisteminde işlenir. Alt üye işyeri kaydı, ödeme güvenliği ve hakediş dağıtımı Iyzico tarafından yürütülür.<br><br><strong>3) IBAN hakediş aktarımı:</strong> Komisyon ve iade kontrollerinden sonra kalan net tutar, doğruladığınız <strong>IBAN hesabınıza</strong> otomatik aktarılır. IBAN, KYC ve Iyzico kaydındaki bilgilerle eşleşmelidir.',
                 ],
                 [
                     'q' => 'Komisyon oranı nedir?',
-                    'a' => 'Seyfibaba platform komisyonu tüm satışlarda <strong>sabit %10</strong>dır. Gizli ek platform kesintisi uygulanmaz; ne kazandığınızı panelden takip edebilirsiniz.',
+                    'a' => 'Kuaför Tedarik platform komisyonu tüm satışlarda <strong>sabit %10</strong>dır. Gizli ek platform kesintisi uygulanmaz; ne kazandığınızı panelden takip edebilirsiniz.',
                 ],
                 [
                     'q' => 'Komisyon ne zaman kesilir?',
@@ -117,12 +117,12 @@ return [
             ],
         ],
         [
-            'title' => 'Neden Seyfibaba?',
+            'title' => 'Neden Kuaför Tedarik?',
             'icon' => 'fa-heart',
             'items' => [
                 [
-                    'q' => 'Neden Seyfibaba\'da satış yapmalıyım?',
-                    'a' => 'Seyfibaba yalnızca <strong>berber, kuaför ve güzellik salonu</strong> sektörüne odaklanır. Genel pazaryerlerinde kaybolmak yerine, doğru müşteriye — salon sahiplerine ve profesyonellere — ulaşırsınız. %10 şeffaf komisyon, Iyzico güvencesi, AI destekli kolay ürün yükleme ve sektöre özel kategorilerle satışı sadeleştiriyoruz.',
+                    'q' => 'Neden Kuaför Tedarik\'da satış yapmalıyım?',
+                    'a' => 'Kuaför Tedarik yalnızca <strong>berber, kuaför ve güzellik salonu</strong> sektörüne odaklanır. Genel pazaryerlerinde kaybolmak yerine, doğru müşteriye — salon sahiplerine ve profesyonellere — ulaşırsınız. %10 şeffaf komisyon, Iyzico güvencesi, AI destekli kolay ürün yükleme ve sektöre özel kategorilerle satışı sadeleştiriyoruz.',
                 ],
                 [
                     'q' => 'Satıcı olmak için neler gerekiyor?',
@@ -130,23 +130,23 @@ return [
                 ],
                 [
                     'q' => 'Iyzico neden TC kimlik numarası istiyor?',
-                    'a' => 'Iyzico alt üye işyeri kaydı, yasal ödeme altyapısı gereği <strong>TC kimlik numaranızı</strong> ister. Bu bilgi yalnızca ödeme kuruluşu kaydı ve hakediş güvenliği için kullanılır; kart bilgileriniz Seyfibaba\'da saklanmaz.',
+                    'a' => 'Iyzico alt üye işyeri kaydı, yasal ödeme altyapısı gereği <strong>TC kimlik numaranızı</strong> ister. Bu bilgi yalnızca ödeme kuruluşu kaydı ve hakediş güvenliği için kullanılır; kart bilgileriniz Kuaför Tedarik\'da saklanmaz.',
                 ],
                 [
                     'q' => 'Vergi levhası neden isteniyor?',
-                    'a' => 'Vergi levhası talebimiz, <strong>doğrulama amaçlıdır</strong>: yalnızca berber, kuaför ve güzellik salonu sektörüne mi hitap ettiğinizi, yoksa platform dışında farklı bir ticari faaliyetiniz olup olmadığını netleştirmek için. Seyfibaba sektöre özel bir pazaryeridir; bu belge, hem sizi hem alıcıları korumak içindir. Belgeleriniz yalnızca onay sürecinde incelenir.',
+                    'a' => 'Vergi levhası talebimiz, <strong>doğrulama amaçlıdır</strong>: yalnızca berber, kuaför ve güzellik salonu sektörüne mi hitap ettiğinizi, yoksa platform dışında farklı bir ticari faaliyetiniz olup olmadığını netleştirmek için. Kuaför Tedarik sektöre özel bir pazaryeridir; bu belge, hem sizi hem alıcıları korumak içindir. Belgeleriniz yalnızca onay sürecinde incelenir.',
                 ],
                 [
-                    'q' => 'Seyfibaba\'ya güvenebilir miyim?',
-                    'a' => 'Ödemeler <strong>Iyzico</strong> lisanslı pazaryeri altyapısıyla işlenir; Seyfibaba müşteri kart ödemesini kendi kasasında tutmaz. Mesafeli satış ve iade süreçleri yasal çerçevede yürütülür. Satıcı doğrulama (KYC), şeffaf %10 komisyon ve panel üzerinden izlenebilir sipariş/hakediş takibi güvenilirlik için tasarlandı.',
+                    'q' => 'Kuaför Tedarik\'ya güvenebilir miyim?',
+                    'a' => 'Ödemeler <strong>Iyzico</strong> lisanslı pazaryeri altyapısıyla işlenir; Kuaför Tedarik müşteri kart ödemesini kendi kasasında tutmaz. Mesafeli satış ve iade süreçleri yasal çerçevede yürütülür. Satıcı doğrulama (KYC), şeffaf %10 komisyon ve panel üzerinden izlenebilir sipariş/hakediş takibi güvenilirlik için tasarlandı.',
                 ],
                 [
                     'q' => 'Kişisel ve ticari bilgilerim güvende mi?',
-                    'a' => 'KYC belgeleri yalnızca hesap doğrulama ve yasal yükümlülükler için kullanılır; onay sonrası erişim kısıtlıdır. Ödeme verileri Iyzico güvenli altyapısında işlenir. Sorularınız için <strong>0850 303 5073</strong> veya <strong>info@seyfibaba.com</strong> üzerinden doğrudan bize ulaşabilirsiniz.',
+                    'a' => 'KYC belgeleri yalnızca hesap doğrulama ve yasal yükümlülükler için kullanılır; onay sonrası erişim kısıtlıdır. Ödeme verileri Iyzico güvenli altyapısında işlenir. Sorularınız için <strong>0850 303 5073</strong> veya <strong>info@kuafortedarik.com</strong> üzerinden doğrudan bize ulaşabilirsiniz.',
                 ],
                 [
                     'q' => 'Destek almak istersem?',
-                    'a' => 'Panelden <strong>Admin\'e Mesaj</strong> gönderebilir, <strong>0850 303 5073</strong> numaradan veya <strong>info@seyfibaba.com</strong> üzerinden bize ulaşabilirsiniz. AI asistan da günlük işlerinizde hızlı yardım sağlar.',
+                    'a' => 'Panelden <strong>Admin\'e Mesaj</strong> gönderebilir, <strong>0850 303 5073</strong> numaradan veya <strong>info@kuafortedarik.com</strong> üzerinden bize ulaşabilirsiniz. AI asistan da günlük işlerinizde hızlı yardım sağlar.',
                 ],
             ],
         ],

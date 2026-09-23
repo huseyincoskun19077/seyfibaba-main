@@ -13,7 +13,7 @@ class SyncCallRecordingsCommand extends Command
         {--to= : Y-m-d bitiş (varsayılan bugün)}
         {--no-download : Sadece CDR meta, ses indirme}';
 
-    protected $description = 'Netgsm Netsantral CDR + ses kayıtlarını Seyfibaba\'ya senkronlar';
+    protected $description = 'Netgsm Netsantral CDR + ses kayıtlarını Kuaför Tedarik\'ya senkronlar';
 
     public function handle(NetsantralCallRecordingService $service): int
     {

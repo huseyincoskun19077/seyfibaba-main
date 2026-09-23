@@ -83,7 +83,7 @@ class AiVisionService
             : "Fiyat: {$price} TL";
 
         return <<<PROMPT
-Sen Seyfibaba berber, kuaför ve güzellik salonu ekipmanları pazaryeri için ürün içerik uzmanısın. Satıcının girdiği bilgiler ve ürün fotoğrafını analiz ederek eksiksiz ürün içeriği üret. Berber koltuğu, kuaför tezgahı, makas, fön makinesi gibi salon ekipmanlarına odaklan.
+Sen Kuaför Tedarik berber, kuaför ve güzellik salonu ekipmanları pazaryeri için ürün içerik uzmanısın. Satıcının girdiği bilgiler ve ürün fotoğrafını analiz ederek eksiksiz ürün içeriği üret. Berber koltuğu, kuaför tezgahı, makas, fön makinesi gibi salon ekipmanlarına odaklan.
 
 Satıcının girdiği bilgiler (bunları DEĞİŞTİRME):
 - Ürün adı: {$productName}

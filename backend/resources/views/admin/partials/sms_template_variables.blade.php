@@ -3,7 +3,7 @@
         'seller_reminder_login' => [
             ['var' => '{{contact_name}}', 'meaning' => 'Yetkili adı soyadı'],
             ['var' => '{{shop_name}}', 'meaning' => 'Firma / dükkan adı'],
-            ['var' => '{{login_url}}', 'meaning' => 'Satıcı giriş adresi (seyfibaba.com/satici-giris)'],
+            ['var' => '{{login_url}}', 'meaning' => 'Satıcı giriş adresi (kuafortedarik.com/satici-giris)'],
             ['var' => '{{login_phone}}', 'meaning' => 'Giriş telefonu (10 hane)'],
             ['var' => '{{password}}', 'meaning' => 'Tek kullanımlık giriş şifresi'],
         ],

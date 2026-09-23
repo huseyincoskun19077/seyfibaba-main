@@ -3,7 +3,7 @@
 namespace App\Services\Softtr;
 
 /**
- * Softtr product payloads → Seyfibaba Product fields (column names unchanged).
+ * Softtr product payloads → Kuaför Tedarik Product fields (column names unchanged).
  * Softtr list schema is undocumented; synonyms + relative image resolution cover real shops.
  */
 class SofttrProductNormalizer

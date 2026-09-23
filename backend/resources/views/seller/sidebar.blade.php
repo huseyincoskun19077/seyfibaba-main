@@ -1,6 +1,6 @@
 @php
     $setting = App\Models\Setting::first();
-    $frontendBase = rtrim($setting?->frontend_url ?? config('app.frontend_url', 'https://seyfibaba.com'), '/');
+    $frontendBase = rtrim($setting?->frontend_url ?? config('app.frontend_url', 'https://kuafortedarik.com'), '/');
 @endphp
 
 <div class="main-sidebar">
@@ -10,7 +10,7 @@
           @if($setting?->logo)
           <img src="{{ asset($setting->logo) }}" alt="logo"/>
           @else
-          <span class="text-white font-weight-bold">Seyfibaba</span>
+          <span class="text-white font-weight-bold">Kuaför Tedarik</span>
           @endif
         </div></a>
       </div>

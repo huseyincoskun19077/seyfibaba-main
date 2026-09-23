@@ -7,7 +7,7 @@ class OtpMessageBuilder
     public static function build(string $otpCode): string
     {
         return sprintf(
-            'Seyfibaba giris kodunuz: %s. Gecerlilik suresi: %d dk.',
+            'Kuaför Tedarik giris kodunuz: %s. Gecerlilik suresi: %d dk.',
             $otpCode,
             (int) config('sms.otp.expire_minutes', 5)
         );
@@ -16,7 +16,7 @@ class OtpMessageBuilder
     /** Hızlı satıcı kaydı: giriş yapılana kadar geçerli, süre metni yok. */
     public static function buildFirstLogin(string $otpCode): string
     {
-        return sprintf('seyfibaba.com satıcı giriş kodunuz:%s.', $otpCode);
+        return sprintf('kuafortedarik.com satıcı giriş kodunuz:%s.', $otpCode);
     }
 
     /** Çağrı merkezi kaydı: kullanıcı adı (telefon) + tek girişlik şifre. */

@@ -22,7 +22,7 @@ class PaymentApprovedMail extends Mailable
     public function build()
     {
         $order = $this->order;
-        $subject = 'Havale Ödemeniz Onaylandı - Seyfibaba';
+        $subject = 'Havale Ödemeniz Onaylandı - Kuaför Tedarik';
         
         return $this->subject($subject)
             ->view('user.payment_approved_template', compact('order'));

@@ -20,7 +20,7 @@ class LocalizeProductImages extends Command
                             {--sleep-ms=200 : pause between downloads}
                             {--dry-run : list only, do not download}';
 
-    protected $description = 'HTTP/CDN thumb_image URL’lerini Seyfibaba uploads altına indirir';
+    protected $description = 'HTTP/CDN thumb_image URL’lerini Kuaför Tedarik uploads altına indirir';
 
     public function handle(ProductImageStorage $imageStorage): int
     {

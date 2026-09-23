@@ -710,7 +710,7 @@ class PaymentController extends Controller
 
                 $content = "Mağazanıza yeni sipariş geldi.\n\nSipariş No: {$order->order_id}\nMüşteri: {$order->user->name}\n\nÜrünler:\n{$productList}\n\nSatıcı panelinden siparişi onaylayabilirsiniz.";
 
-                Mail::to($sellerUser->email)->send(new OrderNotificationToSeller($content, "Yeni Sipariş #{$order->order_id} — Seyfibaba"));
+                Mail::to($sellerUser->email)->send(new OrderNotificationToSeller($content, "Yeni Sipariş #{$order->order_id} — Kuaför Tedarik"));
             }
         } catch (\Throwable $e) {
             \Log::warning('Seller order notification mail failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);

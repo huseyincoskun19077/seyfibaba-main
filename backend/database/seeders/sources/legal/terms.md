@@ -1,20 +1,20 @@
 SEYFİBABA ŞARTLAR VE KOŞULLAR
 Son Güncelleme Tarihi: 6 Ağustos 2026
 Yürürlük Tarihi: 6 Ağustos 2026
-Platform: https://seyfibaba.com
+Platform: https://kuafortedarik.com
 
 1. TARAFLAR VE TANIMLAR
-İşbu Şartlar ve Koşullar ("Sözleşme"), Seyfibaba Platformu'nu kullanan tüm kullanıcılar ile Platform'un işletmecisi arasında akdedilmektedir.
+İşbu Şartlar ve Koşullar ("Sözleşme"), Kuaför Tedarik Platformu'nu kullanan tüm kullanıcılar ile Platform'un işletmecisi arasında akdedilmektedir.
 
 Platform İşletmecisi (Aracı Hizmet Sağlayıcı)
 Şirket Unvanı: HC YAZILIM
 Adres: İstiklal Mahallesi Bülük Sokak No:9 Kat:2 No:208 Serdivan / Sakarya
 Telefon: 0850 303 50 73
-E-posta: info@seyfibaba.com
+E-posta: info@kuafortedarik.com
 
 Tanımlar
-TerimAçıklamaPlatformSeyfibaba internet sitesi, mobil uygulamaları ve bağlı tüm dijital hizmetler.Kullanıcı / AlıcıPlatform'u ziyaret eden, üye olan veya ürün satın alan gerçek ya da tüzel kişi.SatıcıPlatform üzerinde mağaza açarak ürün satışına sunan onaylı gerçek veya tüzel kişi.İkinci El SatıcıPlatformun ikinci el ilan modülünde ilan yayımlayan kullanıcı.SözleşmeAlıcı ile Satıcı arasında kurulan mesafeli satış sözleşmesi.Aracı HizmetPlatform tarafından sunulan listeleme, sipariş, ödeme altyapısı ve teknik aracılık hizmetleri.
-Seyfibaba, çok satıcılı pazaryeri modeli ile faaliyet göstermektedir.
+TerimAçıklamaPlatformKuaför Tedarik internet sitesi, mobil uygulamaları ve bağlı tüm dijital hizmetler.Kullanıcı / AlıcıPlatform'u ziyaret eden, üye olan veya ürün satın alan gerçek ya da tüzel kişi.SatıcıPlatform üzerinde mağaza açarak ürün satışına sunan onaylı gerçek veya tüzel kişi.İkinci El SatıcıPlatformun ikinci el ilan modülünde ilan yayımlayan kullanıcı.SözleşmeAlıcı ile Satıcı arasında kurulan mesafeli satış sözleşmesi.Aracı HizmetPlatform tarafından sunulan listeleme, sipariş, ödeme altyapısı ve teknik aracılık hizmetleri.
+Kuaför Tedarik, çok satıcılı pazaryeri modeli ile faaliyet göstermektedir.
 
 Sıfır ürün satışlarında satış sözleşmesinin tarafı Alıcı ile Satıcıdır. HC YAZILIM, 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun kapsamında Aracı Hizmet Sağlayıcı sıfatıyla faaliyet göstermektedir.
 
@@ -269,7 +269,7 @@ Platformu ziyaret eden, üye olan veya sipariş oluşturan her kullanıcı, bu m
 
 Telefon: 0850 303 50 73
 
-E-posta: info@seyfibaba.com
+E-posta: info@kuafortedarik.com
 
 23. DEĞİŞİKLİKLER
 HC YAZILIM, işbu Şartlar ve Koşullar'ı yürürlükteki mevzuat ve hizmetlerde meydana gelen değişiklikler doğrultusunda güncelleme hakkını saklı tutar.
@@ -300,6 +300,6 @@ HC YAZILIM
 
 Telefon: 0850 303 50 73
 
-E-posta: info@seyfibaba.com
+E-posta: info@kuafortedarik.com
 
-Web Sitesi: https://seyfibaba.com
+Web Sitesi: https://kuafortedarik.com

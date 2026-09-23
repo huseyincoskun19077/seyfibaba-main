@@ -10,7 +10,7 @@
         <p style="white-space: pre-line;">{{ $content }}</p>
         <hr style="border: 1px solid #eee; margin: 20px 0;">
         <p style="color: #777; font-size: 12px;">
-            Seyfibaba Kuaför ve Güzellik Salonları İçin Online Alışveriş Platformu
+            Kuaför Tedarik Kuaför ve Güzellik Salonları İçin Online Alışveriş Platformu
         </p>
     </div>
 </body>

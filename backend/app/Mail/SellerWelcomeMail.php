@@ -20,7 +20,7 @@ class SellerWelcomeMail extends Mailable
     public function build()
     {
         \App\Helpers\MailHelper::setMailConfig();
-        return $this->subject('Seyfibaba\'ya Hoş Geldiniz!')
+        return $this->subject('Kuaför Tedarik\'ya Hoş Geldiniz!')
             ->view('emails.generic-notification')
             ->with(['content' => $this->messageContent, 'title' => 'Hoş Geldiniz']);
     }

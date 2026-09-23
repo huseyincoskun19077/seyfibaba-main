@@ -24,8 +24,8 @@ class KycStatusMail extends Mailable
         $isApproved = $this->status === 'approved';
 
         $subject = $isApproved
-            ? 'Seyfibaba — Hesap doğrulamanız onaylandı'
-            : 'Seyfibaba — Hesap doğrulamanız reddedildi';
+            ? 'Kuaför Tedarik — Hesap doğrulamanız onaylandı'
+            : 'Kuaför Tedarik — Hesap doğrulamanız reddedildi';
 
         return $this->subject($subject)
             ->view('emails.kyc_status', [

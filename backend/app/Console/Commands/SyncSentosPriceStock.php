@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Hourly Sentos → Seyfibaba price/stock pull (docs-compliant pacing).
+ * Hourly Sentos → Kuaför Tedarik price/stock pull (docs-compliant pacing).
  * Only vendors with integration enabled; does not alter other sellers.
  */
 class SyncSentosPriceStock extends Command

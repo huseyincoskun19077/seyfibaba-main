@@ -34,7 +34,7 @@
               <div class="d-flex flex-wrap align-items-center justify-content-between" style="gap:12px;">
                 <div>
                   <h5><i class="fas fa-robot mr-1"></i> Yapay zeka ile doldur</h5>
-                  <p class="mb-0 spf-hint">Önce ürün adını yazın. Seyfibaba (berber / kuaför / salon) pazaryerine uygun başlık, açıklama ve SEO üretir.</p>
+                  <p class="mb-0 spf-hint">Önce ürün adını yazın. Kuaför Tedarik (berber / kuaför / salon) pazaryerine uygun başlık, açıklama ve SEO üretir.</p>
                 </div>
                 @include('seller.partials.ai_content_generator_button')
               </div>

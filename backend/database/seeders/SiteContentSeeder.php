@@ -18,12 +18,12 @@ class SiteContentSeeder extends Seeder
         $this->updateOrInsertFiltered('footers', ['id' => 1], [
             'about_us' => 'Kuaförler ve güzellik profesyonelleri için ihtiyaç duyulan tüm kuaför malzemelerini güvenilir satıcılarla buluşturan bir pazaryeri platformudur. Profesyonel ekipmanlardan sarf malzemelerine kadar geniş ürün yelpazemizle, sektöre hızlı, güvenli ve kolay alışveriş deneyimi sunuyoruz.',
             'phone' => '0850 303 5073',
-            'email' => 'info@seyfibaba.com',
+            'email' => 'info@kuafortedarik.com',
             'address' => 'istiklal mahallesi Serdivan/SAKARYA',
             'first_column' => 'Kurumsal',
             'second_column' => 'Ürünler',
             'third_column' => 'Satıcı',
-            'copyright' => '© 2026 Seyfibaba. Tüm hakları saklıdır.',
+            'copyright' => '© 2026 Kuaför Tedarik. Tüm hakları saklıdır.',
         ]);
 
         // Footer Links
@@ -73,12 +73,12 @@ class SiteContentSeeder extends Seeder
         // SEO Settings
         $seoSettings = [
             ['id' => 1, 'page_name' => 'Home Page', 'seo_title' => 'Berber & Kuaför Malzemeleri – Profesyoneller İçin Alışveriş', 'seo_description' => 'berber malzemeleri,kuaför malzemeleri,berber koltuğu,kuaför ekipmanları,salon ekipmanları,berber alışveriş sitesi'],
-            ['id' => 2, 'page_name' => 'About Us', 'seo_title' => 'Hakkımızda | Seyfibaba – Berber & Kuaför Malzemeleri', 'seo_description' => 'Seyfibaba.com, berber ve kuaför profesyonelleri için kaliteli ekipman ve salon malzemeleri sunar. Salonunuz için güvenli ve kolay alışveriş.'],
-            ['id' => 3, 'page_name' => 'Contact Us', 'seo_title' => 'İletişim | Seyfibaba – Berber & Kuaför Malzemeleri', 'seo_description' => 'Seyfibaba.com iletişim sayfası. Berber ve kuaför malzemeleriyle ilgili soru, destek ve talepleriniz için bizimle iletişime geçin.'],
-            ['id' => 5, 'page_name' => 'Seller Page', 'seo_title' => 'Mağazalarımız | Seyfibaba – Berber & Kuaför Malzemeleri', 'seo_description' => 'Seyfibaba.com\'da yer alan mağazaları keşfedin. Berber ve kuaför salonları için profesyonel, güvenilir ve kaliteli ürün seçenekleri.'],
-            ['id' => 6, 'page_name' => 'Blog', 'seo_title' => 'Blog | Seyfibaba – Berber & Kuaför Rehberi', 'seo_description' => 'Berber ve kuaförler için ekipman seçimi, salon ipuçları ve profesyonel öneriler. Seyfibaba Blog ile işinizi geliştirin.'],
-            ['id' => 8, 'page_name' => 'Flash Deal', 'seo_title' => 'İndirimli Ürünler | Seyfibaba – Berber & Kuaför Malzemeleri', 'seo_description' => 'Sınırlı süreli İndirimli Ürünler! Berber ve kuaför malzemelerinde özel indirimleri Seyfibaba.com\'da kaçırmayın.'],
-            ['id' => 9, 'page_name' => 'Shop Page', 'seo_title' => 'Mağaza | Berber & Kuaför Malzemeleri – Seyfibaba', 'seo_description' => 'Berber ve kuaför salonları için profesyonel ekipmanlar, demirbaşlar ve sarf ürünleri. Tüm ürünleri Seyfibaba.com mağazasında keşfedin.'],
+            ['id' => 2, 'page_name' => 'About Us', 'seo_title' => 'Hakkımızda | Kuaför Tedarik – Berber & Kuaför Malzemeleri', 'seo_description' => 'Kuaför Tedarik.com, berber ve kuaför profesyonelleri için kaliteli ekipman ve salon malzemeleri sunar. Salonunuz için güvenli ve kolay alışveriş.'],
+            ['id' => 3, 'page_name' => 'Contact Us', 'seo_title' => 'İletişim | Kuaför Tedarik – Berber & Kuaför Malzemeleri', 'seo_description' => 'Kuaför Tedarik.com iletişim sayfası. Berber ve kuaför malzemeleriyle ilgili soru, destek ve talepleriniz için bizimle iletişime geçin.'],
+            ['id' => 5, 'page_name' => 'Seller Page', 'seo_title' => 'Mağazalarımız | Kuaför Tedarik – Berber & Kuaför Malzemeleri', 'seo_description' => 'Kuaför Tedarik.com\'da yer alan mağazaları keşfedin. Berber ve kuaför salonları için profesyonel, güvenilir ve kaliteli ürün seçenekleri.'],
+            ['id' => 6, 'page_name' => 'Blog', 'seo_title' => 'Blog | Kuaför Tedarik – Berber & Kuaför Rehberi', 'seo_description' => 'Berber ve kuaförler için ekipman seçimi, salon ipuçları ve profesyonel öneriler. Kuaför Tedarik Blog ile işinizi geliştirin.'],
+            ['id' => 8, 'page_name' => 'Flash Deal', 'seo_title' => 'İndirimli Ürünler | Kuaför Tedarik – Berber & Kuaför Malzemeleri', 'seo_description' => 'Sınırlı süreli İndirimli Ürünler! Berber ve kuaför malzemelerinde özel indirimleri Kuaför Tedarik.com\'da kaçırmayın.'],
+            ['id' => 9, 'page_name' => 'Shop Page', 'seo_title' => 'Mağaza | Berber & Kuaför Malzemeleri – Kuaför Tedarik', 'seo_description' => 'Berber ve kuaför salonları için profesyonel ekipmanlar, demirbaşlar ve sarf ürünleri. Tüm ürünleri Kuaför Tedarik.com mağazasında keşfedin.'],
         ];
 
         foreach ($seoSettings as $seo) {
@@ -89,7 +89,7 @@ class SiteContentSeeder extends Seeder
         $this->updateOrInsertFiltered('contact_pages', ['id' => 1], [
             'title' => 'İletişim',
             'description' => "Aşağıdaki iletişim formunu doldurarak ya da bize yazarak bizimle iletişime geçebilirsiniz.\nTalebinize en kısa sürede dönüş sağlanacaktır.",
-            'email' => 'info@seyfibaba.com',
+            'email' => 'info@kuafortedarik.com',
             'address' => 'istiklal mahallesi Serdivan/SAKARYA',
             'phone' => '0850 303 5073',
             'map' => 'https://www.google.com/maps/place/40%C2%B045\'47.4%22N+30%C2%B021\'50.0%22E/@40.7631531,30.3613224,17z',
@@ -116,9 +116,9 @@ class SiteContentSeeder extends Seeder
 
         $this->updateFiltered('settings', ['id' => 1], [
             'homepage_section_title' => $sectionTitles,
-            'sidebar_lg_header' => 'Seyfibaba',
+            'sidebar_lg_header' => 'Kuaför Tedarik',
             'sidebar_sm_header' => 'SB',
-            'contact_email' => 'info@seyfibaba.com',
+            'contact_email' => 'info@kuafortedarik.com',
             'timezone' => 'Europe/Istanbul',
             'text_direction' => 'ltr',
             'popular_category' => 'Popular Category',

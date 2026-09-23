@@ -246,10 +246,10 @@ class QuickProductService
             'sub_category_id' => $resolved['sub_category']?->id ?? 0,
             'short_name' => mb_substr($inputName, 0, 30),
             'name' => $inputName,
-            'short_description' => $inputName . ' — Seyfibaba\'da güvenle alışveriş yapın.',
-            'long_description' => '<p>' . e($inputName) . '</p><p>Kaliteli ürün, hızlı kargo ve güvenli alışveriş deneyimi için Seyfibaba\'yı tercih edin.</p>',
+            'short_description' => $inputName . ' — Kuaför Tedarik\'da güvenle alışveriş yapın.',
+            'long_description' => '<p>' . e($inputName) . '</p><p>Kaliteli ürün, hızlı kargo ve güvenli alışveriş deneyimi için Kuaför Tedarik\'yı tercih edin.</p>',
             'seo_title' => mb_substr($inputName, 0, 60),
-            'seo_description' => mb_substr($inputName . ' — Seyfibaba\'da en uygun fiyatlarla.', 0, 155),
+            'seo_description' => mb_substr($inputName . ' — Kuaför Tedarik\'da en uygun fiyatlarla.', 0, 155),
             'tags' => $inputName,
             'brand_name' => '',
         ];

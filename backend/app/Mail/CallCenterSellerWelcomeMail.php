@@ -28,7 +28,7 @@ class CallCenterSellerWelcomeMail extends Mailable
         MailHelper::setMailConfig();
 
         return $this
-            ->subject('Seyfibaba Satıcı Hesabınız Oluşturuldu')
+            ->subject('Kuaför Tedarik Satıcı Hesabınız Oluşturuldu')
             ->view('emails.call_center_seller_welcome');
     }
 

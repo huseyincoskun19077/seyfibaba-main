@@ -73,7 +73,7 @@ class SellerSsoTicketService
     private function sellerPanelOrigin(): string
     {
         $appUrl = rtrim((string) config('app.url'), '/');
-        $frontend = rtrim((string) config('app.frontend_url', 'https://seyfibaba.com'), '/');
+        $frontend = rtrim((string) config('app.frontend_url', 'https://kuafortedarik.com'), '/');
         $appHost = strtolower((string) (parse_url($appUrl, PHP_URL_HOST) ?: ''));
         $frontHost = strtolower((string) (parse_url($frontend, PHP_URL_HOST) ?: ''));
         $frontHost = preg_replace('/^www\./', '', (string) $frontHost) ?: $frontHost;
@@ -83,7 +83,7 @@ class SellerSsoTicketService
             return $appUrl;
         }
 
-        return 'https://admin.seyfibaba.com';
+        return 'https://admin.kuafortedarik.com';
     }
 
     private function secret(): string

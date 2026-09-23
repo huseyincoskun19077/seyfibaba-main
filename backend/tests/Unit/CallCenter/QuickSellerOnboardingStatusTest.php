@@ -69,7 +69,7 @@ class QuickSellerOnboardingStatusTest extends TestCase
         $user = new User();
         $user->forceFill([
             'name' => 'Test',
-            'email' => 'satici.532@pending.seyfibaba.local',
+            'email' => 'satici.532@pending.kuafortedarik.local',
             'phone' => '+905321111111',
             'must_change_password' => true,
         ])->save();

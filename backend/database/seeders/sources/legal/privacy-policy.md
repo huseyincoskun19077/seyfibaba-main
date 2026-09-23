@@ -7,12 +7,12 @@
 
 # 1. VERİ SORUMLUSU BİLGİLERİ
 
-6698 sayılı **Kişisel Verilerin Korunması Kanunu ("KVKK")** uyarınca, Seyfibaba internet sitesi, mobil uygulamaları ve bağlı servislerinin ("Platform") işletilmesinden sorumlu veri sorumlusuna ilişkin bilgiler aşağıdadır:
+6698 sayılı **Kişisel Verilerin Korunması Kanunu ("KVKK")** uyarınca, Kuaför Tedarik internet sitesi, mobil uygulamaları ve bağlı servislerinin ("Platform") işletilmesinden sorumlu veri sorumlusuna ilişkin bilgiler aşağıdadır:
 
 **Şirket Unvanı:** HC YAZILIM
 **Adres:** İstiklal Mahallesi Bülük Sokak No:9 Kat:2 No:208 Serdivan / Sakarya
 **Telefon:** 0850 303 50 73
-**E-posta:** [info@seyfibaba.com](mailto:info@seyfibaba.com)
+**E-posta:** [info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 ---
 
@@ -209,7 +209,7 @@ Bunlardan bazıları şunlardır:
 
 Platforma yüklenen tüm ilan, görsel ve içeriklerin hukuka uygunluğundan ilgili kullanıcı sorumludur.
 
-Telif hakkı, marka hakkı veya diğer fikri ve sınai mülkiyet haklarının ihlal edildiğini düşünen hak sahipleri, **[info@seyfibaba.com](mailto:info@seyfibaba.com)** adresine başvurabilir.
+Telif hakkı, marka hakkı veya diğer fikri ve sınai mülkiyet haklarının ihlal edildiğini düşünen hak sahipleri, **[info@kuafortedarik.com](mailto:info@kuafortedarik.com)** adresine başvurabilir.
 
 Hak ihlali tespit edilmesi halinde ilgili içerik gecikmeksizin yayından kaldırılır.
 
@@ -239,7 +239,7 @@ haklarına sahiptir.
 
 **E-posta**
 
-[info@seyfibaba.com](mailto:info@seyfibaba.com)
+[info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 **KEP**
 
@@ -251,7 +251,7 @@ Başvurular, talebin niteliğine göre en geç **30 (otuz) gün** içerisinde ü
 
 # 11. ÇOCUKLARIN GİZLİLİĞİ
 
-Seyfibaba Platformu 18 yaşın altındaki bireylere yönelik değildir.
+Kuaför Tedarik Platformu 18 yaşın altındaki bireylere yönelik değildir.
 
 18 yaşından küçük kişilerden bilerek kişisel veri toplanmamaktadır. Böyle bir durumun tespit edilmesi halinde ilgili veriler gecikmeksizin silinir.
 
@@ -273,4 +273,4 @@ Serdivan / Sakarya
 
 **Telefon:** 0850 303 50 73
 
-**E-posta:** [info@seyfibaba.com](mailto:info@seyfibaba.com)
+**E-posta:** [info@kuafortedarik.com](mailto:info@kuafortedarik.com)

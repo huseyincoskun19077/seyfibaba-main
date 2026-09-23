@@ -2,18 +2,18 @@
 
 **Son Güncelleme Tarihi:** 6 Ağustos 2026  
 **Yürürlük Tarihi:** 6 Ağustos 2026  
-**Platform:** https://seyfibaba.com
+**Platform:** https://kuafortedarik.com
 
 ---
 
 # 1. SÖZLEŞMENİN KONUSU VE TARAFLAR
 
-İşbu Gizlilik Sözleşmesi ("Sözleşme"); Seyfibaba internet sitesi, mobil uygulamaları ve bağlı dijital hizmetleri ("Platform") üzerinden üyelik oluşturan, alışveriş yapan, satıcı hesabı açan veya ikinci el ilan modülünü kullanan gerçek veya tüzel kişi ("Kullanıcı") ile Platform'un işletmecisi **HC YAZILIM** ("Şirket") arasında, kişisel verilerin işlenmesine ilişkin sözleşmesel çerçevenin belirlenmesi amacıyla akdedilmiştir.
+İşbu Gizlilik Sözleşmesi ("Sözleşme"); Kuaför Tedarik internet sitesi, mobil uygulamaları ve bağlı dijital hizmetleri ("Platform") üzerinden üyelik oluşturan, alışveriş yapan, satıcı hesabı açan veya ikinci el ilan modülünü kullanan gerçek veya tüzel kişi ("Kullanıcı") ile Platform'un işletmecisi **HC YAZILIM** ("Şirket") arasında, kişisel verilerin işlenmesine ilişkin sözleşmesel çerçevenin belirlenmesi amacıyla akdedilmiştir.
 
 **Şirket Unvanı:** HC YAZILIM  
 **Adres:** İstiklal Mahallesi Bülük Sokak No:9 Kat:2 No:208 Serdivan / Sakarya  
 **Telefon:** 0850 303 50 73  
-**E-posta:** [info@seyfibaba.com](mailto:info@seyfibaba.com)  
+**E-posta:** [info@kuafortedarik.com](mailto:info@kuafortedarik.com)  
 **KEP:** [hcyazilim@hs01.kep.tr](mailto:hcyazilim@hs01.kep.tr)
 
 ---
@@ -97,7 +97,7 @@ kabul ve taahhüt eder.
 
 Kullanıcı, KVKK'nın 11. maddesi kapsamındaki haklarını;
 
-* [info@seyfibaba.com](mailto:info@seyfibaba.com) adresine e-posta göndererek,
+* [info@kuafortedarik.com](mailto:info@kuafortedarik.com) adresine e-posta göndererek,
 * KEP adresi üzerinden,
 * Yazılı başvuru ile merkez adrese posta yoluyla
 
@@ -150,5 +150,5 @@ Platform üzerinde üyelik oluşturulması, sipariş verilmesi, satıcı kaydı 
 ---
 
 **HC YAZILIM**  
-**Seyfibaba Pazaryeri**  
-https://seyfibaba.com
+**Kuaför Tedarik Pazaryeri**  
+https://kuafortedarik.com

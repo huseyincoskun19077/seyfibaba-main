@@ -242,7 +242,7 @@ class SellerOrderController extends Controller
                 $user = User::find($order->user_id);
                 if ($user && $user->email) {
                     $template = 'Siparişiniz satıcı tarafından onaylandı ve işleme alındı. Sipariş No: ' . $order->order_id;
-                    Mail::to($user->email)->send(new OrderSuccessfully($template, 'Sipariş Onaylandı - Seyfibaba'));
+                    Mail::to($user->email)->send(new OrderSuccessfully($template, 'Sipariş Onaylandı - Kuaför Tedarik'));
                 }
             } catch (\Exception $e) {
                 \Log::warning('Satıcı sipariş onay mail gönderilemedi', ['order_id' => $id, 'error' => $e->getMessage()]);
@@ -304,7 +304,7 @@ class SellerOrderController extends Controller
                         ? "\nKargo Firması: " . ($latestCargo->carrier_name ?? $latestCargo->cargo_company ?? '-') . "\nTakip No: " . $latestCargo->tracking_number
                         : '';
                     $template = "Siparişiniz kargoya verildi.\n\nSipariş No: {$order->order_id}\n\nGönderilen Ürünler:\n{$productNames}{$trackingInfo}\n\nKargo durumunu takip numarasıyla sorgulayabilirsiniz.";
-                    Mail::to($user->email)->send(new OrderSuccessfully($template, 'Sipariş Kargoya Verildi — Seyfibaba'));
+                    Mail::to($user->email)->send(new OrderSuccessfully($template, 'Sipariş Kargoya Verildi — Kuaför Tedarik'));
                 }
             } catch (\Exception $e) {
                 \Log::warning('Satıcı teslim mail gönderilemedi', ['order_id' => $id, 'error' => $e->getMessage()]);

@@ -67,7 +67,7 @@
                                         <td>{{ $products->firstItem() + $index }}</td>
                                         <td>
                                           @php
-                                            $storefront = rtrim((string) ($setting?->frontend_url ?? config('app.frontend_url', 'https://seyfibaba.com')), '/');
+                                            $storefront = rtrim((string) ($setting?->frontend_url ?? config('app.frontend_url', 'https://kuafortedarik.com')), '/');
                                             $publicUrl = $product->slug ? $storefront.'/urun/'.$product->slug : null;
                                           @endphp
                                           @if ($publicUrl)

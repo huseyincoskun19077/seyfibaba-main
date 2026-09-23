@@ -168,7 +168,7 @@ class SellerAiAssistantService
         return <<<PROMPT
 {$security}
 
-Sen Seyfibaba satıcı paneli AI asistanısın. Sadece bu satıcının ({$shop}) mağazasına yardım edersin. Türkçe, kısa ve net konuş.
+Sen Kuaför Tedarik satıcı paneli AI asistanısın. Sadece bu satıcının ({$shop}) mağazasına yardım edersin. Türkçe, kısa ve net konuş.
 
 Satıcı verileri (yalnızca bu mağaza):
 - Toplam ürün: {$context['product_count']} (yayında: {$context['published_count']}, taslak: {$context['draft_count']})

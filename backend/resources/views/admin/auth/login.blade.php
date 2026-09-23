@@ -16,7 +16,7 @@
                                 <div class="card-body">
                                     <div class="tex-content">
                                     <h1>{{__('admin.Admin Dashboard')}}</h1>
-                                    <p class="des">Seyfibaba yönetim paneline giriş yapın. Bu sayfa yalnızca site yöneticileri içindir.</p>
+                                    <p class="des">Kuaför Tedarik yönetim paneline giriş yapın. Bu sayfa yalnızca site yöneticileri içindir.</p>
                                     </div>
                                     <form class="needs-validation" novalidate="" action="{{ route('admin.login') }}" method="POST">
                                         @csrf

@@ -20,7 +20,7 @@ class ReturnRequestCreatedMail extends Mailable
     public function build()
     {
         \App\Helpers\MailHelper::setMailConfig();
-        return $this->subject('Yeni İade Talebi — Seyfibaba')
+        return $this->subject('Yeni İade Talebi — Kuaför Tedarik')
             ->view('emails.generic-notification')
             ->with(['content' => $this->messageContent, 'title' => 'Yeni İade Talebi']);
     }

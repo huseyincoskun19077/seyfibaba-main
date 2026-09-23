@@ -48,7 +48,7 @@ class SalonCrmWebsiteService
 
     public function publicUrl(string $provinceSlug, string $districtSlug, string $nameSlug): string
     {
-        $base = rtrim((string) env('MARKETPLACE_URL', 'https://seyfibaba.com'), '/');
+        $base = rtrim((string) env('MARKETPLACE_URL', 'https://kuafortedarik.com'), '/');
 
         return $base.'/salon/'.$provinceSlug.'/'.$districtSlug.'/'.$nameSlug;
     }
@@ -239,7 +239,7 @@ class SalonCrmWebsiteService
                 'cover_image' => $salon->cover_image,
                 'open_hour' => (int) ($salon->open_hour ?? 9),
                 'close_hour' => (int) ($salon->close_hour ?? 21),
-                'seo_title' => $salon->website_seo_title ?: ($salon->name.' | Seyfibaba'),
+                'seo_title' => $salon->website_seo_title ?: ($salon->name.' | Kuaför Tedarik'),
                 'seo_description' => $salon->website_seo_description
                     ?: Str::limit(trim((string) ($salon->profile_text ?: ($salon->name.' randevu ve hizmetler'))), 160),
                 'join_code' => $joinCode,
@@ -258,7 +258,7 @@ class SalonCrmWebsiteService
             'qr_url' => $this->qrImageUrl($url),
             'book' => [
                 'join_code' => $joinCode,
-                'app_hint' => 'Randevu almak için Seyfibaba uygulamasını indirin. Salon Hub → müşteri girişi ile bu salona bağlanın.',
+                'app_hint' => 'Randevu almak için Kuaför Tedarik uygulamasını indirin. Salon Hub → müşteri girişi ile bu salona bağlanın.',
                 'deep_link_hint' => 'Uygulamada Salon Hub → Müşteri girişi → berber kodu: '.($joinCode ?: '—'),
             ],
         ];

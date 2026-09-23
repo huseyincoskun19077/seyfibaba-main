@@ -20,6 +20,6 @@
         <p><a href="{{ url('/seller/kyc') }}">Doğrulama sayfasına git</a></p>
     @endif
 
-    <p style="margin-top: 24px; color: #666; font-size: 13px;">Seyfibaba Satıcı Destek</p>
+    <p style="margin-top: 24px; color: #666; font-size: 13px;">Kuaför Tedarik Satıcı Destek</p>
 </body>
 </html>

@@ -8,7 +8,7 @@
                 <ul class="navbar-nav mr-3">
                     <li><a href="#" data-toggle="sidebar" class="nav-link nav-link-lg"><i class="fas fa-bars"></i></a></li>
                 </ul>
-                <span class="navbar-text text-white font-weight-bold ml-2">Seyfibaba Çağrı Merkezi</span>
+                <span class="navbar-text text-white font-weight-bold ml-2">Kuaför Tedarik Çağrı Merkezi</span>
             </div>
             <ul class="navbar-nav navbar-right">
                 <li class="dropdown">

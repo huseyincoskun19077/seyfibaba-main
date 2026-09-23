@@ -16,7 +16,7 @@
           </ul>
         </form>
         <ul class="navbar-nav navbar-right">
-            <li class="dropdown dropdown-list-toggle"><a target="_blank" href="{{ $setting?->frontend_url ?? config('app.frontend_url', 'https://seyfibaba.com') }}" class="nav-link nav-link-lg"><i class="fas fa-home"></i> {{__('admin.Visit Website')}}</i></a>
+            <li class="dropdown dropdown-list-toggle"><a target="_blank" href="{{ $setting?->frontend_url ?? config('app.frontend_url', 'https://kuafortedarik.com') }}" class="nav-link nav-link-lg"><i class="fas fa-home"></i> {{__('admin.Visit Website')}}</i></a>
             </li>
 
             <li class="dropdown">
@@ -84,7 +84,7 @@
 
       <footer class="main-footer">
         <div class="footer-left">
-          {{ $setting?->copyright ?? '© '.date('Y').' Seyfibaba' }}
+          {{ $setting?->copyright ?? '© '.date('Y').' Kuaför Tedarik' }}
         </div>
       </footer>
     </div>

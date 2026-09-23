@@ -113,4 +113,4 @@ $remoteScript | ssh @SSH_OPTS $SERVER "bash -s"
 Remove-Item $zip -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
-Write-Host "Deploy tamam. https://seyfibaba.com kontrol et (Ctrl+Shift+R)" -ForegroundColor Green
+Write-Host "Deploy tamam. https://kuafortedarik.com kontrol et (Ctrl+Shift+R)" -ForegroundColor Green

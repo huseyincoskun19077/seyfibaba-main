@@ -157,8 +157,8 @@ class SentosProductSyncService
     }
 
     /**
-     * Hourly sync: update price/stock for mapped products; create new Sentos products into Seyfibaba.
-     * One-way only (Sentos → Seyfibaba). Never writes product catalog back to Sentos.
+     * Hourly sync: update price/stock for mapped products; create new Sentos products into Kuaför Tedarik.
+     * One-way only (Sentos → Kuaför Tedarik). Never writes product catalog back to Sentos.
      * Uses paced GET /products to stay within Sentos rate limits.
      *
      * @return array{ok: bool, message: string, stats: array<string, int>}
@@ -242,7 +242,7 @@ class SentosProductSyncService
 
                 try {
                     if (! $map) {
-                        // New product in Sentos → create on Seyfibaba (pull only).
+                        // New product in Sentos → create on Kuaför Tedarik (pull only).
                         $result = $this->upsertProduct($vendor, $normalized);
                         if ($result === 'created') {
                             $stats['created']++;

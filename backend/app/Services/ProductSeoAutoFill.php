@@ -70,11 +70,11 @@ class ProductSeoAutoFill
             $plain = trim(strip_tags((string) ($shortDescription ?: $longDescription ?: '')));
             $plain = Str::limit(preg_replace('/\s+/u', ' ', $plain) ?: '', 800, '');
 
-            $prompt = "Sen Seyfibaba (seyfibaba.com) SEO yazarısın. Platform: Türkiye’de berber, kuaför, güzellik salonu ve profesyonel kuaför malzemeleri pazaryeri.\n"
+            $prompt = "Sen Kuaför Tedarik (kuafortedarik.com) SEO yazarısın. Platform: Türkiye’de berber, kuaför, güzellik salonu ve profesyonel kuaför malzemeleri pazaryeri.\n"
                 ."Sadece Türkçe yaz. Alakasız ürün/sektör uydurma. Abartılı vaat yok.\n"
                 ."Ürün adı: {$name}\n"
                 ."Açıklama: {$plain}\n"
-                ."seo_title max 60 karakter (ürün ana kelimesi + isteğe bağlı | Seyfibaba).\n"
+                ."seo_title max 60 karakter (ürün ana kelimesi + isteğe bağlı | Kuaför Tedarik).\n"
                 ."seo_description max 155 karakter; ürünün gerçek faydasına dayansın, salon/profesyonel bağlam doğal olsun.\n"
                 .'Sadece JSON: {"seo_title":"...","seo_description":"..."}';
 
@@ -127,7 +127,7 @@ class ProductSeoAutoFill
 
         $title = mb_substr($name, 0, 55);
         if (! str_contains(mb_strtolower($title), 'seyfibaba')) {
-            $title = mb_substr($title.' | Seyfibaba', 0, 60);
+            $title = mb_substr($title.' | Kuaför Tedarik', 0, 60);
         }
 
         $descSource = $plain !== '' ? $plain : $name;
@@ -159,7 +159,7 @@ class ProductSeoAutoFill
             ->post($base.'/chat/completions', [
                 'model' => $model,
                 'messages' => [
-                    ['role' => 'system', 'content' => 'Sen Seyfibaba pazaryeri (berber/kuaför/salon malzemeleri) için Türkçe SEO uzmanısın. Sadece geçerli JSON döndür. Alakasız sektör veya abartılı vaat yazma.'],
+                    ['role' => 'system', 'content' => 'Sen Kuaför Tedarik pazaryeri (berber/kuaför/salon malzemeleri) için Türkçe SEO uzmanısın. Sadece geçerli JSON döndür. Alakasız sektör veya abartılı vaat yazma.'],
                     ['role' => 'user', 'content' => $prompt],
                 ],
                 'temperature' => 0.4,

@@ -20,7 +20,7 @@ class SalonCrmActivatedMail extends Mailable
     public function build()
     {
         \App\Helpers\MailHelper::setMailConfig();
-        return $this->subject('Salon CRM Hesabınız Oluşturuldu — Seyfibaba')
+        return $this->subject('Salon CRM Hesabınız Oluşturuldu — Kuaför Tedarik')
             ->view('emails.generic-notification')
             ->with(['content' => $this->messageContent, 'title' => 'Salon CRM Aktif']);
     }

@@ -7,7 +7,7 @@
 
 ## 1. AMAÇ
 
-İşbu Açık Rıza Metni, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında, HC YAZILIM tarafından işletilen Seyfibaba platformu üzerinden sunulan bazı hizmetler için açık rızanızı almak amacıyla hazırlanmıştır.
+İşbu Açık Rıza Metni, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında, HC YAZILIM tarafından işletilen Kuaför Tedarik platformu üzerinden sunulan bazı hizmetler için açık rızanızı almak amacıyla hazırlanmıştır.
 
 Bu metin, **Gizlilik Politikası (KVKK Aydınlatma Metni)** ile birlikte değerlendirilmelidir.
 
@@ -25,7 +25,7 @@ Serdivan / Sakarya
 
 **Telefon:** 0850 303 50 73
 
-**E-posta:** [info@seyfibaba.com](mailto:info@seyfibaba.com)
+**E-posta:** [info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 **KEP:** [hcyazilim@hs01.kep.tr](mailto:hcyazilim@hs01.kep.tr)
 
@@ -97,7 +97,7 @@ Sipariş, ödeme ve teslimat bildirimleri hizmetin sunulması kapsamında ayrıc
 
 ## Yurt Dışına Veri Aktarımı
 
-Seyfibaba'nın kullandığı bazı teknik hizmet sağlayıcılarının sunucularının yurt dışında bulunması halinde kişisel verileriniz, KVKK'nın ilgili hükümleri doğrultusunda ve gerekli olması halinde açık rızanız alınarak yurt dışına aktarılabilir.
+Kuaför Tedarik'in kullandığı bazı teknik hizmet sağlayıcılarının sunucularının yurt dışında bulunması halinde kişisel verileriniz, KVKK'nın ilgili hükümleri doğrultusunda ve gerekli olması halinde açık rızanız alınarak yurt dışına aktarılabilir.
 
 Yurt dışına veri aktarımı yapılması gereken durumlarda gerekli bilgilendirme ayrıca yapılacaktır.
 
@@ -136,7 +136,7 @@ haklarına sahipsiniz.
 
 Başvurularınızı aşağıdaki iletişim kanalları üzerinden iletebilirsiniz.
 
-**E-posta:** [info@seyfibaba.com](mailto:info@seyfibaba.com)
+**E-posta:** [info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 **KEP:** [hcyazilim@hs01.kep.tr](mailto:hcyazilim@hs01.kep.tr)
 
@@ -156,7 +156,7 @@ Her bir izin bağımsız olarak verilebilir veya geri çekilebilir.
 
 ☐ Kampanya, indirim ve tanıtım amacıyla tarafıma e-posta gönderilmesini kabul ediyorum.
 
-☐ Seyfibaba mobil uygulaması üzerinden kampanya ve tanıtım amaçlı bildirim gönderilmesini kabul ediyorum.
+☐ Kuaför Tedarik mobil uygulaması üzerinden kampanya ve tanıtım amaçlı bildirim gönderilmesini kabul ediyorum.
 
 ☐ Kişiselleştirilmiş reklam, pazarlama ve analitik amaçlarla çerez kullanılmasını kabul ediyorum.
 
@@ -174,6 +174,6 @@ Kullanıcı dilediği zaman verdiği açık rızaları hesabındaki iletişim te
 
 **HC YAZILIM**
 
-**Seyfibaba Pazaryeri**
+**Kuaför Tedarik Pazaryeri**
 
-**https://seyfibaba.com**
+**https://kuafortedarik.com**

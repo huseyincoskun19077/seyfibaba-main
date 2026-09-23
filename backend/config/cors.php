@@ -20,6 +20,13 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
+        'https://kuafortedarik.com',
+        'http://kuafortedarik.com',
+        'https://www.kuafortedarik.com',
+        'http://www.kuafortedarik.com',
+        'https://ikinciel.kuafortedarik.com',
+        'http://ikinciel.kuafortedarik.com',
+        // Geçiş: eski domain (301 sonrası kaldırılabilir)
         'https://seyfibaba.com',
         'http://seyfibaba.com',
         'https://www.seyfibaba.com',

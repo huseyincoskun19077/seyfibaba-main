@@ -2,7 +2,7 @@
 
 **Son Güncelleme Tarihi:** 6 Ağustos 2026
 **Yürürlük Tarihi:** 6 Ağustos 2026
-**Platform:** https://seyfibaba.com
+**Platform:** https://kuafortedarik.com
 
 ---
 
@@ -18,13 +18,13 @@
 
 **Telefon:** 0850 303 50 73
 
-**E-posta:** [info@seyfibaba.com](mailto:info@seyfibaba.com)
+**E-posta:** [info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 ## Satıcı
 
 Platform üzerinde mağaza açan, kimlik doğrulama (KYC) sürecini tamamlayan ve bu sözleşmeyi kabul eden gerçek veya tüzel kişidir.
 
-Seyfibaba çok satıcılı pazaryeri modeli ile faaliyet göstermektedir.
+Kuaför Tedarik çok satıcılı pazaryeri modeli ile faaliyet göstermektedir.
 
 Satış sözleşmesi Alıcı ile Satıcı arasında kurulmaktadır. HC YAZILIM yalnızca 6563 sayılı Kanun kapsamında **Aracı Hizmet Sağlayıcı** olarak faaliyet göstermektedir.
 
@@ -279,6 +279,6 @@ işbu sözleşmeyi elektronik ortamda okuduğunu, anladığını ve kabul ettiğ
 
 **Telefon:** 0850 303 50 73
 
-**E-posta:** [info@seyfibaba.com](mailto:info@seyfibaba.com)
+**E-posta:** [info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
-**Web Sitesi:** https://seyfibaba.com
+**Web Sitesi:** https://kuafortedarik.com

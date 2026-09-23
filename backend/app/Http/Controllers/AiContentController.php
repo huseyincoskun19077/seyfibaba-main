@@ -109,8 +109,8 @@ class AiContentController extends Controller
         $existingContent = $params['existing_content'] ?? [];
         $targetLang = $params['target_lang'] ?? 'en';
 
-        $systemBase = "Sen Seyfibaba pazaryeri için içerik yazarısın.\n"
-            ."Platform: Türkiye’de berber, kuaför, güzellik salonu ve profesyonel kuaför malzemeleri satılan B2B/B2C pazaryeri (seyfibaba.com).\n"
+        $systemBase = "Sen Kuaför Tedarik pazaryeri için içerik yazarısın.\n"
+            ."Platform: Türkiye’de berber, kuaför, güzellik salonu ve profesyonel kuaför malzemeleri satılan B2B/B2C pazaryeri (kuafortedarik.com).\n"
             ."Hedef kitle: berberler, kuaförler, salon sahipleri, profesyonel kullanıcılar.\n"
             ."Kurallar:\n"
             ."- Sadece Türkçe yaz.\n"
@@ -118,7 +118,7 @@ class AiContentController extends Controller
             ."- Kullanıcının verdiği ürün adını bozma; netleştir, profesyonel hale getir.\n"
             ."- Kategori varsa ona uy.\n"
             ."- Fiyat, stok, kargo vaadi uydurma.\n"
-            ."- SEO başlığı max 60, SEO açıklaması max 155 karakter; Seyfibaba ve salon/kuaför bağlamı doğal geçsin.\n"
+            ."- SEO başlığı max 60, SEO açıklaması max 155 karakter; Kuaför Tedarik ve salon/kuaför bağlamı doğal geçsin.\n"
             ."- long_description HTML olsun (<p>, <ul>, <li>, <strong>); sade ve satışa yardımcı olsun.\n";
 
         $jsonStructure = '{"name":"","short_description":"","long_description":"","seo_title":"","seo_description":"","tags":"","return_policy_text":"","delivery_time_text":""}';
@@ -127,12 +127,12 @@ class AiContentController extends Controller
             case 'full':
                 $categoryCtx = $categoryName ? "\nSeçili kategori: {$categoryName}" : '';
                 return $systemBase . "Satıcının girdiği ürün adı: \"{$productName}\".{$categoryCtx}\n\n"
-                    ."Bu ürün için Seyfibaba’ya uygun eksiksiz içerik üret.\n"
+                    ."Bu ürün için Kuaför Tedarik’e uygun eksiksiz içerik üret.\n"
                     ."Alanlar:\n"
                     ."- name: Profesyonel, aranabilir ürün adı (orijinal anlamı koru)\n"
                     ."- short_description: 1-2 cümle, salon/profesyonel fayda\n"
                     ."- long_description: HTML, 3-5 kısa paragraf + madde işaretli özellikler\n"
-                    ."- seo_title: max 60 karakter, ana kelime + isteğe bağlı | Seyfibaba\n"
+                    ."- seo_title: max 60 karakter, ana kelime + isteğe bağlı | Kuaför Tedarik\n"
                     ."- seo_description: max 155 karakter, net fayda + arama niyeti\n"
                     ."- tags: 5-8 Türkçe anahtar kelime (virgülle)\n"
                     ."- return_policy_text: kısa, genel (1 cümle)\n"
@@ -141,7 +141,7 @@ class AiContentController extends Controller
 
             case 'enhance':
                 $existingJson = json_encode($existingContent, JSON_UNESCAPED_UNICODE);
-                return $systemBase . "Aşağıdaki Seyfibaba ürün içeriğini iyileştir. Anlamı bozma, abartma, alakasız sektör ekleme.\n\n"
+                return $systemBase . "Aşağıdaki Kuaför Tedarik ürün içeriğini iyileştir. Anlamı bozma, abartma, alakasız sektör ekleme.\n\n"
                     ."Mevcut içerik:\n{$existingJson}\n\n"
                     ."Aynı JSON şemasında daha net, SEO uyumlu ve profesyonel metin üret.\n"
                     ."SADECE geçerli JSON döndür. Şema:\n{$jsonStructure}";
@@ -162,7 +162,7 @@ class AiContentController extends Controller
                     ."SADECE geçerli JSON döndür. Şema:\n{$jsonStructure}";
 
             default:
-                return "\"{$productName}\" için Seyfibaba ürün içeriği oluştur.";
+                return "\"{$productName}\" için Kuaför Tedarik ürün içeriği oluştur.";
         }
     }
 

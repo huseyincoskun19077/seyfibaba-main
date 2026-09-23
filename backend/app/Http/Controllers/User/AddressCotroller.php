@@ -222,7 +222,7 @@ class AddressCotroller extends Controller
         if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return false;
         }
-        if (str_ends_with($email, '@pending.seyfibaba.local') || str_ends_with($email, '.local')) {
+        if (str_ends_with($email, '@pending.kuafortedarik.local') || str_ends_with($email, '.local')) {
             return false;
         }
 

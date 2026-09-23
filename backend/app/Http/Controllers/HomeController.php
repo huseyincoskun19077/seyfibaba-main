@@ -1072,7 +1072,7 @@ class HomeController extends Controller
 
         $email = trim((string) $request->email);
         if ($email === '') {
-            $email = 'bilgi-talebi@seyfibaba.com';
+            $email = 'bilgi-talebi@kuafortedarik.com';
         }
 
         $userMessage = trim((string) $request->message);
@@ -1599,7 +1599,20 @@ class HomeController extends Controller
 
             if($request->highlight == 'popular_category'){
 
-                $products = $products->where('is_top',1);
+                $popularCategoryIds = PopularCategory::query()
+                    ->pluck('category_id')
+                    ->filter()
+                    ->map(static fn ($id) => (int) $id)
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                $products = $products->where(function ($query) use ($popularCategoryIds) {
+                    $query->where('is_top', 1);
+                    if ($popularCategoryIds !== []) {
+                        $query->orWhereIn('category_id', $popularCategoryIds);
+                    }
+                });
 
             }
 
@@ -1893,7 +1906,20 @@ class HomeController extends Controller
 
             if($request->highlight == 'popular_category'){
 
-                $products = $products->where('is_top',1);
+                $popularCategoryIds = PopularCategory::query()
+                    ->pluck('category_id')
+                    ->filter()
+                    ->map(static fn ($id) => (int) $id)
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                $products = $products->where(function ($query) use ($popularCategoryIds) {
+                    $query->where('is_top', 1);
+                    if ($popularCategoryIds !== []) {
+                        $query->orWhereIn('category_id', $popularCategoryIds);
+                    }
+                });
 
             }
 

@@ -390,7 +390,7 @@ class ImportCategoryResolver
             : 'Excel\'de alt kategori boş; ürün adına göre en uygun alt kategoriyi seç.';
 
         $prompt = <<<PROMPT
-Sen Seyfibaba kuaför/berber pazaryeri için alt kategori eşleştirme uzmanısın.
+Sen Kuaför Tedarik kuaför/berber pazaryeri için alt kategori eşleştirme uzmanısın.
 
 Ana kategori: "{$category->name}"
 Ürün adı: {$productName}
@@ -651,7 +651,7 @@ PROMPT;
         $descLine = $description ? "Ürün açıklaması: {$description}" : '';
 
         $prompt = <<<PROMPT
-Sen Seyfibaba berber/kuaför/güzellik salonu ekipmanları pazaryeri için kategori eşleştirme uzmanısın.
+Sen Kuaför Tedarik berber/kuaför/güzellik salonu ekipmanları pazaryeri için kategori eşleştirme uzmanısın.
 
 Ürün adı: {$productName}
 {$catLine}

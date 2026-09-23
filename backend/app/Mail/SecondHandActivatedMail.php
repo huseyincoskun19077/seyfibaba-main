@@ -20,7 +20,7 @@ class SecondHandActivatedMail extends Mailable
     public function build()
     {
         \App\Helpers\MailHelper::setMailConfig();
-        return $this->subject('İkinci El Hesabınız Aktif — Seyfibaba')
+        return $this->subject('İkinci El Hesabınız Aktif — Kuaför Tedarik')
             ->view('emails.generic-notification')
             ->with(['content' => $this->messageContent, 'title' => 'İkinci El Hesabı Aktif']);
     }

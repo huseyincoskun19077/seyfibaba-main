@@ -16,7 +16,7 @@ class AdminAdAssistantService
 
         $lines = [$cfg['system_prompt'] ?? ''];
         $lines[] = '';
-        $lines[] = '=== SEYFIBABA REKLAM BİLGİ BANKASI (tek kaynak) ===';
+        $lines[] = '=== KUAFÖR TEDARİK REKLAM BİLGİ BANKASI (tek kaynak) ===';
         foreach ($knowledge as $key => $value) {
             if (is_array($value)) {
                 $lines[] = strtoupper((string) $key) . ': ' . implode(' | ', $value);
@@ -115,7 +115,7 @@ class AdminAdAssistantService
             }
         }
 
-        $branded = $prompt . "\n\nBrand context: Seyfibaba Turkish barber/hair salon B2B marketplace ad creative. Clean professional look, no fake logos of other marketplaces, no readable personal data, no phone numbers invented.";
+        $branded = $prompt . "\n\nBrand context: Kuaför Tedarik Turkish barber/hair salon B2B marketplace ad creative. Clean professional look, no fake logos of other marketplaces, no readable personal data, no phone numbers invented.";
 
         $model = (string) config('admin_ad_assistant.image_model', 'gpt-image-1');
         $timeout = max(60, (int) ($setting->openai_timeout ?? 90));

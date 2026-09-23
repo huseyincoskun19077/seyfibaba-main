@@ -49,7 +49,7 @@ Bu sözleşmede "Satıcı", siparişe konu ürünü Platform üzerinden satışa
 
 **Telefon:** 0850 303 50 73
 
-**E-posta:** [info@seyfibaba.com](mailto:info@seyfibaba.com)
+**E-posta:** [info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 **KEP:** [hcyazilim@hs01.kep.tr](mailto:hcyazilim@hs01.kep.tr)
 
@@ -63,7 +63,7 @@ Platform, sipariş, ödeme ve teknik altyapıyı sağlamaktadır.
 
 # 2. SÖZLEŞMENİN KONUSU
 
-Bu sözleşme, Alıcı'nın Seyfibaba üzerinden Satıcı'ya ait ürünleri elektronik ortamda satın almasına ilişkin tarafların hak ve yükümlülüklerini düzenlemektedir.
+Bu sözleşme, Alıcı'nın Kuaför Tedarik üzerinden Satıcı'ya ait ürünleri elektronik ortamda satın almasına ilişkin tarafların hak ve yükümlülüklerini düzenlemektedir.
 
 Sipariş bilgileri aşağıdaki gibidir.
 
@@ -273,7 +273,7 @@ HC YAZILIM
 
 Telefon: 0850 303 50 73
 
-E-posta: [info@seyfibaba.com](mailto:info@seyfibaba.com)
+E-posta: [info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 ---
 

@@ -154,7 +154,7 @@
         if (type === 'blog') {
             $('#ai-modal-description').text('Blog başlığını girin. Yapay zeka içerik ve SEO üretir.');
         } else {
-            $('#ai-modal-description').text('Önce ürün adını yazın. İçerik Seyfibaba’ya (berber, kuaför, salon malzemeleri) göre üretilir; SEO başlık ve açıklamadan otomatik dolar.');
+            $('#ai-modal-description').text('Önce ürün adını yazın. İçerik Kuaför Tedarik’e (berber, kuaför, salon malzemeleri) göre üretilir; SEO başlık ve açıklamadan otomatik dolar.');
         }
     });
 

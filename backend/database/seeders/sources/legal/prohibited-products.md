@@ -7,7 +7,7 @@
 
 # 1. AMAÇ
 
-Bu Politika, Seyfibaba platformunda kullanıcıların ve satıcıların hangi ürünleri listeleyebileceğini ve hangi ürünlerin yayımlanmasının yasak olduğunu belirlemek amacıyla hazırlanmıştır.
+Bu Politika, Kuaför Tedarik platformunda kullanıcıların ve satıcıların hangi ürünleri listeleyebileceğini ve hangi ürünlerin yayımlanmasının yasak olduğunu belirlemek amacıyla hazırlanmıştır.
 
 Platformda ilan veya ürün oluşturan tüm kullanıcılar bu politikayı kabul etmiş sayılır.
 
@@ -126,7 +126,7 @@ Mevzuatın izin verdiği ürünler hariçtir.
 
 # 4. KOZMETİK VE BERBER MALZEMELERİ
 
-Seyfibaba'nın faaliyet alanı gereği aşağıdaki ürünler yalnızca mevzuata uygun şekilde satılabilir.
+Kuaför Tedarik'in faaliyet alanı gereği aşağıdaki ürünler yalnızca mevzuata uygun şekilde satılabilir.
 
 * Berber ekipmanları
 * Kuaför ekipmanları
@@ -206,11 +206,11 @@ Hukuka aykırı ürünlerden doğabilecek tüm hukuki ve cezai sorumluluk ilgili
 
 Yasaklı olduğunu düşündüğünüz ürünleri Platform üzerinden bildirebilir veya aşağıdaki iletişim kanallarını kullanabilirsiniz.
 
-**E-posta:** [info@seyfibaba.com](mailto:info@seyfibaba.com)
+**E-posta:** [info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 **Telefon:** 0850 303 50 73
 
-**Web Sitesi:** https://seyfibaba.com
+**Web Sitesi:** https://kuafortedarik.com
 
 Platform, yapılan bildirimleri yürürlükteki mevzuat kapsamında değerlendirir.
 
@@ -232,6 +232,6 @@ Platformda ürün listeleyen, mağaza açan veya ikinci el ilan oluşturan tüm 
 
 **HC YAZILIM**
 
-**Seyfibaba Pazaryeri**
+**Kuaför Tedarik Pazaryeri**
 
-**https://seyfibaba.com**
+**https://kuafortedarik.com**

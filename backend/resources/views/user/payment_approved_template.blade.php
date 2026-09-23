@@ -28,7 +28,7 @@
     <div class="content">
         <p>Merhaba <strong>{{ $order->user->name ?? 'Değerli Müşterimiz' }}</strong>,</p>
         
-        <p>Seyfibaba olarak havale ödemenizi onayladığımızı bildirmekten memnuniyet duyarız. Siparişiniz en kısa sürede işleme alınacaktır.</p>
+        <p>Kuaför Tedarik olarak havale ödemenizi onayladığımızı bildirmekten memnuniyet duyarız. Siparişiniz en kısa sürede işleme alınacaktır.</p>
         
         <div class="order-info">
             <h3>📦 Sipariş Bilgileri</h3>
@@ -68,11 +68,11 @@
         
         <p>Sorularınız için bizimle iletişime geçebilirsiniz.</p>
         
-        <p>Saygılarımızla,<br><strong>Seyfibaba Ekibi</strong></p>
+        <p>Saygılarımızla,<br><strong>Kuaför Tedarik Ekibi</strong></p>
     </div>
     
     <div class="footer">
-        <p>© {{ date('Y') }} Seyfibaba - Tüm hakları saklıdır.</p>
+        <p>© {{ date('Y') }} Kuaför Tedarik - Tüm hakları saklıdır.</p>
     </div>
 </body>
 </html>

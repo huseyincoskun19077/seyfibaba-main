@@ -18,7 +18,7 @@ use App\Support\ProductSlug;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Pull Softtr products into one vendor catalog (one-way Softtr → Seyfibaba).
+ * Pull Softtr products into one vendor catalog (one-way Softtr → Kuaför Tedarik).
  * Softtr list often returns one row per variant with the same SKU — we dedupe by SKU.
  */
 class SofttrProductSyncService

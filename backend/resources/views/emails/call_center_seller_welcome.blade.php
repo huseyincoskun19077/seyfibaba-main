@@ -14,7 +14,7 @@
     <h2 style="margin-top: 0;">Hoş geldiniz, {{ $contactName }}</h2>
 
     <p>
-        <strong>{{ $shopName }}</strong> için Seyfibaba satıcı hesabınız oluşturuldu.
+        <strong>{{ $shopName }}</strong> için Kuaför Tedarik satıcı hesabınız oluşturuldu.
         @if($showEmailCredentials && $loginChannel === 'email')
             Giriş bilgileriniz aşağıdadır.
         @elseif($showEmailCredentials && $showSmsCredentials)

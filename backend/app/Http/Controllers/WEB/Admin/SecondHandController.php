@@ -559,7 +559,7 @@ class SecondHandController extends Controller
             \App\Helpers\MailHelper::setMailConfig();
             $user = \App\Models\User::find($verification->user_id);
             if ($user && $user->email) {
-                $content = "Tebrikler! İkinci el hesabınız onaylandı.\n\nArtık ikinci el ürünlerinizi Seyfibaba üzerinden ilan verebilirsiniz.\n\nİşletme: " . ($verification->business_name ?? $user->name);
+                $content = "Tebrikler! İkinci el hesabınız onaylandı.\n\nArtık ikinci el ürünlerinizi Kuaför Tedarik üzerinden ilan verebilirsiniz.\n\nİşletme: " . ($verification->business_name ?? $user->name);
                 \Mail::to($user->email)->send(new \App\Mail\SecondHandActivatedMail($content));
             }
         } catch (\Throwable $e) {

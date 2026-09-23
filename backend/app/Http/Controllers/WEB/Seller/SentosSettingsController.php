@@ -172,7 +172,7 @@ class SentosSettingsController extends Controller
         }
 
         return back()->with([
-            'messege' => 'Sentos entegrasyonu bu satıcı için kapatıldı. Mevcut Seyfibaba ürünleri etkilenmedi.',
+            'messege' => 'Sentos entegrasyonu bu satıcı için kapatıldı. Mevcut Kuaför Tedarik ürünleri etkilenmedi.',
             'alert-type' => 'success',
         ]);
     }

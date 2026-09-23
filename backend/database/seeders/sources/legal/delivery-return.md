@@ -7,7 +7,7 @@
 
 # 1. GENEL
 
-Seyfibaba, berber, kuaför ve güzellik salonlarına yönelik ürünlerin satışa sunulduğu çok satıcılı bir pazaryeridir.
+Kuaför Tedarik, berber, kuaför ve güzellik salonlarına yönelik ürünlerin satışa sunulduğu çok satıcılı bir pazaryeridir.
 
 Platform üzerinde satılan ürünlerin satıcısı, ilgili mağazadır.
 
@@ -239,11 +239,11 @@ Teslimat veya iade süreciyle ilgili her konuda bizimle iletişime geçebilirsin
 
 **Web Sitesi**
 
-https://seyfibaba.com
+https://kuafortedarik.com
 
 **E-posta**
 
-[info@seyfibaba.com](mailto:info@seyfibaba.com)
+[info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 **Telefon**
 
@@ -265,6 +265,6 @@ Platform üzerinden sipariş veren tüm kullanıcılar bu metni okuduklarını, 
 
 **HC YAZILIM**
 
-**Seyfibaba Pazaryeri**
+**Kuaför Tedarik Pazaryeri**
 
-https://seyfibaba.com
+https://kuafortedarik.com

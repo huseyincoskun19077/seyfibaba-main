@@ -25,7 +25,7 @@
         </div>
       @else
         <div class="alert alert-info">
-          <strong>Iyzico onay tablosu → Seyfibaba eşlemesi</strong>
+          <strong>Iyzico onay tablosu → Kuaför Tedarik eşlemesi</strong>
           <p class="mb-2 mt-2">Ödeme sırasında taksit limiti şu sırayla bakılır: <strong>Child kategori → Alt kategori → Ana kategori</strong>. Boş/0 olan seviye bir üste düşer. Sepette en düşük taksit limiti tüm siparişe uygulanır.</p>
           <div class="table-responsive">
             <table class="table table-sm table-bordered mb-0 bg-white">
@@ -33,7 +33,7 @@
                 <tr>
                   <th>Iyzico Kategorisi</th>
                   <th>Max Taksit</th>
-                  <th>Seyfibaba'da nereye yazılır?</th>
+                  <th>Kuaför Tedarik'te nereye yazılır?</th>
                 </tr>
               </thead>
               <tbody>

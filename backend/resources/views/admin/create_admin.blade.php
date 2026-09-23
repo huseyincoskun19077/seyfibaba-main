@@ -52,7 +52,7 @@
                                         <option value="0">Yönetici</option>
                                         <option value="2">Çağrı Merkezi</option>
                                     </select>
-                                    <small class="text-muted">Çağrı merkezi kullanıcıları admin.seyfibaba.com/call-center adresinden giriş yapar.</small>
+                                    <small class="text-muted">Çağrı merkezi kullanıcıları admin.kuafortedarik.com/call-center adresinden giriş yapar.</small>
                                 </div>
                                 @endif
                             </div>

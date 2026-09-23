@@ -33,7 +33,7 @@ class SofttrSettingsController extends Controller
         }
 
         $settings = VendorSofttrSetting::query()->where('vendor_id', $seller->id)->first();
-        // One Softtr product can map many Softtr variant IDs → list unique Seyfibaba products.
+        // One Softtr product can map many Softtr variant IDs → list unique Kuaför Tedarik products.
         $latestMapIds = VendorSofttrProductMap::query()
             ->selectRaw('MAX(id) as id')
             ->where('vendor_id', $seller->id)
@@ -169,7 +169,7 @@ class SofttrSettingsController extends Controller
         }
 
         return back()->with([
-            'messege' => 'Softtr entegrasyonu kapatıldı. Mevcut Seyfibaba ürünleri etkilenmedi.',
+            'messege' => 'Softtr entegrasyonu kapatıldı. Mevcut Kuaför Tedarik ürünleri etkilenmedi.',
             'alert-type' => 'success',
         ]);
     }

@@ -3,7 +3,7 @@
 namespace App\Helpers;
 
 /**
- * Seyfibaba tek fiyat formatı (TR).
+ * Kuaför Tedarik tek fiyat formatı (TR).
  * Örnek: ₺1.518,00  |  indirim: -₺62,69
  *
  * Web `frontend/src/utils/priceFormat.js` ile aynı kurallar.

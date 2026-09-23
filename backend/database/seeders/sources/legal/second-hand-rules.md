@@ -7,7 +7,7 @@
 
 # 1. AMAÇ
 
-Bu İkinci El İlan Kuralları, Seyfibaba platformunda yayınlanan bireysel ikinci el ilanlarının güvenli, şeffaf ve dürüst bir şekilde yayımlanmasını sağlamak amacıyla hazırlanmıştır.
+Bu İkinci El İlan Kuralları, Kuaför Tedarik platformunda yayınlanan bireysel ikinci el ilanlarının güvenli, şeffaf ve dürüst bir şekilde yayımlanmasını sağlamak amacıyla hazırlanmıştır.
 
 Platform üzerinden ikinci el ilan oluşturan tüm kullanıcılar bu kuralları kabul etmiş sayılır.
 
@@ -15,7 +15,7 @@ Platform üzerinden ikinci el ilan oluşturan tüm kullanıcılar bu kuralları 
 
 # 2. PLATFORMUN ROLÜ
 
-Seyfibaba, ikinci el ilan bölümünde yalnızca ilanların yayımlanmasını sağlayan bir platformdur.
+Kuaför Tedarik, ikinci el ilan bölümünde yalnızca ilanların yayımlanmasını sağlayan bir platformdur.
 
 Platform;
 
@@ -235,6 +235,6 @@ Bu İkinci El İlan Kuralları Platform üzerinde yayımlandığı tarihte yür�
 
 **HC YAZILIM**
 
-**Seyfibaba Pazaryeri**
+**Kuaför Tedarik Pazaryeri**
 
-**https://seyfibaba.com**
+**https://kuafortedarik.com**

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 class SeyfibabaDumpSeeder extends Seeder
 {
     /**
-     * Seyfibaba temel veritabanı dump'ını import eder.
+     * Kuaför Tedarik temel veritabanı dump'ını import eder.
      * Kullanım: php artisan db:seed --class=SeyfibabaDumpSeeder
      */
     public function run(): void
@@ -20,7 +20,7 @@ class SeyfibabaDumpSeeder extends Seeder
             return;
         }
 
-        $this->command->info('Seyfibaba DB dump import ediliyor...');
+        $this->command->info('Kuaför Tedarik DB dump import ediliyor...');
 
         $dbName = config('database.connections.mysql.database');
         $dbUser = config('database.connections.mysql.username');
@@ -43,7 +43,7 @@ class SeyfibabaDumpSeeder extends Seeder
         exec($command, $output, $exitCode);
 
         if ($exitCode === 0) {
-            $this->command->info('Seyfibaba DB dump başarıyla import edildi.');
+            $this->command->info('Kuaför Tedarik DB dump başarıyla import edildi.');
         } else {
             $this->command->error('Import hatası: ' . implode("\n", $output));
         }

@@ -13,7 +13,7 @@ class SalonCrmCalendarShareService
 {
     public function publicUrl(string $token): string
     {
-        $base = rtrim((string) env('MARKETPLACE_URL', 'https://seyfibaba.com'), '/');
+        $base = rtrim((string) env('MARKETPLACE_URL', 'https://kuafortedarik.com'), '/');
 
         return $base.'/salon-takvim/'.$token;
     }
@@ -151,7 +151,7 @@ class SalonCrmCalendarShareService
             'open_hour' => (int) ($salon->open_hour ?? 9),
             'close_hour' => (int) ($salon->close_hour ?? 21),
             'days' => $days,
-            'book_message' => 'Randevu almak için Seyfibaba uygulamasını indirmeniz gerekir. Bu sayfada yalnızca dolu ve boş saatleri canlı takip edebilirsiniz.',
+            'book_message' => 'Randevu almak için Kuaför Tedarik uygulamasını indirmeniz gerekir. Bu sayfada yalnızca dolu ve boş saatleri canlı takip edebilirsiniz.',
         ];
     }
 

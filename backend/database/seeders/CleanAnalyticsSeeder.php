@@ -22,7 +22,7 @@ class CleanAnalyticsSeeder extends Seeder
 
         // Banka havalesi bilgilerini Türkçeleştir
         DB::table('bank_payments')->where('id', 1)->update([
-            'account_info' => "Hesap Sahibi: Seyfibaba Tic. Ltd. Şti.\nBanka: ................\nIBAN: TR00 0000 0000 0000 0000 0000 00\nHesap No: ................\nŞube: ................\n\nHavale/EFT yaparken sipariş numaranızı açıklama kısmına yazınız.",
+            'account_info' => "Hesap Sahibi: Kuaför Tedarik Tic. Ltd. Şti.\nBanka: ................\nIBAN: TR00 0000 0000 0000 0000 0000 00\nHesap No: ................\nŞube: ................\n\nHavale/EFT yaparken sipariş numaranızı açıklama kısmına yazınız.",
         ]);
         $this->command->info('Banka havalesi bilgileri Türkçeleştirildi.');
 

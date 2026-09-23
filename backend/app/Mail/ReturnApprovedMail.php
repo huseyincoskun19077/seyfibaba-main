@@ -20,7 +20,7 @@ class ReturnApprovedMail extends Mailable
     public function build()
     {
         \App\Helpers\MailHelper::setMailConfig();
-        return $this->subject('İade Talebiniz Onaylandı — Seyfibaba')
+        return $this->subject('İade Talebiniz Onaylandı — Kuaför Tedarik')
             ->view('emails.generic-notification')
             ->with(['content' => $this->messageContent, 'title' => 'İade Onaylandı']);
     }

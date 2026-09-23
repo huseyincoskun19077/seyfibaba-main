@@ -15,7 +15,7 @@
 
     <div class="section-body">
       <div class="alert alert-info">
-        <strong>Kapsam:</strong> Yalnızca Seyfibaba reklam / pazarlama. Sipariş, müşteri, ödeme veya güvenlik yok.
+        <strong>Kapsam:</strong> Yalnızca Kuaför Tedarik reklam / pazarlama. Sipariş, müşteri, ödeme veya güvenlik yok.
         Asistan projeyi değiştiremez; bilgi bankası + sohbet ile reklam metni ve görsel üretir.
         Model: <code>{{ $chatModel }}</code> (yoksa yedek) · Görsel: <code>{{ $imageModel }}</code>
       </div>
@@ -52,9 +52,9 @@
                   <button type="button" class="btn btn-primary" id="ad-chat-send" @disabled(!$openaiReady)>
                     <i class="fas fa-paper-plane mr-1"></i> Gönder
                   </button>
-                  <button type="button" class="btn btn-outline-primary btn-sm ad-quick" data-msg="Alıcı (salon) için Instagram feed reklam metni yaz: kuaför koltuğu / malzeme. CTA: seyfibaba.com">Alıcı reklamı</button>
+                  <button type="button" class="btn btn-outline-primary btn-sm ad-quick" data-msg="Alıcı (salon) için Instagram feed reklam metni yaz: kuaför koltuğu / malzeme. CTA: kuafortedarik.com">Alıcı reklamı</button>
                   <button type="button" class="btn btn-outline-primary btn-sm ad-quick" data-msg="Satıcı kazanımı için Meta reklam metni yaz. %10 komisyon, abonelik yok, /satici-kayit. CTA ve hedef kitle öner.">Satıcı reklamı</button>
-                  <button type="button" class="btn btn-outline-primary btn-sm ad-quick" data-msg="Google Ads için 5 kısa başlık + 2 açıklama öner (alıcı odaklı, Seyfibaba).">Google Ads</button>
+                  <button type="button" class="btn btn-outline-primary btn-sm ad-quick" data-msg="Google Ads için 5 kısa başlık + 2 açıklama öner (alıcı odaklı, Kuaför Tedarik).">Google Ads</button>
                 </div>
                 <small class="text-muted d-block mt-2" id="ad-chat-status"></small>
               </div>

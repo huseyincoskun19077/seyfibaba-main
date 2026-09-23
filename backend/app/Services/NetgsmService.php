@@ -125,7 +125,7 @@ class NetgsmService implements SmsServiceInterface
         return [
             'usercode' => trim((string) ($setting->netgsm_usercode ?? '')),
             'password' => trim((string) ($setting->netgsm_password ?? '')),
-            'msgheader' => trim((string) ($setting->netgsm_msgheader ?? 'SEYFIBABA')),
+            'msgheader' => trim((string) ($setting->netgsm_msgheader ?? 'KUAFÖR TEDARİK')),
         ];
     }
 

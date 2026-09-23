@@ -20,7 +20,7 @@ class PaymentFailedMail extends Mailable
     public function build()
     {
         \App\Helpers\MailHelper::setMailConfig();
-        return $this->subject('Ödemeniz Başarısız Oldu — Seyfibaba')
+        return $this->subject('Ödemeniz Başarısız Oldu — Kuaför Tedarik')
             ->view('emails.generic-notification')
             ->with(['content' => $this->messageContent, 'title' => 'Ödeme Başarısız']);
     }

@@ -22,9 +22,9 @@
 
             <div class="alert alert-info">
                 <strong>Softtr (yalnızca ürün):</strong>
-                Softtr API ürün listeleme + stok/fiyat okuma destekler; <strong>Seyfibaba siparişlerini Softtr’ye gönderme yok</strong>
+                Softtr API ürün listeleme + stok/fiyat okuma destekler; <strong>Kuaför Tedarik siparişlerini Softtr’ye gönderme yok</strong>
                 (dokümandaki sipariş endpoint’leri Softtr siparişlerini okumak/güncellemek içindir).
-                Ürünler Softtr → Seyfibaba çekilir. Softtr’daki <code>updateStokAndPrice</code> Softtr’ye yazar; biz kullanmayız.
+                Ürünler Softtr → Kuaför Tedarik çekilir. Softtr’daki <code>updateStokAndPrice</code> Softtr’ye yazar; biz kullanmayız.
                 Saatlik senkron: yeni ürün + fiyat + stok. Sentos ile aynı anda açılamaz.
                 Doküman: <a href="https://api.softtr.net/docbeta/" target="_blank" rel="noopener">api.softtr.net/docbeta</a>
             </div>
@@ -163,7 +163,7 @@
                         <div class="card-body">
                             <p class="text-muted small mb-3">
                                 Softtr her varyantı ayrı satır gönderebilir; aynı SKU tek ürüne birleştirilir.
-                                Kategori eşlemesi Seyfibaba tarafındadır. Detay düzenleme Ürünler menüsünden; Softtr’a yazılmaz.
+                                Kategori eşlemesi Kuaför Tedarik tarafındadır. Detay düzenleme Ürünler menüsünden; Softtr’a yazılmaz.
                             </p>
                             <div class="table-responsive">
                                 <table class="table table-striped table-md">

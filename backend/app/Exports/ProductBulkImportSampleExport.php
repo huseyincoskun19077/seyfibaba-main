@@ -118,7 +118,7 @@ class ProductBulkImportSampleGuideSheet implements FromArray, WithTitle
     public function array(): array
     {
         return [
-            ['Seyfibaba Toplu Ürün Yükleme — Berber & Kuaför Örnek Dosya'],
+            ['Kuaför Tedarik Toplu Ürün Yükleme — Berber & Kuaför Örnek Dosya'],
             [''],
             ['Bu dosya berber, kuaför ve güzellik salonu satıcıları için hazırlanmıştır.'],
             [''],

@@ -75,7 +75,7 @@ class MailHelper
         }
 
         if (trim((string) $emailSetting->smtp_username) === '') {
-            return 'SMTP kullanıcı adı boş. Genelde gönderen adresinizle aynı olmalı (ör. info@seyfibaba.com).';
+            return 'SMTP kullanıcı adı boş. Genelde gönderen adresinizle aynı olmalı (ör. info@kuafortedarik.com).';
         }
 
         if (trim((string) ($emailSetting->smtp_password ?? '')) === '') {
@@ -83,7 +83,7 @@ class MailHelper
         }
 
         if (trim((string) ($emailSetting->email ?? '')) === '') {
-            return 'Gönderen e-posta adresi boş. info@seyfibaba.com gibi geçerli bir adres girin.';
+            return 'Gönderen e-posta adresi boş. info@kuafortedarik.com gibi geçerli bir adres girin.';
         }
 
         $port = (int) ($emailSetting->mail_port ?: 0);
@@ -186,7 +186,7 @@ class MailHelper
                 'timeout' => null,
             ],
             'mail.from.address' => trim((string) ($emailSetting->email ?: $emailSetting->smtp_username)),
-            'mail.from.name' => config('mail.from.name', 'Seyfibaba'),
+            'mail.from.name' => config('mail.from.name', 'Kuaför Tedarik'),
         ]);
 
         if (app()->bound('mail.manager')) {

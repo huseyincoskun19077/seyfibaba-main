@@ -2427,7 +2427,7 @@ class SalonCrmController extends Controller
                 'id' => -((int) $order->id),
                 'type' => 'expense',
                 'category' => 'seyfibaba',
-                'title' => 'Seyfibaba alışveriş #'.$orderNo,
+                'title' => 'Kuaför Tedarik alışveriş #'.$orderNo,
                 'amount' => round($amount, 2),
                 'entry_date' => $day->toDateString(),
                 'notes' => 'Pazaryeri siparişi gider olarak işlendi',

@@ -11,7 +11,7 @@ use App\Models\VendorSentosSetting;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Pushes paid Seyfibaba orders to Sentos for opted-in vendors only.
+ * Pushes paid Kuaför Tedarik orders to Sentos for opted-in vendors only.
  */
 class SentosOrderSyncService
 {
@@ -119,7 +119,7 @@ class SentosOrderSyncService
             return;
         }
 
-        $url = $trackingUrl ?: ('https://seyfibaba.com/order/' . $order->order_id);
+        $url = $trackingUrl ?: ('https://kuafortedarik.com/order/' . $order->order_id);
         $response = $this->client->updateOrderStatus($setting, (int) $map->sentos_order_id, [
             'status' => 5,
             'data' => [
@@ -171,11 +171,11 @@ class SentosOrderSyncService
         }
 
         $created = $this->client->createSalesChannel($setting, [
-            'name' => 'Seyfibaba',
-            'url' => 'seyfibaba.com',
+            'name' => 'Kuaför Tedarik',
+            'url' => 'kuafortedarik.com',
             'payment_method' => 'online',
             'order_prefix' => 'SF-',
-            'note' => 'Seyfibaba pazaryeri siparişleri',
+            'note' => 'Kuaför Tedarik pazaryeri siparişleri',
         ]);
 
         $id = (int) ($created['saleschannel']['id'] ?? $created['id'] ?? 0);
@@ -217,7 +217,7 @@ class SentosOrderSyncService
         $phone = $this->normalizePhone(
             (string) ($address?->shipping_phone ?? $address?->billing_phone ?? $user?->phone ?? '905550000000')
         );
-        $email = (string) ($address?->shipping_email ?? $address?->billing_email ?? $user?->email ?? 'noreply@seyfibaba.com');
+        $email = (string) ($address?->shipping_email ?? $address?->billing_email ?? $user?->email ?? 'noreply@kuafortedarik.com');
         $name = (string) ($address?->shipping_name ?? $address?->billing_name ?? $user?->name ?? 'Musteri');
         $address = $address ?: (object) [];
 
@@ -265,7 +265,7 @@ class SentosOrderSyncService
             'currency' => 'TL',
             'payment_method' => $this->mapPaymentMethod($order),
             'shipping_total' => $shippingTotal,
-            'note' => 'Seyfibaba sipariş #' . ($order->order_id ?: $order->id),
+            'note' => 'Kuaför Tedarik sipariş #' . ($order->order_id ?: $order->id),
             'customer' => [
                 'name' => $name,
                 'phone' => $phone,

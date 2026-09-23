@@ -20,7 +20,7 @@ class OrderCancelledMail extends Mailable
     public function build()
     {
         \App\Helpers\MailHelper::setMailConfig();
-        return $this->subject('Siparişiniz İptal Edildi — Seyfibaba')
+        return $this->subject('Siparişiniz İptal Edildi — Kuaför Tedarik')
             ->view('emails.generic-notification')
             ->with(['content' => $this->messageContent, 'title' => 'Sipariş İptal']);
     }

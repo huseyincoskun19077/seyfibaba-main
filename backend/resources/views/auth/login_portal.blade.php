@@ -13,7 +13,7 @@
                     <div class="card card-primary card-wrapper-auth">
                         <div class="card-body">
                             <div class="tex-content text-center mb-4">
-                                <h1>Seyfibaba Giriş</h1>
+                                <h1>Kuaför Tedarik Giriş</h1>
                                 <p class="des mb-0">Devam etmek için rolünüze uygun giriş sayfasını seçin.</p>
                             </div>
 

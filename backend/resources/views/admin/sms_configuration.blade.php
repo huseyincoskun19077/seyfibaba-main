@@ -43,7 +43,7 @@
                                 <div class="col-12">
                                     <div class="form-group">
                                         <label for="netgsm_msgheader">Mesaj Başlığı (Sender ID)</label>
-                                        <input type="text" name="netgsm_msgheader" value="{{ $setting->netgsm_msgheader ?? 'SEYFIBABA' }}" class="form-control" placeholder="SEYFIBABA">
+                                        <input type="text" name="netgsm_msgheader" value="{{ $setting->netgsm_msgheader ?? 'KUAFÖR TEDARİK' }}" class="form-control" placeholder="KUAFÖR TEDARİK">
                                         <small class="text-muted">Netgsm panelinde tanımlı olan başlık adı</small>
                                     </div>
                                 </div>

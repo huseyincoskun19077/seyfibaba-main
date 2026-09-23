@@ -83,7 +83,7 @@ class PublicSellerRegistrationController extends Controller
             try {
                 \App\Helpers\MailHelper::setMailConfig();
                 $shopName = $result->vendor->shop_name ?? 'Mağazanız';
-                $content = "Seyfibaba'ya hoş geldiniz!\n\nMağaza: {$shopName}\n\nKaydınız alındı ve admin onayı bekleniyor. Onaylandığında size bilgilendirme yapılacaktır.\n\nSatıcı panelinize giriş yapmak için: seyfibaba.com/satici-giris\n\nSorularınız için bize ulaşabilirsiniz.";
+                $content = "Kuaför Tedarik'e hoş geldiniz!\n\nMağaza: {$shopName}\n\nKaydınız alındı ve admin onayı bekleniyor. Onaylandığında size bilgilendirme yapılacaktır.\n\nSatıcı panelinize giriş yapmak için: kuafortedarik.com/satici-giris\n\nSorularınız için bize ulaşabilirsiniz.";
                 \Mail::to($result->user->email)->send(new \App\Mail\SellerWelcomeMail($content));
             } catch (\Throwable $e) {
                 \Log::warning('Seller welcome mail failed', ['user_id' => $result->user->id, 'error' => $e->getMessage()]);

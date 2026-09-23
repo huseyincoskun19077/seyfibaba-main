@@ -19,9 +19,9 @@ HC YAZILIM ("Veri Sorumlusu"), başvurularınızı KVKK ve ilgili mevzuata uygun
 
 **Unvan:** HC YAZILIM
 
-**Platform:** Seyfibaba
+**Platform:** Kuaför Tedarik
 
-**Web Sitesi:** https://seyfibaba.com
+**Web Sitesi:** https://kuafortedarik.com
 
 **Adres:**
 İstiklal Mahallesi Bülük Sokak No:9 Kat:2 No:208
@@ -31,7 +31,7 @@ Serdivan / Sakarya
 0850 303 50 73
 
 **E-posta:**
-[info@seyfibaba.com](mailto:info@seyfibaba.com)
+[info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 **KEP Adresi:**
 [hcyazilim@hs01.kep.tr](mailto:hcyazilim@hs01.kep.tr)
@@ -190,7 +190,7 @@ Serdivan / Sakarya
 
 ### E-posta
 
-[info@seyfibaba.com](mailto:info@seyfibaba.com)
+[info@kuafortedarik.com](mailto:info@kuafortedarik.com)
 
 (Kayıtlı e-posta adresinizden gönderilmesi tavsiye edilir.)
 
@@ -278,6 +278,6 @@ Açıklama
 
 **HC YAZILIM**
 
-**Seyfibaba Pazaryeri**
+**Kuaför Tedarik Pazaryeri**
 
-**https://seyfibaba.com**
+**https://kuafortedarik.com**
