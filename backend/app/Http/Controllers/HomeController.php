@@ -136,6 +136,8 @@ use App\Models\PusherCredentail;
 use Artisan;
 
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class HomeController extends Controller
 {
@@ -407,20 +409,30 @@ class HomeController extends Controller
 
         $stories = [];
         if (Schema::hasTable('stories')) {
+            $storyCols = [
+                'id',
+                'title',
+                'image',
+                'type',
+                'feed',
+                'link',
+                'see_all_url',
+                'serial',
+            ];
+            if (Schema::hasColumn('stories', 'mobile_link')) {
+                $storyCols[] = 'mobile_link';
+            }
+            if (Schema::hasColumn('stories', 'show_on_web')) {
+                $storyCols[] = 'show_on_web';
+            }
+            if (Schema::hasColumn('stories', 'show_on_mobile')) {
+                $storyCols[] = 'show_on_mobile';
+            }
             $stories = Story::query()
                 ->where('status', true)
                 ->orderBy('serial')
                 ->orderBy('id')
-                ->get([
-                    'id',
-                    'title',
-                    'image',
-                    'type',
-                    'feed',
-                    'link',
-                    'see_all_url',
-                    'serial',
-                ]);
+                ->get($storyCols);
         }
 
 
@@ -661,6 +673,73 @@ class HomeController extends Controller
         $products = $this->homepageFlagProducts($column, $limit);
 
         return response()->json(['products' => $products, 'feed' => $feed]);
+    }
+
+    /**
+     * Story görüntülenme kaydı (web + mobil, üye/misafir).
+     */
+    public function recordStoryView(Request $request)
+    {
+        if (! Schema::hasTable('story_views')) {
+            return response()->json(['success' => false, 'message' => 'story_views missing'], 503);
+        }
+
+        $data = $request->validate([
+            'story_id' => ['required', 'integer', 'exists:stories,id'],
+            'platform' => ['required', 'string', Rule::in(['web', 'mobile'])],
+            'guest_key' => ['nullable', 'string', 'max:64'],
+            'product_index' => ['nullable', 'integer', 'min:0', 'max:500'],
+            'products_total' => ['nullable', 'integer', 'min:0', 'max:500'],
+            'completed' => ['nullable', 'boolean'],
+        ]);
+
+        $userId = null;
+        try {
+            $user = Auth::guard('api')->user();
+            if ($user) {
+                $userId = (int) $user->id;
+            }
+        } catch (\Throwable $e) {
+            // misafir
+        }
+
+        $view = \App\Models\StoryView::query()->create([
+            'story_id' => (int) $data['story_id'],
+            'platform' => $data['platform'],
+            'user_id' => $userId,
+            'guest_key' => $userId ? null : (trim((string) ($data['guest_key'] ?? '')) ?: null),
+            'product_index' => (int) ($data['product_index'] ?? 0),
+            'products_total' => (int) ($data['products_total'] ?? 0),
+            'completed' => (bool) ($data['completed'] ?? false),
+        ]);
+
+        return response()->json(['success' => true, 'id' => $view->id]);
+    }
+
+    /**
+     * Sana Özel ürün şeridi (sektör vitrini; boşsa popüler).
+     */
+    public function personalizedProducts(Request $request)
+    {
+        $limit = min(24, max(4, (int) $request->query('limit', 16)));
+        $user = null;
+        try {
+            $user = Auth::guard('api')->user();
+        } catch (\Throwable $e) {
+            // misafir
+        }
+        if (! $user && $request->filled('token')) {
+            try {
+                $user = auth('api')->setToken((string) $request->query('token'))->user();
+            } catch (\Throwable $e) {
+                // geçersiz token
+            }
+        }
+
+        $payload = (new \App\Services\PersonalizationProductService())
+            ->productsForUser($user, $limit);
+
+        return response()->json($payload);
     }
 
     public function index()

@@ -1058,6 +1058,10 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::post('story-reorder', [StoryController::class, 'reorder'])->name('story.reorder');
         Route::delete('story/{id}', [StoryController::class, 'destroy'])->name('story.destroy');
 
+        Route::get('personalization-showcase', [\App\Http\Controllers\WEB\Admin\PersonalizationShowcaseController::class, 'index'])->name('personalization-showcase.index');
+        Route::post('personalization-showcase', [\App\Http\Controllers\WEB\Admin\PersonalizationShowcaseController::class, 'store'])->name('personalization-showcase.store');
+        Route::delete('personalization-showcase/{id}', [\App\Http\Controllers\WEB\Admin\PersonalizationShowcaseController::class, 'destroy'])->name('personalization-showcase.destroy');
+
 
         Route::get('popular-category', [HomePageController::class, 'popularCategory'])->name('popular-category');
         Route::post('store-popular-category', [HomePageController::class, 'storePopularCategory'])->name('store-popular-category');

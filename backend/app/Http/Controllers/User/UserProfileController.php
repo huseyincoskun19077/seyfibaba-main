@@ -387,7 +387,7 @@ class UserProfileController extends Controller
 
         $request->validate([
             'shop_name' => ['nullable', 'string', 'max:150'],
-            'business_type' => ['required', 'in:female_hairdresser,male_hairdresser,barber,beauty_salon,other'],
+            'business_type' => ['required', 'in:female_hairdresser,male_hairdresser,barber,beauty_salon,nail_art,other'],
             'business_type_other' => ['nullable', 'string', 'max:120'],
             'business_status' => ['required', 'in:own_shop,opening_soon,employed_in_salon,planning'],
         ]);

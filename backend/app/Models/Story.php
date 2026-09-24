@@ -12,13 +12,18 @@ class Story extends Model
         'type',
         'feed',
         'link',
+        'mobile_link',
         'see_all_url',
         'serial',
         'status',
+        'show_on_web',
+        'show_on_mobile',
     ];
 
     protected $casts = [
         'status' => 'boolean',
+        'show_on_web' => 'boolean',
+        'show_on_mobile' => 'boolean',
         'serial' => 'integer',
     ];
 

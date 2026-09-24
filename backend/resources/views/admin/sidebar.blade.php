@@ -317,6 +317,7 @@
 
                 <li class="{{ Route::is('admin.slider.*') || Route::is('admin.mobile-slider.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.slider.index') }}">{{__('admin.Slider')}}</a></li>
                 <li class="{{ Route::is('admin.story.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.story.index') }}">Stories</a></li>
+                <li class="{{ Route::is('admin.personalization-showcase.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.personalization-showcase.index') }}">Sana Özel Vitrin</a></li>
 
                 <li class="{{ Route::is('admin.shop-page') ? 'active' : '' }} d-none"><a class="nav-link" href="{{ route('admin.shop-page') }}">{{ __('admin.Shop Page') }}</a></li>
 

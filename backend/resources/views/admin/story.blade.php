@@ -20,10 +20,17 @@
         </div>
         <div class="card-body">
           <p class="text-muted mb-3">
-            Ürün vitrini tipinde hover/tıklamada ürünler yatay kayar. Bağlantı tipinde doğrudan sayfaya gider.
-            Görsel yüklemezseniz sarı halka içinde başlık harfi gösterilir.
-            Listedeki satırları <strong>sürükle-bırak</strong> ile sıralayabilirsiniz; site üst şeridinde aynı sıra görünür.
+            Ürün vitrini tipinde web’de hover, mobilde tıklamada ürünler story gibi açılır. Bağlantı tipinde sayfaya gider.
+            <strong>Web’de göster / Mobil’de göster</strong> tikleri ile platform seçin (ikisini de açık bırakabilirsiniz).
+            <strong>Web bağlantısı</strong> site, <strong>Mobil bağlantı</strong> uygulama içindir (boşsa web linki kullanılır).
+            Listedeki satırları <strong>sürükle-bırak</strong> ile sıralayabilirsiniz.
           </p>
+
+          <div class="alert alert-light border mb-4">
+            <strong>İzlenme özeti:</strong>
+            Tabloda her story için toplam / web / mobil görüntüleme, üye &amp; misafir, benzersiz izleyici ve ortalama ilerleme görünür.
+            <em>Migrate:</em> <code>php artisan migrate --force</code> (<code>story_views</code>)
+          </div>
 
           <form method="POST" action="{{ route('admin.story.store') }}" enctype="multipart/form-data" class="mb-4">
             @csrf
@@ -83,25 +90,42 @@
                   <input type="number" name="serial" class="form-control" min="0" value="{{ old('serial', !empty($editStory) ? $editStory->serial : (($stories->max('serial') ?? 0) + 1)) }}">
                 </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <div class="form-group">
-                  <label>Bağlantı (link tipi veya yedek)</label>
+                  <label>Web bağlantısı</label>
                   <input type="text" name="link" class="form-control" placeholder="/satici veya https://..." value="{{ old('link', !empty($editStory) ? $editStory->link : '') }}">
                 </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <div class="form-group">
-                  <label>Tümünü gör URL</label>
+                  <label>Mobil bağlantı</label>
+                  <input type="text" name="mobile_link" class="form-control" placeholder="https://kuafortedarik.com/satici-kayit veya boş" value="{{ old('mobile_link', !empty($editStory) ? ($editStory->mobile_link ?? '') : '') }}">
+                  <small class="text-muted">Uygulama; boşsa web bağlantısı kullanılır</small>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label>Tümünü gör URL (web)</label>
                   <input type="text" name="see_all_url" class="form-control" placeholder="/products?highlight=..." value="{{ old('see_all_url', !empty($editStory) ? $editStory->see_all_url : '') }}">
                 </div>
               </div>
               <div class="col-md-2">
                 <div class="form-group">
                   <label class="d-block">&nbsp;</label>
-                  <label class="mt-2">
+                  <label class="mt-2 d-block">
                     <input type="hidden" name="status" value="0">
                     <input type="checkbox" name="status" value="1" {{ old('status', !empty($editStory) ? (int) $editStory->status : 1) ? 'checked' : '' }}>
                     Aktif
+                  </label>
+                  <label class="mt-2 d-block">
+                    <input type="hidden" name="show_on_web" value="0">
+                    <input type="checkbox" name="show_on_web" value="1" {{ old('show_on_web', !empty($editStory) ? (int) ($editStory->show_on_web ?? 1) : 1) ? 'checked' : '' }}>
+                    Web’de göster
+                  </label>
+                  <label class="mt-2 d-block">
+                    <input type="hidden" name="show_on_mobile" value="0">
+                    <input type="checkbox" name="show_on_mobile" value="1" {{ old('show_on_mobile', !empty($editStory) ? (int) ($editStory->show_on_mobile ?? 1) : 1) ? 'checked' : '' }}>
+                    Mobil’de göster
                   </label>
                 </div>
               </div>
@@ -123,13 +147,21 @@
                   <th>Görsel</th>
                   <th>Başlık</th>
                   <th>Tip</th>
-                  <th>Kaynak / Link</th>
+                  <th>Kaynak / Web / Mobil</th>
                   <th>Durum</th>
+                  <th>Web</th>
+                  <th>Mobil</th>
+                  <th>İzlenme</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody id="sortable-body">
                 @forelse($stories as $index => $story)
+                  @php $st = $storyStats[$story->id] ?? [
+                    'total_views'=>0,'web_views'=>0,'mobile_views'=>0,
+                    'auth_views'=>0,'guest_views'=>0,'unique_users'=>0,
+                    'unique_auth'=>0,'unique_guests'=>0,'completions'=>0,'avg_progress_pct'=>0
+                  ]; @endphp
                   <tr data-id="{{ $story->id }}">
                     <td class="drag-handle" title="Sürükle"><i class="fas fa-grip-vertical"></i></td>
                     <td class="sort-number">{{ $index + 1 }}</td>
@@ -145,11 +177,26 @@
                     <td>
                       @if($story->type === 'product_feed')
                         {{ $feeds[$story->feed] ?? $story->feed }}
+                        @if($story->see_all_url)
+                          <br><small class="text-muted">see-all: {{ $story->see_all_url }}</small>
+                        @endif
                       @else
-                        {{ $story->link ?: '—' }}
+                        <div>Web: {{ $story->link ?: '—' }}</div>
+                        <small class="text-muted">Mobil: {{ $story->mobile_link ?: '(web ile aynı)' }}</small>
                       @endif
                     </td>
                     <td>{{ $story->status ? 'Aktif' : 'Pasif' }}</td>
+                    <td>{{ ($story->show_on_web ?? true) ? '✓' : '—' }}</td>
+                    <td>{{ ($story->show_on_mobile ?? true) ? '✓' : '—' }}</td>
+                    <td style="min-width:220px;font-size:12px;line-height:1.45;">
+                      <div><strong>Toplam:</strong> {{ $st['total_views'] }}</div>
+                      <div>Web: {{ $st['web_views'] }} · Mobil: {{ $st['mobile_views'] }}</div>
+                      <div>Üye izlenme: {{ $st['auth_views'] }} · Misafir: {{ $st['guest_views'] }}</div>
+                      <div>Benzersiz: {{ $st['unique_users'] }}
+                        <small class="text-muted">(üye {{ $st['unique_auth'] }} / misafir {{ $st['unique_guests'] }})</small>
+                      </div>
+                      <div>Tamamlanan: {{ $st['completions'] }} · Ort. ilerleme: %{{ $st['avg_progress_pct'] }}</div>
+                    </td>
                     <td class="text-right sort-actions">
                       <button type="button" class="btn btn-light btn-sm btn-move-up" title="Yukarı"><i class="fas fa-arrow-up"></i></button>
                       <button type="button" class="btn btn-light btn-sm btn-move-down" title="Aşağı"><i class="fas fa-arrow-down"></i></button>
@@ -162,7 +209,7 @@
                     </td>
                   </tr>
                 @empty
-                  <tr class="dataTables_empty"><td colspan="8" class="text-center text-muted">Kayıt yok</td></tr>
+                  <tr class="dataTables_empty"><td colspan="11" class="text-center text-muted">Kayıt yok</td></tr>
                 @endforelse
               </tbody>
             </table>

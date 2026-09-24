@@ -34,11 +34,17 @@ class StoryController extends Controller
             $editStory = Story::query()->find((int) $request->query('edit'));
         }
 
+        $storyStats = [];
+        foreach ($stories as $story) {
+            $storyStats[$story->id] = \App\Models\StoryView::statsForStory((int) $story->id);
+        }
+
         return view('admin.story', [
             'stories' => $stories,
             'editStory' => $editStory,
             'feeds' => Story::FEEDS,
             'types' => Story::TYPES,
+            'storyStats' => $storyStats,
         ]);
     }
 
@@ -57,6 +63,7 @@ class StoryController extends Controller
             'type' => ['required', Rule::in(array_keys(Story::TYPES))],
             'feed' => ['nullable', Rule::in(array_keys(Story::FEEDS))],
             'link' => ['nullable', 'string', 'max:500'],
+            'mobile_link' => ['nullable', 'string', 'max:500'],
             'see_all_url' => ['nullable', 'string', 'max:500'],
             'serial' => ['nullable', 'integer', 'min:0'],
         ]);
@@ -71,9 +78,16 @@ class StoryController extends Controller
             ? (trim((string) $request->input('feed', '')) ?: 'popular')
             : null;
         $story->link = trim((string) $request->input('link', '')) ?: null;
+        $story->mobile_link = trim((string) $request->input('mobile_link', '')) ?: null;
         $story->see_all_url = trim((string) $request->input('see_all_url', '')) ?: null;
         $story->serial = (int) ($request->input('serial') ?: 1);
         $story->status = $request->boolean('status');
+        if (\Illuminate\Support\Facades\Schema::hasColumn('stories', 'show_on_web')) {
+            $story->show_on_web = $request->boolean('show_on_web');
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('stories', 'show_on_mobile')) {
+            $story->show_on_mobile = $request->boolean('show_on_mobile');
+        }
 
         if ($request->hasFile('image')) {
             $dir = public_path('uploads/website-images');
