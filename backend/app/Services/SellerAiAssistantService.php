@@ -2,12 +2,16 @@
 
 namespace App\Services;
 
+use App\Models\Category;
+use App\Models\ChildCategory;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Models\SubCategory;
 use App\Models\Vendor;
 use App\Support\ProductSellerPublishStatus;
 use App\Support\SellerProductSoftDelete;
+use App\Support\SellerAiCatalogHelper;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -129,9 +133,10 @@ class SellerAiAssistantService
     {
         $products = Product::query()
             ->where('vendor_id', $seller->id)
+            ->with(['category:id,name', 'subCategory:id,name', 'childCategory:id,name'])
             ->orderByDesc('id')
             ->limit(80)
-            ->get(['id', 'name', 'sku', 'barcode', 'price', 'offer_price', 'qty', 'status', 'approve_by_admin', 'thumb_image']);
+            ->get(['id', 'name', 'sku', 'barcode', 'price', 'offer_price', 'qty', 'status', 'approve_by_admin', 'thumb_image', 'category_id', 'sub_category_id', 'child_category_id', 'seo_title']);
 
         $todayOrders = Order::query()
             ->whereHas('orderProducts', fn ($q) => $q->where('seller_id', $seller->id))
@@ -143,6 +148,25 @@ class SellerAiAssistantService
             ->whereHas('orderProducts', fn ($q) => $q->where('seller_id', $seller->id))
             ->count();
 
+        $categoryTree = Category::query()
+            ->where('status', 1)
+            ->with(['activeSubCategories.activeChildCategories'])
+            ->ordered()
+            ->limit(50)
+            ->get(['id', 'name'])
+            ->map(fn (Category $c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'subs' => $c->activeSubCategories->take(30)->map(fn ($s) => [
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'children' => $s->activeChildCategories->take(30)->map(fn ($ch) => [
+                        'id' => $ch->id,
+                        'name' => $ch->name,
+                    ])->values()->all(),
+                ])->values()->all(),
+            ])->values()->all();
+
         return [
             'shop_name' => $seller->shop_name ?? 'Mağaza',
             'product_count' => Product::where('vendor_id', $seller->id)->count(),
@@ -150,22 +174,29 @@ class SellerAiAssistantService
             'draft_count' => Product::where('vendor_id', $seller->id)->where('status', 0)->count(),
             'today_orders' => $todayOrders,
             'pending_orders' => $pendingOrders,
-            'products' => $products->map(fn (Product $p) => [
+            'categories' => $categoryTree,
+            'products' => $products->values()->map(fn (Product $p, int $i) => [
+                'sn' => $i + 1,
                 'id' => $p->id,
                 'name' => $p->name,
                 'sku' => (string) ($p->sku ?? ''),
                 'barcode' => (string) ($p->barcode ?? ''),
+                'category' => $p->category?->name,
+                'sub_category' => $p->subCategory?->name,
+                'child_category' => $p->childCategory?->name,
+                'has_seo' => trim((string) ($p->seo_title ?? '')) !== '',
                 'price' => (float) $p->price,
                 'offer_price' => (float) $p->offer_price,
                 'qty' => (int) $p->qty,
                 'status' => (int) $p->status === 1 ? 'yayinda' : 'pasif',
-            ])->values()->all(),
+            ])->all(),
         ];
     }
 
     private function buildSystemPrompt(array $context): string
     {
         $productsJson = json_encode($context['products'], JSON_UNESCAPED_UNICODE);
+        $categoriesJson = json_encode($context['categories'] ?? [], JSON_UNESCAPED_UNICODE);
         $shop = $context['shop_name'];
         $security = $this->promptGuard->sellerSecuritySystemPrompt();
 
@@ -179,32 +210,45 @@ Satıcı verileri (yalnızca bu mağaza):
 - Bugünkü sipariş: {$context['today_orders']}
 - Bekleyen sipariş: {$context['pending_orders']}
 
-Örnek ürün listesi (eşleştirme için; toplu işlemde tüm mağaza ürünleri kullanılır):
+Platform kategori ağacı (doğru kategoriye yerleştirmek için):
+{$categoriesJson}
+
+Örnek ürün listesi (SN = panel sıra numarası):
 {$productsJson}
 
 Yapabileceklerin (HEPSİNİ sen uygularsın — "panelden yapın" DEME):
-1. Bilgi: stok, sipariş özeti, ürün sayısı (sadece bu mağaza)
-2. Tek ürün güncelle: fiyat, indirimli fiyat, stok, ad, kısa/uzun açıklama, yayına al/pasife al
-3. Toplu durum: tüm yayındakileri pasife al; tüm pasifleri (görseli olanları) yayına al
-4. Ürün sil (soft): SKU / barkod / SN / ürün adı veya id ile — satıcı listesinden kalkar, admin kaydı görür
+1. Bilgi: stok, sipariş, ürün sayısı
+2. Tek ürün güncelle: fiyat, indirim, stok, ad, açıklama, yayına/pasife, kategori, SEO
+3. Toplu durum: tüm veya kategori/alt/child bazlı yayına al / pasife al
+4. Ürün sil (soft): SN / SKU / barkod / ad
+5. Kategori yerleştir: ürünü doğru kategori + alt + child'a taşı
+6. SEO üret/güncelle: tek ürün veya kategori/tüm mağaza
 
 Tek ürün ACTION:
-<!--ACTION{"type":"update_product","product_id":0,"product_name":"","sku":"","barcode":"","fields":{"price":0,"offer_price":0,"qty":0,"status":0}}-->
+<!--ACTION{"type":"update_product","sn":0,"product_id":0,"product_name":"","sku":"","fields":{"price":0,"offer_price":0,"qty":0,"status":0,"category_name":"","sub_category_name":"","child_category_name":"","seo_title":"","seo_description":"","generate_seo":true}}-->
 
-Silme ACTION:
-<!--ACTION{"type":"delete_product","product_id":0,"sku":"","barcode":"","product_name":""}-->
+Kategori ata:
+<!--ACTION{"type":"set_category","sn":0,"product_name":"","category_name":"Makas","sub_category_name":"","child_category_name":""}-->
 
-Toplu durum ACTION:
-<!--ACTION{"type":"bulk_set_status","status":0,"scope":"published"}-->
-scope: "published" | "draft" | "all"
-status: 0 = pasif (satıcı pasifi), 1 = yayında
-NOT: Pasife alırken approve/admin kilidi koyma. Admin kilidi varsa yayına alma.
+SEO:
+<!--ACTION{"type":"generate_seo","sn":0,"product_name":"","scope":"one"}-->
+<!--ACTION{"type":"generate_seo","scope":"category","category_name":"Makas"}-->
+<!--ACTION{"type":"generate_seo","scope":"all"}-->
 
-ZORUNLU KURALLAR:
-- Satıcı "pasife al / sil" derse ACTION ekle; paneli önerme
-- product_id, sku, barcode (SN) biliniyorsa kullan; yoksa product_name
-- Başka satıcının ürününe erişme
-- Kalıcı hard-delete yok — soft silme kullan
+Silme:
+<!--ACTION{"type":"delete_product","sn":5}-->
+
+Toplu durum:
+<!--ACTION{"type":"bulk_set_status","status":1,"scope":"draft","category_name":"Makas","sub_category_name":"","child_category_name":""}-->
+status 0=pasif 1=yayında | scope published|draft|all
+Kategori verilirse yalnız o kategori/alt/child etkilenir.
+
+ZORUNLU:
+- Kategori adını ağaçtan eşleştir
+- "X kategorisini yayına/pasife al" → bulk_set_status + category_name
+- SEO isteğinde generate_seo ACTION
+- SN = sıra no (SKU değil)
+- Admin kilidini açma
 PROMPT;
     }
 
@@ -232,8 +276,14 @@ PROMPT;
             || (bool) preg_match('/\b(tum|tumu|hepsi|hepsini)\b|yayinda|2629|urunleriniz var/u', $prev);
 
         if ($wantsDelete && ! $allScope) {
+            // Panel SN = sıra numarası (1,2,3…), SKU değil
+            if (preg_match('/(?:sira\s*numara(?:si)?|sira\s*no|\bsn\b)\s*[:=#]?\s*(\d{1,6})\b/u', $text, $m)
+                || preg_match('/\b(\d{1,6})\s*(?:\.|inci|nci|uncu|uncu)?\s*sira/u', $text, $m)) {
+                return ['type' => 'delete_product', 'sn' => (int) $m[1]];
+            }
+
             $code = null;
-            if (preg_match('/(?:sku|barkod|sn|kod)\s*[:=]?\s*([0-9A-Za-z\-]{4,})/u', $text, $m)) {
+            if (preg_match('/(?:sku|barkod|kod)\s*[:=]?\s*([0-9A-Za-z\-]{4,})/u', $text, $m)) {
                 $code = $m[1];
             } elseif (preg_match('/\b([0-9]{8,14})\b/', $text, $m)) {
                 $code = $m[1];
@@ -241,6 +291,33 @@ PROMPT;
             if ($code) {
                 return ['type' => 'delete_product', 'sku' => $code, 'barcode' => $code];
             }
+        }
+
+        $wantsSeo = (bool) preg_match('/\bseo\b|meta\s*baslik|meta\s*aciklama|arama\s*motor/u', $text);
+        $categoryHint = null;
+        if (preg_match('/([\w\sçğıöşüÇĞİÖŞÜ\-]{2,60}?)\s*(?:kategor(?:i|isi|isini|isindeki)|alt\s*kategor|child)/u', $message, $m)) {
+            $categoryHint = trim(preg_replace('/\b(tum|tumu|bu|su|olan|urunleri|urunlerin|urunler)\b/iu', '', $m[1]));
+            $categoryHint = trim($categoryHint);
+        } elseif (preg_match('/([a-z0-9\s\-]{2,40}?)\s*kategor/u', $text, $m)) {
+            $categoryHint = trim(preg_replace('/\b(tum|tumu|bu|su|olan|urunleri|urunlerin|urunler)\b/u', '', $m[1]));
+        }
+
+        if ($wantsSeo && ! $wantsDelete) {
+            if ($categoryHint) {
+                return ['type' => 'generate_seo', 'scope' => 'category', 'category_name' => $categoryHint];
+            }
+            if ($allScope || (bool) preg_match('/\b(tum|hepsi|butun)\b/u', $text)) {
+                return ['type' => 'generate_seo', 'scope' => 'all'];
+            }
+        }
+
+        if (($wantsPassive || $wantsPublish) && $categoryHint) {
+            return [
+                'type' => 'bulk_set_status',
+                'status' => $wantsPublish ? 1 : 0,
+                'scope' => $wantsPublish ? 'draft' : 'published',
+                'category_name' => $categoryHint,
+            ];
         }
 
         if ($wantsPassive && $allScope) {
@@ -289,6 +366,14 @@ PROMPT;
             return $this->executeDeleteProduct($seller, $action);
         }
 
+        if ($type === 'set_category') {
+            return $this->executeSetCategory($seller, $action);
+        }
+
+        if ($type === 'generate_seo') {
+            return $this->executeGenerateSeo($seller, $action);
+        }
+
         if ($type !== 'update_product') {
             return ['summary' => null, 'error' => 'Bu işlem desteklenmiyor.'];
         }
@@ -326,6 +411,33 @@ PROMPT;
             $product->long_description = $fields['long_description'];
             $changes[] = 'açıklama güncellendi';
         }
+        $catalog = app(SellerAiCatalogHelper::class);
+        $resolvedCat = $catalog->resolveFromAction($action, $fields);
+        if ($resolvedCat) {
+            $product->category_id = (int) $resolvedCat['category_id'];
+            $product->sub_category_id = (int) ($resolvedCat['sub_category_id'] ?? 0);
+            $product->child_category_id = (int) ($resolvedCat['child_category_id'] ?? 0);
+            $changes[] = 'kategori: '.$resolvedCat['label'];
+        }
+
+        $wantSeo = ! empty($fields['generate_seo'])
+            || ! empty($fields['seo_title'])
+            || ! empty($fields['seo_description'])
+            || array_key_exists('seo_title', $fields)
+            || array_key_exists('seo_description', $fields);
+        if ($wantSeo) {
+            $seo = app(ProductSeoAutoFill::class)->resolve(
+                $fields['seo_title'] ?? $product->seo_title,
+                $fields['seo_description'] ?? $product->seo_description,
+                (string) $product->name,
+                $product->short_description,
+                $product->long_description
+            );
+            $product->seo_title = $seo['seo_title'];
+            $product->seo_description = $seo['seo_description'];
+            $changes[] = 'SEO güncellendi';
+        }
+
         if (isset($fields['status']) && in_array((int) $fields['status'], [0, 1], true)) {
             if ((int) $fields['status'] === 1) {
                 if ($publishStatus->isBlockedByAdmin($product)) {
@@ -365,7 +477,7 @@ PROMPT;
     {
         $product = $this->findSellerProduct($seller, $action);
         if (! $product) {
-            return ['summary' => null, 'error' => 'Silinecek ürün bulunamadı. SKU, barkod (SN) veya ürün adı yazın.'];
+            return ['summary' => null, 'error' => 'Silinecek ürün bulunamadı. Sıra numarası (SN), SKU, barkod veya ürün adı yazın.'];
         }
 
         if (app(ProductSellerPublishStatus::class)->isBlockedByAdmin($product)) {
@@ -403,12 +515,23 @@ PROMPT;
             $query->where('status', 0);
         }
 
+        $catalog = app(SellerAiCatalogHelper::class);
+        $resolvedCat = $catalog->resolveFromAction($action);
+        $catLabel = '';
+        if ($resolvedCat) {
+            $catalog->applyToQuery($query, $resolvedCat);
+            $catLabel = $resolvedCat['label'];
+        } elseif (trim((string) ($action['category_name'] ?? $action['sub_category_name'] ?? $action['child_category_name'] ?? '')) !== '') {
+            return ['summary' => null, 'error' => 'Kategori bulunamadı. Lütfen kategori adını net yazın.'];
+        }
+
         $ids = $query->pluck('id');
         if ($ids->isEmpty()) {
+            $where = $catLabel !== '' ? ('"'.$catLabel.'" kategorisinde ') : '';
             return [
                 'summary' => $status === 0
-                    ? 'Pasife alınacak yayında ürün bulunamadı.'
-                    : 'Yayına alınacak pasif ürün bulunamadı.',
+                    ? ($where.'pasife alınacak yayında ürün bulunamadı.')
+                    : ($where.'yayına alınacak pasif ürün bulunamadı.'),
                 'error' => null,
             ];
         }
@@ -457,7 +580,7 @@ PROMPT;
         }
 
         $label = $status === 1 ? 'yayına alındı' : 'pasife alındı';
-        $summary = "{$updated} ürün {$label} (yalnızca sizin mağazanız).";
+        $summary = "{$updated} ürün {$label} (yalnızca sizin mağazanız".($catLabel !== '' ? ', kategori: '.$catLabel : '').").";
         if ($skippedNoImage > 0) {
             $summary .= " {$skippedNoImage} ürün eksik bilgi/görsel nedeniyle atlandı.";
         }
@@ -478,7 +601,16 @@ PROMPT;
                 ->first();
         }
 
-        $sku = trim((string) ($action['sku'] ?? $action['sn'] ?? ''));
+        // Panel "SN / sıra numarası" = id DESC listedeki 1-based sıra (SKU değil)
+        $sn = (int) ($action['sn'] ?? $action['sira_no'] ?? $action['row'] ?? 0);
+        if ($sn > 0) {
+            $bySn = $this->findSellerProductByListSn($seller, $sn);
+            if ($bySn) {
+                return $bySn;
+            }
+        }
+
+        $sku = trim((string) ($action['sku'] ?? ''));
         if ($sku !== '') {
             $bySku = Product::query()
                 ->where('vendor_id', $seller->id)
@@ -488,6 +620,14 @@ PROMPT;
                 ->first();
             if ($bySku) {
                 return $bySku;
+            }
+
+            // "sn:12" yanlışlıkla sku gelirse küçük sayıyı sıra no dene
+            if (ctype_digit($sku) && (int) $sku > 0 && (int) $sku < 100000) {
+                $bySn = $this->findSellerProductByListSn($seller, (int) $sku);
+                if ($bySn) {
+                    return $bySn;
+                }
             }
         }
 
@@ -521,11 +661,116 @@ PROMPT;
             }
         }
 
+        // "5. ürün" / sadece sayı → sıra no
+        if (preg_match('/^(\d{1,6})(?:\s*\.?\s*urun)?$/u', $nameQuery, $m)) {
+            $bySn = $this->findSellerProductByListSn($seller, (int) $m[1]);
+            if ($bySn) {
+                return $bySn;
+            }
+        }
+
         $products = Product::query()
             ->where('vendor_id', $seller->id)
             ->get(['id', 'name']);
 
         return $this->fuzzyProductMatch($nameQuery, $products);
+    }
+
+    /**
+     * @return array{summary:?string,error:?string}
+     */
+    private function executeSetCategory(Vendor $seller, array $action): array
+    {
+        $product = $this->findSellerProduct($seller, $action);
+        if (! $product) {
+            return ['summary' => null, 'error' => 'Ürün bulunamadı.'];
+        }
+
+        $resolved = app(SellerAiCatalogHelper::class)->resolveFromAction($action);
+        if (! $resolved || empty($resolved['category_id'])) {
+            return ['summary' => null, 'error' => 'Kategori bulunamadı. Platformdaki kategori adını yazın.'];
+        }
+
+        $product->category_id = (int) $resolved['category_id'];
+        $product->sub_category_id = (int) ($resolved['sub_category_id'] ?? 0);
+        $product->child_category_id = (int) ($resolved['child_category_id'] ?? 0);
+        $product->save();
+
+        return [
+            'summary' => '"'.$product->name.'" kategorisi güncellendi: '.$resolved['label'].'.',
+            'error' => null,
+        ];
+    }
+
+    /**
+     * @return array{summary:?string,error:?string}
+     */
+    private function executeGenerateSeo(Vendor $seller, array $action): array
+    {
+        $scope = strtolower(trim((string) ($action['scope'] ?? 'one')));
+        $seoService = app(ProductSeoAutoFill::class);
+        $catalog = app(SellerAiCatalogHelper::class);
+
+        if ($scope === 'one' || isset($action['sn']) || isset($action['product_id']) || isset($action['product_name']) || isset($action['sku'])) {
+            $product = $this->findSellerProduct($seller, $action);
+            if (! $product) {
+                return ['summary' => null, 'error' => 'SEO için ürün bulunamadı.'];
+            }
+            $seo = $seoService->resolve(null, null, (string) $product->name, $product->short_description, $product->long_description);
+            $product->seo_title = $seo['seo_title'];
+            $product->seo_description = $seo['seo_description'];
+            $product->save();
+
+            return [
+                'summary' => '"'.$product->name.'" SEO güncellendi: '.$seo['seo_title'],
+                'error' => null,
+            ];
+        }
+
+        $query = Product::query()->where('vendor_id', $seller->id)->orderByDesc('id')->limit(80);
+        $label = 'mağaza';
+        if ($scope === 'category') {
+            $resolved = $catalog->resolveFromAction($action);
+            if (! $resolved) {
+                return ['summary' => null, 'error' => 'SEO için kategori bulunamadı.'];
+            }
+            $catalog->applyToQuery($query, $resolved);
+            $label = $resolved['label'];
+        }
+
+        $products = $query->get();
+        if ($products->isEmpty()) {
+            return ['summary' => null, 'error' => 'SEO uygulanacak ürün yok.'];
+        }
+
+        $n = 0;
+        foreach ($products as $product) {
+            $seo = $seoService->resolve(null, null, (string) $product->name, $product->short_description, $product->long_description);
+            $product->seo_title = $seo['seo_title'];
+            $product->seo_description = $seo['seo_description'];
+            $product->save();
+            $n++;
+        }
+
+        return [
+            'summary' => "{$n} ürün için SEO güncellendi ({$label}).",
+            'error' => null,
+        ];
+    }
+
+    /** Satıcı ürün listesi ile aynı sıra: orderByDesc(id), 1-based SN */
+    private function findSellerProductByListSn(Vendor $seller, int $sn): ?Product
+    {
+        if ($sn < 1) {
+            return null;
+        }
+
+        return Product::query()
+            ->where('vendor_id', $seller->id)
+            ->orderByDesc('id')
+            ->skip($sn - 1)
+            ->take(1)
+            ->first();
     }
 
     /**
@@ -571,7 +816,7 @@ PROMPT;
             return is_array($decoded) ? $decoded : null;
         }
 
-        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status|delete_product)"[\s\S]*\}/', $raw, $m)) {
+        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status|delete_product|set_category|generate_seo)"[\s\S]*\}/', $raw, $m)) {
             $decoded = json_decode($m[0], true);
 
             return is_array($decoded) ? $decoded : null;
