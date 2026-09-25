@@ -10,6 +10,7 @@ import '../../../utils/utils.dart';
 import '../models/seller_catalog_option.dart';
 import '../services/seller_api_service.dart';
 import '../widgets/seller_delivery_info_field.dart';
+import '../widgets/seller_simple_variants_editor.dart';
 
 class SellerFullProductScreen extends StatefulWidget {
   const SellerFullProductScreen({super.key});
@@ -34,11 +35,16 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
   final _seoTitleCtrl = TextEditingController();
   final _seoDescCtrl = TextEditingController();
   final _deliveryCtrl = TextEditingController();
+  final _weightCtrl = TextEditingController();
+  final _packQtyCtrl = TextEditingController(text: '1');
+  final _variantsKey = GlobalKey<SellerSimpleVariantsEditorState>();
 
   SellerProductCreateMeta? _meta;
   List<SellerCatalogOption> _subs = const [];
+  List<SellerCatalogOption> _children = const [];
   int? _categoryId;
   int? _subCategoryId;
+  int? _childCategoryId;
   int? _brandId;
   String? _imagePath;
   bool _loadingMeta = true;
@@ -67,6 +73,8 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
     _seoTitleCtrl.dispose();
     _seoDescCtrl.dispose();
     _deliveryCtrl.dispose();
+    _weightCtrl.dispose();
+    _packQtyCtrl.dispose();
     super.dispose();
   }
 
@@ -97,13 +105,29 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
     setState(() {
       _categoryId = id;
       _subCategoryId = null;
+      _childCategoryId = null;
       _subs = const [];
+      _children = const [];
     });
     if (id == null) return;
     try {
       final subs = await _service.fetchSubcategories(_token, id);
       if (!mounted) return;
       setState(() => _subs = subs);
+    } catch (_) {}
+  }
+
+  Future<void> _onSubChanged(int? id) async {
+    setState(() {
+      _subCategoryId = id;
+      _childCategoryId = null;
+      _children = const [];
+    });
+    if (id == null) return;
+    try {
+      final children = await _service.fetchChildCategories(_token, id);
+      if (!mounted) return;
+      setState(() => _children = children);
     } catch (_) {}
   }
 
@@ -232,6 +256,8 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
       return;
     }
 
+    final packQty = int.tryParse(_packQtyCtrl.text.trim()) ?? 1;
+
     setState(() => _submitting = true);
     Utils.loadingDialog(context);
     try {
@@ -245,6 +271,7 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
               : _slugCtrl.text.trim(),
           'category': '$_categoryId',
           if (_subCategoryId != null) 'sub_category': '$_subCategoryId',
+          if (_childCategoryId != null) 'child_category': '$_childCategoryId',
           if (_brandId != null) 'brand': '$_brandId',
           'short_description': _shortDescCtrl.text.trim(),
           'long_description': _longDescCtrl.text.trim(),
@@ -257,8 +284,13 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
           'seo_title': _seoTitleCtrl.text.trim(),
           'seo_description': _seoDescCtrl.text.trim(),
           'delivery_info': _deliveryCtrl.text.trim(),
+          'sale_unit_qty': '${packQty < 1 ? 1 : packQty}',
+          if (_weightCtrl.text.trim().isNotEmpty)
+            'weight': _weightCtrl.text.trim(),
         },
         thumbImagePath: _imagePath!,
+        colors: _variantsKey.currentState?.colorsPayload ?? const [],
+        optionGroups: _variantsKey.currentState?.optionGroupsPayload ?? const [],
       );
       if (!mounted) return;
       Utils.closeDialog(context);
@@ -349,6 +381,12 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
                     _field(_slugCtrl, 'Slug'),
                     _field(_shortDescCtrl, 'Kısa açıklama *', maxLines: 3),
                     _field(_longDescCtrl, 'Uzun açıklama *', maxLines: 6),
+                    const SellerShippingNotice(),
+                    _field(
+                      _packQtyCtrl,
+                      'Paketteki ürün adedi',
+                      number: true,
+                    ),
                     Row(
                       children: [
                         Expanded(child: _field(_priceCtrl, 'Fiyat *')),
@@ -356,7 +394,10 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
                         Expanded(child: _field(_offerCtrl, 'İndirimli fiyat')),
                       ],
                     ),
-                    _field(_qtyCtrl, 'Stok *', number: true),
+                    _field(_qtyCtrl, 'Stok (kaç paket) *', number: true),
+                    const SizedBox(height: 8),
+                    SellerSimpleVariantsEditor(key: _variantsKey),
+                    const SizedBox(height: 12),
                     DropdownButtonFormField<int?>(
                       value: _categoryId,
                       isExpanded: true,
@@ -401,7 +442,34 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
                             ),
                           ),
                         ],
-                        onChanged: (v) => setState(() => _subCategoryId = v),
+                        onChanged: _onSubChanged,
+                      ),
+                    ],
+                    if (_children.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<int?>(
+                        value: _childCategoryId,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Alt alt kategori',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          const DropdownMenuItem<int?>(
+                            value: null,
+                            child: Text('Seçilmedi'),
+                          ),
+                          ..._children.map(
+                            (c) => DropdownMenuItem<int?>(
+                              value: c.id,
+                              child: Text(
+                                c.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                        onChanged: (v) => setState(() => _childCategoryId = v),
                       ),
                     ],
                     const SizedBox(height: 12),
@@ -431,6 +499,7 @@ class _SellerFullProductScreenState extends State<SellerFullProductScreen> {
                     ),
                     const SizedBox(height: 12),
                     _field(_skuCtrl, 'SKU'),
+                    _field(_weightCtrl, 'Ağırlık (g)', number: true),
                     _field(_tagsCtrl, 'Etiketler'),
                     SellerDeliveryInfoField(controller: _deliveryCtrl),
                     const SizedBox(height: 12),

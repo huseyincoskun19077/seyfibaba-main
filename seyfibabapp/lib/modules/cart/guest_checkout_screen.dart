@@ -505,6 +505,32 @@ class _GuestCheckoutBodyState extends State<GuestCheckoutBody> {
               setState(() => _legalConsents[key] = value);
             },
             padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+            shippingAddressId:
+                shippingAddressId > 0 ? shippingAddressId : null,
+            billingAddressId:
+                billingAddressId > 0 ? billingAddressId : null,
+            shippingCharge: checkCubit.state.shippingFee,
+            guestItems: detailCubit.savedProduct
+                .map(
+                  (e) => {
+                    'product_id': e.productId,
+                    'qty': e.qty,
+                    'variants': (e.variants ?? [])
+                        .map(
+                          (v) => {
+                            'variant_item_id': v.variantItemId,
+                            'variant_name':
+                                v.variantItem?.variantName ?? 'Seçenek',
+                            'variant_value': v.variantItem?.name ?? '',
+                            'variant_price':
+                                double.tryParse('${v.variantItem?.price ?? 0}') ??
+                                    0,
+                          },
+                        )
+                        .toList(),
+                  },
+                )
+                .toList(),
           ),
           Row(
             children: [

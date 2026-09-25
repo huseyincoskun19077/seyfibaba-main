@@ -8,6 +8,7 @@ import DataIteration from "../Helpers/DataIteration";
 import InputCom from "../Helpers/InputCom";
 import LoaderStyleOne from "../Helpers/Loaders/LoaderStyleOne";
 import ProductView from "./ProductView";
+import ProductReturnPolicy from "./ProductReturnPolicy";
 import { buildProductPath } from "@/utils/url";
 import { displayTurkishLabel } from "@/utils/turkishDisplay";
 import Reviews from "./Reviews";
@@ -221,10 +222,10 @@ export default function SingleProductPage({ details }) {
 
   return (
     <>
-      <div key={safeProduct?.id || "product"} className="single-product-wrapper w-full ">
-        <div className="product-view-main-wrapper bg-white pt-[30px] w-full">
-          <div className="breadcrumb-wrapper w-full ">
-            <div className="container-x mx-auto">
+      <div key={safeProduct?.id || "product"} className="single-product-wrapper w-full bg-[#f4f7f9]">
+        <div className="product-view-main-wrapper w-full border-b border-[#04334a]/10 bg-gradient-to-b from-[#eef3f6] to-[#f4f7f9] pt-5 md:pt-8">
+          <div className="breadcrumb-wrapper w-full">
+            <div className="container-x mx-auto px-4">
               <BreadcrumbCom
                 paths={[
                   { name: ServeLangItem()?.home, path: "/" },
@@ -244,9 +245,8 @@ export default function SingleProductPage({ details }) {
               />
             </div>
           </div>
-          <div className="w-full bg-white pb-[60px]">
-            <div className="container-x mx-auto">
-              {/*key name spelling not correct (gellery)*/}
+          <div className="w-full pb-8 md:pb-12">
+            <div className="container-x mx-auto px-4">
               <ProductView
                 key={safeProduct?.id}
                 product={safeProduct}
@@ -260,107 +260,109 @@ export default function SingleProductPage({ details }) {
         </div>
 
         <div
-          className="product-des-wrapper w-full relative pb-[60px]"
+          className="product-des-wrapper relative w-full pb-10 md:pb-14"
           ref={reviewElement}
         >
-          <div className="tab-buttons w-full mb-10 mt-5 sm:mt-0">
-            <div className="container-x mx-auto">
-              <ul className="flex gap-6 sm:gap-12 overflow-x-auto overscroll-x-contain -mx-2 px-2">
+          <div className="tab-buttons mb-6 mt-2 w-full sm:mt-0">
+            <div className="container-x mx-auto px-4">
+              <ul className="-mx-2 flex gap-2 overflow-x-auto overscroll-x-contain px-2 sm:gap-3">
                 {safeVideoSlides.length > 0 && (
                     <li>
-                      <span
+                      <button
+                        type="button"
                         onClick={() => setTab("video")}
-                        className={`py-[15px]  space-x-3.5 sm:text-[15px] text-sm sm:flex border-b font-medium cursor-pointer ${
+                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-700 transition ${
                           tab === "video"
-                            ? "border-qyellow text-qblack "
-                            : "border-transparent text-qgray"
+                            ? "bg-[#04334a] text-white"
+                            : "bg-white text-[#04334a]/60 ring-1 ring-[#04334a]/10 hover:text-[#04334a]"
                         }`}
                       >
-                        <span>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="w-5 h-5"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"
-                            />
-                          </svg>
-                        </span>{" "}
-                        <span>Videolar</span>
-                      </span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth="1.5"
+                          stroke="currentColor"
+                          className="h-5 w-5"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"
+                          />
+                        </svg>
+                        Videolar
+                      </button>
                     </li>
                   )}
 
                 <li>
-                  <span
+                  <button
+                    type="button"
                     onClick={() => setTab("des")}
-                    className={`py-[15px] sm:text-[15px] text-sm sm:block border-b font-medium cursor-pointer ${
+                    className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-700 transition ${
                       tab === "des"
-                        ? "border-qyellow text-qblack "
-                        : "border-transparent text-qgray"
+                        ? "bg-[#04334a] text-white"
+                        : "bg-white text-[#04334a]/60 ring-1 ring-[#04334a]/10 hover:text-[#04334a]"
                     }`}
                   >
                     {ServeLangItem()?.Description}
-                  </span>
+                  </button>
                 </li>
                 <li>
-                  <span
+                  <button
+                    type="button"
                     onClick={() => setTab("review")}
-                    className={`py-[15px] sm:text-[15px] text-sm sm:block border-b font-medium cursor-pointer ${
+                    className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-700 transition ${
                       tab === "review"
-                        ? "border-qyellow text-qblack "
-                        : "border-transparent text-qgray"
+                        ? "bg-[#04334a] text-white"
+                        : "bg-white text-[#04334a]/60 ring-1 ring-[#04334a]/10 hover:text-[#04334a]"
                     }`}
                   >
                     {ServeLangItem()?.Reviews}
-                  </span>
+                  </button>
                 </li>
-                {/* Satıcı bilgisi gizlendi (#70) */}
                 <li>
-                  <span
+                  <button
+                    type="button"
                     onClick={() => setTab("shipping")}
-                    className={`py-[15px] sm:text-[15px] text-sm sm:block border-b font-medium cursor-pointer ${
+                    className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-700 transition ${
                       tab === "shipping"
-                        ? "border-qyellow text-qblack "
-                        : "border-transparent text-qgray"
+                        ? "bg-[#04334a] text-white"
+                        : "bg-white text-[#04334a]/60 ring-1 ring-[#04334a]/10 hover:text-[#04334a]"
                     }`}
                   >
                     Teslimat Bilgisi
-                  </span>
+                  </button>
                 </li>
                 <li>
-                  <span
+                  <button
+                    type="button"
                     onClick={() => setTab("return")}
-                    className={`py-[15px] sm:text-[15px] text-sm sm:block border-b font-medium cursor-pointer ${
+                    className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-700 transition ${
                       tab === "return"
-                        ? "border-qyellow text-qblack "
-                        : "border-transparent text-qgray"
+                        ? "bg-[#04334a] text-white"
+                        : "bg-white text-[#04334a]/60 ring-1 ring-[#04334a]/10 hover:text-[#04334a]"
                     }`}
                   >
                     İade Politikası
-                  </span>
+                  </button>
                 </li>
               </ul>
             </div>
-            <div className="w-full h-[1px] bg-[#E8E8E8] absolute left-0 sm:top-[50px] top-[36px] -z-10"></div>
           </div>
-          <div className="tab-contents w-full ">
-            <div className="container-x mx-auto">
+          <div className="tab-contents w-full">
+            <div className="container-x mx-auto px-4">
+              <div className="rounded-2xl border border-[#04334a]/10 bg-white p-5 shadow-sm sm:p-8">
               {tab === "video" && (
                 <>
-                  <div className="grid grid-cols-5 gap-10">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {safeVideoSlides.length > 0 &&
                       safeVideoSlides.map((item, i) => (
-                        <div key={i} className="item h-40">
-                          {/*<p  onClick={() => popupHandler(i)}>video {i}</p>*/}
-                          <div
+                        <div key={i} className="item h-36 sm:h-40">
+                          <button
+                            type="button"
                             onClick={() => popupHandler(i)}
-                            className="bg-red-500 text-white h-full flex justify-center items-center cursor-pointer"
+                            className="flex h-full w-full items-center justify-center rounded-xl bg-[#04334a] text-white transition hover:bg-[#032736]"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -368,7 +370,7 @@ export default function SingleProductPage({ details }) {
                               viewBox="0 0 24 24"
                               strokeWidth="1.5"
                               stroke="currentColor"
-                              className="w-20 h-20"
+                              className="h-14 w-14"
                             >
                               <path
                                 strokeLinecap="round"
@@ -381,7 +383,7 @@ export default function SingleProductPage({ details }) {
                                 d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z"
                               />
                             </svg>
-                          </div>
+                          </button>
                         </div>
                       ))}
                   </div>
@@ -396,11 +398,11 @@ export default function SingleProductPage({ details }) {
               )}
               {tab === "des" && (
                 <>
-                  <h6 className="text-[20px] font-bold text-qblack mb-5">
+                  <h6 className="mb-4 text-lg font-800 text-[#04334a]">
                     {ServeLangItem()?.Introduction}
                   </h6>
                   <div
-                    className="product-detail-des mb-10"
+                    className="product-detail-des mb-8 text-sm leading-7 text-[#04334a]/70"
                     dangerouslySetInnerHTML={{
                       __html: safeProduct?.long_description || "",
                     }}
@@ -409,20 +411,20 @@ export default function SingleProductPage({ details }) {
                     Array.isArray(safeDetails.specifications) &&
                     safeDetails.specifications.length > 0 && (
                       <div className="product-specifications">
-                        <h6 className="text-[20px] font-bold mb-4">
+                        <h6 className="mb-4 text-lg font-800 text-[#04334a]">
                           {ServeLangItem()?.Features} :
                         </h6>
-                        <ul className="">
+                        <ul className="divide-y divide-[#04334a]/8 rounded-xl border border-[#04334a]/10 overflow-hidden">
                           {safeDetails.specifications.map((item, i) => (
                             <li
                               key={i}
-                              className=" leading-9 flex space-x-3 items-center"
+                              className="flex items-center space-x-3 bg-[#F4F6F7]/50 px-4 py-3 leading-7"
                             >
-                              <span className="text-qblack font-medium capitalize">
+                              <span className="font-700 capitalize text-[#04334a]">
                                 {" "}
                                 {item?.key?.key}:
                               </span>
-                              <span className="font-normal text-qgray">
+                              <span className="font-normal text-[#04334a]/60">
                                 {item.specification}
                               </span>
                             </li>
@@ -434,10 +436,9 @@ export default function SingleProductPage({ details }) {
               )}
               {tab === "review" && (
                 <div data-aos="fade-up" className="w-full tab-content-item">
-                  <h6 className="text-[20px] font-bold text-qblack mb-2">
+                  <h6 className="mb-3 text-lg font-800 text-[#04334a]">
                     {ServeLangItem()?.Reviews}
                   </h6>
-                  {/* review-comments */}
                   <div className="w-full">
                     <Reviews
                       comments={
@@ -449,22 +450,21 @@ export default function SingleProductPage({ details }) {
                   </div>
                 </div>
               )}
-              {/* Satıcı bilgisi tab içeriği gizlendi (#70) */}
               {tab === "shipping" && (
                 <div data-aos="fade-up" className="w-full tab-content-item">
-                  <div className="prose max-w-none text-qgray text-sm leading-7">
-                    <h3 className="text-lg font-semibold text-qblack mb-4">Teslimat Bilgisi</h3>
+                  <div className="prose max-w-none text-sm leading-7 text-[#04334a]/65">
+                    <h3 className="mb-4 text-lg font-800 text-[#04334a]">Teslimat Bilgisi</h3>
                     {safeProduct?.delivery_info ? (
-                      <div className="mb-4 rounded-xl border border-[#ece3cf] bg-[#fffaf0] px-4 py-3 text-qblacktext">
-                        <p className="text-xs font-700 uppercase tracking-wide text-[#9a7b2f] mb-1">
+                      <div className="mb-4 rounded-xl border border-[#04334a]/10 bg-[#FFF8E8] px-4 py-3 text-[#04334a]">
+                        <p className="mb-1 text-xs font-800 uppercase tracking-wide text-[#04334a]/50">
                           Satıcı kargo süresi
                         </p>
-                        <p className="text-sm md:text-base font-600 leading-relaxed">
+                        <p className="text-sm font-600 leading-relaxed md:text-base">
                           {safeProduct.delivery_info}
                         </p>
                       </div>
                     ) : null}
-                    <ul className="list-disc pl-5 space-y-2">
+                    <ul className="list-disc space-y-2 pl-5">
                       {!safeProduct?.delivery_info ? (
                         <li>Siparişiniz onaylandıktan sonra 1-3 iş günü içinde kargoya verilir.</li>
                       ) : null}
@@ -477,27 +477,20 @@ export default function SingleProductPage({ details }) {
               )}
               {tab === "return" && (
                 <div data-aos="fade-up" className="w-full tab-content-item">
-                  <div className="prose max-w-none text-qgray text-sm leading-7">
-                    <h3 className="text-lg font-semibold text-qblack mb-4">İade Politikası</h3>
-                    <ul className="list-disc pl-5 space-y-2">
-                      <li>Ürünü teslim aldıktan sonra 14 gün içinde iade talebinde bulunabilirsiniz.</li>
-                      <li>İade edilecek ürün kullanılmamış ve orijinal ambalajında olmalıdır.</li>
-                      <li>İade talebi onaylandıktan sonra ürünü belirtilen adrese göndermeniz gerekmektedir.</li>
-                      <li>İade tutarı, ürün tarafımıza ulaştıktan sonra 3-5 iş günü içinde ödeme yönteminize iade edilir.</li>
-                    </ul>
-                  </div>
+                  <ProductReturnPolicy />
                 </div>
               )}
+              </div>
             </div>
           </div>
         </div>
-        <div className="w-full bg-[#fffaf0] py-[40px]">
-          <div className="container-x mx-auto">
-            <div className="rounded-[28px] border border-[#efe4c8] bg-white px-6 py-8 shadow-sm">
-              <h2 className="text-[24px] font-semibold text-qblack mb-3">
+        <div className="w-full bg-[#eef3f6] py-10">
+          <div className="container-x mx-auto px-4">
+            <div className="rounded-2xl border border-[#04334a]/10 bg-white px-5 py-7 shadow-sm sm:px-8 sm:py-8">
+              <h2 className="mb-2 text-xl font-800 text-[#04334a] sm:text-2xl">
                 İlgili Kategoriler ve Sayfalar
               </h2>
-              <p className="text-sm leading-7 text-qgray mb-6">
+              <p className="mb-5 text-sm leading-7 text-[#04334a]/55">
                 Bu ürünle ilgili kategori, marka ve mağaza sayfalarına geçerek
                 benzer berber ve kuaför ekipmanlarını daha hızlı keşfedebilirsiniz.
               </p>
@@ -505,7 +498,7 @@ export default function SingleProductPage({ details }) {
                 {safeProduct?.category?.name && productCategorySlug && (
                   <Link
                     href={`/products?category=${productCategorySlug}`}
-                    className="rounded-full border border-[#e5d7b8] bg-[#fff8e8] px-4 py-2 text-sm font-medium text-qblack transition hover:border-qyellow hover:text-qyellow"
+                    className="rounded-full border border-[#04334a]/12 bg-[#F4F6F7] px-4 py-2 text-sm font-600 text-[#04334a] transition hover:border-qyellow hover:bg-[#FFF8E8]"
                   >
                     {displayTurkishLabel(safeProduct.category.name)} kategorisindeki ürünler
                   </Link>
@@ -513,14 +506,14 @@ export default function SingleProductPage({ details }) {
                 {safeProduct?.brand?.name && productBrandSlug && (
                   <Link
                     href={`/products?brand=${productBrandSlug}`}
-                    className="rounded-full border border-[#e5d7b8] bg-[#fff8e8] px-4 py-2 text-sm font-medium text-qblack transition hover:border-qyellow hover:text-qyellow"
+                    className="rounded-full border border-[#04334a]/12 bg-[#F4F6F7] px-4 py-2 text-sm font-600 text-[#04334a] transition hover:border-qyellow hover:bg-[#FFF8E8]"
                   >
                     {safeProduct.brand.name} markasındaki ürünler
                   </Link>
                 )}
                 <Link
                   href="/products"
-                  className="rounded-full border border-[#e5d7b8] bg-[#fff8e8] px-4 py-2 text-sm font-medium text-qblack transition hover:border-qyellow hover:text-qyellow"
+                  className="rounded-full border border-[#04334a]/12 bg-[#F4F6F7] px-4 py-2 text-sm font-600 text-[#04334a] transition hover:border-qyellow hover:bg-[#FFF8E8]"
                 >
                   Tüm profesyonel ürünleri incele
                 </Link>
@@ -529,15 +522,15 @@ export default function SingleProductPage({ details }) {
           </div>
         </div>
         {relatedProducts.length > 0 && (
-          <div className="related-product w-full bg-white">
-            <div className="container-x mx-auto">
-              <div className="w-full py-[60px]">
-                <h2 className="sm:text-3xl text-xl font-600 text-qblacktext leading-none mb-[30px]">
+          <div className="related-product w-full bg-[#f4f7f9]">
+            <div className="container-x mx-auto px-4">
+              <div className="w-full py-10 md:py-14">
+                <h2 className="mb-6 text-xl font-800 leading-none text-[#04334a] sm:text-2xl">
                   {ServeLangItem()?.Related_Product}
                 </h2>
                 <div
                   data-aos="fade-up"
-                  className="grid grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 xl:gap-[30px] gap-2.5"
+                  className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4 xl:gap-[30px]"
                 >
                   <DataIteration
                     datas={relatedProducts}
@@ -644,7 +637,7 @@ export default function SingleProductPage({ details }) {
                 disabled={reportLoading}
                 onClick={() => productReport(safeProduct?.id)}
                 type="button"
-                className="black-btn flex h-[50px] items-center justify-center w-full"
+                className="flex h-[50px] w-full items-center justify-center rounded-xl bg-[#04334a] text-sm font-800 text-white transition hover:bg-[#032736] disabled:opacity-60"
               >
                 <span>{ServeLangItem()?.Submit_Report}</span>
                 {reportLoading && (

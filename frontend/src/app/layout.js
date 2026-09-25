@@ -10,6 +10,7 @@ import DefaultLayout from "@/components/Partials/DefaultLayout";
 import { Providers } from "@/redux/providers";
 import Toaster from "@/components/Helpers/Toaster";
 import localFont from "next/font/local";
+import Script from "next/script";
 import getSetupData from "@/api/setup";
 
 const inter = localFont({
@@ -26,12 +27,12 @@ const inter = localFont({
 export const metadata = {
   metadataBase: new URL(appConfig.APPLICATION_URL),
   title: {
-    default: "Berber ve Kuaför Malzemeleri | Seyfibaba",
-    template: "%s | Seyfibaba",
+    default: "Berber ve Kuaför Malzemeleri | Kuaför Tedarik",
+    template: "%s | Kuaför Tedarik",
   },
   description: "Berber malzemeleri, kuaför ekipmanları, berber koltuğu ve salon mobilyaları. Profesyoneller için en uygun fiyatlı alışveriş sitesi.",
-  authors: [{ name: "Seyfibaba", url: appConfig.APPLICATION_URL }],
-  publisher: "Seyfibaba",
+  authors: [{ name: "Kuaför Tedarik", url: appConfig.APPLICATION_URL }],
+  publisher: "Kuaför Tedarik",
   robots: {
     index: true,
     follow: true,
@@ -63,8 +64,8 @@ export const metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "Seyfibaba",
-    title: "Berber ve Kuaför Malzemeleri | Seyfibaba",
+    siteName: "Kuaför Tedarik",
+    title: "Berber ve Kuaför Malzemeleri | Kuaför Tedarik",
     description: "Berber malzemeleri, kuaför ekipmanları, berber koltuğu ve salon mobilyaları. Profesyoneller için en uygun fiyatlı alışveriş sitesi.",
     url: appConfig.APPLICATION_URL,
     locale: "tr_TR",
@@ -73,14 +74,14 @@ export const metadata = {
         url: appConfig.BASE_URL + "uploads/website-images/logo-2025-12-18-04-53-36-7704.png",
         width: 1200,
         height: 630,
-        alt: "Seyfibaba Pazaryeri",
+        alt: "Kuaför Tedarik Pazaryeri",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
     site: "@seyfibaba",
-    title: "Berber ve Kuaför Malzemeleri | Seyfibaba",
+    title: "Berber ve Kuaför Malzemeleri | Kuaför Tedarik",
     description: "Berber malzemeleri, kuaför ekipmanları, berber koltuğu ve salon mobilyaları. Profesyoneller için en uygun fiyatlı alışveriş sitesi.",
     images: [appConfig.BASE_URL + "uploads/website-images/logo-2025-12-18-04-53-36-7704.png"],
   },
@@ -101,41 +102,39 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="tr" translate="no" className="notranslate">
       <head>
-        <link rel="preconnect" href="https://admin.seyfibaba.com/" />
-        <link rel="dns-prefetch" href="https://admin.seyfibaba.com/" />
-        {useGtag ? (
-          <>
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('consent', 'default', {
-                    ad_storage: 'denied',
-                    ad_user_data: 'denied',
-                    ad_personalization: 'denied',
-                    analytics_storage: 'denied',
-                    wait_for_update: 500
-                  });
-                `,
-              }}
-            />
-            <script
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${gtagId}`}
-            />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  gtag('js', new Date());
-                  gtag('config', '${gtagId}');
-                `,
-              }}
-            />
-          </>
-        ) : null}
+        <link rel="preconnect" href="https://admin.kuafortedarik.com/" />
+        <link rel="dns-prefetch" href="https://admin.kuafortedarik.com/" />
       </head>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning={true}>
+        {useGtag ? (
+          <>
+            <Script id="gtag-consent-default" strategy="beforeInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('consent', 'default', {
+                  ad_storage: 'denied',
+                  ad_user_data: 'denied',
+                  ad_personalization: 'denied',
+                  analytics_storage: 'denied',
+                  wait_for_update: 500
+                });
+              `}
+            </Script>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gtagId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-config" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gtagId}');
+              `}
+            </Script>
+          </>
+        ) : null}
         <NextSnakeLoader />
         <Toaster />
         <Providers>

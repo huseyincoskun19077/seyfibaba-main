@@ -21,6 +21,7 @@ import 'component/description_component.dart';
 import 'component/delivery_info_component.dart';
 import 'component/product_details_component.dart';
 import 'component/product_header_component.dart';
+import 'component/product_return_policy_component.dart';
 import 'component/rating_list_component.dart';
 import 'component/related_products_list.dart';
 import 'component/variant_bottom_sheet.dart';
@@ -171,6 +172,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 textList: [
                   Language.description.capitalizeByWord(),
                   'Teslimat',
+                  'İade',
                   '${Language.reviews.capitalizeByWord()} (${productDetailsModel.productReviews.length})',
                 ],
                 initialLabelIndex: 0,
@@ -204,6 +206,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         deliveryInfo: productDetailsModel.product.deliveryInfo,
       );
     } else if (selectedIndex == 2) {
+      return const ProductReturnPolicyComponent();
+    } else if (selectedIndex == 3) {
       return ReviewListComponent(productDetailsModel.productReviews);
     }
     return const SizedBox();

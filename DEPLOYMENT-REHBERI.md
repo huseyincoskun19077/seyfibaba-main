@@ -2,7 +2,7 @@
 
 **Son Güncelleme:** 27 Ağustos 2026  
 **Sunucu:** 45.138.183.101  
-**Domain:** seyfibaba.com
+**Domain:** kuafortedarik.com
 
 ---
 
@@ -342,15 +342,15 @@ echo "PM2:     $(pm2 list 2>&1 | grep sey-frontend | awk '{print $18}')"
 
 ```bash
 # Ana site
-curl -sI https://seyfibaba.com | head -1
+curl -sI https://kuafortedarik.com | head -1
 # Beklenen: HTTP/2 200
 
 # Admin panel
-curl -sI https://admin.seyfibaba.com | head -1
+curl -sI https://admin.kuafortedarik.com | head -1
 # Beklenen: HTTP/2 302
 
 # API
-curl -s https://seyfibaba.com/api/website-setup | head -c 50
+curl -s https://kuafortedarik.com/api/website-setup | head -c 50
 # Beklenen: JSON verisi
 ```
 
@@ -571,8 +571,8 @@ pm2 restart sey-frontend
 - [ ] `nginx -t` başarılı
 - [ ] `systemctl status mysql nginx php8.3-fpm` aktif
 - [ ] `pm2 list` online
-- [ ] https://seyfibaba.com erişilebilir (200)
-- [ ] https://admin.seyfibaba.com erişilebilir (302→login)
+- [ ] https://kuafortedarik.com erişilebilir (200)
+- [ ] https://admin.kuafortedarik.com erişilebilir (302→login)
 - [ ] API çalışıyor (JSON dönüyor)
 - [ ] Hata logları temiz
 

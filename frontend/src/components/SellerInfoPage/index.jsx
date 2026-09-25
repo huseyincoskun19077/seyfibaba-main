@@ -5,7 +5,7 @@ import { sellerInfoPageList, sellerInfoPages } from "@/data/sellerInfoPages";
 
 const WHATSAPP_DIGITS = "908503035073";
 const WHATSAPP_TEXT =
-  "Merhaba, Seyfibaba'da satıcı olmak istiyorum. Bilgi almak istiyorum.";
+  "Merhaba, Kuaför Tedarik'te satıcı olmak istiyorum. Bilgi almak istiyorum.";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_DIGITS}?text=${encodeURIComponent(WHATSAPP_TEXT)}`;
 
 function CtaRow() {

@@ -1,5 +1,4 @@
-import CheckProductIsExistsInFlashSale from "@/components/Shared/CheckProductIsExistsInFlashSale";
-import CurrencyConvert from "@/components/Shared/CurrencyConvert";
+import PriceDisplay from "@/components/Shared/PriceDisplay";
 import Image from "next/image";
 import Link from "next/link";
 import { buildProductPath } from "@/utils/url";
@@ -9,7 +8,7 @@ import { getProductImageProps } from "@/utils/productImage";
 
 const PRODUCT_IMAGE_FALLBACK = "/assets/images/server-error.png";
 
-function RowV2({ styleType, datas, offerPrice, price, isProductInFlashSale }) {
+function RowV2({ styleType, datas, offerPrice, price }) {
   const bfCacheKey = useBfCacheRemountKey();
   const { src: productImage, unoptimized: productImageUnoptimized } = getProductImageProps(datas?.image, PRODUCT_IMAGE_FALLBACK);
   const hasRealDiscount = isEffectiveOfferPrice(offerPrice, price);
@@ -37,43 +36,12 @@ function RowV2({ styleType, datas, offerPrice, price, isProductInFlashSale }) {
               </h3>
             </Link>
 
-            <p className="price">
-              <span
-                suppressHydrationWarning
-                className={`main-price  font-600 text-[18px] ${
-                  hasRealDiscount ? "line-through text-qgray" : "text-qred"
-                }`}
-              >
-                {hasRealDiscount ? (
-                  <span>
-                    <CurrencyConvert price={price} />
-                  </span>
-                ) : (
-                  <>
-                    {isProductInFlashSale && (
-                      <span className="line-through text-qgray font-500 text-base mr-2">
-                        <CurrencyConvert price={price} />
-                      </span>
-                    )}
-                    <CheckProductIsExistsInFlashSale
-                      id={datas.id}
-                      price={price}
-                    />
-                  </>
-                )}
-              </span>
-              {hasRealDiscount && (
-                <span
-                  suppressHydrationWarning
-                  className="offer-price text-qred font-600 text-[18px] ml-2"
-                >
-                  <CheckProductIsExistsInFlashSale
-                    id={datas.id}
-                    price={offerPrice}
-                  />
-                </span>
-              )}
-            </p>
+            <PriceDisplay
+              price={price}
+              offerPrice={hasRealDiscount ? offerPrice : null}
+              size="md"
+              layout="stack"
+            />
           </div>
         </div>
       </div>

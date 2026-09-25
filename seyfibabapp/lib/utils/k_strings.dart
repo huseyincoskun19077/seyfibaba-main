@@ -1,10 +1,11 @@
 class KStrings {
-  static const String appName = "Seyfibaba";
+  static const String appName = "Kuaför Tedarik";
   static const String appVersion = "6.2.0";
-  static const String splashTitle = "Türkiye'nin Kuaför Pazaryeri";
+  static const String splashTitle = "Kuaför ve Güzellik Salonları İçin Online Alışveriş Platformu";
 
   static const String cachedUserResponseKey = "cachhUserResponse";
-  static const String cachOnboardingKey = "cachOnboardingKey";
+  // v2: yeni onboarding görselleri — bir kez daha göster, sonra yine cache
+  static const String cachOnboardingKey = "cachOnboardingKey_v2";
   static const String cachedWebSettingKey = "cachedWebSettingKey";
   static const String cacheCouponResponse = "couponResponseKey";
   static const String cacheCartCalculation = "cartCalculationKey";

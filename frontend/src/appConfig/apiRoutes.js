@@ -87,8 +87,10 @@ function serverApiOrigin() {
   }
   try {
     const host = new URL(appConfig.BASE_URL).hostname.replace(/^www\./, "");
-    if (host.endsWith("seyfibaba.com")) {
-      return "https://admin.seyfibaba.com/";
+    if (host.endsWith("kuafortedarik.com") || host.endsWith("seyfibaba.com")) {
+      return host.endsWith("seyfibaba.com")
+        ? "https://admin.seyfibaba.com/"
+        : "https://admin.kuafortedarik.com/";
     }
   } catch {
     /* use public */
@@ -226,6 +228,7 @@ const apiRoutes = {
   legalDocuments: combinedUrl(LEGAL_DOCUMENTS),
   legalDocumentShow: combinedUrl(LEGAL_DOCUMENTS),
   legalConsents: combinedUrl(LEGAL_CONSENTS),
+  checkoutLegalContracts: combinedUrl("checkout/legal-contracts"),
 
   // social
   googleGetLoginUrl: combinedUrl(GOOGLE_LOGIN),

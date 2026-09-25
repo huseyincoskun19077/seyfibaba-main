@@ -232,7 +232,7 @@ class _SalonCrmWebsiteScreenState extends State<SalonCrmWebsiteScreen> {
   Future<void> _shareUrl() async {
     final url = _savedUrl ?? _previewUrl;
     if (url == null || url.isEmpty) return;
-    await Share.share('${_nameCtrl.text.trim()} — Seyfibaba salon sitesi\n$url');
+    await Share.share('${_nameCtrl.text.trim()} — Kuaför Tedarik salon sitesi\n$url');
   }
 
   Future<void> _openUrl() async {
@@ -276,7 +276,7 @@ class _SalonCrmWebsiteScreenState extends State<SalonCrmWebsiteScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
                   children: [
                     Text(
-                      'Müşterilerin için seyfibaba.com üzerinde mini bir salon sitesi. '
+                      'Müşterilerin için kuafortedarik.com üzerinde mini bir salon sitesi. '
                       'Mevcut CRM randevu akışına yönlendirir; CRM’in yerine geçmez.',
                       style: SalonCrmTheme.body,
                     ),

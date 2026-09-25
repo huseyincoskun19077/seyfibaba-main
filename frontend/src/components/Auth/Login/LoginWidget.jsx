@@ -1,8 +1,7 @@
 // React and Next.js imports
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import Image from "next/image";
 
 // Third-party library imports
@@ -25,27 +24,8 @@ import { AUTH_STORAGE_SYNC_EVENT } from "@/redux/api/apiSlice";
 import { safePostLoginRedirect, setAccessTokenCookie } from "@/utils/auth";
 import { useLazyGetWishlistItemsApiQuery } from "@/redux/features/product/apiSlice";
 import auth from "@/utils/auth";
-import appConfig from "@/appConfig";
 import redirectToSellerPanel from "@/utils/sellerSsoRedirect";
 import SocialAuthButtons from "@/components/Auth/SocialAuthButtons";
-
-// login line shapre
-const LoginShape = () => {
-  return (
-    <svg
-      width="172"
-      height="29"
-      viewBox="0 0 172 29"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M1 5.08742C17.6667 19.0972 30.5 31.1305 62.5 27.2693C110.617 21.4634 150 -10.09 171 5.08727"
-        stroke="#FCBF49"
-      />
-    </svg>
-  );
-};
 
 // checked svg
 const CheckedSvg = () => {
@@ -305,34 +285,30 @@ function LoginWidget({
 
   return (
     <div className="w-full">
-      {/* Header Section */}
-      <div className="title-area flex flex-col justify-center items-center relative text-center mb-7">
-        <h2 className="text-[34px] font-bold leading-[74px] text-qblack">
-          {isSellerLogin ? "Satıcı Girişi" : ServeLangItem()?.Log_In}
-        </h2>
-        <div className="shape -mt-6">
-          <LoginShape />
-        </div>
+      <div className="mb-6 text-center">
+        <p className="text-sm text-[#04334a]/65">
+          {isSellerLogin
+            ? "Telefon numaranızın son 10 hanesi veya e-posta ile giriş yapın."
+            : "E-posta veya telefon ile hesabınıza giriş yapın."}
+        </p>
       </div>
 
-      {/* Form Section */}
       <div className="input-area">
-        {/* Login Type Toggle */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="flex items-center bg-gray-100 rounded-full p-1">
+        <div className="mb-6 flex items-center justify-center">
+          <div className="flex items-center rounded-full bg-[#F4F6F7] p-1">
             <button
               type="button"
               onClick={() => {
                 setLoginType("email");
                 setFormData((prev) => ({ ...prev, email: prev.email || "" }));
               }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                loginType === 'email' 
-                  ? 'bg-white text-blue-600 shadow-md' 
-                  : 'text-gray-500 hover:text-gray-700'
+              className={`rounded-full px-4 py-2 text-sm font-600 transition-all duration-300 ${
+                loginType === "email"
+                  ? "bg-[#04334a] text-white shadow-sm"
+                  : "text-[#04334a]/55 hover:text-[#04334a]"
               }`}
             >
-              <svg className="w-4 h-4 inline-block mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="mr-1.5 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               E-posta
@@ -340,19 +316,19 @@ function LoginWidget({
             <button
               type="button"
               onClick={() => {
-                setLoginType('phone');
+                setLoginType("phone");
                 setFormData((prev) => ({
                   ...prev,
                   phone: prev.phone?.startsWith("+90") ? prev.phone : "+90",
                 }));
               }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                loginType === 'phone' 
-                  ? 'bg-white text-blue-600 shadow-md' 
-                  : 'text-gray-500 hover:text-gray-700'
+              className={`rounded-full px-4 py-2 text-sm font-600 transition-all duration-300 ${
+                loginType === "phone"
+                  ? "bg-[#04334a] text-white shadow-sm"
+                  : "text-[#04334a]/55 hover:text-[#04334a]"
               }`}
             >
-              <svg className="w-4 h-4 inline-block mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="mr-1.5 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
               Telefon
@@ -360,7 +336,6 @@ function LoginWidget({
           </div>
         </div>
 
-        {/* Email Input Field */}
         <div className="input-item mb-5">
           {loginType === "email" ? (
             <InputCom
@@ -368,24 +343,25 @@ function LoginWidget({
               label="E-posta Adresi*"
               name="email"
               type="text"
-              inputClasses="h-[50px]"
+              inputClasses="h-[50px] bg-[#F4F6F7] text-[#04334a]"
+              labelClasses="font-700 text-[#04334a] text-[13px]"
               inputHandler={handleInputChange}
               value={formData.email}
             />
           ) : (
-            <div className="input-com w-full h-full">
-              <label className="input-label capitalize block mb-2 text-qgray text-[13px] font-normal">
+            <div className="input-com h-full w-full">
+              <label className="input-label mb-2 block text-[13px] font-700 capitalize text-[#04334a]">
                 Telefon Numarası*
               </label>
-              <div className="h-[50px] rounded-md bg-white border border-qgray-border flex items-center overflow-hidden">
-                <div className="h-full px-3 flex items-center gap-2 border-r border-qgray-border bg-[#f7f7f7]">
+              <div className="flex h-[50px] items-center overflow-hidden rounded-md bg-[#F4F6F7] focus-within:ring-2 focus-within:ring-[#FCBF49]/60">
+                <div className="flex h-full items-center gap-2 border-r border-[#04334a]/10 px-3">
                   <Image
                     width={18}
                     height={12}
                     src="/assets/images/countries/TR.svg"
                     alt="TR"
                   />
-                  <span className="text-qblack text-sm font-medium">+90</span>
+                  <span className="text-sm font-medium text-[#04334a]">+90</span>
                 </div>
                 <input
                   name="phone"
@@ -399,63 +375,59 @@ function LoginWidget({
                       phone: `+90${String(e.target.value || "").replace(/\D/g, "").slice(0, 10)}`,
                     }))
                   }
-                  className="flex-1 h-full bg-transparent text-qblack placeholder:text-qgray px-4 text-sm focus:outline-none"
+                  className="h-full flex-1 bg-transparent px-4 text-sm text-[#04334a] placeholder:text-qgray focus:outline-none"
                 />
               </div>
             </div>
           )}
         </div>
 
-        {/* Password Input Field */}
         <div className="input-item mb-5">
           <InputCom
             placeholder="* * * * * *"
             label={ServeLangItem()?.Password + "*"}
             name="password"
             type="password"
-            inputClasses="h-[50px]"
+            inputClasses="h-[50px] bg-[#F4F6F7] text-[#04334a]"
+            labelClasses="font-700 text-[#04334a] text-[13px]"
             inputHandler={handleInputChange}
             value={formData.password}
             onKeyDown={(e) => e.key === "Enter" && doLogin()}
           />
         </div>
 
-        {/* Remember Me and Forgot Password Section */}
-        <div className="forgot-password-area flex justify-between items-center mb-7">
-          {/* Remember Me Checkbox */}
-          <div className="remember-checkbox flex items-center space-x-2.5 rtl:space-x-reverse cursor-pointer select-none">
+        <div className="forgot-password-area mb-7 flex items-center justify-between">
+          <div className="remember-checkbox flex cursor-pointer select-none items-center space-x-2.5 rtl:space-x-reverse">
             <button
               onClick={rememberMe}
               type="button"
-              className="w-5 h-5 text-qblack flex justify-center items-center border border-light-gray cursor-pointer"
+              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded border border-[#04334a]/20 text-[#04334a]"
             >
               {checked && <CheckedSvg />}
             </button>
-            <span onClick={rememberMe} className="text-base text-black">
+            <span onClick={rememberMe} className="text-sm text-[#04334a]">
               {ServeLangItem()?.Remember_Me}
             </span>
           </div>
 
-          {/* Forgot Password Link */}
           <Link href="/forgot-password">
-            <span className="text-base text-qyellow cursor-pointer">
+            <span className="cursor-pointer text-sm font-600 text-[#04334a] underline underline-offset-2 hover:text-qyellow">
               {ServeLangItem()?.Forgot_password}?
             </span>
           </Link>
         </div>
 
-        {/* Login Button Section */}
         <div className="signin-area mb-3.5">
           <div className="flex justify-center">
             <button
               onClick={doLogin}
               type="button"
               disabled={isLoginLoading}
-              className="black-btn mb-6 text-sm text-white w-full h-[50px] font-semibold flex justify-center bg-purple items-center"
+              className="mb-6 flex h-[50px] w-full items-center justify-center rounded-lg bg-[#04334a] text-sm font-800 text-white transition hover:bg-[#032736] disabled:opacity-70"
             >
-              <span>{ServeLangItem()?.Login}</span>
+              <span>{isSellerLogin ? "Panele Giriş Yap" : ServeLangItem()?.Login}</span>
               {isLoginLoading && (
-                <span className="w-5 " style={{ transform: "scale(0.3)" }}>
+                <span className="w-5" style={{ transform: "scale(0.3)" }}>
                   <LoaderStyleOne />
                 </span>
               )}
@@ -465,46 +437,42 @@ function LoginWidget({
 
         {!isSellerLogin ? <SocialAuthButtons /> : null}
 
-        {/* Sign Up Section */}
         {isSellerLogin ? (
-          <div className="signup-area flex flex-col items-center text-center">
-            <p className="text-base text-qgraytwo font-normal mb-2">
+          <div className="signup-area flex flex-col items-center gap-2 pt-1 text-center">
+            <p className="text-sm font-normal text-[#04334a]/55">
               Henüz satıcı değil misiniz?
             </p>
-            <Link href="/satici-kayit">
-              <span className="text-qblack cursor-pointer capitalize font-medium">
-                Satıcı ol
-              </span>
+            <Link
+              href="/satici-kayit"
+              className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-qyellow text-sm font-800 text-[#04334a] hover:brightness-95"
+            >
+              Satıcı başvurusu yap
             </Link>
-            <Link href="/login" className="mt-3">
-              <span className="text-qyellow cursor-pointer text-sm">
-                Müşteri girişi
-              </span>
+            <Link
+              href="/login"
+              className="mt-1 text-sm font-600 text-[#04334a]/70 underline underline-offset-2 hover:text-[#04334a]"
+            >
+              Müşteri girişi
             </Link>
           </div>
         ) : (
           <div className="signup-area flex flex-col items-center text-center">
-            <p className="text-base text-qgraytwo font-normal">
-              {ServeLangItem()?.Dontt_have_an_account} ?
+            <p className="text-sm font-normal text-[#04334a]/60">
+              {ServeLangItem()?.Dontt_have_an_account}?{" "}
               {redirect ? (
                 <Link href="/signup">
-                  <span className="ml-2 text-qblack cursor-pointer capitalize">
+                  <span className="cursor-pointer font-700 capitalize text-[#04334a] hover:text-qyellow">
                     {ServeLangItem()?.sign_up_free}
                   </span>
                 </Link>
               ) : (
                 <button onClick={loginActionPopup} type="button">
-                  <span className="ml-2 text-qblack cursor-pointer capitalize">
+                  <span className="cursor-pointer font-700 capitalize text-[#04334a] hover:text-qyellow">
                     {ServeLangItem()?.sign_up_free}
                   </span>
                 </button>
               )}
             </p>
-            <Link href="/satici-kayit" className="mt-3">
-              <span className="text-qyellow cursor-pointer text-sm font-600">
-                Satıcı ol
-              </span>
-            </Link>
           </div>
         )}
       </div>

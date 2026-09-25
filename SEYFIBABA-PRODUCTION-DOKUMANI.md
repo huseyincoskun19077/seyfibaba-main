@@ -5,7 +5,7 @@
 
 **Son Güncelleme:** 27 Ağustos 2026  
 **Durum:** ✅ Production Modunda Aktif  
-**Erişim:** https://seyfibaba.com
+**Erişim:** https://kuafortedarik.com
 
 ---
 
@@ -41,10 +41,10 @@ Seyfibaba, Türkiye odaklı bir e-ticaret pazaryeri platformudur. CodeCanyon Sho
 ### Erişim Noktaları
 | Domain | Amaç | Port |
 |--------|------|------|
-| `seyfibaba.com` | Ana mağaza | 443 (HTTPS) |
-| `www.seyfibaba.com` | WWW variantı | 443 (HTTPS) |
-| `admin.seyfibaba.com` | Admin paneli | 443 (HTTPS) |
-| `ikinciel.seyfibaba.com` | İkinci el ürünler | 443 (HTTPS) |
+| `kuafortedarik.com` | Ana mağaza | 443 (HTTPS) |
+| `www.kuafortedarik.com` | WWW variantı | 443 (HTTPS) |
+| `admin.kuafortedarik.com` | Admin paneli | 443 (HTTPS) |
+| `ikinciel.kuafortedarik.com` | İkinci el ürünler | 443 (HTTPS) |
 
 ### Mimari Özeti
 ```
@@ -216,10 +216,10 @@ pm2 save     # Mevcut process listesini kaydet
 ### Cloudflare DNS Kayıtları
 | Domain | Tip | Hedef | Proxy |
 |--------|-----|-------|-------|
-| seyfibaba.com | A | 45.138.183.101 | ✅ Turuncu bulut |
-| www.seyfibaba.com | CNAME | seyfibaba.com | ✅ Turuncu bulut |
-| admin.seyfibaba.com | A | 45.138.183.101 | ✅ Turuncu bulut |
-| ikinciel.seyfibaba.com | A | 45.138.183.101 | ✅ Turuncu bulut |
+| kuafortedarik.com | A | 45.138.183.101 | ✅ Turuncu bulut |
+| www.kuafortedarik.com | CNAME | kuafortedarik.com | ✅ Turuncu bulut |
+| admin.kuafortedarik.com | A | 45.138.183.101 | ✅ Turuncu bulut |
+| ikinciel.kuafortedarik.com | A | 45.138.183.101 | ✅ Turuncu bulut |
 
 ### Cloudflare Ayarları
 - **SSL Modu:** Full (Origin)
@@ -236,21 +236,21 @@ Nginx, Cloudflare IP aralıklarından gelen isteklerde `CF-Connecting-IP` başl�
 
 ### Let's Encrypt Sertifikası
 ```
-Sertifika Adı:    seyfibaba.com
+Sertifika Adı:    kuafortedarik.com
 Tür:              ECDSA
 Bitiş Tarihi:     25 Kasım 2026 (89 gün kaldı)
 Otomatik Yenileme: Evet (certbot timer)
 ```
 
 ### Kapsanan Domainler
-- seyfibaba.com
-- www.seyfibaba.com
-- admin.seyfibaba.com
-- ikinciel.seyfibaba.com
+- kuafortedarik.com
+- www.kuafortedarik.com
+- admin.kuafortedarik.com
+- ikinciel.kuafortedarik.com
 
 ### SSL Dosya Konumları
 ```
-/etc/letsencrypt/live/seyfibaba.com/
+/etc/letsencrypt/live/kuafortedarik.com/
 ├── fullchain.pem    # Sertifika zinciri
 ├── privkey.pem      # Özel anahtar
 ├── chain.pem        # CA sertifikası
@@ -286,7 +286,7 @@ upstream frontend {
 
 ### Domain Bazlı Yönlendirme
 
-#### seyfibaba.com / www.seyfibaba.com
+#### kuafortedarik.com / www.kuafortedarik.com
 ```
 /api/*        → @php_fpm (Laravel backend)
 /admin/*      → @php_fpm (Laravel backend)
@@ -297,12 +297,12 @@ upstream frontend {
 /*            → http://frontend (Next.js)
 ```
 
-#### admin.seyfibaba.com
+#### admin.kuafortedarik.com
 ```
 /*            → Laravel backend (try_files + PHP-FPM)
 ```
 
-#### ikinciel.seyfibaba.com
+#### ikinciel.kuafortedarik.com
 ```
 /*            → http://frontend (Next.js)
 /uploads/*    → /opt/seyfibaba-main/backend/public/uploads/
@@ -431,7 +431,7 @@ Dosya: /opt/seyfibaba-main/backend/.env
 APP_NAME=Seyfibaba
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://seyfibaba.com
+APP_URL=https://kuafortedarik.com
 
 # Veritabanı
 DB_CONNECTION=mysql
@@ -524,16 +524,16 @@ Dosya: /opt/seyfibaba-main/frontend/.env.local
 #### Ayarlar
 ```env
 # Backend API URL
-NEXT_PUBLIC_BASE_URL=https://admin.seyfibaba.com
+NEXT_PUBLIC_BASE_URL=https://admin.kuafortedarik.com
 
 # Application URL
-NEXT_APPLICATION_URL=https://seyfibaba.com
+NEXT_APPLICATION_URL=https://kuafortedarik.com
 
 # İkinci el subdomain
 NEXT_PUBLIC_SECOND_HAND_SUBDOMAIN=1
-NEXT_PUBLIC_SECOND_HAND_ORIGIN=https://ikinciel.seyfibaba.com
-NEXT_PUBLIC_MARKETPLACE_ORIGIN=https://seyfibaba.com
-NEXT_PUBLIC_COOKIE_DOMAIN=.seyfibaba.com
+NEXT_PUBLIC_SECOND_HAND_ORIGIN=https://ikinciel.kuafortedarik.com
+NEXT_PUBLIC_MARKETPLACE_ORIGIN=https://kuafortedarik.com
+NEXT_PUBLIC_COOKIE_DOMAIN=.kuafortedarik.com
 
 # PWA (devre dışı)
 NEXT_PWA_STATUS=0
@@ -549,7 +549,7 @@ Dosya: /opt/seyfibaba-main/frontend/server.js
 ```
 
 - `http-proxy` ile API isteklerini Laravel backend'ine proxy'ler
-- `/api/*` isteklerini `admin.seyfibaba.com:443` adresine yönlendirir
+- `/api/*` isteklerini `admin.kuafortedarik.com:443` adresine yönlendirir
 - Port 3001'de dinler
 
 ### PM2 Yapılandırması
@@ -567,7 +567,7 @@ module.exports = {
     env: {
       NODE_ENV: 'production',
       PORT: 3001,
-      BACKEND_PROXY_HOST: 'admin.seyfibaba.com',
+      BACKEND_PROXY_HOST: 'admin.kuafortedarik.com',
     },
   }],
 };
@@ -891,7 +891,7 @@ pm2 restart sey-frontend
 cd /opt/seyfibaba-main/backend && COMPOSER_ALLOW_SUPERUSER=1 composer audit
 
 # SSL kontrol
-openssl s_client -connect seyfibaba.com:443 -servername seyfibaba.com
+openssl s_client -connect kuafortedarik.com:443 -servername kuafortedarik.com
 
 # Nginx yapılandırma testi
 nginx -t
@@ -1050,7 +1050,7 @@ pm2 monit
 | PHP-FPM config | `/etc/php/8.3/fpm/pool.d/seyfibaba.conf` |
 | PM2 ecosystem | `/opt/seyfibaba-main/frontend/ecosystem.config.cjs` |
 | MySQL şifresi | `/opt/seyfibaba-main/.mysql-root-password` |
-| SSL sertifikası | `/etc/letsencrypt/live/seyfibaba.com/` |
+| SSL sertifikası | `/etc/letsencrypt/live/kuafortedarik.com/` |
 | Laravel logları | `/opt/seyfibaba-main/backend/storage/logs/` |
 | Nginx logları | `/var/log/nginx/` |
 

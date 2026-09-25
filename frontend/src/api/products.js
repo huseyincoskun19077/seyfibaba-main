@@ -1,7 +1,15 @@
 import apiRoutes from "@/appConfig/apiRoutes";
-import { notFound } from "next/navigation";
 
 const PUBLIC_CONTENT_REVALIDATE = 60;
+
+const emptyProductsPayload = () => ({
+  products: { data: [], total: 0, next_page_url: null },
+  categories: [],
+  brands: [],
+  activeVariants: [],
+  shopPage: { filter_price_range: 100000 },
+  seoSetting: null,
+});
 
 const appendListParam = (params, key, value) => {
   if (!value) return;
@@ -51,11 +59,9 @@ const buildQueryFromObject = (query = {}) => {
 
 /**
  * Function to get products
- * @param {string} type
+ * @param {string|object} type
  * @param {string} slug
  * @param {string} searchWithCategorySlug
- * If type is searchWithCategory, then searchWithCategorySlug is required
- * ex: `?search=hello&categories[]=electronics`
  * @returns {object}
  */
 export default async function products(
@@ -109,15 +115,15 @@ export default async function products(
       },
     });
   } catch {
-    notFound();
+    return emptyProductsPayload();
   }
   if (!res.ok) {
-    notFound();
+    return emptyProductsPayload();
   }
   try {
     const data = await res.json();
-    return data;
+    return data || emptyProductsPayload();
   } catch {
-    notFound();
+    return emptyProductsPayload();
   }
 }

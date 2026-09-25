@@ -6,6 +6,7 @@
 :root {
   --primary-color: #ffbb38;
   --secondary-color: #222222;
+  --header-ink: #04334a;
 }
 
 *,
@@ -198,8 +199,8 @@ font {
   opacity: 100%;
 }
 .container-x {
-  @apply md:px-6 px-2 w-full;
-  max-width: 1216px !important;
+  @apply w-full px-3 sm:px-4 md:px-5 xl:px-6;
+  max-width: 1520px !important;
 }
 .animate-right-dir {
   animation: rightDir 1s infinite;
@@ -245,6 +246,35 @@ font {
 .overflow-style-none {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
+}
+
+/* Anasayfa stories: sola doğru yavaş sonsuz kayma */
+@keyframes sb-stories-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+.sb-stories-marquee {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  width: max-content;
+  animation: sb-stories-marquee 55s linear infinite;
+  will-change: transform;
+}
+.sb-stories-marquee > * {
+  flex: 0 0 auto;
+}
+.sb-stories-marquee.is-paused {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-stories-marquee {
+    animation: none;
+  }
 }
 .paypal-buttons:last-child {
   display: none !important;
@@ -431,13 +461,16 @@ font {
   border-color: rgb(var(--primary-color));
 }
 .nav-widget-wrapper .nav .nav-wrapper li {
-  @apply text-qblacktext;
+  color: var(--header-ink);
 }
 .quomodo-shop-nav-bar.nav-widget-wrapper {
-  background: rgb(var(--primary-color));
+  background: #fff;
+  border-bottom: 1px solid rgba(4, 51, 74, 0.1);
+  box-shadow: 0 4px 18px rgba(4, 51, 74, 0.06);
 }
 .nav-widget-wrapper .become-seller-btn {
-  @apply text-white bg-qblack;
+  color: #fff;
+  background: #04334a;
 }
 
 .nav-widget-wrapper .category-dropdown .categories-list .category-item {
@@ -561,7 +594,15 @@ font {
 
 /* ======mega menu====== */
 .nav-widget-wrapper .nav ul.nav-wrapper > li {
-  padding: 20px 0;
+  padding: 12px 0;
+}
+.nav-widget-wrapper,
+.nav-widget-wrapper .nav,
+.nav-widget-wrapper .nav ul.nav-wrapper {
+  overflow: visible !important;
+}
+.header-section-wrapper {
+  overflow: visible;
 }
 .nav-widget-wrapper .nav ul li .sub-menu {
   transition: all 0.5s ease-in-out;
@@ -951,4 +992,58 @@ font {
   .home-slider .swiper-pagination {
     bottom: 6px !important;
   }
+}
+
+/* ===== Seyfibaba tek tip fiyat (sb-price) =====
+   -₺62,69
+   ₺1.518,00  (üstü çizili)
+   ₺1.455,31  (güncel)
+*/
+.sb-price {
+  display: inline-flex;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.sb-price--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+}
+.sb-price--stack.items-end,
+.sb-price--stack.text-right {
+  align-items: flex-end;
+}
+.sb-price--inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+}
+.sb-price__savings {
+  color: #e11d48;
+  font-weight: 700;
+}
+.sb-price__list {
+  color: #9ca3af;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+.sb-price__current {
+  color: #04334a;
+  font-weight: 800;
+}
+.sb-price--sm .sb-price__savings { font-size: 11px; }
+.sb-price--sm .sb-price__list { font-size: 11px; }
+.sb-price--sm .sb-price__current { font-size: 14px; }
+.sb-price--md .sb-price__savings { font-size: 12px; }
+.sb-price--md .sb-price__list { font-size: 12px; }
+.sb-price--md .sb-price__current { font-size: 16px; }
+.sb-price--lg .sb-price__savings { font-size: 13px; }
+.sb-price--lg .sb-price__list { font-size: 14px; }
+.sb-price--lg .sb-price__current { font-size: 20px; }
+@media (min-width: 768px) {
+  .sb-price--sm .sb-price__current { font-size: 15px; }
+  .sb-price--md .sb-price__current { font-size: 18px; }
+  .sb-price--lg .sb-price__current { font-size: 22px; }
 }

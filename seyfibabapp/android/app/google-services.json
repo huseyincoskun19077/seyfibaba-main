@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:967339992980:android:0ca347d85b18e54a395181",
         "android_client_info": {
-          "package_name": "com.seyfibaba.app"
+          "package_name": "com.seyfibaba.mobile"
         }
       },
       "oauth_client": [
@@ -17,7 +17,7 @@
           "client_id": "967339992980-au69v8t984dgdhvvhtkd57mobcpsuje6.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.seyfibaba.app",
+            "package_name": "com.seyfibaba.mobile",
             "certificate_hash": "ea64986df544f794e26c534c55a55837d0d63cf2"
           }
         },
@@ -25,7 +25,7 @@
           "client_id": "967339992980-cbqi3uqcdcsi6hh9qkfrth79eqkee2qn.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.seyfibaba.app",
+            "package_name": "com.seyfibaba.mobile",
             "certificate_hash": "90aeed7f9cd88e7e44e92b88ae3a4c521a35dfb4"
           }
         },

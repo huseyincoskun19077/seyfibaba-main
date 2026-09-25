@@ -23,10 +23,10 @@ const publicBaseEnv = (() => {
 
 const appConfig = {
   // Backend base (Laravel) — always trailing slash
-  BASE_URL: normalizeBaseUrl(publicBaseEnv, "https://admin.seyfibaba.com/"),
+  BASE_URL: normalizeBaseUrl(publicBaseEnv, "https://admin.kuafortedarik.com/"),
   PWA_STATUS: process.env.NEXT_PWA_STATUS || "0",
   // Frontend origin — no trailing slash
-  APPLICATION_URL: normalizeAppUrl(process.env.NEXT_APPLICATION_URL, "https://seyfibaba.com"),
+  APPLICATION_URL: normalizeAppUrl(process.env.NEXT_APPLICATION_URL, "https://kuafortedarik.com"),
 };
 
 export default appConfig;

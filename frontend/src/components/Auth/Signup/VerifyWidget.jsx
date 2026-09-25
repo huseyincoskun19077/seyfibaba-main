@@ -10,28 +10,6 @@ import LoaderStyleOne from "../../Helpers/Loaders/LoaderStyleOne";
 import { useLazyUserVerifyApiQuery } from "@/redux/features/auth/apiSlice";
 
 /**
- * Otp shape SVG component for the title decoration
- */
-const OtpShape = () => {
-  return (
-    <svg
-      width="354"
-      height="30"
-      viewBox="0 0 354 30"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M1 28.8027C17.6508 20.3626 63.9476 8.17089 113.509 17.8802C166.729 28.3062 341.329 42.704 353 1"
-        stroke="#FCBF49"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-};
-
-/**
  * VerifyWidget Component
  * Handles OTP verification for user signup or other verification flows.
  * @param {Object} props
@@ -97,16 +75,11 @@ function VerifyWidgetContent({ redirect = true, verifyActionPopup }) {
 
   return (
     <div className="w-full">
-      {/* Title Section */}
-      <div className="title-area flex flex-col justify-center items-center relative text-center mb-7">
-        <h2 className="text-[34px] font-bold leading-[74px] text-qblack">
-          {ServeLangItem()?.Verify_You}
-        </h2>
-        <div className="shape -mt-6">
-          <OtpShape />
-        </div>
+      <div className="mb-6 text-center">
+        <p className="text-sm text-[#04334a]/65">
+          {ServeLangItem()?.Verify_You || "Doğrulama kodunu girin"}
+        </p>
       </div>
-      {/* Input Section */}
       <div className="input-area">
         <div className="input-item mb-5">
           <InputCom
@@ -114,26 +87,23 @@ function VerifyWidgetContent({ redirect = true, verifyActionPopup }) {
             label={ServeLangItem()?.OTP}
             name="otp"
             type="text"
-            inputClasses="h-[50px]"
+            inputClasses="h-[50px] bg-[#F4F6F7] text-[#04334a]"
+            labelClasses="font-700 text-[#04334a] text-[13px]"
             value={form.otp}
             inputHandler={handleInputChange}
           />
         </div>
-        {/* Verify Button Section */}
         <div className="signin-area mb-3">
           <div className="flex justify-center">
             <button
               disabled={!form.otp || isVerifyLoading}
               onClick={doVerify}
               type="button"
-              className="black-btn disabled:bg-opacity-50 disabled:cursor-not-allowed  w-full h-[50px] font-semibold flex justify-center bg-purple items-center"
+              className="flex h-[50px] w-full items-center justify-center rounded-lg bg-[#04334a] text-sm font-800 text-white transition hover:bg-[#032736] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <span className="text-sm text-white block">
-                {ServeLangItem()?.Verify}
-              </span>
-              {/* Loader shown while verifying */}
+              <span>{ServeLangItem()?.Verify}</span>
               {isVerifyLoading && (
-                <span className="w-5 " style={{ transform: "scale(0.3)" }}>
+                <span className="w-5" style={{ transform: "scale(0.3)" }}>
                   <LoaderStyleOne />
                 </span>
               )}
@@ -149,8 +119,8 @@ function VerifyWidget({ redirect = true, verifyActionPopup }) {
   return (
     <Suspense
       fallback={
-        <div className="w-full flex justify-center items-center min-h-[300px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+        <div className="flex min-h-[200px] w-full items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-qyellow" />
         </div>
       }
     >

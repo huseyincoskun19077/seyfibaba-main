@@ -167,7 +167,7 @@ class _SecondHandDetailScreenState extends State<SecondHandDetailScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Mesajlaşma alıcı ile satıcı arasındadır. Seyfibaba aracıdır, anlaşmadan sorumlu değildir.',
+                'Mesajlaşma alıcı ile satıcı arasındadır. Kuaför Tedarik aracıdır, anlaşmadan sorumlu değildir.',
                 style: TextStyle(fontSize: 13, color: ShTheme.muted),
               ),
               const SizedBox(height: 16),

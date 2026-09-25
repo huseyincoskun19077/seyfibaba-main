@@ -28,27 +28,57 @@ class PriceCardWidget extends StatelessWidget {
         final regularValue = double.tryParse(price) ?? 0;
         final hasOffer = offerValue > 0 &&
             (regularValue <= 0 || offerValue < regularValue);
-        final packStr = hasOffer ? offerPrice : price;
-        final pack = double.tryParse(packStr) ?? 0;
-        final unit = _units > 0 ? pack / _units : pack;
+        final current = hasOffer ? offerValue : regularValue;
+        final savings =
+            hasOffer && regularValue > current ? regularValue - current : 0.0;
+        final unit = _units > 0 ? current / _units : current;
         final unitLabel = Utils.formatPrice(unit.toString(), context);
-        final packLabel = Utils.formatPrice(packStr, context);
+        final currentLabel = Utils.formatPrice(current.toString(), context);
+        final listLabel = Utils.formatPrice(price, context);
+        final savingsLabel =
+            Utils.formatMoneyTR(savings, forceMinus: true);
         final compact = textSize < 18;
-        const saleColor = Color(0xFFE11D48);
-        const regularPriceColor = Color(0xFF0F766E);
+        const currentColor = Color(0xFF04334A);
+        const savingsColor = Color(0xFFE11D48);
+        const listColor = Color(0xFF9CA3AF);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (hasOffer && savings > 0)
+              Text(
+                savingsLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: savingsColor,
+                  fontSize: compact ? 10 : 12,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
+                ),
+              ),
+            if (hasOffer)
+              Text(
+                listLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: listColor,
+                  fontSize: compact ? 10 : 12,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.lineThrough,
+                  height: 1.15,
+                ),
+              ),
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
-                packLabel,
+                currentLabel,
                 maxLines: 1,
                 style: TextStyle(
-                  color: hasOffer ? saleColor : regularPriceColor,
+                  color: currentColor,
                   fontSize: compact ? 13 : textSize + 2,
                   fontWeight: FontWeight.w800,
                   height: 1.1,
@@ -56,40 +86,6 @@ class PriceCardWidget extends StatelessWidget {
                 ),
               ),
             ),
-            if (hasOffer)
-              Text(
-                Utils.formatPrice(price, context),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: HomeTheme.textMuted,
-                  fontSize: compact ? 10 : 12,
-                  decoration: TextDecoration.lineThrough,
-                  height: 1.15,
-                ),
-              ),
-            if (hasOffer && regularValue > 0) ...[
-              const SizedBox(height: 1),
-              Builder(
-                builder: (context) {
-                  final pct =
-                      (((regularValue - offerValue) / regularValue) * 100)
-                          .round();
-                  if (pct < 1) return const SizedBox.shrink();
-                  return Text(
-                    '%$pct indirim',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: saleColor,
-                      fontSize: compact ? 9 : 11,
-                      fontWeight: FontWeight.w700,
-                      height: 1.1,
-                    ),
-                  );
-                },
-              ),
-            ],
             if (_units > 1) ...[
               const SizedBox(height: 2),
               Text(

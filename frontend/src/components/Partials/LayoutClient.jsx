@@ -72,7 +72,7 @@ export default function LayoutClient({ children, childrenClasses, websiteSetupDa
 
   // Mobile drawer management
   const { drawer, handleDrawerToggle } = useDrawer();
-  // Bionluk tarzı: ikinciel.seyfibaba.com üzerinde sağda mesaj paneli
+  // Bionluk tarzı: ikinciel.kuafortedarik.com üzerinde sağda mesaj paneli
   const showSecondHandDock = !!isSecondHandSite;
 
   const processedLanguages = useMemo(() => {

@@ -4,7 +4,7 @@ import { getSecondHandListingSeoPath } from "@/api/secondHandPublic";
 import { secondHandPublicOrigin } from "@/utils/secondHandSite";
 import { getSellerInfoSlugs } from "@/data/sellerInfoPages";
 
-const baseUrl = appConfig.APPLICATION_URL || "https://seyfibaba.com";
+const baseUrl = appConfig.APPLICATION_URL || "https://kuafortedarik.com";
 const secondHandBaseUrl = secondHandPublicOrigin();
 
 export default async function sitemap() {
@@ -15,7 +15,8 @@ export default async function sitemap() {
   ];
 
   const routes = [
-    "", "/products", "/about", "/contact", "/faq",
+    "", "/products", "/about", "/contact", "/yardim",
+    "/indir",
     "/salon-crm",
     "/terms-condition", "/privacy-policy",
     "/flash-sale",

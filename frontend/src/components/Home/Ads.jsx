@@ -90,7 +90,7 @@ export default function Ads() {
                           ? appConfig.BASE_URL + logo
                           : "/assets/images/logo.svg"
                       }`}
-                      alt="Seyfibaba logo"
+                      alt="Kuaför Tedarik logo"
                     />
                   </Link>
                 </div>

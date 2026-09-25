@@ -124,6 +124,17 @@ class _SingleOrderDetailsComponentState
                     ),
                   ],
                 ),
+                if (orderItem.variantsText.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    orderItem.variantsText,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: HomeTheme.textMuted,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text(
                   '${Language.quantity.capitalizeByWord()}: ${orderItem.qty}',

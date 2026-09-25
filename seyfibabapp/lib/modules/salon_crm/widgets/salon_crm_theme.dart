@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../utils/constants.dart';
 
-/// Salon CRM görsel dili — yumuşak, sade, Seyfibaba sarısı ile.
+/// Salon CRM görsel dili — yumuşak, sade, Kuaför Tedarik sarısı ile.
 class SalonCrmTheme {
   SalonCrmTheme._();
 

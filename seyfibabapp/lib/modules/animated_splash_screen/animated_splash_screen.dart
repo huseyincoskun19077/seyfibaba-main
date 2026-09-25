@@ -27,6 +27,10 @@ class SplashScreenState extends State<AnimatedSplashScreen>
   late AppSettingCubit sCubit;
   late CurrencyCubit cCubit;
   late TranslateCubit tCubit;
+  late final DateTime _splashStartedAt;
+  bool _navigated = false;
+
+  static const _minSplash = Duration(seconds: 1);
 
   @override
   void dispose() {
@@ -37,12 +41,13 @@ class SplashScreenState extends State<AnimatedSplashScreen>
   @override
   void initState() {
     super.initState();
+    _splashStartedAt = DateTime.now();
     loginBloc = context.read<LoginBloc>();
     sCubit = context.read<AppSettingCubit>();
     cCubit = context.read<CurrencyCubit>();
     tCubit = context.read<TranslateCubit>();
     animationController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 2));
+        AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     animation =
         CurvedAnimation(parent: animationController, curve: Curves.easeOut);
 
@@ -56,8 +61,8 @@ class SplashScreenState extends State<AnimatedSplashScreen>
     });
   }
 
-  void _continueIfReady(AppSettingState state) {
-    if (state is! AppSettingStateLoaded) return;
+  Future<void> _continueIfReady(AppSettingState state) async {
+    if (state is! AppSettingStateLoaded || _navigated) return;
 
     MyTheme.dynamicColor = Utils.dynamicPrimaryColor(context);
     cCubit.resetList(false);
@@ -84,6 +89,14 @@ class SplashScreenState extends State<AnimatedSplashScreen>
       }
     }
 
+    final elapsed = DateTime.now().difference(_splashStartedAt);
+    final wait = _minSplash - elapsed;
+    if (wait > Duration.zero) {
+      await Future.delayed(wait);
+    }
+    if (!mounted || _navigated) return;
+    _navigated = true;
+
     if ((state.settingModel.maintainTextModel?.status ?? 0) == 0) {
       final next = sCubit.isOnBoardingShown
           ? RouteNames.mainPage
@@ -97,6 +110,7 @@ class SplashScreenState extends State<AnimatedSplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: MultiBlocListener(
         listeners: [
           BlocListener<InternetStatusBloc, InternetStatusState>(
@@ -117,7 +131,7 @@ class SplashScreenState extends State<AnimatedSplashScreen>
               } else if (state is AppSettingStateError) {
                 Utils.errorSnackBar(
                   context,
-                  'Sunucuya bağlanılamadı. İnterneti kontrol edip tekrar deneyin.',
+                  'Sunucuya bağlanılamadı: ${state.meg}',
                 );
               }
             },
@@ -127,7 +141,8 @@ class SplashScreenState extends State<AnimatedSplashScreen>
           builder: (context, state) {
             if (state is AppSettingStateError) {
               return SettingErrorWidget(
-                message: 'Sunucuya bağlanılamadı.\nTekrar denemek için yenile.',
+                message:
+                    'Sunucuya bağlanılamadı.\n${state.meg}\n\nAPI: admin.kuafortedarik.com\nYenilemek için dokun.',
               );
             }
             return AnimationSplashWidget(animation: animation);

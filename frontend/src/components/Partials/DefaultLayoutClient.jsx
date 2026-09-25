@@ -18,6 +18,7 @@ import GoogleTagManager from "./LayoutHelpers/GoogleTagManager";
 import AuthenticationModal from "./LayoutHelpers/AuthenticationModal";
 import SimpleFlyingCart from "../Helpers/SimpleFlyingCart";
 import FixedCartButton from "../Helpers/FixedCartButton";
+import CartSidePanel from "../Cart/CartSidePanel";
 import ScrollToTop from "../Helpers/ScrollToTop";
 import ChatWidget from "../ChatWidget";
 
@@ -194,6 +195,7 @@ export default function DefaultLayoutClient({ children }) {
       <AuthenticationModal />
       <SimpleFlyingCart />
       <FixedCartButton />
+      <CartSidePanel />
       <ScrollToTop />
     </>
   );

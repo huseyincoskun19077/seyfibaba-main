@@ -518,21 +518,24 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
     final clientMethod = client
         .get(uri, headers: defaultHeader)
-        .timeout(const Duration(seconds: 12));
+        .timeout(const Duration(seconds: 30));
     final responseJsonBody =
         await NetworkParser.callClientWithCatchException(() => clientMethod);
-    Map<String, dynamic> data = responseJsonBody['language'];
-    data.forEach((key, value) {
-      var newKey = key
-          .toString()
-          .replaceAll("-", " ")
-          .replaceAll(",", "")
-          .replaceAll(".", "")
-          .replaceAll("'", "")
-          .replaceAll("!", "")
-          .replaceAll(' ', '_');
-      myMap[newKey] = value;
-    });
+    final languageRaw = responseJsonBody['language'];
+    if (languageRaw is Map) {
+      Map<String, dynamic> data = Map<String, dynamic>.from(languageRaw);
+      data.forEach((key, value) {
+        var newKey = key
+            .toString()
+            .replaceAll("-", " ")
+            .replaceAll(",", "")
+            .replaceAll(".", "")
+            .replaceAll("'", "")
+            .replaceAll("!", "")
+            .replaceAll(' ', '_');
+        myMap[newKey] = value;
+      });
+    }
     return WebsiteSetupModel.fromMap(responseJsonBody);
   }
 

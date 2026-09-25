@@ -34,8 +34,23 @@ class Utils {
 
 
 
-  static String priceSeparator(double value, {String locale = 'en_US', String symbol = '', int radix = 1}) {
+  /// Kuaför Tedarik tek fiyat formatı — web ile aynı: ₺1.518,00
+  static String formatMoneyTR(num? value, {bool forceMinus = false}) {
+    final n = (value ?? 0).toDouble();
+    final abs = n.abs();
+    final formatted = NumberFormat('#,##0.00', 'tr_TR').format(abs);
+    if (forceMinus || n < 0) {
+      return '-₺$formatted';
+    }
+    return '₺$formatted';
+  }
+
+  static String priceSeparator(double value, {String locale = 'tr_TR', String symbol = '₺', int radix = 2}) {
     try {
+      // Sol simge + TR binlik/ondalık (web priceFormat ile uyumlu)
+      if (symbol == '₺' || symbol.isEmpty) {
+        return formatMoneyTR(value);
+      }
       final formatter = NumberFormat.currency(
         locale: locale,
         symbol: symbol,
@@ -43,67 +58,35 @@ class Utils {
       );
       return formatter.format(value);
     } catch (e) {
-      return value.toStringAsFixed(radix);
+      return formatMoneyTR(value);
     }
   }
 
-  static String convertMulCurrency( var price, BuildContext context, CurrenciesModel c, [int radix = 1]) {
-
-    const String icon = '₺';
+  static String convertMulCurrency( var price, BuildContext context, CurrenciesModel c, [int radix = 2]) {
     final newCurrency = c.currencyRate > 0 ? c.currencyRate : 1.0;
-
+    double p;
     if (price is double) {
-      final result = price * newCurrency;
-      return '${priceSeparator(result, symbol: '', radix: radix)}$icon';
+      p = price * newCurrency;
+    } else if (price is String) {
+      p = (double.tryParse(price) ?? 0.0) * newCurrency;
+    } else if (price is int) {
+      p = price * newCurrency;
+    } else {
+      p = (price as num).toDouble() * newCurrency;
     }
-    if (price is String) {
-      final r = double.tryParse(price) ?? 0.0;
-      final p = r * newCurrency;
-      return '${priceSeparator(p, symbol: '', radix: radix)}$icon';
-    }
-    if (price is int) {
-      final p = price * newCurrency;
-      return '${priceSeparator(p, symbol: '', radix: radix)}$icon';
-    }
-    final p = (price as num).toDouble() * newCurrency;
-    return '${priceSeparator(p, symbol: '', radix: radix)}$icon';
+    return formatMoneyTR(p);
   }
 
-  static String formatPrice(var price, BuildContext context, [int radix = 1]) {
+  static String formatPrice(var price, BuildContext context, [int radix = 2]) {
     final cCubit = context.read<CurrencyCubit>();
-    final appSetting = context.read<AppSettingCubit>();
-
     if (cCubit.state.currencies.isNotEmpty) {
       return Utils.convertMulCurrency(price, context, cCubit.state.currencies.first, radix);
-    } else if (appSetting.settingModel?.setting != null) {
-      const currency = '₺';
-      if (price is double) {
-        return priceSeparator(price, symbol: currency, radix: radix);
-      }
-      if (price is String) {
-        final parsedPrice = double.tryParse(price) ?? 0.0;
-        return priceSeparator(parsedPrice, symbol: currency, radix: radix);
-      }
-      if (price is int) {
-        return priceSeparator(price.toDouble(), symbol: currency, radix: radix);
-      }
-      return priceSeparator(0.0, symbol: currency, radix: radix);
     }
-    // Fallback option with a default currency symbol
-    else {
-      const currency = '₺';
-      if (price is double) {
-        return priceSeparator(price, symbol: currency, radix: radix);
-      }
-      if (price is String) {
-        final parsedPrice = double.tryParse(price) ?? 0.0;
-        return priceSeparator(parsedPrice, symbol: currency, radix: radix);
-      }
-      if (price is int) {
-        return priceSeparator(price.toDouble(), symbol: currency, radix: radix);
-      }
-      return priceSeparator(0.0, symbol: currency, radix: radix);
-    }
+    if (price is double) return formatMoneyTR(price);
+    if (price is String) return formatMoneyTR(double.tryParse(price) ?? 0.0);
+    if (price is int) return formatMoneyTR(price.toDouble());
+    if (price is num) return formatMoneyTR(price.toDouble());
+    return formatMoneyTR(0);
   }
 
 
@@ -726,7 +709,7 @@ class Utils {
               const SizedBox(height: 6),
               InfoLabel(
                   label: Language.developedBy.capitalizeByWord(),
-                  text: "Seyfibaba"),
+                  text: "Kuaför Tedarik"),
             ],
           ),
           actions: [

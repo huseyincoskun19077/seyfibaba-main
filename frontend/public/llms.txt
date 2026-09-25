@@ -1,5 +1,5 @@
 # Seyfibaba — Berber ve Kuafor Malzemeleri Pazaryeri
-# https://seyfibaba.com
+# https://kuafortedarik.com
 
 > Seyfibaba, Turkiye merkezli profesyonel berber ve kuafor malzemeleri pazaryeridir. Berber koltugu, kuafor tezgahi, salon ekipmanlari, sac bakim urunleri ve profesyonel berber aletleri gibi genis urun yelpazesiyle sektordeki profesyonellere hizmet verir.
 
@@ -18,16 +18,16 @@ Seyfibaba, berber ve kuafor salonlari icin ekipman, mobilya, sarf malzeme ve sal
 
 ## Site Yapısı
 
-- Ana Sayfa: https://seyfibaba.com/
-- Tüm Ürünler: https://seyfibaba.com/products
-- Satıcılar: https://seyfibaba.com/sellers
-- Fırsat Ürünleri: https://seyfibaba.com/flash-sale
-- Blog: https://seyfibaba.com/blogs
-- Hakkimizda: https://seyfibaba.com/about
-- Iletisim: https://seyfibaba.com/contact
-- SSS: https://seyfibaba.com/faq
-- Gizlilik Politikasi: https://seyfibaba.com/privacy-policy
-- Kullanim Kosullari: https://seyfibaba.com/terms-condition
+- Ana Sayfa: https://kuafortedarik.com/
+- Tüm Ürünler: https://kuafortedarik.com/products
+- Satıcılar: https://kuafortedarik.com/sellers
+- Fırsat Ürünleri: https://kuafortedarik.com/flash-sale
+- Blog: https://kuafortedarik.com/blogs
+- Hakkimizda: https://kuafortedarik.com/about
+- Iletisim: https://kuafortedarik.com/contact
+- SSS: https://kuafortedarik.com/faq
+- Gizlilik Politikasi: https://kuafortedarik.com/privacy-policy
+- Kullanim Kosullari: https://kuafortedarik.com/terms-condition
 
 ## Teknik Bilgiler
 
@@ -38,9 +38,9 @@ Seyfibaba, berber ve kuafor salonlari icin ekipman, mobilya, sarf malzeme ve sal
 
 ## Crawling Rehberi
 
-- Sitemap: https://seyfibaba.com/sitemap.xml
-- Robots: https://seyfibaba.com/robots.txt
-- llms.txt: https://seyfibaba.com/llms.txt
+- Sitemap: https://kuafortedarik.com/sitemap.xml
+- Robots: https://kuafortedarik.com/robots.txt
+- llms.txt: https://kuafortedarik.com/llms.txt
 - Urun sayfalari: /urun/{product-slug}
 - Eski urun URL'leri: /single-product?slug={product-slug} kalici yonlendirme ile desteklenir
 - Satici profilleri: /seller/{seller-slug}
@@ -49,7 +49,7 @@ Seyfibaba, berber ve kuafor salonlari icin ekipman, mobilya, sarf malzeme ve sal
 
 ## İletişim
 
-- Web: https://seyfibaba.com
-- Iletisim Formu: https://seyfibaba.com/contact
-- E-posta: info@seyfibaba.com
+- Web: https://kuafortedarik.com
+- Iletisim Formu: https://kuafortedarik.com/contact
+- E-posta: info@kuafortedarik.com
 - Telefon: +90 543 501 1995

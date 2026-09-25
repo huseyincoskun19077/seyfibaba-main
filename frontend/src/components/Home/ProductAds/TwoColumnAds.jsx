@@ -22,8 +22,8 @@ function TwoColumnAds({ bannerOne, bannerTwo }) {
                     src={appConfig.BASE_URL + bannerOne.image}
                     alt={
                       bannerOne.title_one || bannerOne.title_two
-                        ? `${bannerOne.title_one || "Seyfibaba"} ${bannerOne.title_two || "kampanya banneri"}`
-                        : "Seyfibaba sol kampanya banneri"
+                        ? `${bannerOne.title_one || "Kuaför Tedarik"} ${bannerOne.title_two || "kampanya banneri"}`
+                        : "Kuaför Tedarik sol kampanya banneri"
                     }
                     fill
                     className="object-cover object-right"
@@ -80,8 +80,8 @@ function TwoColumnAds({ bannerOne, bannerTwo }) {
                     src={appConfig.BASE_URL + bannerTwo.image}
                     alt={
                       bannerTwo.title_one || bannerTwo.title_two
-                        ? `${bannerTwo.title_one || "Seyfibaba"} ${bannerTwo.title_two || "kampanya banneri"}`
-                        : "Seyfibaba sag kampanya banneri"
+                        ? `${bannerTwo.title_one || "Kuaför Tedarik"} ${bannerTwo.title_two || "kampanya banneri"}`
+                        : "Kuaför Tedarik sag kampanya banneri"
                     }
                     fill
                     className="object-cover object-right"

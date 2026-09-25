@@ -28,7 +28,27 @@ class CartController extends Controller
 
     public function cart(){
         $user = Auth::guard('api')->user();
-        $cartProducts = ShoppingCart::with('product','variants.variantItem')->where('user_id', $user->id)->select('id','product_id','qty')->get();
+        $cartProducts = ShoppingCart::with('product','variants.variantItem')
+            ->where('user_id', $user->id)
+            ->select('id','product_id','qty')
+            ->get();
+
+        $installmentService = app(\App\Services\CategoryInstallmentService::class);
+        $cartProducts->each(function ($row) use ($installmentService) {
+            if (! $row->product) {
+                return;
+            }
+            try {
+                $info = $installmentService->resolveInstallmentForProduct($row->product);
+                $row->product->setAttribute('max_installment', (int) ($info['max_installment'] ?? 1));
+                $row->product->setAttribute('category_name', (string) ($info['category_name'] ?? ''));
+                $row->product->setAttribute('installment_source', (string) ($info['source'] ?? ''));
+            } catch (\Throwable $e) {
+                $row->product->setAttribute('max_installment', 1);
+                $row->product->setAttribute('category_name', '');
+                $row->product->setAttribute('installment_source', '');
+            }
+        });
 
         return response()->json(['cartProducts' => $cartProducts],200);
     }

@@ -46,7 +46,7 @@ export default function SalonCalendarClient({ token }) {
           href="/"
           className="inline-flex mt-5 h-10 items-center rounded-xl bg-qyellow px-4 text-sm font-700 text-qblack"
         >
-          Seyfibaba’ya dön
+          Kuaför Tedarik’e dön
         </Link>
       </div>
     );
@@ -73,7 +73,7 @@ export default function SalonCalendarClient({ token }) {
       <p className="text-sm text-qgray mt-1">{roleLabel} takvimi · canlı</p>
       <p className="mt-4 text-sm leading-6 text-[#4b5563]">
         Yalnızca dolu saatler görünür. Kim randevu aldı, isim veya hizmet
-        bilgisi paylaşılmaz. Randevu almak için Seyfibaba uygulamasını indirin.
+        bilgisi paylaşılmaz. Randevu almak için Kuaför Tedarik uygulamasını indirin.
       </p>
 
       <div className="mt-6 space-y-4">

@@ -26,8 +26,8 @@ function OneColumnAdsTwo({ data }) {
             src={appConfig.BASE_URL + data.image}
             alt={
               data.title_one || data.title_two
-                ? `${data.title_one || "Seyfibaba"} ${data.title_two || "kampanya banneri"}`
-                : "Seyfibaba tekli kampanya banneri"
+                ? `${data.title_one || "Kuaför Tedarik"} ${data.title_two || "kampanya banneri"}`
+                : "Kuaför Tedarik tekli kampanya banneri"
             }
             fill
             className="object-cover"

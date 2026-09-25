@@ -177,6 +177,7 @@ class SellerApiService {
     required String thumbImagePath,
     List<String> galleryImagePaths = const [],
     List<Map<String, String>> colors = const [],
+    List<Map<String, dynamic>> optionGroups = const [],
   }) async {
     final request = http.MultipartRequest(
       'POST',
@@ -235,22 +236,11 @@ class SellerApiService {
       if (path.trim().isEmpty) continue;
       request.files.add(await _imagePart('gallery_images[]', path));
     }
-    for (var i = 0; i < colors.length; i++) {
-      final color = colors[i];
-      final colorName = (color['name'] ?? '').trim();
-      if (colorName.isEmpty) continue;
-      request.fields['colors[$i][name]'] = colorName;
-      if ((color['price'] ?? '').trim().isNotEmpty) {
-        request.fields['colors[$i][price]'] = color['price']!.trim();
-      }
-      if ((color['qty'] ?? '').trim().isNotEmpty) {
-        request.fields['colors[$i][qty]'] = color['qty']!.trim();
-      }
-      final imagePath = (color['image'] ?? '').trim();
-      if (imagePath.isNotEmpty) {
-        request.files.add(await _imagePart('colors[$i][image]', imagePath));
-      }
-    }
+    await _appendSimpleVariants(
+      request,
+      colors: colors,
+      optionGroups: optionGroups,
+    );
 
     final streamed = await request.send();
     final response = await NetworkParser.callClientWithCatchException(
@@ -306,6 +296,9 @@ class SellerApiService {
     required int productId,
     required Map<String, String> fields,
     String? thumbImagePath,
+    List<Map<String, String>> colors = const [],
+    List<Map<String, dynamic>> optionGroups = const [],
+    bool syncSimpleVariants = false,
   }) async {
     final request = http.MultipartRequest(
       'POST',
@@ -315,6 +308,14 @@ class SellerApiService {
     request.fields.addAll(fields);
     if (thumbImagePath != null && thumbImagePath.isNotEmpty) {
       request.files.add(await _imagePart('thumb_image', thumbImagePath));
+    }
+    if (syncSimpleVariants) {
+      await _appendSimpleVariants(
+        request,
+        colors: colors,
+        optionGroups: optionGroups,
+        syncFlag: true,
+      );
     }
     final streamed = await request.send();
     await NetworkParser.callClientWithCatchException(
@@ -1210,6 +1211,8 @@ class SellerApiService {
     required String token,
     required Map<String, String> fields,
     required String thumbImagePath,
+    List<Map<String, String>> colors = const [],
+    List<Map<String, dynamic>> optionGroups = const [],
   }) async {
     final request = http.MultipartRequest(
       'POST',
@@ -1218,10 +1221,68 @@ class SellerApiService {
     request.headers.addAll(_authHeaders(token));
     request.fields.addAll(fields);
     request.files.add(await _imagePart('thumb_image', thumbImagePath));
+    await _appendSimpleVariants(
+      request,
+      colors: colors,
+      optionGroups: optionGroups,
+      syncFlag: true,
+    );
     final streamed = await request.send();
     await NetworkParser.callClientWithCatchException(
       () => http.Response.fromStream(streamed),
     );
+  }
+
+  Future<void> _appendSimpleVariants(
+    http.MultipartRequest request, {
+    List<Map<String, String>> colors = const [],
+    List<Map<String, dynamic>> optionGroups = const [],
+    bool syncFlag = false,
+  }) async {
+    if (syncFlag) {
+      request.fields['sync_simple_variants'] = '1';
+    }
+    for (var i = 0; i < colors.length; i++) {
+      final color = colors[i];
+      final colorName = (color['name'] ?? '').trim();
+      if (colorName.isEmpty) continue;
+      request.fields['colors[$i][name]'] = colorName;
+      if ((color['price'] ?? '').trim().isNotEmpty) {
+        request.fields['colors[$i][price]'] = color['price']!.trim();
+      }
+      if ((color['qty'] ?? '').trim().isNotEmpty) {
+        request.fields['colors[$i][qty]'] = color['qty']!.trim();
+      }
+      final keepImage = (color['keep_image'] ?? '').trim();
+      if (keepImage.isNotEmpty) {
+        request.fields['colors[$i][keep_image]'] = keepImage;
+      }
+      final imagePath = (color['image'] ?? '').trim();
+      if (imagePath.isNotEmpty) {
+        request.files.add(await _imagePart('colors[$i][image]', imagePath));
+      }
+    }
+    for (var gi = 0; gi < optionGroups.length; gi++) {
+      final group = optionGroups[gi];
+      final gName = '${group['name'] ?? ''}'.trim();
+      if (gName.isEmpty) continue;
+      request.fields['option_groups[$gi][name]'] = gName;
+      final items = group['items'];
+      if (items is! List) continue;
+      var ii = 0;
+      for (final raw in items) {
+        if (raw is! Map) continue;
+        final item = Map<String, dynamic>.from(raw);
+        final iname = '${item['name'] ?? ''}'.trim();
+        if (iname.isEmpty) continue;
+        request.fields['option_groups[$gi][items][$ii][name]'] = iname;
+        final price = '${item['price'] ?? ''}'.trim();
+        if (price.isNotEmpty) {
+          request.fields['option_groups[$gi][items][$ii][price]'] = price;
+        }
+        ii++;
+      }
+    }
   }
 
   Future<http.MultipartFile> _imagePart(String field, String path) async {

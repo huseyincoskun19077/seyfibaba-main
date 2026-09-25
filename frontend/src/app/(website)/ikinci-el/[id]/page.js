@@ -50,7 +50,7 @@ export async function generateMetadata({ params }) {
       url,
       title: title ? `${title} | İkinci El` : "İkinci El İlanı",
       description: typeof desc === "string" && desc.length > 0 ? desc.slice(0, 160) : "İkinci el ilan detayı",
-      siteName: "Seyfibaba",
+      siteName: "Kuaför Tedarik",
       locale: "tr_TR",
       images: ogImage ? [{ url: ogImage }] : undefined,
     },

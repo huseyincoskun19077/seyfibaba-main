@@ -1,13 +1,13 @@
-import LegalConsentCheckboxes from "@/components/Legal/LegalConsentCheckboxes";
-import { CHECKOUT_REQUIRED_CONSENTS } from "@/config/legalDocuments";
+import CheckoutDynamicLegalConsents from "./CheckoutDynamicLegalConsents";
 import CheckoutTickIco from "@/components/Helpers/icons/CheckoutTickIco";
 import CurrencyConvert from "@/components/Shared/CurrencyConvert";
+import { formatMoneyTR } from "@/utils/priceFormat";
 import { getWebSettings } from "../utils/checkoutUtils";
 import { useMemo } from "react";
 import { toast } from "react-toastify";
 
 const DEFAULT_BANK_INFO =
-  "Hesap Sahibi: Seyfibaba Tic. Ltd. Şti.\nBanka: Ziraat Bankası\nIBAN: TR00 0000 0000 0000 0000 0000 00\n\nHavale/EFT yaparken sipariş numaranızı açıklama kısmına yazınız.";
+  "Hesap Sahibi: Kuaför Tedarik Tic. Ltd. Şti.\nBanka: Ziraat Bankası\nIBAN: TR00 0000 0000 0000 0000 0000 00\n\nHavale/EFT yaparken sipariş numaranızı açıklama kısmına yazınız.";
 
 function parseBankAccountFields(raw) {
   const text = String(raw || "").trim();
@@ -86,6 +86,12 @@ const PaymentMethods = ({
   placeOrderHandler,
   legalConsentValues = {},
   setLegalConsentValues = () => {},
+  shippingAddressId,
+  billingAddressId,
+  shippingAddress,
+  billingAddress,
+  shippingCharge = 0,
+  cartItems = [],
 
   // Total price from parent
   totalPrice = 0,
@@ -266,14 +272,18 @@ const PaymentMethods = ({
         </div>
       )}
 
-      <LegalConsentCheckboxes
-        items={CHECKOUT_REQUIRED_CONSENTS}
+      <CheckoutDynamicLegalConsents
         values={legalConsentValues}
         onChange={(key, value) =>
           setLegalConsentValues((prev) => ({ ...prev, [key]: value }))
         }
-        required
-        title="Yasal Onaylar"
+        shippingAddressId={shippingAddressId}
+        billingAddressId={billingAddressId}
+        shippingAddress={shippingAddress}
+        billingAddress={billingAddress}
+        shippingCharge={shippingCharge}
+        paymentMethod={selectPayment}
+        cartItems={cartItems}
         className="mb-5"
       />
 
@@ -281,9 +291,7 @@ const PaymentMethods = ({
         <div className="w-full h-[50px] black-btn flex justify-center items-center">
           <span className="text-sm font-semibold">
             {selectPayment === "bankpayment" && totalPriceNum > 0
-              ? `Siparişi Ver - ${Number(bankTotal).toLocaleString("tr-TR", {
-                  minimumFractionDigits: 2,
-                })} TL (%${bankTransferDiscountPercent} İndirimli)`
+              ? `Siparişi Ver - ${formatMoneyTR(bankTotal)} (%${bankTransferDiscountPercent} İndirimli)`
               : "Siparişi Ver"}
           </span>
         </div>

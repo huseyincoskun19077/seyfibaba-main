@@ -11,8 +11,8 @@ Aynı içerik düz metin: [`hesaplar.local.txt.example`](hesaplar.local.txt.exam
 
 | Alan   | Değer |
 | ------ | ----- |
-| URL    | https://admin.seyfibaba.com/admin/login |
-| E-posta | `admin@seyfibaba.com` |
+| URL    | https://admin.kuafortedarik.com/admin/login |
+| E-posta | `admin@kuafortedarik.com` |
 | Şifre  | `admin123` |
 
 > Eski notlarda geçen `admin@gmail.com` / `1234` canlı veritabanıyla uyuşmayabilir; güncel kayıt yukarıdaki adrestir.
@@ -21,7 +21,7 @@ Aynı içerik düz metin: [`hesaplar.local.txt.example`](hesaplar.local.txt.exam
 
 | Alan   | Değer |
 | ------ | ----- |
-| URL    | https://admin.seyfibaba.com/seller/login |
+| URL    | https://admin.kuafortedarik.com/seller/login |
 | E-posta | `orhanguzell@gmail.com` |
 | Şifre  | `admin123` |
 
@@ -30,7 +30,7 @@ Aynı içerik düz metin: [`hesaplar.local.txt.example`](hesaplar.local.txt.exam
 
 ## Müşteri (frontend)
 
-| URL | https://seyfibaba.com (giriş / kayıt) |
+| URL | https://kuafortedarik.com (giriş / kayıt) |
 | --- | ------------------------------------- |
 | Şifre (ortak) | `admin123` |
 

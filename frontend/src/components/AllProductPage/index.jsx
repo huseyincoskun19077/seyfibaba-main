@@ -23,7 +23,7 @@ import {
   useLazyNextPageProductsApiQuery,
 } from "@/redux/features/product/apiSlice";
 
-function AllProductPageContent({ response, sellerInfo }) {
+function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ürünler" }) {
   // Next.js routing hooks
   const router = useRouter();
   const pathname = usePathname();
@@ -1072,22 +1072,22 @@ function AllProductPageContent({ response, sellerInfo }) {
     if (!products?.length) return null;
 
     return (
-      <div className="products-sorting w-full bg-white md:h-[70px] flex md:flex-row flex-col md:space-y-0 space-y-5 md:justify-between md:items-center p-[30px] mb-[40px]">
+      <div className="products-sorting w-full bg-white md:h-[70px] flex md:flex-row flex-col md:space-y-0 space-y-5 md:justify-between md:items-center p-[30px] mb-[40px] rounded-xl border border-[#04334a]/10 shadow-sm">
         {/* Results count + sort */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <p className="font-400 text-[13px]">
-            <span className="text-qgray">{ServeLangItem()?.Showing}</span> 1–
+          <p className="font-400 text-[13px] text-[#04334a]/70">
+            <span className="text-[#04334a]/45">{ServeLangItem()?.Showing}</span> 1–
             {products.length} / {productTotal} {ServeLangItem()?.results}
           </p>
           <div className="flex items-center gap-2">
-            <label htmlFor="product-sort" className="text-[13px] text-qblack whitespace-nowrap">
+            <label htmlFor="product-sort" className="text-[13px] font-600 text-[#04334a] whitespace-nowrap">
               Sırala:
             </label>
             <select
               id="product-sort"
               value={sortId}
               onChange={handleSortChange}
-              className="h-10 min-w-[170px] px-3 border border-qgray-border rounded text-[13px] bg-white"
+              className="h-10 min-w-[170px] px-3 rounded-lg border-0 bg-[#F4F6F7] text-[13px] text-[#04334a] focus:outline-none focus:ring-2 focus:ring-[#FCBF49]/50"
             >
               <option value="">En yeni</option>
               <option value="2">Fiyat: Düşükten yükseğe</option>
@@ -1098,14 +1098,14 @@ function AllProductPageContent({ response, sellerInfo }) {
 
         {/* View style controls */}
         <div className="flex space-x-3 items-center">
-          <span className="font-bold text-qblack text-[13px]">
+          <span className="font-bold text-[#04334a] text-[13px]">
             {ServeLangItem()?.View_by} :
           </span>
           <button
             onClick={() => handleCardViewStyle("col")}
             type="button"
-            className={`hover:text-qgreen w-6 h-6 ${
-              cardViewStyle === "col" ? "text-qgreen" : "text-qgray"
+            className={`hover:text-qyellow w-6 h-6 ${
+              cardViewStyle === "col" ? "text-qyellow" : "text-[#04334a]/40"
             }`}
           >
             <ViewColIco />
@@ -1113,8 +1113,8 @@ function AllProductPageContent({ response, sellerInfo }) {
           <button
             onClick={() => handleCardViewStyle("row")}
             type="button"
-            className={`hover:text-qgreen w-6 h-6 ${
-              cardViewStyle === "row" ? "text-qgreen" : "text-qgray"
+            className={`hover:text-qyellow w-6 h-6 ${
+              cardViewStyle === "row" ? "text-qyellow" : "text-[#04334a]/40"
             }`}
           >
             <ViewRowIco />
@@ -1131,12 +1131,12 @@ function AllProductPageContent({ response, sellerInfo }) {
             }
           }}
           type="button"
-          className="w-10 h-10 rounded flex justify-center items-center border border-qyellow text-qyellow relative"
+          className="w-10 h-10 rounded-lg flex justify-center items-center border border-[#04334a]/15 bg-[#FFF8E8] text-[#04334a] relative hover:border-qyellow"
           aria-label={desktopFilterOpen ? "Filtreleri kapat" : "Filtreleri aç"}
         >
           <FilterIco />
           {getActiveFiltersCount() > 0 && (
-            <span className="absolute -top-2 -right-2 bg-qred text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="absolute -top-2 -right-2 bg-[#E11D48] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {getActiveFiltersCount()}
             </span>
           )}
@@ -1206,21 +1206,26 @@ function AllProductPageContent({ response, sellerInfo }) {
 
   // Main Component Render
   return (
-    <div className="products-page-wrapper w-full">
-      <div className="container-x mx-auto">
-        {/* Main H1 for SEO - only if not seller page (seller info has its own H1) */}
-        {!sellerInfo && (
-          <h1 className="text-2xl font-semibold text-qblack mb-6">
-            Tüm Ürünler
-          </h1>
-        )}
-        
-        {/* Seller Information Section */}
+    <div className="products-page-wrapper w-full bg-[#f4f7f9] min-h-[60vh]">
+      <div className="border-b border-[#04334a]/10 bg-gradient-to-b from-[#eef3f6] to-[#f4f7f9]">
+        <div className="container-x mx-auto px-4 py-8 md:py-10">
+          {!sellerInfo ? (
+            <>
+              <p className="mb-2 text-xs font-800 uppercase tracking-widest text-[#04334a]/45">
+                Kuaför Tedarik Katalog
+              </p>
+              <h1 className="text-2xl md:text-3xl font-800 text-[#04334a]">
+                {listingTitle}
+              </h1>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="container-x mx-auto px-4 py-6 md:py-8">
         {renderSellerInfo()}
 
-
         <div className="w-full lg:flex lg:space-x-[30px] rtl:space-x-reverse">
-          {/* Left Sidebar - Filters */}
           {desktopFilterOpen && (
             <div className="lg:w-[270px] shrink-0">
               <ProductsFilter
@@ -1248,9 +1253,7 @@ function AllProductPageContent({ response, sellerInfo }) {
             </div>
           )}
 
-
-          {/* Main Content Area */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <ListingSearchBar
               value={listingSearch}
               onSubmit={handleListingSearch}
@@ -1261,21 +1264,21 @@ function AllProductPageContent({ response, sellerInfo }) {
               </div>
             ) : products?.length > 0 ? (
               <div className="w-full">
-                {/* Product Controls */}
                 {renderProductControls()}
-
-                {/* First Products Grid */}
                 {renderProductsGrid(products, 0, products?.length)}
-
-                {/* Load More Button */}
                 {renderLoadMoreButton()}
-
               </div>
             ) : (
-              <div className="mt-5 flex justify-center">
-                <h2 className="text-2xl font-medium text-tblack">
-                  Ürün bulunamadı
-                </h2>
+              <div className="mt-2 rounded-xl border border-[#04334a]/10 bg-white p-10 text-center shadow-sm">
+                <p className="mb-4 text-sm text-[#04334a]/60">
+                  Bu listede gösterilecek ürün bulunamadı.
+                </p>
+                <Link
+                  href="/products"
+                  className="inline-flex h-11 items-center justify-center rounded-lg bg-[#04334a] px-5 text-sm font-800 text-white hover:bg-[#032736]"
+                >
+                  Tüm ürünlere dön
+                </Link>
               </div>
             )}
           </div>
@@ -1285,16 +1288,24 @@ function AllProductPageContent({ response, sellerInfo }) {
   );
 }
 
-export default function AllProductPage({ response, sellerInfo }) {
+export default function AllProductPage({
+  response,
+  sellerInfo,
+  listingTitle = "Tüm Ürünler",
+}) {
   return (
     <Suspense
       fallback={
-        <div className="w-full flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        <div className="w-full flex justify-center items-center min-h-[400px] bg-[#f4f7f9]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-qyellow"></div>
         </div>
       }
     >
-      <AllProductPageContent response={response} sellerInfo={sellerInfo} />
+      <AllProductPageContent
+        response={response}
+        sellerInfo={sellerInfo}
+        listingTitle={listingTitle}
+      />
     </Suspense>
   );
 }

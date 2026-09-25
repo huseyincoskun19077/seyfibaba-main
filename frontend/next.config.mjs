@@ -2,12 +2,15 @@ import { fileURLToPath } from "node:url";
 
 /** @type {import('next').NextConfig} */
 // Production build için - sunucudaki API kullanılacak
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://admin.seyfibaba.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://admin.kuafortedarik.com";
 const { hostname, protocol } = new URL(baseUrl);
 
 // next/image: build sırasında NEXT_PUBLIC_BASE_URL yanlış kalırsa bile canlı görseller izinli olsun.
 // Ek hostlar: NEXT_IMAGE_EXTRA_HOSTS=cdn1.com,cdn2.com (virgülle)
 const DEFAULT_IMAGE_HOSTS = [
+  "admin.kuafortedarik.com",
+  "kuafortedarik.com",
+  "www.kuafortedarik.com",
   "admin.seyfibaba.com",
   "seyfibaba.com",
   "www.seyfibaba.com",
@@ -56,7 +59,7 @@ function buildImageRemotePatterns() {
   return patterns;
 }
 
-// Bu VPS'te admin.seyfibaba.com hosts ile 127.0.0.1'e düşer.
+// Bu VPS'te admin.kuafortedarik.com hosts ile 127.0.0.1'e düşer.
 // Next image optimizer sunucudan çekerken private IP diye keser; tarayıcıdan direkt URL çalışır.
 // Optimizer'ı kapatmak kalıcı çözüm (NEXT_IMAGE_UNOPTIMIZED=0 ile tekrar açılır).
 const imageUnoptimized = process.env.NEXT_IMAGE_UNOPTIMIZED !== "0";
@@ -129,7 +132,7 @@ const nextConfig = {
   },
   images: {
     unoptimized: imageUnoptimized,
-    // admin.seyfibaba.com hosts'ta 127.0.0.1'e gider; Next optimizer SSRF diye keser.
+    // admin.kuafortedarik.com hosts'ta 127.0.0.1'e gider; Next optimizer SSRF diye keser.
     dangerouslyAllowLocalIP: true,
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
@@ -140,6 +143,11 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      {
+        source: "/faq",
+        destination: "/yardim",
+        permanent: true,
+      },
       // /profile/address gibi doğrudan bağlantıları hash tabına yönlendir
       {
         source: "/profile/:tab(dashboard|profile|order|address|wishlist|reviews|password|second-hand)",

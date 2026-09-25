@@ -42,6 +42,8 @@ class ProductDetailsProductModel extends Equatable {
   final String furnitureInquiryWhatsapp;
   final int soldQty;
   final int saleUnitQty;
+  final int maxInstallment;
+  final String categoryName;
 
   const ProductDetailsProductModel({
     required this.id,
@@ -76,6 +78,8 @@ class ProductDetailsProductModel extends Equatable {
     this.furnitureInquiryWhatsapp = '908503035073',
     this.soldQty = 0,
     this.saleUnitQty = 1,
+    this.maxInstallment = 1,
+    this.categoryName = '',
   });
 
   ProductDetailsProductModel copyWith({
@@ -111,6 +115,8 @@ class ProductDetailsProductModel extends Equatable {
     String? furnitureInquiryWhatsapp,
     int? soldQty,
     int? saleUnitQty,
+    int? maxInstallment,
+    String? categoryName,
   }) {
     return ProductDetailsProductModel(
       id: id ?? this.id,
@@ -147,6 +153,8 @@ class ProductDetailsProductModel extends Equatable {
           furnitureInquiryWhatsapp ?? this.furnitureInquiryWhatsapp,
       soldQty: soldQty ?? this.soldQty,
       saleUnitQty: saleUnitQty ?? this.saleUnitQty,
+      maxInstallment: maxInstallment ?? this.maxInstallment,
+      categoryName: categoryName ?? this.categoryName,
     );
   }
 
@@ -182,6 +190,8 @@ class ProductDetailsProductModel extends Equatable {
       'avg_review': avgReview.map((x) => x.toMap()).toList(),
       'sold_qty': soldQty,
       'sale_unit_qty': saleUnitQty,
+      'max_installment': maxInstallment,
+      'category_name': categoryName,
     };
   }
 
@@ -243,6 +253,15 @@ class ProductDetailsProductModel extends Equatable {
           (map['furniture_inquiry_whatsapp'] ?? '908503035073').toString(),
       soldQty: parseProductSoldQty(map),
       saleUnitQty: parseProductSaleUnitQty(map),
+      maxInstallment:
+          int.tryParse('${map['max_installment'] ?? 1}')?.clamp(1, 99) ?? 1,
+      categoryName: () {
+        final explicit = '${map['category_name'] ?? ''}'.trim();
+        if (explicit.isNotEmpty) return explicit;
+        final cat = map['category'];
+        if (cat is Map) return '${cat['name'] ?? ''}';
+        return '';
+      }(),
       avgReview: map['avg_review'] != null
           ? List<AvgReviewModel>.from(
               (map['avg_review'] as List<dynamic>).map<AvgReviewModel>(
@@ -297,6 +316,8 @@ class ProductDetailsProductModel extends Equatable {
       furnitureInquiryWhatsapp,
       soldQty,
       saleUnitQty,
+      maxInstallment,
+      categoryName,
     ];
   }
 }

@@ -2,16 +2,16 @@ import SellerLanding from "@/components/SellerLanding";
 
 export async function generateMetadata() {
   return {
-    title: "Satıcı Ol | Seyfibaba'da Satışa Başlayın",
+    title: "Satıcı Merkezi | Kuaför Tedarik",
     description:
-      "Kuaför, berber ve güzellik sektörüne ürün satıyorsanız Seyfibaba'da mağaza açın. Türkiye geneli görünürlük, ürün yükleme desteği, WhatsApp bilgi hattı ve şeffaf komisyon.",
+      "Kuaför Tedarik satıcı merkezi: komisyon, hakediş, ürün yükleme, kargo ve başvuru. Kurumsal satıcı rehberi ve SSS.",
     alternates: {
       canonical: "/satici",
     },
     openGraph: {
-      title: "Seyfibaba'da Satışa Başlayın",
+      title: "Kuaför Tedarik Satıcı Merkezi",
       description:
-        "Ürünlerinizi Türkiye genelindeki kuaför, berber ve güzellik salonlarıyla buluşturun. Kayıt olun veya WhatsApp ile bilgi alın.",
+        "Kuaför, berber ve güzellik sektörüne satış için başvuru, rehber ve SSS.",
       url: "/satici",
       type: "website",
     },

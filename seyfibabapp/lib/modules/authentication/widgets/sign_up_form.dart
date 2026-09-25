@@ -344,9 +344,32 @@ class _SignUpFormState extends State<SignUpForm> {
                       height: 1.35,
                     ),
                     children: [
-                      const TextSpan(text: 'Alıcı '),
+                      const TextSpan(
+                        text:
+                            'Bir hesap oluşturduğunuzda, Kuaför Tedarik\'in ',
+                      ),
                       TextSpan(
-                        text: 'Gizlilik Politikası',
+                        text: 'Üyelik / Alıcı Sözleşmesi',
+                        style: const TextStyle(
+                          color: redColor,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            Navigator.pushNamed(
+                              context,
+                              RouteNames.legalDocumentScreen,
+                              arguments: {
+                                'slug': 'terms',
+                                'title': 'Üyelik / Alıcı Sözleşmesi',
+                              },
+                            );
+                          },
+                      ),
+                      const TextSpan(text: ', '),
+                      TextSpan(
+                        text: 'Ticari Kimlik Beyanı',
                         style: const TextStyle(
                           color: redColor,
                           fontWeight: FontWeight.w600,
@@ -359,12 +382,36 @@ class _SignUpFormState extends State<SignUpForm> {
                               RouteNames.legalDocumentScreen,
                               arguments: {
                                 'slug': 'privacy-policy',
-                                'title': 'Alıcı Gizlilik Politikası',
+                                'title': 'Ticari Kimlik Beyanı',
                               },
                             );
                           },
                       ),
-                      const TextSpan(text: ' metnini okudum ve kabul ediyorum.'),
+                      const TextSpan(text: ' ve '),
+                      TextSpan(
+                        text:
+                            'Kişisel Verilerinizin Korunması ve İşlenmesi',
+                        style: const TextStyle(
+                          color: redColor,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            Navigator.pushNamed(
+                              context,
+                              RouteNames.legalDocumentScreen,
+                              arguments: {
+                                'slug': 'kvkk-aydinlatma',
+                                'title':
+                                    'Kişisel Verilerinizin Korunması ve İşlenmesi',
+                              },
+                            );
+                          },
+                      ),
+                      const TextSpan(
+                        text: ' metinlerini kabul etmiş olursunuz.',
+                      ),
                     ],
                   ),
                 ),

@@ -31,7 +31,7 @@ class ProductFurnitureInquiry extends StatelessWidget {
   }
 
   Future<void> _openWhatsApp(BuildContext context) async {
-    final url = 'https://seyfibaba.com/urun/${product.slug}';
+    final url = 'https://kuafortedarik.com/urun/${product.slug}';
     final text = [
       'Merhaba, kuaför mobilyası hakkında bilgi almak istiyorum.',
       '',
@@ -204,7 +204,7 @@ class _FurnitureInquiryFormState extends State<_FurnitureInquiryForm> {
             ),
             const SizedBox(height: 6),
             Text(
-              '${widget.product.name} için bilgi talebiniz Seyfibaba destek ekibine iletilir.',
+              '${widget.product.name} için bilgi talebiniz Kuaför Tedarik destek ekibine iletilir.',
               style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
             ),
             const SizedBox(height: 12),

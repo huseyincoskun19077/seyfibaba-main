@@ -97,8 +97,8 @@ export default function Contact({ datas }) {
     {
       icon: <ContactEmailIco />,
       title: ServeLangItem()?.Email || "E-posta",
-      value: contact?.email || "info@seyfibaba.com",
-      href: `mailto:${contact?.email || "info@seyfibaba.com"}`,
+      value: contact?.email || "info@kuafortedarik.com",
+      href: `mailto:${contact?.email || "info@kuafortedarik.com"}`,
       bgColor: "bg-[#D3EFFF]",
     },
     {

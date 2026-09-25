@@ -1,16 +1,16 @@
 /**
- * Seyfibaba satıcı bilgilendirme sayfaları.
+ * Kuaför Tedarik satıcı bilgilendirme sayfaları.
  * İçerik yalnızca platformda satıcı/müşterinin bildiği kurallara dayanır.
  */
 
 export const sellerInfoPages = {
   "nasil-satici-olunur": {
     slug: "nasil-satici-olunur",
-    title: "Seyfibaba'da Nasıl Satıcı Olunur?",
+    title: "Kuaför Tedarik'te Nasıl Satıcı Olunur?",
     description:
-      "Seyfibaba'da satıcı olmak için kayıt, KYC doğrulama, Iyzico alt üye işyeri ve ürün ekleme yol haritası.",
+      "Kuaför Tedarik'te satıcı olmak için kayıt, KYC doğrulama, Iyzico alt üye işyeri ve ürün ekleme yol haritası.",
     h1: "Nasıl satıcı olunur?",
-    lead: "Seyfibaba; berber, kuaför ve güzellik salonu ekipmanlarına özel Türkiye pazaryeridir. Satıcı olmak için abonelik ücreti yoktur. Aşağıdaki yol haritasını sırayla tamamlayın.",
+    lead: "Kuaför Tedarik; berber, kuaför ve güzellik salonu ekipmanlarına özel Türkiye pazaryeridir. Satıcı olmak için abonelik ücreti yoktur. Aşağıdaki yol haritasını sırayla tamamlayın.",
     layout: "roadmap",
     roadmapTitle: "Satıcı olma yol haritası",
     roadmapSummary:
@@ -76,11 +76,11 @@ export const sellerInfoPages = {
 
   "nasil-satis-yapilir": {
     slug: "nasil-satis-yapilir",
-    title: "Seyfibaba'da Nasıl Satış Yapılır?",
+    title: "Kuaför Tedarik'te Nasıl Satış Yapılır?",
     description:
-      "Siparişten kargoya, alıcı onayından Iyzico hakedişine kadar Seyfibaba satış yol haritası.",
+      "Siparişten kargoya, alıcı onayından Iyzico hakedişine kadar Kuaför Tedarik satış yol haritası.",
     h1: "Nasıl satış yapılır?",
-    lead: "Seyfibaba’da satış; sipariş karşılama, kargo, alıcı onayı ve Iyzico hakedişinden oluşur. Ödeme Iyzico pazaryeri havuzunda işlenir; kart bilgisi Seyfibaba’da tutulmaz.",
+    lead: "Kuaför Tedarik’te satış; sipariş karşılama, kargo, alıcı onayı ve Iyzico hakedişinden oluşur. Ödeme Iyzico pazaryeri havuzunda işlenir; kart bilgisi Kuaför Tedarik’te tutulmaz.",
     layout: "roadmap",
     roadmapTitle: "Satış yol haritası",
     roadmapSummary:
@@ -98,7 +98,7 @@ export const sellerInfoPages = {
       {
         n: "2",
         title: "Kargoya verin",
-        text: "Kargo bedeli ve sorumluluğu tamamen satıcıya aittir. Seyfibaba ürünü depolamaz. Anlaşmalı firmanızla gönderip takip numarasını panele girin.",
+        text: "Kargo bedeli ve sorumluluğu tamamen satıcıya aittir. Kuaför Tedarik ürünü depolamaz. Anlaşmalı firmanızla gönderip takip numarasını panele girin.",
         bullets: [
           "Manuel Kargo bölümünden takip numarası girin",
           "Geliver veya kendi kargo anlaşmanızı kullanabilirsiniz",
@@ -153,28 +153,28 @@ export const sellerInfoPages = {
 
   "kimlere-hitap-ediyor": {
     slug: "kimlere-hitap-ediyor",
-    title: "Seyfibaba Kimlere Hitap Ediyor?",
+    title: "Kuaför Tedarik Kimlere Hitap Ediyor?",
     description:
-      "Seyfibaba kuaför, berber ve güzellik salonu işletmelerine ürün satan satıcılar ile bu işletmelere yönelik pazaryeridir.",
+      "Kuaför Tedarik kuaför, berber ve güzellik salonu işletmelerine ürün satan satıcılar ile bu işletmelere yönelik pazaryeridir.",
     h1: "Kimlere hitap ediyor?",
-    lead: "Seyfibaba genel bir pazaryeri değildir. Yalnızca berber, kuaför ve güzellik sektörüne odaklanır. Hem alıcı hem satıcı tarafı bu sektöre göre şekillenir.",
+    lead: "Kuaför Tedarik genel bir pazaryeri değildir. Yalnızca berber, kuaför ve güzellik sektörüne odaklanır. Hem alıcı hem satıcı tarafı bu sektöre göre şekillenir.",
     sections: [
       {
         heading: "Alıcı kitlesi",
         paragraphs: [
-          "Platformdaki müşteriler ağırlıklı olarak kuaför salonları, berber dükkânları ve güzellik salonlarıdır. Türkiye genelindeki bu işletmeler, ihtiyaç duydukları mobilya, malzeme, kozmetik ve yedek parçayı Seyfibaba web ve mobil uygulamasından keşfeder.",
+          "Platformdaki müşteriler ağırlıklı olarak kuaför salonları, berber dükkânları ve güzellik salonlarıdır. Türkiye genelindeki bu işletmeler, ihtiyaç duydukları mobilya, malzeme, kozmetik ve yedek parçayı Kuaför Tedarik web ve mobil uygulamasından keşfeder.",
         ],
       },
       {
         heading: "Satıcı kitlesi",
         paragraphs: [
-          "Kuaför, berber ve güzellik sektörüne ürün satan üreticiler, toptancılar ve yetkili satıcılar Seyfibaba’da mağaza açabilir. Amaç; doğru ürünü doğru işletmeyle buluşturmak ve mevcut satış kanallarınıza Türkiye geneli ek bir kanal eklemektir.",
+          "Kuaför, berber ve güzellik sektörüne ürün satan üreticiler, toptancılar ve yetkili satıcılar Kuaför Tedarik’te mağaza açabilir. Amaç; doğru ürünü doğru işletmeyle buluşturmak ve mevcut satış kanallarınıza Türkiye geneli ek bir kanal eklemektir.",
         ],
       },
       {
         heading: "Neden sektöre özel?",
         paragraphs: [
-          "Genel pazaryerlerinde ürününüz binlerce kategori arasında kaybolabilir. Seyfibaba’da vitrin, kategori yapısı ve tanıtım çalışmaları doğrudan bu sektöre yöneliktir. Ürün sayfalarında satıcı adı gösterilmez; müşteri ürüne odaklanır.",
+          "Genel pazaryerlerinde ürününüz binlerce kategori arasında kaybolabilir. Kuaför Tedarik’te vitrin, kategori yapısı ve tanıtım çalışmaları doğrudan bu sektöre yöneliktir. Ürün sayfalarında satıcı adı gösterilmez; müşteri ürüne odaklanır.",
         ],
       },
       {
@@ -193,11 +193,11 @@ export const sellerInfoPages = {
 
   "neden-seyfibaba": {
     slug: "neden-seyfibaba",
-    title: "Neden Seyfibaba'da Satıcı Olmalıyım?",
+    title: "Neden Kuaför Tedarik'te Satıcı Olmalıyım?",
     description:
       "Sektöre özel vitrin, %10 şeffaf komisyon, Iyzico güvencesi, ürün yükleme desteği ve Türkiye geneli görünürlük.",
-    h1: "Neden Seyfibaba?",
-    lead: "Seyfibaba; berber ve kuaför sektörüne odaklı pazaryeridir. Iyzico güvencesi, şeffaf komisyon ve sektöre özel alıcı kitlesi sunar.",
+    h1: "Neden Kuaför Tedarik?",
+    lead: "Kuaför Tedarik; berber ve kuaför sektörüne odaklı pazaryeridir. Iyzico güvencesi, şeffaf komisyon ve sektöre özel alıcı kitlesi sunar.",
     sections: [
       {
         heading: "Satıcı avantajları",
@@ -233,16 +233,16 @@ export const sellerInfoPages = {
 
   "komisyon-ve-hakedis": {
     slug: "komisyon-ve-hakedis",
-    title: "Seyfibaba Komisyon ve Hakediş",
+    title: "Kuaför Tedarik Komisyon ve Hakediş",
     description:
-      "Seyfibaba platform komisyonu %10'dur. Iyzico hakediş, IBAN aktarımı ve kesintiler hakkında net bilgi.",
+      "Kuaför Tedarik platform komisyonu %10'dur. Iyzico hakediş, IBAN aktarımı ve kesintiler hakkında net bilgi.",
     h1: "Komisyon ve hakediş",
-    lead: "Satıcıların en çok sorduğu konu budur. Seyfibaba’da komisyon sabittir; ödeme Iyzico üzerinden yürür.",
+    lead: "Satıcıların en çok sorduğu konu budur. Kuaför Tedarik’te komisyon sabittir; ödeme Iyzico üzerinden yürür.",
     sections: [
       {
         heading: "Hangi kesintiler var?",
         paragraphs: [
-          "Seyfibaba platform komisyonu sabit %10’dur. Ödeme Iyzico altyapısından işlenir. Hakediş onayından sonra tutar Iyzico hesabınıza yatırılır; banka hesabına geçiş Iyzico takvimine göredir.",
+          "Kuaför Tedarik platform komisyonu sabit %10’dur. Ödeme Iyzico altyapısından işlenir. Hakediş onayından sonra tutar Iyzico hesabınıza yatırılır; banka hesabına geçiş Iyzico takvimine göredir.",
           "Örnek: 1.000 TL satış → yaklaşık 100 TL komisyon, yaklaşık 900 TL satıcı payı (kargo hariç). Komisyon, hakediş hesaplanırken düşülür.",
         ],
       },
@@ -269,11 +269,11 @@ export const sellerInfoPages = {
 
   "kargo-ve-teslimat": {
     slug: "kargo-ve-teslimat",
-    title: "Seyfibaba'da Kargo ve Teslimat",
+    title: "Kuaför Tedarik'te Kargo ve Teslimat",
     description:
-      "Seyfibaba'da kargo ücreti satıcıya aittir. Takip numarası, Manuel Kargo ve gönderim sorumluluğu hakkında bilgi.",
+      "Kuaför Tedarik'te kargo ücreti satıcıya aittir. Takip numarası, Manuel Kargo ve gönderim sorumluluğu hakkında bilgi.",
     h1: "Kargo ve teslimat",
-    lead: "Seyfibaba ürünü depolamaz. Paketleme, kargolama ve kargo ücreti satıcıya aittir.",
+    lead: "Kuaför Tedarik ürünü depolamaz. Paketleme, kargolama ve kargo ücreti satıcıya aittir.",
     sections: [
       {
         heading: "Kargo ücretini kim öder?",
@@ -303,9 +303,9 @@ export const sellerInfoPages = {
 
   "urun-nasil-eklenir": {
     slug: "urun-nasil-eklenir",
-    title: "Seyfibaba'ya Ürün Nasıl Eklenir?",
+    title: "Kuaför Tedarik'e Ürün Nasıl Eklenir?",
     description:
-      "Tek ürün, hızlı AI ürün ekleme ve Excel toplu yükleme ile Seyfibaba satıcı paneline ürün ekleme.",
+      "Tek ürün, hızlı AI ürün ekleme ve Excel toplu yükleme ile Kuaför Tedarik satıcı paneline ürün ekleme.",
     h1: "Ürün nasıl eklenir?",
     lead: "Doğrulanmış satıcı hesabınızla panele girip ürünlerinizi üç yoldan ekleyebilirsiniz. İsterseniz ürün yükleme desteği de alırsınız.",
     sections: [
@@ -340,11 +340,11 @@ export const sellerInfoPages = {
 
   "hangi-urunler-satilir": {
     slug: "hangi-urunler-satilir",
-    title: "Seyfibaba'da Hangi Ürünler Satılır?",
+    title: "Kuaför Tedarik'te Hangi Ürünler Satılır?",
     description:
-      "Kuaför mobilyaları, malzemeler, kozmetik ve yedek parçalar — Seyfibaba'da satabileceğiniz ürün kategorileri.",
+      "Kuaför mobilyaları, malzemeler, kozmetik ve yedek parçalar — Kuaför Tedarik'te satabileceğiniz ürün kategorileri.",
     h1: "Hangi ürünler satılır?",
-    lead: "Seyfibaba’da satılan ürünler berber, kuaför ve güzellik salonu ihtiyaçlarına yöneliktir.",
+    lead: "Kuaför Tedarik’te satılan ürünler berber, kuaför ve güzellik salonu ihtiyaçlarına yöneliktir.",
     sections: [
       {
         heading: "Kuaför mobilyaları",
@@ -380,7 +380,7 @@ export const sellerInfoPages = {
 
   "iade-sureci": {
     slug: "iade-sureci",
-    title: "Seyfibaba Satıcı İade Süreci",
+    title: "Kuaför Tedarik Satıcı İade Süreci",
     description:
       "Müşteri iade talebi geldiğinde satıcı panelinde ne yapılır? Kabul, ret ve hakediş etkisi.",
     h1: "İade süreci",

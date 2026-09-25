@@ -692,7 +692,7 @@ class _LoadedAddressViewState extends State<LoadedAddressView> {
                       if (!emailValue.contains('@') ||
                           emailValue.endsWith('.local') ||
                           emailValue
-                              .endsWith('@pending.seyfibaba.local')) {
+                              .endsWith('@pending.kuafortedarik.local')) {
                         Utils.errorSnackBar(
                           context,
                           'Geçerli bir e-posta adresi girin.',

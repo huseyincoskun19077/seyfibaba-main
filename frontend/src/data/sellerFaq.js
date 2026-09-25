@@ -38,7 +38,7 @@ export const sellerFaqSections = [
     items: [
       {
         q: "Hangi kesintiler var?",
-        a: "Seyfibaba platform komisyonu sabit %10'dur. Ödeme Iyzico altyapısından işlenir. Hakediş onayından sonra tutar Iyzico hesabınıza yatırılır; banka hesabına geçiş Iyzico takvimine göredir. Onay, paranın hemen IBAN'ınıza yatmış olduğu anlamına gelmez.",
+        a: "Kuaför Tedarik platform komisyonu sabit %10'dur. Ödeme Iyzico altyapısından işlenir. Hakediş onayından sonra tutar Iyzico hesabınıza yatırılır; banka hesabına geçiş Iyzico takvimine göredir. Onay, paranın hemen IBAN'ınıza yatmış olduğu anlamına gelmez.",
       },
     ],
   },
@@ -50,7 +50,7 @@ export const sellerFaqSections = [
         a: "KYC doğrulama, Iyzico alt üye işyeri kaydı (TC kimlik zorunlu), vergi levhası doğrulaması ve geçerli IBAN. Vergi levhası, sektöre özel satış yaptığınızı teyit etmek içindir.",
       },
       {
-        q: "Neden Seyfibaba?",
+        q: "Neden Kuaför Tedarik?",
         a: "Yalnızca berber ve kuaför sektörüne odaklanırız. Iyzico güvencesi, şeffaf komisyon ve sektöre özel alıcı kitlesi sunarız.",
       },
     ],

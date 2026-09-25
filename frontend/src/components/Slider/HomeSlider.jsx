@@ -16,8 +16,8 @@ function HomeSlider({ images, settings }) {
                 {...getProductImageProps(item.image)}
                 alt={
                   item.title_one || item.title_two
-                    ? `${item.title_one || "Seyfibaba"} ${item.title_two || "berber ve kuafor kampanyasi"}`
-                    : "Seyfibaba berber ve kuafor malzemeleri slider gorseli"
+                    ? `${item.title_one || "Kuaför Tedarik"} ${item.title_two || "berber ve kuafor kampanyasi"}`
+                    : "Kuaför Tedarik berber ve kuafor malzemeleri slider gorseli"
                 }
                 fill
                 priority={i === 0}

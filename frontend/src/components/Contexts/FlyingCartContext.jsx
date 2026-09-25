@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 
 const FlyingCartContext = createContext();
 
@@ -18,6 +18,14 @@ export const FlyingCartProvider = ({ children }) => {
     startPosition: { x: 0, y: 0 },
     endPosition: { x: 0, y: 0 },
   });
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+
+  const openCartDrawer = useCallback(() => setIsCartDrawerOpen(true), []);
+  const closeCartDrawer = useCallback(() => setIsCartDrawerOpen(false), []);
+  const toggleCartDrawer = useCallback(
+    () => setIsCartDrawerOpen((v) => !v),
+    []
+  );
 
   const triggerFlyingCart = (productImage, startPosition, endPosition) => {
     setFlyingCart({
@@ -39,7 +47,16 @@ export const FlyingCartProvider = ({ children }) => {
   };
 
   return (
-    <FlyingCartContext.Provider value={{ flyingCart, triggerFlyingCart }}>
+    <FlyingCartContext.Provider
+      value={{
+        flyingCart,
+        triggerFlyingCart,
+        isCartDrawerOpen,
+        openCartDrawer,
+        closeCartDrawer,
+        toggleCartDrawer,
+      }}
+    >
       {children}
     </FlyingCartContext.Provider>
   );

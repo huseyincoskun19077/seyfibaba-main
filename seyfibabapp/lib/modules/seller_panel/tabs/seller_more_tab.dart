@@ -95,8 +95,8 @@ class SellerMoreTab extends StatelessWidget {
       ),
       _MoreItem(
         Icons.support_agent_outlined,
-        'Seyfibaba Destek',
-        'seyfibaba.com ile iletişime geçin',
+        'Kuaför Tedarik Destek',
+        'kuafortedarik.com ile iletişime geçin',
         () =>
             Navigator.pushNamed(context, RouteNames.sellerAdminContactScreen),
       ),

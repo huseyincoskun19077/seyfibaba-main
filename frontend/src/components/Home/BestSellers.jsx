@@ -24,7 +24,7 @@ export default function BestSellers({ className, sallers = [] }) {
                   alt={
                     saller.shop_name
                       ? `${saller.shop_name} satici logosu`
-                      : "Seyfibaba satici magazasi logosu"
+                      : "Kuaför Tedarik satici magazasi logosu"
                   }
                   loading="lazy"
                 />

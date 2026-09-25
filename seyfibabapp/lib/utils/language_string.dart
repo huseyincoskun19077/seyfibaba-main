@@ -7,9 +7,9 @@ class Language {
   static String get onBoardingTitle1 => _s('Choose_Product', 'Ürün Seç');
   static String get onBoardingTitle2 => _s('Make_Your_Payment', 'Ödeme Yap');
   static String get onBoardingTitle3 => _s('Fast_Delivery', 'Hızlı Teslimat');
-  static String get onBoardingSubTitle => _s('on_boarding_subtitle', 'Seyfibaba Pazaryeri');
+  static String get onBoardingSubTitle => _s('on_boarding_subtitle', 'Kuaför Tedarik Kuaför ve Güzellik Salonları İçin Online Alışveriş Platformu');
   static String get next => _s('next', 'Sonraki');
-  static String get ecoShop => _s('ecoshop', 'Seyfibaba');
+  static String get ecoShop => _s('ecoshop', 'Kuaför Tedarik');
   static String get ecoShopSubTitle => _s('Buy_groceries_and_feed_yourself', 'Türkiye\'nin Kuaför Marketi');
   static String get dismiss => _s('Dismiss', 'Kapat');
   static String get developedBy => _s('Developed_By', 'Geliştiren');
@@ -114,7 +114,7 @@ class Language {
       _s('Bank_Payment', 'Havale ile ödeme yapıldı');
   static String get bankPaymentPendingNote => _s(
         'Bank_Payment_Pending_Note',
-        'Seyfibaba.com sistemi kontrol ettikten sonra ödemeniz yapıldıysa onay verecektir.',
+        'Kuaför Tedarik.com sistemi kontrol ettikten sonra ödemeniz yapıldıysa onay verecektir.',
       );
   static String get bankInfo => _s('Please_enter_bank_information', 'Banka bilgilerini girin');
   static String get pending => _s('Pending', 'Beklemede');
@@ -158,9 +158,9 @@ class Language {
   static String get mobileElectronics => _s('MobileElectronics', 'Elektronik');
   static String get totalPrice => _s('Total_Price', 'Toplam Fiyat');
   static String get pleaseWaitAMoment =>
-      _s('Please_wait_a_moment', 'Seyfibaba ürünleri geliyor...');
+      _s('Please_wait_a_moment', 'Kuaför Tedarik ürünleri geliyor...');
   static String get seyfibabaLoading1 =>
-      _s('seyfibaba_loading_1', 'Seyfibaba rafları hazırlanıyor...');
+      _s('seyfibaba_loading_1', 'Kuaför Tedarik rafları hazırlanıyor...');
   static String get seyfibabaLoading2 =>
       _s('seyfibaba_loading_2', 'Salon malzemeleri toplanıyor...');
   static String get seyfibabaLoading3 =>
@@ -170,7 +170,7 @@ class Language {
   static String get seyfibabaLoading5 =>
       _s('seyfibaba_loading_5', 'En iyi ürünler seçiliyor...');
   static String get seyfibabaLoading6 =>
-      _s('seyfibaba_loading_6', 'Bir saniye, Seyfibaba geliyor...');
+      _s('seyfibaba_loading_6', 'Bir saniye, Kuaför Tedarik geliyor...');
   static String get seyfibabaLoading7 =>
       _s('seyfibaba_loading_7', 'Mağaza vitrini güncelleniyor...');
   static String get appInfo => _s('app_info', 'Uygulama Bilgisi');

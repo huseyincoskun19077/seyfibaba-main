@@ -58,6 +58,11 @@ class QuickProductController extends Controller
             'colors.*.price' => 'nullable|numeric|min:0',
             'colors.*.qty' => 'nullable|integer|min:0',
             'colors.*.image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:8192',
+            'option_groups' => 'nullable|array|max:20',
+            'option_groups.*.name' => 'nullable|string|max:80',
+            'option_groups.*.items' => 'nullable|array|max:80',
+            'option_groups.*.items.*.name' => 'nullable|string|max:80',
+            'option_groups.*.items.*.price' => 'nullable|numeric|min:0',
         ]);
 
         $offerPrice = $request->filled('offer_price') ? (float) $request->offer_price : null;
@@ -95,6 +100,7 @@ class QuickProductController extends Controller
             'sale_unit_qty' => max(1, (int) ($request->input('sale_unit_qty', 1) ?: 1)),
             'child_category_id' => $request->filled('child_category_id') ? (int) $validated['child_category_id'] : null,
             'colors' => app(\App\Services\SimpleProductColorService::class)->payloadFromRequest($request),
+            'option_groups' => app(\App\Services\SimpleProductOptionService::class)->groupsFromRequest($request),
             'gallery_images' => $request->file('gallery_images'),
         ];
 
@@ -116,6 +122,9 @@ class QuickProductController extends Controller
             $message = 'Ürün yayına alındı.';
             if (! empty($result['color']['message'])) {
                 $message .= ' ' . $result['color']['message'];
+            }
+            if (! empty($result['options']['message'])) {
+                $message .= ' ' . $result['options']['message'];
             }
 
             return response()->json([

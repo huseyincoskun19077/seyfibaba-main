@@ -6,7 +6,7 @@ export async function generateMetadata() {
   return {
     title: "Satıcı Girişi",
     description:
-      "Seyfibaba satıcı paneline giriş yapın. Telefon veya e-posta ile mağazanızı yönetin.",
+      "Kuaför Tedarik satıcı paneline giriş yapın. Telefon veya e-posta ile mağazanızı yönetin.",
     alternates: {
       canonical: "/satici-giris",
     },

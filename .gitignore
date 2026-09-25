@@ -77,3 +77,7 @@ backend.rar
 .playwright-mcp/
 backend.rar
 .playwright-mcp/
+
+# Local signing secrets folder
+seyfibaba/
+

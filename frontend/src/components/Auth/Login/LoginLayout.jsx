@@ -1,22 +1,16 @@
-import React from "react";
-
 function LoginLayout({ children, scrollable = false }) {
-  const panelClassName = scrollable
-    ? "lg:w-[572px] w-full bg-white flex flex-col sm:p-10 p-5 pb-6 border border-[#E0E0E0]"
-    : "lg:w-[572px] w-full h-[783px] bg-white flex flex-col justify-center sm:p-10 p-5 border border-[#E0E0E0]";
-
   return (
-    <div
-      className={
-        scrollable
-          ? "login-page-wrapper w-full py-6 pb-28 lg:py-10 lg:pb-10"
-          : "login-page-wrapper w-full py-10"
-      }
-    >
-      <div className="container-x mx-auto">
-        <div className="flex justify-center">
-          <div className={panelClassName}>
-            {children && children}
+    <div className="w-full min-h-[50vh] bg-[#f4f7f9]">
+      <div
+        className={
+          scrollable
+            ? "container-x mx-auto px-4 py-6 pb-28 lg:py-10 lg:pb-10"
+            : "container-x mx-auto px-4 py-8 md:py-10"
+        }
+      >
+        <div className="mx-auto max-w-md">
+          <div className="rounded-2xl border border-[#04334a]/10 bg-white p-5 shadow-sm sm:p-8">
+            {children}
           </div>
         </div>
       </div>

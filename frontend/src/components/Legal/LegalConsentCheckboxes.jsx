@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { legalPath } from "@/config/legalDocuments";
+import { useState } from "react";
+import LegalDocumentModal from "@/components/Legal/LegalDocumentModal";
 
 /**
- * @param {{ items: Array<{slug?: string, slugs?: string[], links?: Array<{slug: string, label: string}>, label: string, linkLabel?: string, href?: string, key?: string}>, values: Record<string, boolean>, onChange: (key: string, checked: boolean) => void, required?: boolean, className?: string, title?: string }} props
+ * @param {{ items: Array<{slug?: string, slugs?: string[], links?: Array<{slug: string, label: string}>, label: string, prefix?: string, linkLabel?: string, href?: string, key?: string, required?: boolean}>, values: Record<string, boolean>, onChange: (key: string, checked: boolean) => void, required?: boolean, className?: string, title?: string, compact?: boolean }} props
  */
 export default function LegalConsentCheckboxes({
   items,
@@ -15,6 +15,13 @@ export default function LegalConsentCheckboxes({
   title = "Yasal Onaylar",
   compact = false,
 }) {
+  const [modal, setModal] = useState({ open: false, slug: "", title: "" });
+
+  const openDoc = (slug, label) => {
+    if (!slug) return;
+    setModal({ open: true, slug, title: label || "" });
+  };
+
   return (
     <div className={className} role="group" aria-label="Yasal onay kutuları">
       {title ? (
@@ -24,7 +31,6 @@ export default function LegalConsentCheckboxes({
         {items.map((item, index) => {
           const key = item.key || item.slug || item.href || `consent-${index}`;
           const checked = !!values[key];
-          const href = item.href || (item.slug ? legalPath(item.slug) : "#");
           const linkLabel = item.linkLabel || item.label;
           const bundledLinks = Array.isArray(item.links) ? item.links : [];
           const isItemRequired =
@@ -78,12 +84,13 @@ export default function LegalConsentCheckboxes({
                   onClick={(event) => event.stopPropagation()}
                 >
                   {isItemRequired ? (
-                    <span className="text-qred mr-1 font-semibold" aria-hidden="true">
+                    <span className="mr-1 font-semibold text-qred" aria-hidden="true">
                       *
                     </span>
                   ) : null}
                   {bundledLinks.length > 0 ? (
                     <>
+                      {item.prefix || null}
                       {bundledLinks.map((link, linkIndex) => (
                         <span key={link.slug}>
                           {linkIndex > 0
@@ -91,42 +98,46 @@ export default function LegalConsentCheckboxes({
                               ? " ve "
                               : ", "
                             : null}
-                          <Link
-                            href={legalPath(link.slug)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-green-700 underline underline-offset-2 hover:text-qyellow font-semibold"
-                            onClick={(event) => event.stopPropagation()}
+                          <button
+                            type="button"
+                            className="font-semibold text-[#04334a] underline underline-offset-2 hover:text-qyellow"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openDoc(link.slug, link.label);
+                            }}
                           >
                             {link.label}
-                          </Link>
+                          </button>
                         </span>
                       ))}
                       {item.label}
                     </>
                   ) : item.linkLabel ? (
                     <>
-                      <Link
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-700 underline underline-offset-2 hover:text-qyellow font-semibold"
-                        onClick={(event) => event.stopPropagation()}
+                      {item.prefix || null}
+                      <button
+                        type="button"
+                        className="font-semibold text-[#04334a] underline underline-offset-2 hover:text-qyellow"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openDoc(item.slug, item.linkLabel);
+                        }}
                       >
                         {item.linkLabel}
-                      </Link>
+                      </button>
                       {item.label}
                     </>
                   ) : (
-                    <Link
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-700 underline underline-offset-2 hover:text-qyellow font-semibold"
-                      onClick={(event) => event.stopPropagation()}
+                    <button
+                      type="button"
+                      className="font-semibold text-[#04334a] underline underline-offset-2 hover:text-qyellow"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openDoc(item.slug, linkLabel);
+                      }}
                     >
                       {linkLabel}
-                    </Link>
+                    </button>
                   )}
                 </span>
               </div>
@@ -134,6 +145,13 @@ export default function LegalConsentCheckboxes({
           );
         })}
       </div>
+
+      <LegalDocumentModal
+        open={modal.open}
+        slug={modal.slug}
+        title={modal.title}
+        onClose={() => setModal({ open: false, slug: "", title: "" })}
+      />
     </div>
   );
 }

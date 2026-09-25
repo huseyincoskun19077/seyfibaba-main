@@ -31,7 +31,7 @@ export async function generateMetadata() {
       url,
       title,
       description,
-      siteName: "Seyfibaba İkinci El",
+      siteName: "Kuaför Tedarik İkinci El",
       locale: "tr_TR",
     },
     twitter: {

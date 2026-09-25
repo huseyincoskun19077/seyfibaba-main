@@ -1,64 +1,78 @@
 "use client";
+
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { useSelector } from "react-redux";
+import Link from "next/link";
 import VerifyWidget from "./VerifyWidget";
 import SignupWidget from "./SignupWidget";
-import appConfig from "@/appConfig";
-
-const IMAGE_FALLBACK = "/assets/images/server-error.png";
 
 export default function Signup() {
-  const { websiteSetup } = useSelector((state) => state.websiteSetup);
   const [verify, setVerify] = useState(false);
   const [signupView, setSignupView] = useState(false);
-  const [imgThumb, setImgThumb] = useState(null);
-  useEffect(() => {
-    if (websiteSetup) {
-      setImgThumb(
-        websiteSetup.payload?.image_content?.login_image || IMAGE_FALLBACK
-      );
-    }
-  }, [websiteSetup]);
-
-  const signupImage =
-    imgThumb && imgThumb !== IMAGE_FALLBACK
-      ? `${appConfig.BASE_URL + imgThumb}`
-      : IMAGE_FALLBACK;
-
   const pathname = usePathname();
+
   useEffect(() => {
     if (pathname === "/verify-you") {
       setVerify(true);
+      setSignupView(false);
     } else {
+      setVerify(false);
       setSignupView(true);
     }
   }, [pathname]);
 
+  const title = verify ? "Hesabı doğrula" : "Üye ol";
+  const subtitle = verify
+    ? "E-posta veya SMS ile gelen doğrulama adımını tamamlayın."
+    : "Hızlıca hesap oluşturun; sipariş, favori ve kampanyalara erişin.";
+
   return (
-    <div className="login-page-wrapper w-full py-10">
-      <div className="container-x mx-auto">
-        <div className="lg:flex items-center relative w-full lg:min-h-[700px]">
-          {verify ? (
-            <div className="lg:w-[572px] w-full lg:h-[700px] bg-white flex flex-col justify-center sm:p-10 p-5 border border-[#E0E0E0]">
-              <VerifyWidget />
-            </div>
-          ) : signupView ? (
-            <div className="lg:w-[572px] w-full lg:h-auto bg-white flex flex-col justify-center sm:p-10 p-5 border border-[#E0E0E0]">
-              <SignupWidget />
-            </div>
-          ) : (
-            ""
-          )}
-          <div className="flex-1 lg:flex hidden transform scale-60 xl:scale-100   xl:justify-center">
-            <div
-              className="absolute ltr:xl:-right-20 ltr:-right-[138px] rtl:xl:-left-20 rtl:-left-[138px]"
-              style={{ top: "calc(50% - 258px)" }}
-            >
-              <Image width={608} height={480} src={signupImage} alt="login" />
-            </div>
+    <div className="w-full min-h-[70vh] bg-[#f4f7f9]">
+      <section className="relative overflow-hidden border-b border-[#04334a]/10">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 70% at 50% 0%, rgba(252,191,73,0.28), transparent 55%), linear-gradient(180deg, #eef3f6 0%, #f4f7f9 100%)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-25"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(4,51,74,0.04) 49px), repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(4,51,74,0.04) 49px)",
+          }}
+        />
+        <div className="relative container-x mx-auto px-4 py-10 text-center md:py-12">
+          <p className="mb-2 text-xs font-800 uppercase tracking-widest text-[#04334a]/50">
+            Kuaför Tedarik
+          </p>
+          <h1 className="text-2xl font-800 text-[#04334a] md:text-3xl">{title}</h1>
+          <p className="mx-auto mt-2 max-w-lg text-sm text-[#04334a]/60">{subtitle}</p>
+        </div>
+      </section>
+
+      <div className="container-x mx-auto px-4 py-8 md:py-10">
+        <div className="mx-auto max-w-lg">
+          <div className="rounded-2xl border border-[#04334a]/10 bg-white p-5 shadow-sm sm:p-8">
+            {verify ? <VerifyWidget /> : signupView ? <SignupWidget /> : null}
           </div>
+
+          {!verify ? (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center text-sm text-[#04334a]/55">
+              <Link href="/login" className="font-600 hover:text-[#04334a]">
+                Giriş yap
+              </Link>
+              <span className="hidden text-[#04334a]/25 sm:inline">·</span>
+              <Link href="/satici-kayit" className="font-600 hover:text-[#04334a]">
+                Satıcı başvurusu
+              </Link>
+              <span className="hidden text-[#04334a]/25 sm:inline">·</span>
+              <Link href="/yardim" className="font-600 hover:text-[#04334a]">
+                Yardım
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

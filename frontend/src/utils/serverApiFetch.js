@@ -16,7 +16,7 @@ export function serverApiBases() {
     .replace(/\/api$/i, "");
   if (env) bases.push(`${env}/api`);
   bases.push(`http://127.0.0.1:${process.env.BACKEND_PORT || "8000"}/api`);
-  bases.push("https://admin.seyfibaba.com/api");
+  bases.push("https://admin.kuafortedarik.com/api");
   bases.push(`http://127.0.0.1:${process.env.PORT || "3001"}/api`);
   return [...new Set(bases)];
 }

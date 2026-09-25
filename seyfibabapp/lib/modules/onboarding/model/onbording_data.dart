@@ -10,7 +10,7 @@ final onBoardingList = <OnBordingModel>[
     badge: 'Kuaför Toptan pazarı',
     title: 'Salonunuzun toptan pazarı',
     paragraph:
-        'Seyfibaba, kuaför ve güzellik salonları için kurulmuş bir toptan pazaryeridir. Boya, fön, koltuk, cihaz ve sarf malzemeyi salon fiyatına bulun; tedariki tek yerden yönetin. Uygulamayı kullanmak tamamen ücretsizdir.',
+        'Kuaför Tedarik, kuaför ve güzellik salonları için kurulmuş bir toptan pazaryeridir. Boya, fön, koltuk, cihaz ve sarf malzemeyi salon fiyatına bulun; tedariki tek yerden yönetin. Uygulamayı kullanmak tamamen ücretsizdir.',
   ),
   const OnBordingModel(
     art: 1,

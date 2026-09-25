@@ -132,6 +132,14 @@ class QuickProductService
             $colorResult = app(\App\Services\SimpleProductColorService::class)->sync($product, $uc['colors']);
         }
 
+        $optionResult = ['ok' => true, 'saved' => 0, 'message' => null];
+        if (!empty($uc['option_groups']) && is_array($uc['option_groups'])) {
+            $optionResult = app(\App\Services\SimpleProductOptionService::class)->replaceNonColorGroups(
+                $product,
+                $uc['option_groups']
+            );
+        }
+
         // Gallery images
         $galleryFiles = $uc['gallery_images'] ?? [];
         if (is_array($galleryFiles)) {
@@ -150,7 +158,12 @@ class QuickProductService
             }
         }
 
-        return ['product' => $product, 'ai' => $ai, 'color' => $colorResult];
+        return [
+            'product' => $product,
+            'ai' => $ai,
+            'color' => $colorResult,
+            'options' => $optionResult,
+        ];
     }
 
     /**

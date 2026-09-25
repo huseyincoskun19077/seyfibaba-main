@@ -388,16 +388,47 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                         '${p['unit_price'] ?? p['price'] ?? 0}',
                       ) ??
                       0;
+                  final variantsRaw = p['order_product_variants'] ??
+                      p['orderProductVariants'] ??
+                      p['variants'];
+                  final variantLabels = <String>[];
+                  if (variantsRaw is List) {
+                    for (final v in variantsRaw) {
+                      if (v is! Map) continue;
+                      final g =
+                          '${v['variant_name'] ?? v['product_variant_name'] ?? 'Seçenek'}'
+                              .trim();
+                      final val =
+                          '${v['variant_value'] ?? v['name'] ?? ''}'.trim();
+                      variantLabels.add(val.isEmpty ? g : '$g: $val');
+                    }
+                  }
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     decoration: HomeTheme.cardDecoration(),
                     padding: const EdgeInsets.all(12),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(
-                            name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              if (variantLabels.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  variantLabels.join(' · '),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: HomeTheme.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                         Text('x$qty'),

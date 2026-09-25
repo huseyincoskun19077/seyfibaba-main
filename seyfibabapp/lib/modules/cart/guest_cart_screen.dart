@@ -16,6 +16,7 @@ import '../../widgets/page_refresh.dart';
 import '../../widgets/rounded_app_bar.dart';
 import '../product_details/controller/cubit/details_state_model.dart';
 import '../product_details/controller/cubit/product_details_cubit.dart';
+import 'component/cart_installment_warning.dart';
 import 'component/guest_cart_component.dart';
 import 'component/guest_panel_widget.dart';
 import 'controllers/checkout/checkout_cubit.dart';
@@ -220,19 +221,17 @@ class GuestCartBody extends StatelessWidget {
           ),
         ),
         if (product.isNotEmpty) ...[
-          SliverPadding(
-            padding: Utils.symmetric(h: 12.0),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = product[index];
-                  return GuestCartComponent(product: item);
-                },
-                childCount: product.length,
-                addAutomaticKeepAlives: true,
-              ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final item = product[index];
+                return GuestCartComponent(product: item);
+              },
+              childCount: product.length,
+              addAutomaticKeepAlives: true,
             ),
           ),
+          const SliverToBoxAdapter(child: CartInstallmentWarning()),
         ] else ...[
           SliverFillRemaining(
             hasScrollBody: false,

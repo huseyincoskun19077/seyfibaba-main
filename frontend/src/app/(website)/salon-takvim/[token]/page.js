@@ -6,9 +6,9 @@ export const dynamicParams = true;
 export async function generateMetadata({ params }) {
   const { token } = await params;
   return {
-    title: "Salon takvimi | Seyfibaba",
+    title: "Salon takvimi | Kuaför Tedarik",
     description:
-      "Kuaför ve güzellik salonu dolu saatlerini canlı takip edin. Randevu için Seyfibaba uygulamasını indirin.",
+      "Kuaför ve güzellik salonu dolu saatlerini canlı takip edin. Randevu için Kuaför Tedarik uygulamasını indirin.",
     robots: { index: false, follow: false },
     alternates: {
       canonical: `/salon-takvim/${token}`,

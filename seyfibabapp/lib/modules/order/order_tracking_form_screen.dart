@@ -2,16 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/remote_urls.dart';
 import '../../core/router_name.dart';
 import '../../utils/constants.dart';
 import '../../utils/k_images.dart';
 import '../../utils/language_string.dart';
 import '../../utils/utils.dart';
 import '../../widgets/action_dialog.dart';
-import '../../widgets/custom_image.dart';
+import '../../widgets/app_brand_logo.dart';
 import '../../widgets/primary_button.dart';
-import '../animated_splash_screen/controller/app_setting_cubit/app_setting_cubit.dart';
 import 'controllers/order_tracking/order_tracking_cubit.dart';
 
 class OrderTrackingFormScreen extends StatelessWidget {
@@ -24,7 +22,6 @@ class OrderTrackingFormScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trackCubit = context.read<OrderTrackingCubit>();
-    final setting = context.read<AppSettingCubit>();
     return WillPopScope(
       onWillPop: () async {
         exitDialog(context);
@@ -41,9 +38,11 @@ class OrderTrackingFormScreen extends StatelessWidget {
           children: [
             verticalSpace(height: 60.0),
             Center(
-              child: CustomImage(
-                  path:
-                      RemoteUrls.imageUrl(setting.settingModel!.setting.logo)),
+              child: AppBrandLogo(
+                height: 56,
+                width: 220,
+                alignment: Alignment.center,
+              ),
             ),
             verticalSpace(),
             Text(

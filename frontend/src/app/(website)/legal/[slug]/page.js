@@ -18,21 +18,21 @@ export async function generateMetadata({ params }) {
 
   if (!document) {
     return {
-      title: "Yasal Belge | Seyfibaba",
+      title: "Yasal Belge | Kuaför Tedarik",
       robots: { index: false, follow: false },
     };
   }
 
   return {
-    title: document.meta_title || `${document.title} | Seyfibaba`,
-    description: document.meta_description || `${document.title} — Seyfibaba`,
+    title: document.meta_title || `${document.title} | Kuaför Tedarik`,
+    description: document.meta_description || `${document.title} — Kuaför Tedarik`,
     alternates: {
       canonical: `/legal/${slug}`,
     },
     openGraph: {
       title: document.meta_title || document.title,
       description: document.meta_description,
-      url: `https://seyfibaba.com/legal/${slug}`,
+      url: `https://kuafortedarik.com/legal/${slug}`,
     },
   };
 }

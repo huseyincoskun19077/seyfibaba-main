@@ -18,7 +18,7 @@ class SalonCrmAltAuthScreen extends StatelessWidget {
           Text('Salon ekibi veya müşteri', style: SalonCrmTheme.titleMd),
           const SizedBox(height: 8),
           Text(
-            'Patron değilseniz buradan devam edin. Patronlar Seyfibaba hesabıyla giriş yapar.',
+            'Patron değilseniz buradan devam edin. Patronlar Kuaför Tedarik hesabıyla giriş yapar.',
             style: SalonCrmTheme.body,
           ),
           const SizedBox(height: 24),

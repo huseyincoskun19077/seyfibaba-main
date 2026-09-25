@@ -1,7 +1,7 @@
 import FacebookCallbackClient from "./FacebookCallbackClient";
 
 export const metadata = {
-  title: "Facebook Giris Yonlendirmesi | Seyfibaba",
+  title: "Facebook Giris Yonlendirmesi | Kuaför Tedarik",
   robots: { index: false, follow: false },
   alternates: {
     canonical: "/callback/facebook",

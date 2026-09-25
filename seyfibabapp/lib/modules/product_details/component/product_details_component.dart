@@ -17,6 +17,8 @@ import '../../category/model/category_navigation_args.dart';
 import '../controller/cubit/product_details_cubit.dart';
 import '../model/product_details_product_model.dart';
 import 'product_furniture_inquiry.dart';
+import 'product_report_sheet.dart';
+import '../utils/product_share_helper.dart';
 
 class ProductDetailsComponent extends StatefulWidget {
   const ProductDetailsComponent(
@@ -179,6 +181,33 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
           ),
           const SizedBox(height: 16),
           ProductFurnitureInquiry(product: widget.product),
+          const SizedBox(height: 14),
+          InkWell(
+            onTap: () => showProductReportSheet(
+              context,
+              productId: widget.product.id,
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.flag_outlined, size: 18, color: redColor),
+                SizedBox(width: 8),
+                Text(
+                  'Bu ürünü şikayet et',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: redColor,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          ProductSocialShareRow(
+            name: widget.product.name,
+            slug: widget.product.slug,
+          ),
           const SizedBox(height: 10),
         ],
       ),

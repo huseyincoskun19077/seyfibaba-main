@@ -836,6 +836,10 @@ export default function CheckoutPage() {
                     setLegalConsentValues={setLegalConsentValues}
                     placeOrderHandler={placeOrderHandler}
                     totalPrice={mainTotalPrice}
+                    shippingAddressId={selectedShipping}
+                    billingAddressId={selectedBilling}
+                    shippingCharge={shippingCharge}
+                    cartItems={cart?.cartProducts || []}
                   />
                 </div>
               </div>

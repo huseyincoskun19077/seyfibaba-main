@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 
-import '../../home/widgets/home_theme.dart';
+import '../../../widgets/app_brand_logo.dart';
 
 /// İkinci el modülü — sade, modern arayüz bileşenleri
 class ShTheme {
@@ -59,26 +59,7 @@ class ShAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final Widget titleWidget;
     if (showLogo) {
-      titleWidget = RichText(
-        text: const TextSpan(
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
-            height: 1.1,
-          ),
-          children: [
-            TextSpan(
-              text: 'Seyfibaba',
-              style: TextStyle(color: HomeTheme.textDark),
-            ),
-            TextSpan(
-              text: '.com',
-              style: TextStyle(color: HomeTheme.brandYellow),
-            ),
-          ],
-        ),
-      );
+      titleWidget = const AppBrandLogo(height: 34, width: 140);
     } else if (subtitle != null) {
       titleWidget = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,8 +239,8 @@ class ShMarketplaceNotice extends StatelessWidget {
           Expanded(
             child: Text(
               compact
-                  ? 'Seyfibaba aracıdır. Ödeme, teslimat ve yazışmadan sorumlu değiliz.'
-                  : 'Alıcı ve satıcı kendi aralarında anlaşır. Telefon, IBAN veya dosya paylaşılabilir. Ödeme ve teslimat taraflara aittir; Seyfibaba sorumlu değildir.',
+                  ? 'Kuaför Tedarik aracıdır. Ödeme, teslimat ve yazışmadan sorumlu değiliz.'
+                  : 'Alıcı ve satıcı kendi aralarında anlaşır. Telefon, IBAN veya dosya paylaşılabilir. Ödeme ve teslimat taraflara aittir; Kuaför Tedarik sorumlu değildir.',
               style: const TextStyle(
                 fontSize: 11,
                 height: 1.35,
@@ -279,8 +260,8 @@ const _defaultSecondHandListingTerms = '''
 
 1. Yüklediğiniz ilan bilgileri ve fotoğraflar gerçeğe uygun olmalıdır.
 2. Çalıntı, yasaklı veya yanıltıcı ürünler yasaktır.
-3. İlanınız yayına alınmadan önce Seyfibaba tarafından incelenebilir.
-4. Seyfibaba yalnızca aracı platformdur. Alıcı ve satıcı kendi aralarında mesajlaşır; telefon, IBAN veya dosya paylaşabilir. Ödeme, teslimat ve anlaşmadan Seyfibaba sorumlu değildir.
+3. İlanınız yayına alınmadan önce Kuaför Tedarik tarafından incelenebilir.
+4. Kuaför Tedarik yalnızca aracı platformdur. Alıcı ve satıcı kendi aralarında mesajlaşır; telefon, IBAN veya dosya paylaşabilir. Ödeme, teslimat ve anlaşmadan Kuaför Tedarik sorumlu değildir.
 5. Kurallara aykırı ilanlar kaldırılabilir; hesabınız kısıtlanabilir.
 
 Bu şartları kabul ederek ilan yükleme ve yayına gönderme işlemini sürdürmüş sayılırsınız.

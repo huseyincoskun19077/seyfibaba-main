@@ -3,6 +3,7 @@ class BuyerBusinessType {
   static const maleHairdresser = 'male_hairdresser';
   static const barber = 'barber';
   static const beautySalon = 'beauty_salon';
+  static const nailArt = 'nail_art';
   static const other = 'other';
 
   static const options = <String, String>{
@@ -10,6 +11,7 @@ class BuyerBusinessType {
     maleHairdresser: 'Erkek kuaförü',
     barber: 'Berber',
     beautySalon: 'Güzellik salonu',
+    nailArt: 'Nail art / Protez tırnak',
     other: 'Diğer',
   };
 }
@@ -31,9 +33,9 @@ class BuyerBusinessStatus {
 class BuyerPersonalizationCopy {
   static const introTitle = 'Sizi daha iyi tanıyalım';
   static const introBody =
-      'Size özel ürün, paket ve kampanyalar sunabilmemiz için birkaç kısa soru soruyoruz. İsterseniz atlayabilirsiniz.';
+      'Alışverişe özel ürünler gösterebilmemiz için birkaç kısa soru. Bir kez kaydedilir; isterseniz atlayabilirsiniz.';
   static const whyWeAsk =
-      'Bu bilgiler yalnızca size uygun ürün ve fırsatları göstermek için kullanılır.';
+      'Sektörünüze (erkek kuaförü, güzellik salonu, nail art…) ve dükkan durumunuza göre “Sana Özel” ürünler listelenir.';
 
   static const shopNameTitle = 'Salonunuzun veya işletmenizin adı nedir?';
   static const shopNameHint = 'Örn: Kuaför Ahmet, Güzellik Merkezi...';
@@ -42,11 +44,11 @@ class BuyerPersonalizationCopy {
 
   static const businessTypeTitle = 'Hangi alanda çalışıyorsunuz?';
   static const businessTypeHelper =
-      'Bayan kuaförü, berber, güzellik salonu gibi alanınızı seçin.';
+      'Bayan kuaförü, erkek kuaförü, güzellik salonu, nail art…';
 
-  static const businessStatusTitle = 'İşletmenizin durumu nedir?';
+  static const businessStatusTitle = 'Dükkan açıyor musunuz / durumunuz?';
   static const businessStatusHelper =
-      'Bütçe ve açılış paketleri için size daha doğru öneriler sunalım.';
+      'Yeni açılışta farklı ürün paketleri önerebiliriz.';
 
   static const otherHint = 'Alanınızı yazın';
   static const skip = 'Atla';

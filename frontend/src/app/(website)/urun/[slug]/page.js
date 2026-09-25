@@ -32,7 +32,7 @@ export async function generateMetadata({ params }) {
       description,
       openGraph: {
         type: "website",
-        siteName: "Seyfibaba",
+        siteName: "Kuaför Tedarik",
         title,
         description,
         url: buildProductUrl(appConfig.APPLICATION_URL, canonicalSlug),

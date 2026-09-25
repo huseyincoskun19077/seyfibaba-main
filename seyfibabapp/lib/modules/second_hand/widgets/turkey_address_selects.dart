@@ -7,7 +7,7 @@ import 'second_hand_ui.dart';
 
 const _mahSep = '\u001e';
 
-const _localUrl = 'https://seyfibaba.com/data/tr-turkiye-address.json';
+const _localUrl = 'https://kuafortedarik.com/data/tr-turkiye-address.json';
 const _remoteUrl =
     'https://raw.githubusercontent.com/hsndmr/turkiye-city-county-district-neighborhood/main/data.json';
 

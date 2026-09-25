@@ -371,7 +371,7 @@ function BecomeSaller() {
                     </button>
                     <Link href="/seller-terms-condition">
                       <span className="text-base text-black cursor-pointer">
-Seyfibaba satıcı şartlarını ve gizlilik politikasını kabul ediyorum
+Kuaför Tedarik satıcı şartlarını ve gizlilik politikasını kabul ediyorum
                       </span>
                     </Link>
                   </div>

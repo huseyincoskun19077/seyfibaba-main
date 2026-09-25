@@ -26,10 +26,13 @@ class MapCubit extends Cubit<MapStateModel> {
 
   Timer? _timer;
 
+  /// Live courier map tracking is disabled (no real-time delivery GPS).
+  static const bool liveDeliveryTrackingEnabled = false;
+
   void isOpen(bool val) {
     debugPrint('called-isOpened');
     emit(state.copyWith(isOpenSupport: val));
-    if (val) {
+    if (val && liveDeliveryTrackingEnabled) {
       _startPeriodicRefresh();
     } else {
       _stopPeriodicRefresh();
@@ -37,6 +40,9 @@ class MapCubit extends Cubit<MapStateModel> {
   }
 
   void _startPeriodicRefresh() {
+    if (!liveDeliveryTrackingEnabled) {
+      return;
+    }
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (state.isOpenSupport) {
@@ -131,6 +137,9 @@ class MapCubit extends Cubit<MapStateModel> {
       ));
 
   Future<void> deliveryLocation() async {
+    if (!liveDeliveryTrackingEnabled) {
+      return;
+    }
     debugPrint('called-after-10-sec');
     if (_loginBloc.userInfo != null &&
         _loginBloc.userInfo!.accessToken.isNotEmpty) {

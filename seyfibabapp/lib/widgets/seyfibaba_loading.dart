@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 import '../utils/language_string.dart';
 
-/// Seyfibaba’ya özgü yükleme mesajları (Getir tarzı marka dokunuşu).
+/// Kuaför Tedarik’e özgü yükleme mesajları (Getir tarzı marka dokunuşu).
 class SeyfibabaLoadingPhrases {
   SeyfibabaLoadingPhrases._();
 
@@ -103,7 +103,7 @@ class _SeyfibabaLoadingCardState extends State<SeyfibabaLoadingCard> {
           ),
           const SizedBox(height: 16),
           Text(
-            'SEYFIBABA',
+            'KUAFÖR TEDARİK',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,

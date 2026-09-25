@@ -65,8 +65,8 @@ export default function SellerFaqSection({ compact = false }) {
           0850 303 5073
         </a>{" "}
         veya{" "}
-        <a href="mailto:info@seyfibaba.com" className="text-qyellow font-semibold hover:underline">
-          info@seyfibaba.com
+        <a href="mailto:info@kuafortedarik.com" className="text-qyellow font-semibold hover:underline">
+          info@kuafortedarik.com
         </a>
       </p>
     </div>

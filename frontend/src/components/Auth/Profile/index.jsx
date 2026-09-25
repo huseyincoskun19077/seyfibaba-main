@@ -174,7 +174,7 @@ function ProfileContent() {
       redirectToSellerPanel(token);
       return;
     }
-    window.location.href = `${appConfig.APPLICATION_URL || "https://seyfibaba.com"}/satici-giris`;
+    window.location.href = `${appConfig.APPLICATION_URL || "https://kuafortedarik.com"}/satici-giris`;
   };
 
   /**

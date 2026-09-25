@@ -1,723 +1,489 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { sellerFaqIntro, sellerFaqSections } from "@/data/sellerFaq";
+import Accodion from "@/components/Helpers/Accodion";
+import { sellerFaqSections } from "@/data/sellerFaq";
 import { sellerInfoPageList } from "@/data/sellerInfoPages";
 
 const WHATSAPP_DIGITS = "908503035073";
 const WHATSAPP_TEXT =
-  "Merhaba, Seyfibaba'da satıcı olmak istiyorum. Bilgi almak istiyorum.";
+  "Merhaba, Kuaför Tedarik'te satıcı olmak istiyorum. Bilgi almak istiyorum.";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_DIGITS}?text=${encodeURIComponent(WHATSAPP_TEXT)}`;
 
-const SECTIONS = [
-  { id: "giris", label: "Satışa başlayın" },
-  { id: "neden", label: "Neden Seyfibaba?" },
-  { id: "gorunurluk", label: "Türkiye geneli görünürlük" },
-  { id: "pazarlama", label: "Pazarlama desteği" },
-  { id: "platform", label: "100+ satıcı, 2.000+ ürün" },
-  { id: "urun-yukleme", label: "Kolay ürün yükleme" },
-  { id: "whatsapp-destek", label: "WhatsApp ürün desteği" },
-  { id: "entegrasyon", label: "Mevcut sisteminizle çalışın" },
-  { id: "urunler", label: "Hangi ürünleri satabilirsiniz?" },
-  { id: "avantajlar", label: "Satıcı avantajları" },
-  { id: "surec", label: "Nasıl katılırım?" },
-  { id: "rehber", label: "Satıcı rehberi" },
-  { id: "sss", label: "Sıkça sorulan sorular" },
-  { id: "basvuru", label: "Başvuru ve iletişim" },
-];
-
-const ADVANTAGES = [
+const SELLER_TOPICS = [
   {
-    title: "Türkiye genelinde ürün tanıtımı",
-    text: "Ürünlerinizin Türkiye genelindeki sektör profesyonellerine ulaştırılması için çalışıyoruz.",
+    id: "baslangic",
+    title: "Satıcı olmak",
+    keywords: ["satıcı", "kayıt", "başvuru", "nasıl", "kyc", "üyelik"],
   },
   {
-    title: "Yeni müşterilere ulaşma",
-    text: "Kendi müşteri çevrenizin dışında yeni işletmelere ulaşabileceğiniz ek bir satış kanalı.",
+    id: "komisyon",
+    title: "Komisyon & hakediş",
+    keywords: ["komisyon", "hakediş", "ödeme", "iban", "iyzico", "para", "%10"],
   },
   {
-    title: "Pazarlama çalışmaları",
-    text: "Platformun büyümesi ve yeni işletmelere ulaşması için dijital ve saha odaklı tanıtım sürdürülür.",
+    id: "urun",
+    title: "Ürün yükleme",
+    keywords: ["ürün", "yükleme", "stok", "fiyat", "excel", "ai"],
   },
   {
-    title: "Ürün yükleme desteği",
-    text: "Ürün adı, görsel, fiyat ve stok bilgilerinizi platforma aktarma sürecinde destek alın.",
+    id: "kargo",
+    title: "Sipariş & kargo",
+    keywords: ["kargo", "sipariş", "teslimat", "gönderi", "takip"],
   },
   {
-    title: "Entegrasyon imkânları",
-    text: "Uygun sistemlerle ürün, fiyat ve stok aktarımı / güncelleme için entegrasyon seçenekleri.",
+    id: "iade",
+    title: "İade süreçleri",
+    keywords: ["iade", "iptal", "cayma", "geri"],
   },
   {
-    title: "Mobil ve web erişimi",
-    text: "Müşteriler ürünlerinizi Seyfibaba web ve mobil uygulamaları üzerinden keşfeder.",
+    id: "entegrasyon",
+    title: "Entegrasyon",
+    keywords: ["entegrasyon", "sentos", "softtr", "sistem", "api"],
   },
   {
-    title: "Aylık abonelik yok",
-    text: "Satıcı olmak için aylık abonelik modeli yoktur. Komisyon şeffaftır.",
+    id: "avantajlar",
+    title: "Neden Kuaför Tedarik?",
+    keywords: ["neden", "avantaj", "görünürlük", "pazarlama", "sektör"],
   },
   {
-    title: "Sektöre özel pazaryeri",
-    text: "Genel pazaryeri yerine doğrudan kuaför, berber ve güzellik sektörüne odaklı platform.",
-  },
-];
-
-const PRODUCT_CATEGORIES = [
-  {
-    title: "Kuaför mobilyaları",
-    text: "Kuaför koltukları, berber koltukları, yıkama üniteleri, tezgâhlar, aynalar ve salon mobilyaları.",
+    id: "rehber",
+    title: "Satıcı rehberi",
+    type: "guides",
   },
   {
-    title: "Kuaför malzemeleri",
-    text: "Profesyonel saç bakım ürünleri, makineler, ekipmanlar, aksesuarlar ve salon ihtiyaçları.",
+    id: "basvuru",
+    title: "Başvuru yap",
+    type: "link",
+    href: "/satici-kayit",
   },
   {
-    title: "Kozmetik",
-    text: "Saç bakımı, boyama, şekillendirme, erkek bakım, cilt, kirpik-kaş, tırnak, ağda, makyaj, hijyen ve sarf ürünleri.",
+    id: "giris",
+    title: "Satıcı girişi",
+    type: "link",
+    href: "/satici-giris",
   },
   {
-    title: "Yedek parçalar",
-    text: "Kuaför koltukları, yıkama üniteleri ve salon ekipmanlarına yönelik yedek parçalar.",
+    id: "whatsapp",
+    title: "WhatsApp bilgi hattı",
+    type: "external",
+    href: WHATSAPP_URL,
+  },
+  {
+    id: "yardim",
+    title: "Alıcı yardım merkezi",
+    type: "link",
+    href: "/yardim",
   },
 ];
 
-const STEPS = [
-  {
-    n: "1",
-    title: "Satıcı başvurunuzu yapın",
-    text: "Hızlı kayıt formundan bilgilerinizi bırakın veya WhatsApp’tan bilgi alın.",
-  },
-  {
-    n: "2",
-    title: "Ürünlerinizi belirleyin",
-    text: "Satmak istediğiniz ürünleri ve ürün bilgilerini paylaşın; gerekirse ekibimiz yardımcı olur.",
-  },
-  {
-    n: "3",
-    title: "Ürünleriniz platforma eklensin",
-    text: "Ürünleriniz Seyfibaba’da yayınlanır; web ve mobil vitrinde görünür.",
-  },
-  {
-    n: "4",
-    title: "Türkiye genelindeki müşterilere ulaşın",
-    text: "Kuaför, berber ve güzellik salonları ürünlerinizi keşfeder.",
-  },
-  {
-    n: "5",
-    title: "Satışlarınızı büyütün",
-    text: "Seyfibaba’yı mevcut kanallarınıza ekleyerek yeni müşterilere ulaşın.",
-  },
-];
+const TOPIC_FAQS = {
+  baslangic: [
+    {
+      id: "b1",
+      question: "Satıcı olmak için neler gerekiyor?",
+      answer:
+        "KYC doğrulama, Iyzico alt üye işyeri kaydı (TC kimlik zorunlu), vergi levhası doğrulaması ve geçerli IBAN. Vergi levhası, sektöre özel satış yaptığınızı teyit etmek içindir. Aylık abonelik ücreti yoktur.",
+    },
+    {
+      id: "b2",
+      question: "Nasıl başvururum?",
+      answer:
+        "Satıcı başvuru formunu doldurun veya WhatsApp bilgi hattından (0850 303 5073) yazın. Kayıt sonrası SMS ile gelen şifreyle satıcı paneline giriş yaparsınız.",
+    },
+    {
+      id: "b3",
+      question: "Başvuru sonrası ne olur?",
+      answer:
+        "Hesabınız oluşturulur; panelden mağaza bilgilerini, KYC belgelerini ve ürünlerinizi tamamlayın. Onay sonrası ürünleriniz vitrinde görünür.",
+    },
+  ],
+  komisyon: [
+    {
+      id: "k1",
+      question: "Komisyon oranı nedir?",
+      answer:
+        "Kuaför Tedarik platform komisyonu sabit %10’dur. Aylık abonelik, gizli listeleme veya ek platform ücreti yoktur.",
+    },
+    {
+      id: "k2",
+      question: "Param ne zaman hesabıma geçer?",
+      answer:
+        "Müşteri ödemesi Iyzico güvenli havuzuna düşer. Teslimat ve iade süreci sorunsuz tamamlanınca %10 komisyon kesilir; kalan tutar doğrulanmış IBAN’ınıza aktarılır. Hakediş onayı, paranın anında bankaya geçtiği anlamına gelmez; Iyzico takvimine bağlıdır.",
+    },
+  ],
+  urun: [
+    {
+      id: "u1",
+      question: "Ürünleri nasıl eklerim?",
+      answer:
+        "Panelden tek ürün, hızlı ürün ekleme (AI) veya Excel toplu yükleme ile ekleyebilirsiniz. Fotoğraf, stok, fiyat ve ölçüleri güncel tutun. İsterseniz ürün yükleme desteği alın.",
+    },
+    {
+      id: "u2",
+      question: "Hangi ürünleri satabilirim?",
+      answer:
+        "Kuaför/berber mobilyaları, salon ekipmanları, profesyonel saç ve bakım ürünleri, kozmetik ve yedek parçalar. Yasaklı ürün politikasına uygun olmalıdır.",
+    },
+  ],
+  kargo: [
+    {
+      id: "c1",
+      question: "Kargo ücretini kim öder?",
+      answer:
+        "Kargo bedeli satıcıya aittir. Siparişleri kendi anlaşmalı kargo firmanızla gönderip takip numarasını satıcı paneline girersiniz.",
+    },
+    {
+      id: "c2",
+      question: "Kendi kargomla gönderebilir miyim?",
+      answer:
+        "Evet. Anlaşmalı kargo firmanızla gönderip takip numarasını panele girmeniz yeterlidir.",
+    },
+  ],
+  iade: [
+    {
+      id: "i1",
+      question: "İade talebi gelirse ne yapmalıyım?",
+      answer:
+        "Talepler İade Talepleri bölümüne düşer. Kabul veya ret verirsiniz; onaylanan iadelerde tutar müşteriye iade edilir ve hakedişinizden düşülür.",
+    },
+  ],
+  entegrasyon: [
+    {
+      id: "e1",
+      question: "Mevcut sistemimle çalışabilir miyim?",
+      answer:
+        "Uygun entegratör ve stok/fiyat yazılımlarıyla ürün aktarımı desteklenir. Başvuru formunda kullandığınız entegratörü belirtebilirsiniz; ekip yönlendirir.",
+    },
+  ],
+  avantajlar: [
+    {
+      id: "a1",
+      question: "Neden Kuaför Tedarik?",
+      answer:
+        "Yalnızca kuaför, berber ve güzellik sektörüne odaklıyız. Türkiye geneli görünürlük, şeffaf %10 komisyon, Iyzico güvencesi ve sektöre özel alıcı kitlesi sunarız.",
+    },
+    {
+      id: "a2",
+      question: "Ürünlerim nerede görünür?",
+      answer:
+        "Web sitesi ve mobil uygulamada. Platform pazarlama çalışmalarıyla ürünlerinizi daha fazla salona ulaştırmayı hedefler.",
+    },
+  ],
+};
 
-function CtaRow({ className = "" }) {
+function SearchIcon() {
   return (
-    <div className={`flex flex-col sm:flex-row gap-3 ${className}`}>
-      <Link
-        href="/satici-kayit"
-        className="inline-flex items-center justify-center rounded-md bg-qyellow px-6 py-3.5 text-sm md:text-base font-700 text-qblack hover:brightness-95 transition"
-      >
-        Satışa Başla — Kayıt Ol
-      </Link>
-      <a
-        href={WHATSAPP_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center justify-center rounded-md border border-[#25D366] bg-[#25D366] px-6 py-3.5 text-sm md:text-base font-700 text-white hover:brightness-95 transition"
-      >
-        WhatsApp ile Bilgi Al
-      </a>
-      <Link
-        href="/satici-giris"
-        className="inline-flex items-center justify-center rounded-md border border-[#d9c89a] bg-white px-6 py-3.5 text-sm md:text-base font-700 text-qblacktext hover:bg-[#fffaf0] transition"
-      >
-        Satıcı Girişi
-      </Link>
-    </div>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+      <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
   );
 }
 
-function SectionHeading({ children }) {
-  return (
-    <h2 className="text-2xl md:text-3xl font-bold text-qblacktext leading-tight">
-      {children}
-    </h2>
-  );
+function matchesKeywords(text, keywords = []) {
+  const hay = String(text || "").toLowerCase();
+  return keywords.some((k) => hay.includes(String(k).toLowerCase()));
 }
 
-function Body({ children }) {
-  return (
-    <p className="mt-3 text-[#555] text-sm md:text-base leading-relaxed">
-      {children}
-    </p>
+function buildFaqPool() {
+  const fromSections = sellerFaqSections.flatMap((section, si) =>
+    section.items.map((item, qi) => ({
+      id: `sf-${si}-${qi}`,
+      question: item.q,
+      answer: item.a,
+      section: section.title,
+    }))
   );
+  const fromTopics = Object.values(TOPIC_FAQS).flat();
+  const seen = new Set();
+  const pool = [];
+  [...fromTopics, ...fromSections].forEach((f) => {
+    const key = f.question.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    pool.push(f);
+  });
+  return pool;
 }
 
 export default function SellerLanding() {
-  const [activeId, setActiveId] = useState("giris");
-  const [openFaq, setOpenFaq] = useState("0-0");
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [activeId, setActiveId] = useState(null);
 
-  const faqFlat = useMemo(
-    () =>
-      sellerFaqSections.flatMap((section, si) =>
-        section.items.map((item, qi) => ({
-          key: `${si}-${qi}`,
-          section: section.title,
-          q: item.q,
-          a: item.a,
-        }))
-      ),
-    []
-  );
+  const allFaqs = useMemo(() => buildFaqPool(), []);
 
-  const scrollToId = useCallback((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY - 96;
-    window.scrollTo({ top, behavior: "smooth" });
-    setActiveId(id);
-    setMobileNavOpen(false);
-  }, []);
-
-  useEffect(() => {
-    const ids = SECTIONS.map((s) => s.id);
-    const observers = [];
-
-    ids.forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const obs = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) setActiveId(id);
-        },
-        { rootMargin: "-20% 0px -65% 0px", threshold: 0 }
+  const categoryFaqs = useMemo(() => {
+    const map = {};
+    SELLER_TOPICS.forEach((topic) => {
+      if (topic.type) return;
+      const base = TOPIC_FAQS[topic.id] || [];
+      const fromPool = allFaqs.filter((f) =>
+        matchesKeywords(`${f.question} ${f.answer}`, topic.keywords || [])
       );
-      obs.observe(el);
-      observers.push(obs);
+      const merged = [...base];
+      fromPool.forEach((f) => {
+        if (!merged.some((m) => m.question.toLowerCase() === f.question.toLowerCase())) {
+          merged.push(f);
+        }
+      });
+      map[topic.id] = merged;
     });
+    return map;
+  }, [allFaqs]);
 
-    return () => observers.forEach((o) => o.disconnect());
-  }, []);
+  const searchResults = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return { faqs: [], guides: [] };
 
-  const openFaqAndScroll = (key) => {
-    setOpenFaq(key);
-    scrollToId("sss");
+    const faqs = allFaqs.filter(
+      (f) =>
+        f.question.toLowerCase().includes(q) ||
+        f.answer.toLowerCase().includes(q)
+    );
+
+    const guides = sellerInfoPageList.filter(
+      (g) =>
+        g.title.toLowerCase().includes(q) ||
+        String(g.description || "").toLowerCase().includes(q)
+    );
+
+    return { faqs, guides };
+  }, [query, allFaqs]);
+
+  const activeTopic = SELLER_TOPICS.find((t) => t.id === activeId) || null;
+  const showingSearch = query.trim().length > 1;
+  const showingGuides = activeId === "rehber";
+  const listFaqs = showingSearch
+    ? searchResults.faqs
+    : activeTopic && !activeTopic.type
+      ? categoryFaqs[activeTopic.id] || []
+      : [];
+
+  const openTopic = (topic) => {
+    setQuery("");
+    if (topic.type === "link" && topic.href) {
+      window.location.href = topic.href;
+      return;
+    }
+    if (topic.type === "external" && topic.href) {
+      window.open(topic.href, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setActiveId(topic.id);
   };
 
   return (
-    <div className="w-full bg-[#faf7f1]">
-      {/* Hero */}
-      <section
-        id="giris"
-        className="relative scroll-mt-24 overflow-hidden border-b border-[#ece3cf]"
-      >
+    <div className="w-full min-h-[70vh] bg-[#f4f7f9]">
+      {/* Hero — kurumsal, yardım merkezi ile aynı dil */}
+      <section className="relative overflow-hidden border-b border-[#04334a]/10">
         <div
-          className="pointer-events-none absolute inset-0 opacity-70"
+          className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 20% 0%, #ffe8b8 0%, transparent 55%), radial-gradient(ellipse 70% 50% at 90% 20%, #f3e6c8 0%, transparent 50%)",
+              "radial-gradient(ellipse 80% 70% at 50% 0%, rgba(252,191,73,0.28), transparent 55%), linear-gradient(180deg, #eef3f6 0%, #f4f7f9 100%)",
           }}
         />
-        <div className="container-x mx-auto relative px-4 py-12 md:py-16">
-          <p className="text-sm font-600 tracking-wide text-[#9a7b2f] mb-3">
-            Seyfibaba Satıcı Platformu
+        <div
+          className="pointer-events-none absolute inset-0 opacity-25"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(4,51,74,0.04) 49px), repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(4,51,74,0.04) 49px)",
+          }}
+        />
+        <div className="relative container-x mx-auto px-4 py-12 md:py-16 text-center">
+          <p className="mb-3 text-xs font-800 uppercase tracking-widest text-[#04334a]/50">
+            Kuaför Tedarik Satıcı Merkezi
           </p>
-          <h1 className="max-w-4xl text-3xl md:text-5xl font-bold text-qblacktext leading-tight">
-            Seyfibaba’da satışa başlayın, ürünlerinizi Türkiye’nin her yerine
-            ulaştırın
+          <h1 className="mb-3 text-2xl font-800 text-[#04334a] md:text-4xl">
+            Satıcı olmak için neye ihtiyacın var?
           </h1>
-          <p className="mt-5 max-w-3xl text-base md:text-lg text-[#5c5c5c] leading-relaxed">
-            Kuaför, berber ve güzellik sektörüne ürün mü satıyorsunuz? Ürünlerinizi
-            yalnızca kendi mağazanızda bırakmayın.{" "}
-            <strong className="font-700 text-qblacktext">
-              Seyfibaba ile Türkiye genelindeki salonların karşısına çıkarın.
-            </strong>
+          <p className="mx-auto mb-6 max-w-2xl text-sm text-[#04334a]/65 md:text-base">
+            Kuaför, berber ve güzellik sektörüne özel pazaryerinde satışa başlayın.
+            Komisyon, hakediş, ürün yükleme ve başvuru adımlarını buradan bulun.
           </p>
-          <p className="mt-4 max-w-3xl text-sm md:text-base text-[#666] leading-relaxed">
-            Seyfibaba; sektör profesyonellerini ve ürün tedarikçilerini bir araya
-            getiren online pazaryeridir. Amacımız yalnızca listelemek değil;
-            ürünlerinizin daha fazla işletme tarafından keşfedilmesini sağlamaktır.
-          </p>
-          <CtaRow className="mt-8" />
-          <p className="mt-4 text-sm text-[#7a7a7a]">
-            WhatsApp’tan yazarken mesaj otomatik olarak{" "}
-            <em>“Satıcı olmak istiyorum”</em> ile açılır. Zaten satıcıysanız{" "}
-            <Link href="/satici-giris" className="underline hover:text-qblacktext">
-              satıcı girişi
-            </Link>{" "}
-            yapın.
-          </p>
+          <div className="relative mx-auto max-w-xl">
+            <label htmlFor="satici-ara" className="sr-only">
+              Satıcı merkezinde ara
+            </label>
+            <input
+              id="satici-ara"
+              type="search"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (e.target.value.trim()) setActiveId(null);
+              }}
+              placeholder="Satıcı Merkezinde Ara"
+              className="h-14 w-full rounded-xl border border-[#04334a]/15 bg-white pl-5 pr-14 text-[#04334a] shadow-sm outline-none placeholder:text-[#04334a]/40 focus:border-qyellow focus:ring-2 focus:ring-qyellow/40"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-qyellow">
+              <SearchIcon />
+            </span>
+          </div>
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/satici-kayit"
+              className="inline-flex h-12 min-w-[180px] items-center justify-center rounded-lg bg-[#04334a] px-6 text-sm font-800 text-white hover:bg-[#032736]"
+            >
+              Satıcı Başvurusu
+            </Link>
+            <Link
+              href="/satici-giris"
+              className="inline-flex h-12 min-w-[180px] items-center justify-center rounded-lg border border-[#04334a]/20 bg-white px-6 text-sm font-800 text-[#04334a] hover:border-qyellow hover:bg-[#FFF8E8]"
+            >
+              Satıcı Girişi
+            </Link>
+          </div>
         </div>
       </section>
 
-      <div className="container-x mx-auto px-4 py-8 md:py-12">
-        <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-10 items-start">
-          {/* Left nav */}
-          <aside className="lg:sticky lg:top-24 mb-6 lg:mb-0">
-            <div className="rounded-2xl border border-[#ece3cf] bg-white shadow-sm overflow-hidden">
+      <div className="container-x mx-auto px-4 py-8 md:py-10">
+        {(showingSearch || activeId) && (
+          <button
+            type="button"
+            onClick={() => {
+              setActiveId(null);
+              setQuery("");
+            }}
+            className="mb-5 text-sm font-700 text-[#04334a]/70 hover:text-[#04334a]"
+          >
+            ← Tüm konular
+          </button>
+        )}
+
+        {!showingSearch && !activeId ? (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
+            {SELLER_TOPICS.map((topic) => (
               <button
+                key={topic.id}
                 type="button"
-                className="lg:hidden w-full flex items-center justify-between px-4 py-3.5 font-700 text-qblacktext text-sm"
-                onClick={() => setMobileNavOpen((v) => !v)}
-                aria-expanded={mobileNavOpen}
+                onClick={() => openTopic(topic)}
+                className={`min-h-[96px] rounded-xl border border-[#04334a]/10 bg-white px-4 py-5 text-center text-sm font-800 text-[#04334a] shadow-sm transition hover:border-qyellow hover:shadow-md md:min-h-[112px] md:text-[15px] ${
+                  topic.id === "basvuru" ? "ring-1 ring-qyellow/50" : ""
+                }`}
               >
-                İçindekiler / SSS
-                <span className="text-qyellow text-lg">{mobileNavOpen ? "−" : "+"}</span>
+                {topic.title}
               </button>
+            ))}
+          </div>
+        ) : null}
 
-              <nav
-                className={`${
-                  mobileNavOpen ? "block" : "hidden"
-                } lg:block max-h-[70vh] overflow-y-auto px-2 py-2`}
-                aria-label="Satıcı sayfası içindekiler"
-              >
-                <p className="hidden lg:block px-3 pt-3 pb-2 text-xs font-700 uppercase tracking-wide text-[#9a7b2f]">
-                  Bu sayfada
-                </p>
-                <ul className="space-y-0.5">
-                  {SECTIONS.map((item) => (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => scrollToId(item.id)}
-                        className={`w-full text-left rounded-lg px-3 py-2 text-sm transition ${
-                          activeId === item.id
-                            ? "bg-[#fff6de] text-qblacktext font-700"
-                            : "text-[#555] hover:bg-[#faf7f1] font-500"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="mt-3 border-t border-[#ece3cf] pt-3 px-1">
-                  <p className="px-2 pb-2 text-xs font-700 uppercase tracking-wide text-[#9a7b2f]">
-                    SSS — hızlı bak
+        {/* Guides */}
+        {(showingGuides || (showingSearch && searchResults.guides.length > 0)) && (
+          <div className={`max-w-3xl mx-auto ${showingSearch ? "mb-8" : ""}`}>
+            {!showingSearch ? (
+              <h2 className="mb-4 text-xl font-800 text-[#04334a]">Satıcı rehberi</h2>
+            ) : (
+              <h2 className="mb-4 text-lg font-800 text-[#04334a]">
+                Rehber sayfaları ({searchResults.guides.length})
+              </h2>
+            )}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(showingSearch ? searchResults.guides : sellerInfoPageList).map((g) => (
+                <Link
+                  key={g.slug}
+                  href={g.href}
+                  className="rounded-xl border border-[#04334a]/10 bg-white p-4 transition hover:border-qyellow hover:shadow-sm"
+                >
+                  <p className="text-sm font-800 text-[#04334a]">{g.title}</p>
+                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#04334a]/55">
+                    {g.description}
                   </p>
-                  <ul className="space-y-0.5 pb-2">
-                    {faqFlat.map((item) => (
-                      <li key={item.key}>
-                        <button
-                          type="button"
-                          onClick={() => openFaqAndScroll(item.key)}
-                          className={`w-full text-left rounded-lg px-3 py-2 text-xs leading-snug transition ${
-                            openFaq === item.key && activeId === "sss"
-                              ? "bg-[#fff6de] text-qblacktext font-700"
-                              : "text-[#666] hover:bg-[#faf7f1]"
-                          }`}
-                        >
-                          {item.q}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="border-t border-[#ece3cf] p-3 space-y-2">
-                  <Link
-                    href="/satici-kayit"
-                    className="flex items-center justify-center w-full rounded-md bg-qyellow py-2.5 text-sm font-700 text-qblack"
-                  >
-                    Kayıt Ol
-                  </Link>
-                  <a
-                    href={WHATSAPP_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center w-full rounded-md bg-[#25D366] py-2.5 text-sm font-700 text-white"
-                  >
-                    WhatsApp Bilgi Al
-                  </a>
-                </div>
-              </nav>
+                </Link>
+              ))}
             </div>
-          </aside>
+          </div>
+        )}
 
-          {/* Content */}
-          <div className="space-y-8 md:space-y-10 min-w-0">
-            <section
-              id="neden"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-white p-5 md:p-8"
-            >
-              <SectionHeading>Neden Seyfibaba?</SectionHeading>
-              <Body>
-                Seyfibaba’da yer alan ürünleriniz yalnızca bulunduğunuz şehirde
-                değil, Türkiye’nin dört bir yanındaki kuaför, berber ve güzellik
-                salonlarına ulaştırılmak üzere tanıtılır.
-              </Body>
-              <Body>
-                İstanbul’dan İzmir’e, Ankara’dan Antalya’ya, Bursa’dan
-                Gaziantep’e kadar sektör profesyonellerinin ürünlerinizi
-                keşfetmesini hedefliyoruz.
-              </Body>
-              <p className="mt-4 text-sm md:text-base font-700 text-qblacktext">
-                Siz ürünlerinizi ekleyin, biz daha fazla işletmeye ulaşması için
-                çalışalım.
-              </p>
-            </section>
+        {/* FAQ list / search */}
+        {(showingSearch || (activeId && !showingGuides && !activeTopic?.type)) && (
+          <div className="mx-auto max-w-3xl">
+            <h2 className="mb-4 text-xl font-800 text-[#04334a]">
+              {showingSearch
+                ? `Soru sonuçları${searchResults.faqs.length ? ` (${searchResults.faqs.length})` : ""}`
+                : activeTopic?.title}
+            </h2>
 
-            <section
-              id="gorunurluk"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-white p-5 md:p-8"
-            >
-              <SectionHeading>Ürünleriniz Türkiye genelinde görünür olsun</SectionHeading>
-              <Body>
-                Amacımız satıcıların ürünlerini yalnızca bir pazaryerinde
-                listelemek değildir. <strong>Ürünlerinizi pazarlıyoruz.</strong>
-              </Body>
-              <Body>
-                Platformda yayınlanan ürünler kuaförlere, berberlere, güzellik
-                salonlarına ve sektör profesyonellerine ulaşabilecek şekilde
-                tanıtılır. Böylece yeni müşteriler için ek bir satış ve pazarlama
-                kanalı oluşturursunuz.
-              </Body>
-            </section>
-
-            <section
-              id="pazarlama"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-white p-5 md:p-8"
-            >
-              <SectionHeading>Sadece satış değil, pazarlama desteği</SectionHeading>
-              <Body>
-                Bir pazaryerine ürün yüklemek kolaydır. Asıl önemli olan ürünün
-                müşteriye ulaşmasıdır. Seyfibaba olarak satıcı ürünlerinin daha
-                fazla kişiye ulaşması için dijital pazarlama çalışmalarını
-                sürdürüyoruz.
-              </Body>
-              <Body>
-                Platform büyüdükçe Seyfibaba’ya gelen her yeni kuaför, berber ve
-                güzellik salonu sizin için de potansiyel müşteri anlamına gelir.
-              </Body>
-              <p className="mt-4 text-sm md:text-base font-700 text-qblacktext">
-                Siz ürünlerinizi ekleyin. Biz Seyfibaba’yı büyütelim.
-              </p>
-            </section>
-
-            <section
-              id="platform"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-[#fffaf0] p-5 md:p-8"
-            >
-              <SectionHeading>100+ satıcı, 2.000+ ürün ve büyüyen platform</SectionHeading>
-              <Body>
-                Seyfibaba her geçen gün büyüyen bir sektör platformudur.
-                Platformumuzda 100’den fazla satıcı ve 2.000’den fazla ürün yer
-                alır.
-              </Body>
-              <ul className="mt-5 space-y-2.5">
-                {[
-                  "Daha fazla salon platforma geliyor",
-                  "Daha fazla ürün keşfediliyor",
-                  "Daha fazla satıcı görünürlük kazanıyor",
-                  "Daha fazla işletme ile satıcı arasında bağlantı oluşuyor",
-                ].map((line) => (
-                  <li key={line} className="flex gap-3 text-sm md:text-base text-[#444]">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-qyellow" />
-                    {line}
-                  </li>
+            {listFaqs.length === 0 && !(showingSearch && searchResults.guides.length) ? (
+              <div className="rounded-xl border border-[#04334a]/10 bg-white p-8 text-center">
+                <p className="mb-4 text-sm text-[#04334a]/60">
+                  Bu konuda sonuç bulunamadı.
+                </p>
+                <Link
+                  href="/satici-kayit"
+                  className="inline-flex h-11 items-center justify-center rounded-lg bg-qyellow px-5 text-sm font-800 text-[#04334a]"
+                >
+                  Satıcı başvurusu yap
+                </Link>
+              </div>
+            ) : listFaqs.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {listFaqs.map((faq) => (
+                  <div
+                    key={faq.id}
+                    className="overflow-hidden rounded-xl border border-[#04334a]/10 bg-white"
+                  >
+                    <Accodion title={faq.question} des={faq.answer} />
+                  </div>
                 ))}
-              </ul>
-              <p className="mt-5 font-700 text-qblacktext text-sm md:text-base">
-                Siz de büyüyen bu ekosistemde yerinizi alın.
-              </p>
-            </section>
+              </div>
+            ) : null}
 
-            <section
-              id="urun-yukleme"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-white p-5 md:p-8"
-            >
-              <SectionHeading>Ürünlerinizi yüklemek için saatlerinizi harcamayın</SectionHeading>
-              <Body>
-                Ürünlerinizi tek tek sisteme girmek zorunda değilsiniz. Ürün adı,
-                açıklama, görseller, fiyat, stok ve diğer bilgiler platforma
-                aktarılabilir.
-              </Body>
-              <Body>
-                Mevcut satış sistemleriniz veya entegrasyon çözümleri üzerinden
-                ürün aktarımı ve güncelleme seçenekleri sunuyoruz. Ürün yükleme
-                konusunda ekibimizden de destek alabilirsiniz.
-              </Body>
-              <p className="mt-4 font-700 text-qblacktext text-sm md:text-base">
-                Siz satışınıza odaklanın; taşıma sürecini birlikte kolaylaştıralım.
+            <div className="mt-8 rounded-xl border border-dashed border-[#04334a]/20 bg-white p-5 text-center">
+              <p className="mb-3 text-sm text-[#04334a]/70">
+                Hâlâ sorunuz mu var?
               </p>
-            </section>
+              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <a
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-11 items-center justify-center rounded-lg bg-[#25D366] px-5 text-sm font-800 text-white"
+                >
+                  WhatsApp ile sor
+                </a>
+                <Link
+                  href="/yardim?kategori=destek"
+                  className="inline-flex h-11 items-center justify-center rounded-lg bg-[#04334a] px-5 text-sm font-800 text-white"
+                >
+                  Destek talebi oluştur
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
-            <section
-              id="whatsapp-destek"
-              className="scroll-mt-24 rounded-2xl border border-[#c8efd8] bg-[#f3fff7] p-5 md:p-8"
-            >
-              <SectionHeading>WhatsApp üzerinden ürün yükleme desteği</SectionHeading>
-              <Body>
-                Karmaşık işlemlerle uğraşmak istemiyorsanız ürün bilgilerinizi
-                ekibimize ileterek yükleme sürecinde destek alabilirsiniz.
-                Görseller, isimler, fiyatlar ve gerekli bilgileri paylaşın;
-                yayın sürecini birlikte yürütelim.
-              </Body>
+        {/* Home bottom CTA */}
+        {!showingSearch && !activeId ? (
+          <div className="mt-10 rounded-2xl bg-[#04334a] px-6 py-8 text-center text-white">
+            <h2 className="mb-2 text-lg font-800 md:text-xl">
+              Satışa hazır mısınız?
+            </h2>
+            <p className="mx-auto mb-5 max-w-md text-sm text-white/70">
+              Başvurunuzu tamamlayın; SMS ile giriş bilgileriniz gelsin. Aylık
+              abonelik yok, komisyon şeffaf %10.
+            </p>
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href="/satici-kayit"
+                className="inline-flex h-12 items-center justify-center rounded-lg bg-qyellow px-6 text-sm font-800 text-[#04334a] hover:brightness-95"
+              >
+                Satıcı Başvurusu
+              </Link>
               <a
                 href={WHATSAPP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-6 inline-flex items-center justify-center rounded-md bg-[#25D366] px-6 py-3.5 text-sm font-700 text-white hover:brightness-95 transition"
+                className="inline-flex h-12 items-center justify-center rounded-lg border border-white/30 bg-transparent px-6 text-sm font-800 text-white hover:bg-white/10"
               >
-                WhatsApp ile Bilgi Al / Destek İste
+                WhatsApp Bilgi Al
               </a>
-              <p className="mt-3 text-xs text-[#666]">
-                Ön tanımlı mesaj: “Merhaba, Seyfibaba&apos;da satıcı olmak istiyorum…”
-              </p>
-            </section>
-
-            <section
-              id="entegrasyon"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-white p-5 md:p-8"
-            >
-              <SectionHeading>Mevcut sisteminizle çalışmaya devam edin</SectionHeading>
-              <Body>
-                Seyfibaba’ya katılmak için mevcut satış sisteminizden
-                vazgeçmeniz gerekmez. Kendi web sitenizi, mağazanızı veya diğer
-                kanallarınızı kullanırken Seyfibaba’yı ek kanal olarak
-                kullanabilirsiniz.
-              </Body>
-              <p className="mt-4 font-700 text-qblacktext text-sm md:text-base">
-                Mevcut satış kanallarınız + Seyfibaba = daha geniş satış ağı
-              </p>
-            </section>
-
-            <section
-              id="urunler"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-white p-5 md:p-8"
-            >
-              <SectionHeading>Seyfibaba’da hangi ürünleri satabilirsiniz?</SectionHeading>
-              <Body>
-                Kuaför ve güzellik sektörüne yönelik ürünlerinizi satışa
-                sunabilirsiniz.
-              </Body>
-              <div className="mt-6 grid sm:grid-cols-2 gap-4">
-                {PRODUCT_CATEGORIES.map((cat) => (
-                  <div
-                    key={cat.title}
-                    className="rounded-xl border border-[#ece3cf] bg-[#faf7f1] p-4"
-                  >
-                    <h3 className="font-700 text-qblacktext text-sm md:text-base">
-                      {cat.title}
-                    </h3>
-                    <p className="mt-2 text-xs md:text-sm text-[#666] leading-relaxed">
-                      {cat.text}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section
-              id="avantajlar"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-white p-5 md:p-8"
-            >
-              <SectionHeading>Seyfibaba satıcılarına sağladığımız avantajlar</SectionHeading>
-              <div className="mt-6 grid sm:grid-cols-2 gap-3 md:gap-4">
-                {ADVANTAGES.map((item) => (
-                  <div
-                    key={item.title}
-                    className="rounded-xl border border-[#ece3cf] p-4 flex gap-3"
-                  >
-                    <span className="text-qyellow font-700 shrink-0">✓</span>
-                    <div>
-                      <h3 className="font-700 text-qblacktext text-sm">{item.title}</h3>
-                      <p className="mt-1 text-xs md:text-sm text-[#666] leading-relaxed">
-                        {item.text}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Body>
-                Sizin ürününüz, Seyfibaba’nın pazarlama gücüyle daha fazla
-                işletmeye ulaşsın. Siz ürünlerinizi ekleyin; biz platformu
-                büyütelim, yeni salonlara ulaşalım ve ürünlerinizi tanıtalım.
-              </Body>
-            </section>
-
-            <section
-              id="surec"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-[#fffaf0] p-5 md:p-8"
-            >
-              <SectionHeading>Seyfibaba’ya katılmak için ne yapmalısınız?</SectionHeading>
-              <ol className="mt-6 space-y-4">
-                {STEPS.map((s) => (
-                  <li key={s.n} className="flex gap-4">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-qyellow font-700 text-qblack">
-                      {s.n}
-                    </span>
-                    <div>
-                      <p className="font-700 text-qblacktext text-sm md:text-base">
-                        {s.title}
-                      </p>
-                      <p className="mt-1 text-sm text-[#666] leading-relaxed">{s.text}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-              <CtaRow className="mt-8" />
-            </section>
-
-            <section
-              id="rehber"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-white p-5 md:p-8"
-            >
-              <SectionHeading>Satıcı rehberi — merak edilenler</SectionHeading>
-              <Body>
-                Satıcı olmak, satış akışı, komisyon, kargo ve ürün ekleme gibi
-                konulara özel sayfalar hazırladık. Her biri ayrı adresle
-                yayınlanır; kayıt öncesi merak ettiklerinizi buradan okuyabilirsiniz.
-              </Body>
-              <ul className="mt-6 grid sm:grid-cols-2 gap-3">
-                {sellerInfoPageList.map((item) => (
-                  <li key={item.slug}>
-                    <Link
-                      href={item.href}
-                      className="block h-full rounded-xl border border-[#ece3cf] bg-[#fffdf8] px-4 py-3.5 hover:border-qyellow transition"
-                    >
-                      <span className="font-700 text-qblacktext text-sm md:text-base">
-                        {item.title}
-                      </span>
-                      <span className="mt-1 block text-xs md:text-sm text-[#666] leading-snug">
-                        {item.description}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <section
-              id="sss"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-white p-5 md:p-8"
-            >
-              <SectionHeading>Satıcılar için sıkça sorulan sorular</SectionHeading>
-              <p className="mt-3 text-sm text-[#666] leading-relaxed">{sellerFaqIntro}</p>
-              <p className="mt-2 text-xs text-[#888]">
-                Soldaki SSS listesinden bir soruya tıklayınca yanıt burada açılır.
-              </p>
-
-              <div className="mt-6 space-y-5">
-                {sellerFaqSections.map((section, si) => (
-                  <div key={section.title}>
-                    <h3 className="text-xs font-700 uppercase tracking-wide text-[#9a7b2f] mb-2">
-                      {section.title}
-                    </h3>
-                    <div className="rounded-xl border border-[#ece3cf] overflow-hidden">
-                      {section.items.map((item, qi) => {
-                        const key = `${si}-${qi}`;
-                        const isOpen = openFaq === key;
-                        return (
-                          <div
-                            key={key}
-                            id={`faq-${key}`}
-                            className="border-b border-[#f0e8d4] last:border-b-0"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => setOpenFaq(isOpen ? null : key)}
-                              className="w-full text-left px-4 py-3.5 flex justify-between gap-3 items-start hover:bg-[#faf7f1] transition"
-                              aria-expanded={isOpen}
-                            >
-                              <span className="font-600 text-qblacktext text-sm">
-                                {item.q}
-                              </span>
-                              <span className="text-qyellow shrink-0">{isOpen ? "−" : "+"}</span>
-                            </button>
-                            {isOpen ? (
-                              <div className="px-4 pb-4 text-sm text-[#555] leading-relaxed bg-[#fffdf8]">
-                                {item.a}
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 rounded-xl border border-[#c8efd8] bg-[#f3fff7] p-4 md:p-5">
-                <p className="text-sm text-[#444] leading-relaxed">
-                  Aklınızda soru kaldıysa WhatsApp’tan yazın. Mesaj{" "}
-                  <strong>“satıcı olmak istiyorum”</strong> ile açılır; ekibimiz
-                  dönüş yapar.
-                </p>
-                <a
-                  href={WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center justify-center rounded-md bg-[#25D366] px-5 py-3 text-sm font-700 text-white"
-                >
-                  WhatsApp ile Sor
-                </a>
-              </div>
-            </section>
-
-            <section
-              id="basvuru"
-              className="scroll-mt-24 rounded-2xl border border-[#ece3cf] bg-qblacktext text-white p-5 md:p-8"
-            >
-              <h2 className="text-2xl md:text-3xl font-bold leading-tight">
-                Siz satın, biz daha fazla müşteriye ulaşmanız için çalışalım
-              </h2>
-              <p className="mt-4 text-sm md:text-base text-white/80 leading-relaxed">
-                Seyfibaba sadece ürün listelediğiniz bir yer değil; sektör
-                profesyonelleriyle buluşmanızı hedefleyen bir pazaryeridir.
-                Türkiye genelindeki salonlara ulaşmak ve mevcut kanallarınıza
-                yeni bir kanal eklemek istiyorsanız başvurun.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <Link
-                  href="/satici-kayit"
-                  className="inline-flex items-center justify-center rounded-md bg-qyellow px-6 py-3.5 text-sm md:text-base font-700 text-qblack hover:brightness-95 transition"
-                >
-                  Satışa Başla
-                </Link>
-                <a
-                  href={WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-md bg-[#25D366] px-6 py-3.5 text-sm md:text-base font-700 text-white hover:brightness-95 transition"
-                >
-                  WhatsApp ile Bilgi Al
-                </a>
-                <Link
-                  href="/satici-giris"
-                  className="inline-flex items-center justify-center rounded-md border border-white/30 px-6 py-3.5 text-sm md:text-base font-700 text-white hover:bg-white/10 transition"
-                >
-                  Satıcı Girişi
-                </Link>
-              </div>
-              <p className="mt-6 text-xs text-white/55">
-                Seyfibaba.com — Kuaför, berber ve güzellik sektörünün online
-                pazaryeri
-              </p>
-            </section>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
-
-      {/* Mobile sticky CTAs */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-[#ece3cf] bg-white/95 backdrop-blur px-3 py-2.5 flex gap-2 safe-area-pb">
-        <Link
-          href="/satici-kayit"
-          className="flex-1 inline-flex items-center justify-center rounded-md bg-qyellow py-3 text-xs font-700 text-qblack"
-        >
-          Kayıt Ol
-        </Link>
-        <a
-          href={WHATSAPP_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 inline-flex items-center justify-center rounded-md bg-[#25D366] py-3 text-xs font-700 text-white"
-        >
-          WhatsApp
-        </a>
-      </div>
-      <div className="lg:hidden h-16" />
     </div>
   );
 }

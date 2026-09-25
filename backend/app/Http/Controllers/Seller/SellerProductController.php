@@ -188,6 +188,15 @@ class SellerProductController extends Controller
             'colors.*.price' => 'nullable|numeric|min:0',
             'colors.*.qty' => 'nullable|integer|min:0',
             'colors.*.image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:8192',
+            'option_groups' => 'nullable|array|max:20',
+            'option_groups.*.name' => 'nullable|string|max:80',
+            'option_groups.*.items' => 'nullable|array|max:80',
+            'option_groups.*.items.*.name' => 'nullable|string|max:80',
+            'option_groups.*.items.*.price' => 'nullable|numeric|min:0',
+            'sizes' => 'nullable|array|max:80',
+            'sizes.*.name' => 'nullable|string|max:80',
+            'sizes.*.price' => 'nullable|numeric|min:0',
+            'sync_simple_variants' => 'nullable|boolean',
         ];
         $customMessages = [
             'short_name.required' => trans('Short name is required'),
@@ -252,18 +261,20 @@ class SellerProductController extends Controller
         $product->save();
 
         $colorResult = ['message' => null];
-        if ($request->has('colors')) {
+        $sizeResult = ['message' => null];
+        $syncVariants = $request->boolean('sync_simple_variants')
+            || $request->has('colors')
+            || $request->hasFile('colors')
+            || $request->has('option_groups')
+            || $request->has('sizes');
+        if ($syncVariants) {
             $colorResult = app(SimpleProductColorService::class)->sync(
                 $product,
                 app(SimpleProductColorService::class)->payloadFromRequest($request)
             );
-        }
-        $sizeResult = ['message' => null];
-        if ($request->has('sizes')) {
-            $sizeResult = app(SimpleProductOptionService::class)->sync(
+            $sizeResult = app(SimpleProductOptionService::class)->replaceNonColorGroups(
                 $product,
-                app(SimpleProductOptionService::class)->payloadFromRequest($request, 'sizes'),
-                'Boyut'
+                app(SimpleProductOptionService::class)->groupsFromRequest($request)
             );
         }
 
@@ -334,6 +345,7 @@ class SellerProductController extends Controller
         $specificationKeys = ProductSpecificationKey::all();
         $productSpecifications = ProductSpecification::where('product_id',$product->id)->get();
         $colorRows = app(SimpleProductColorService::class)->existingRows($product);
+        $optionGroups = app(SimpleProductOptionService::class)->existingNonColorGroups($product);
         return response()->json([
             'product' => $product,
             'categories' => $categories,
@@ -343,6 +355,7 @@ class SellerProductController extends Controller
             'subCategories' => $subCategories,
             'childCategories' => $childCategories,
             'colorRows' => $colorRows,
+            'optionGroups' => $optionGroups,
         ], 200);
 
     }
@@ -378,6 +391,15 @@ class SellerProductController extends Controller
             'colors.*.price' => 'nullable|numeric|min:0',
             'colors.*.qty' => 'nullable|integer|min:0',
             'colors.*.image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:8192',
+            'option_groups' => 'nullable|array|max:20',
+            'option_groups.*.name' => 'nullable|string|max:80',
+            'option_groups.*.items' => 'nullable|array|max:80',
+            'option_groups.*.items.*.name' => 'nullable|string|max:80',
+            'option_groups.*.items.*.price' => 'nullable|numeric|min:0',
+            'sizes' => 'nullable|array|max:80',
+            'sizes.*.name' => 'nullable|string|max:80',
+            'sizes.*.price' => 'nullable|numeric|min:0',
+            'sync_simple_variants' => 'nullable|boolean',
         ];
         $customMessages = [
             'short_name.required' => trans('Short name is required'),
@@ -449,18 +471,20 @@ class SellerProductController extends Controller
         $product->save();
 
         $colorResult = ['message' => null];
-        if ($request->has('colors')) {
+        $sizeResult = ['message' => null];
+        $syncVariants = $request->boolean('sync_simple_variants')
+            || $request->has('colors')
+            || $request->hasFile('colors')
+            || $request->has('option_groups')
+            || $request->has('sizes');
+        if ($syncVariants) {
             $colorResult = app(SimpleProductColorService::class)->sync(
                 $product,
                 app(SimpleProductColorService::class)->payloadFromRequest($request)
             );
-        }
-        $sizeResult = ['message' => null];
-        if ($request->has('sizes')) {
-            $sizeResult = app(SimpleProductOptionService::class)->sync(
+            $sizeResult = app(SimpleProductOptionService::class)->replaceNonColorGroups(
                 $product,
-                app(SimpleProductOptionService::class)->payloadFromRequest($request, 'sizes'),
-                'Boyut'
+                app(SimpleProductOptionService::class)->groupsFromRequest($request)
             );
         }
 

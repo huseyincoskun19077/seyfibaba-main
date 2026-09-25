@@ -340,7 +340,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           }
                           if (!emailValue.contains('@') ||
                               emailValue.endsWith('.local') ||
-                              emailValue.endsWith('@pending.seyfibaba.local')) {
+                              emailValue.endsWith('@pending.kuafortedarik.local')) {
                             Utils.errorSnackBar(
                               context,
                               'Geçerli bir e-posta adresi girin.',

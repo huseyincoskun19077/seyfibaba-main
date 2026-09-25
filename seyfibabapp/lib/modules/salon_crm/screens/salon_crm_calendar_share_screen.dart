@@ -79,7 +79,7 @@ class _SalonCrmCalendarShareScreenState
     final s = _share!;
     return '${s.salonName} — ${s.personName} takvimi\n'
         'Dolu ve boş saatleri canlı görün. Kim randevu aldı görünmez.\n'
-        'Randevu almak için Seyfibaba uygulamasını indirin.\n'
+        'Randevu almak için Kuaför Tedarik uygulamasını indirin.\n'
         '${s.url}';
   }
 
@@ -129,7 +129,7 @@ class _SalonCrmCalendarShareScreenState
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Müşteri uygulamayı indirmeden seyfibaba.com üzerinden dolu saatleri takip eder. Geçmiş günler görünmez. İsim veya kim olduğu yazılmaz.',
+                      'Müşteri uygulamayı indirmeden kuafortedarik.com üzerinden dolu saatleri takip eder. Geçmiş günler görünmez. İsim veya kim olduğu yazılmaz.',
                       style: SalonCrmTheme.body,
                     ),
                     const SizedBox(height: 18),

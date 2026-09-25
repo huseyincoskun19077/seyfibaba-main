@@ -181,6 +181,9 @@ class ProductDetailsCubit extends Cubit<DetailsStateModel> {
         thumbImage: p?.thumbImage ?? '',
         price: p?.price ?? 0.0,
         offerPrice: p?.offerPrice ?? 0.0,
+        maxInstallment: p?.maxInstallment ?? 1,
+        categoryName: p?.categoryName ?? '',
+        saleUnitQty: (p?.saleUnitQty ?? 1) < 1 ? 1 : (p?.saleUnitQty ?? 1),
       );
     }
 

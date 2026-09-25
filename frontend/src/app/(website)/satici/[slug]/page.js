@@ -39,7 +39,7 @@ export default async function SaticiInfoSlugPage({ params }) {
   const page = getSellerInfoPage(slug);
   if (!page) notFound();
 
-  const base = appConfig.APPLICATION_URL || "https://seyfibaba.com";
+  const base = appConfig.APPLICATION_URL || "https://kuafortedarik.com";
   const url = `${base}/satici/${page.slug}`;
 
   const breadcrumbSchema = {
@@ -75,11 +75,11 @@ export default async function SaticiInfoSlugPage({ params }) {
     mainEntityOfPage: url,
     author: {
       "@type": "Organization",
-      name: "Seyfibaba",
+      name: "Kuaför Tedarik",
     },
     publisher: {
       "@type": "Organization",
-      name: "Seyfibaba",
+      name: "Kuaför Tedarik",
       url: base,
     },
   };

@@ -115,8 +115,9 @@ flutter:
     - assets/stripe/
     - google_fonts/
 
-flutter_icons:
+flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   remove_alpha_ios: true
   image_path: "assets/launcher_icon.png"
+  min_sdk_android: 21

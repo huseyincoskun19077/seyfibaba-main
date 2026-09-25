@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../utils/constants.dart';
 
-/// Ana sayfa görsel dili — Seyfibaba marka renkleri (web ile uyumlu)
+/// Ana sayfa görsel dili — Kuaför Tedarik marka renkleri (web ile uyumlu)
 class HomeTheme {
   HomeTheme._();
 

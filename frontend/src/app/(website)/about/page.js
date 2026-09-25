@@ -18,7 +18,7 @@ export async function generateMetadata() {
     title: seoSetting?.seo_title || "Hakkımızda",
     description:
       seoSetting?.seo_description ||
-      "Seyfibaba'nin berber ve kuafor profesyonelleri icin kurdugu pazaryeri yapisini, hizmet alanlarini ve operasyon anlayisini kesfedin.",
+      "Kuaför Tedarik'nin berber ve kuafor profesyonelleri icin kurdugu pazaryeri yapisini, hizmet alanlarini ve operasyon anlayisini kesfedin.",
     alternates: {
       canonical: "/about",
     },

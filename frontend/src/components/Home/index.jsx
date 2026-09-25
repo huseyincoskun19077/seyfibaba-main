@@ -2,16 +2,14 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import Banner from "./Banner";
 import CategorySection from "./CategorySection";
+import PopularProductsStrip from "./PopularProductsStrip";
+import StoriesStrip from "./StoriesStrip";
 import { isFlashSaleActive } from "@/utils/flashSale";
-import appConfig from "@/appConfig";
 import apiRoutes from "@/appConfig/apiRoutes";
 import { resolveProductImageUrl } from "@/utils/productImage";
 import ProductCard from "../Helpers/Cards/ProductCard";
-import HomeSlider from "../Slider/HomeSlider";
 
 const Ads = dynamic(() => import("./Ads"), { ssr: false });
 const ViewMoreTitle = dynamic(() => import("../Helpers/ViewMoreTitle"));
@@ -26,7 +24,7 @@ const FALLBACK_PLAY_STORE =
 
 const FALLBACK_APP_STORE =
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_STORE_URL) ||
-  "https://apps.apple.com/tr/search?term=Seyfibaba";
+  "https://apps.apple.com/tr/search?term=Kuaför Tedarik";
 
 function resolveStoreUrl(value, fallback) {
   const raw = String(value || "").trim();
@@ -93,19 +91,6 @@ export default function Home({ homepageData }) {
     });
   }
 
-  const mobileSliderSettings = {
-    pagination: {
-      clickable: true,
-    },
-    loop: true,
-    autoplay: {
-      delay: 3200,
-      speed: 900,
-      disableOnInteraction: false,
-    },
-    effect: "fade",
-  };
-
   // Tüm Ürünler — API'den gelen genel liste (vitrin bayrağı gerekmez); yoksa eski birleşik vitrin listesi
   const mergedVitrineProducts = [
     ...(homepage?.newArrivalProducts || []),
@@ -145,7 +130,7 @@ export default function Home({ homepageData }) {
   };
   const [selectedMobileCategorySlug, setSelectedMobileCategorySlug] = useState("");
 
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 12;
 
   const selectedMobileCategory = (homepage?.homepage_categories || []).find(
     (category) => category.slug === selectedMobileCategorySlug
@@ -176,17 +161,14 @@ export default function Home({ homepageData }) {
     <div className="w-full pt-1 pb-12 md:pb-16 space-y-4 md:space-y-7 bg-[#fdfdfd]">
       <Ads />
 
-      {/* Mobil: slider + kategoriler — sıkı aralık */}
+      {/* Stories — sadece anasayfa, popüler ürünlerin üstünde */}
+      <StoriesStrip />
+
+      {/* Popüler ürünler — eski slider yerine sola kayan şerit */}
+      <PopularProductsStrip products={homepage?.popularCategoryProducts} />
+
+      {/* Mobil: kategoriler */}
       <div className="md:hidden space-y-3">
-        {homepage?.sliders?.length > 0 && (
-          <section>
-            <div className="container-x mx-auto">
-              <div className="w-full h-[160px] sm:h-[180px] rounded-3xl overflow-hidden">
-                <HomeSlider images={homepage.sliders} settings={mobileSliderSettings} />
-              </div>
-            </div>
-          </section>
-        )}
         <section className="bg-white/50">
           <CategorySection
             categories={homepage?.homepage_categories}
@@ -207,29 +189,6 @@ export default function Home({ homepageData }) {
         </section>
       </div>
 
-      {/* Desktop Slider / Banner */}
-      {homepage?.sliders?.length > 0 && (
-        <div className="container-x mx-auto hidden md:block">
-          <Banner
-            images={homepage.sliders}
-            services={homepage.services}
-            sidebarImgOne={
-              homepage.sliderBannerOne &&
-              parseInt(homepage.sliderBannerOne.status) === 1
-                ? homepage.sliderBannerOne
-                : null
-            }
-            sidebarImgTwo={
-              homepage.sliderBannerTwo &&
-              parseInt(homepage.sliderBannerTwo.status) === 1
-                ? homepage.sliderBannerTwo
-                : null
-            }
-            className="banner-wrapper shadow-xl rounded-3xl overflow-hidden"
-          />
-        </div>
-      )}
-
       {/* Dinamik section'lar — admin paneldeki sıraya göre render */}
       {/* Tum Urunler — 8 urun + tumune git */}
       {homepageAllProducts.length > 0 && (
@@ -242,9 +201,9 @@ export default function Home({ homepageData }) {
                   : "Tüm Ürünler"}
               </h2>
             </div>
-            <div className="w-full grid grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 xl:gap-5 gap-2.5">
+            <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-2.5 xl:gap-3">
               {visibleProducts.map((item) => (
-                <div key={`${pathname}-${item.id}`} data-aos="fade-up">
+                <div key={`${pathname}-${item.id}`} data-aos="fade-up" className="min-w-0">
                   <ProductCard datas={formatProduct(item)} compact />
                 </div>
               ))}
@@ -301,16 +260,8 @@ export default function Home({ homepageData }) {
             );
 
           case "Popular_Category":
-            return homepage?.popularCategoryProducts?.length > 0 ? (
-              <section key={key}>
-                <ViewMoreTitle
-                  seeMoreUrl="/products?highlight=popular_category"
-                  categoryTitle={title}
-                >
-                  <SectionStyleTwo products={homepage.popularCategoryProducts} />
-                </ViewMoreTitle>
-              </section>
-            ) : null;
+            // Üstte PopularProductsStrip var; tekrar etmesin
+            return null;
 
           case "Top_Rated_Products":
             return null;

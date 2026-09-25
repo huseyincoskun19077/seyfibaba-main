@@ -302,7 +302,7 @@ export default function usePlaceOrder({
       const billingEmail = String(billing?.email || "").trim().toLowerCase();
       if (
         !billingEmail ||
-        billingEmail.endsWith("@pending.seyfibaba.local") ||
+        billingEmail.endsWith("@pending.kuafortedarik.local") ||
         billingEmail.endsWith(".local") ||
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billingEmail)
       ) {

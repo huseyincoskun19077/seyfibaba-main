@@ -69,7 +69,7 @@ export default function WhySeyfibaba({ className, homepageData }) {
       <div className="container-x mx-auto">
         <div className="text-center mb-10">
           <h2 className="sm:text-3xl text-2xl font-bold text-qblacktext leading-tight">
-            Neden Seyfibaba?
+            Neden Kuaför Tedarik?
           </h2>
           <p className="text-gray-500 mt-3 max-w-2xl mx-auto text-base leading-relaxed">
             Türkiye'nin en kapsamlı berber ve kuaför malzemeleri pazaryeri olarak
@@ -81,7 +81,7 @@ export default function WhySeyfibaba({ className, homepageData }) {
             Profesyonel satin alma kararini destekleyen ana sinyaller
           </h3>
           <p className="mt-3 max-w-4xl text-sm leading-7 text-gray-600">
-            Seyfibaba, salon profesyonellerinin urun secimini yalnizca fiyat
+            Kuaför Tedarik, salon profesyonellerinin urun secimini yalnizca fiyat
             listesi uzerinden degil; kategori yapisi, marka karsilastirmasi,
             kampanya alani ve guncel urun akisi ile birlikte degerlendirebilmesi
             icin kurgulandi.
@@ -92,7 +92,7 @@ export default function WhySeyfibaba({ className, homepageData }) {
             baslar. Bir berber koltugu icin hidrolik sistem ve doseme dayanimi,
             bir kuafor tezgahi icin depolama duzeni ve elektrik noktalarina
             uyum, bir kurutma makinesi icin ise motor tipi ve servis
-            erisilebilirligi ayni tabloda degerlendirilmelidir. Seyfibaba
+            erisilebilirligi ayni tabloda degerlendirilmelidir. Kuaför Tedarik
             uzerindeki kategori, marka ve satici yapisi; bu kriterleri tek bir
             akista karsilastirarak salon kurulumu, ekipman yenileme ve tekrarli
             sarf tedarigi senaryolarinda daha savunulabilir satin alma karari

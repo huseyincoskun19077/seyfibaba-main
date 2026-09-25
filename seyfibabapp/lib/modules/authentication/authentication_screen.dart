@@ -4,12 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../widgets/custom_text.dart';
 import '/utils/language_string.dart';
 import '/widgets/capitalized_word.dart';
-import '../../core/remote_urls.dart';
 import '../../core/router_name.dart';
 import '../../utils/constants.dart';
 import '../../utils/utils.dart';
-import '../../widgets/custom_image.dart';
-import '../animated_splash_screen/controller/app_setting_cubit/app_setting_cubit.dart';
+import '../../widgets/app_brand_logo.dart';
 import '../profile/controllers/delete_user/delete_user_cubit.dart';
 import 'controller/login/login_bloc.dart';
 import 'controller/sign_up/sign_up_bloc.dart';
@@ -35,7 +33,6 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final appSetting = context.read<AppSettingCubit>();
     // final loginBloc = context.read<LoginBloc>();
     return MultiBlocListener(
       listeners: [
@@ -131,12 +128,10 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 50),
-                    CustomImage(
-                      path: RemoteUrls.imageUrl(
-                          appSetting.settingModel!.setting.logo),
-                      width: 188,
+                    const AppBrandLogo(
                       height: 47,
-                      // height: 55,
+                      width: 188,
+                      alignment: Alignment.center,
                     ),
                     const SizedBox(height: 30),
                     _buildHeader(),

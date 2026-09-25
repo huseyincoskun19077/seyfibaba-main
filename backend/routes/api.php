@@ -187,6 +187,8 @@ Route::group([], function () {
     Route::get('/legal-documents/{slug}', [\App\Http\Controllers\API\LegalDocumentController::class, 'show'])->name('legal-documents.show');
     Route::post('/legal-consents', [\App\Http\Controllers\API\LegalDocumentController::class, 'storeConsents'])->name('legal-consents.store');
     Route::get('/user/legal-consents', [\App\Http\Controllers\API\LegalDocumentController::class, 'userConsents'])->middleware('auth:api')->name('legal-consents.user');
+    Route::post('/checkout/legal-contracts', [\App\Http\Controllers\API\CheckoutLegalContractController::class, 'preview'])
+        ->name('checkout.legal-contracts');
 
     Route::get('/products/sitemap', [HomeController::class, 'productSitemap'])->name('products.sitemap');
     Route::get('/products/active-count', [HomeController::class, 'productCount'])->name('products.count');

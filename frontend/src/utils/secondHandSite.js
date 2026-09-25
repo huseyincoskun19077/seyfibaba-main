@@ -1,5 +1,5 @@
-export const SECOND_HAND_HOST = "ikinciel.seyfibaba.com";
-export const MARKETPLACE_HOST = "seyfibaba.com";
+export const SECOND_HAND_HOST = "ikinciel.kuafortedarik.com";
+export const MARKETPLACE_HOST = "kuafortedarik.com";
 
 export const SECOND_HAND_ORIGIN =
   process.env.NEXT_PUBLIC_SECOND_HAND_ORIGIN || `https://${SECOND_HAND_HOST}`;

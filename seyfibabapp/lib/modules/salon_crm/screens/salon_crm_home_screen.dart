@@ -430,7 +430,7 @@ class _SalonCrmHomeScreenState extends State<SalonCrmHomeScreen> {
           CrmMenuTile(
             icon: Icons.shopping_bag_rounded,
             title: 'Alışverişe dön',
-            subtitle: 'Seyfibaba mağaza',
+            subtitle: 'Kuaför Tedarik mağaza',
             onTap: _goToMainHub,
           ),
           CrmMenuTile(

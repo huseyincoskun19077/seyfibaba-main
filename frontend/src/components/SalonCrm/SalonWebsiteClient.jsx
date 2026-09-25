@@ -39,7 +39,7 @@ function ClosedState({ title, message }) {
     <div className="mx-auto max-w-lg px-4 py-16">
       <div className="rounded-3xl border border-black/5 bg-white p-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
         <p className="text-[11px] font-700 uppercase tracking-[0.22em] text-[#b45309]">
-          Seyfibaba Salon
+          Kuaför Tedarik Salon
         </p>
         <h1 className="mt-4 text-3xl font-800 tracking-tight text-[#111]">{title}</h1>
         <p className="mt-4 text-sm leading-7 text-[#6b7280]">{message}</p>
@@ -47,7 +47,7 @@ function ClosedState({ title, message }) {
           href="/"
           className="mt-8 inline-flex h-11 items-center rounded-full bg-qyellow px-6 text-sm font-700 text-qblack"
         >
-          Seyfibaba’ya dön
+          Kuaför Tedarik’e dön
         </Link>
       </div>
     </div>
@@ -107,7 +107,7 @@ function BookAppModal({ open, onClose, joinCode, playStoreUrl, appStoreUrl }) {
             Uygulamayı indir
           </h3>
           <p className="mt-2 text-sm leading-6 text-white/75">
-            Randevu yalnızca Seyfibaba mobil uygulamasından alınır. İndir, Salon
+            Randevu yalnızca Kuaför Tedarik mobil uygulamasından alınır. İndir, Salon
             Hub → müşteri girişi ile salona bağlan.
           </p>
         </div>
@@ -148,7 +148,7 @@ function BookAppModal({ open, onClose, joinCode, playStoreUrl, appStoreUrl }) {
             ) : null}
             {!playStoreUrl && !appStoreUrl ? (
               <p className="text-sm text-[#6b7280]">
-                Mağaza linkleri yakında — App Store / Play Store’dan “Seyfibaba”
+                Mağaza linkleri yakında — App Store / Play Store’dan “Kuaför Tedarik”
                 arayın.
               </p>
             ) : null}

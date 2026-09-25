@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/router_name.dart';
 import '../../../utils/utils.dart';
-import '../../authentication/controller/login/login_bloc.dart';
+import '../../../widgets/app_brand_logo.dart';
 import '../services/salon_crm_entry.dart';
 import '../services/salon_crm_service.dart';
 import '../services/salon_crm_session.dart';
@@ -52,7 +51,7 @@ class _SalonCrmGateScreenState extends State<SalonCrmGateScreen> {
       return;
     }
 
-    // CRM session yok ama Seyfibaba'ya giriş yapmışsa → direkt patron girişi
+    // CRM session yok ama Kuaför Tedarik'e giriş yapmışsa → direkt patron girişi
     if (Utils.isLoggedIn(context)) {
       debugPrint('[SalonCrm] gate → openPatron (no session)');
       await SalonCrmEntry.openPatron(context);
@@ -82,12 +81,14 @@ class _SalonCrmGateScreenState extends State<SalonCrmGateScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(22, 24, 22, 36),
         children: [
-          const Icon(
-            Icons.store_rounded,
-            size: 56,
-            color: SalonCrmTheme.accent,
+          const Center(
+            child: AppBrandLogo(
+              height: 48,
+              width: 180,
+              alignment: Alignment.center,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
             'Salon CRM\'e Hoş Geldiniz',
             textAlign: TextAlign.center,
@@ -104,7 +105,7 @@ class _SalonCrmGateScreenState extends State<SalonCrmGateScreen> {
             icon: Icons.admin_panel_settings_rounded,
             title: 'Salon Sahibi Girişi',
             subtitle:
-                'Seyfibaba hesabınızla giriş yapın. Salonunuzu yönetin, personel ekleyin, randevuları takip edin.',
+                'Kuaför Tedarik hesabınızla giriş yapın. Salonunuzu yönetin, personel ekleyin, randevuları takip edin.',
             onTap: () => SalonCrmEntry.openPatron(context),
           ),
           const SizedBox(height: 14),

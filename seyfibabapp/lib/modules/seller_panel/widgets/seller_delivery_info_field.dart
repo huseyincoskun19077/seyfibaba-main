@@ -12,6 +12,29 @@ const kDeliveryInfoPresets = <String>[
   'Özel üretim — ölçüye / siparişe özel; üretim sonrası kargoya verilir',
 ];
 
+/// Web ile aynı: kargo satıcıda uyarısı.
+class SellerShippingNotice extends StatelessWidget {
+  const SellerShippingNotice({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFF59E0B)),
+      ),
+      child: const Text(
+        'Kargo sizin üzerinizde: Müşteri kargo ücreti ödemez. Kargo bedelini siz ödersiniz; fiyatınızı buna göre yazın.',
+        style: TextStyle(height: 1.4, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
 /// Opsiyonel kargo/teslimat süresi alanı (satıcı ürün formları).
 class SellerDeliveryInfoField extends StatelessWidget {
   const SellerDeliveryInfoField({
@@ -31,7 +54,7 @@ class SellerDeliveryInfoField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DropdownButtonFormField<String>(
-          value: selected,
+          value: selected.isEmpty ? '' : selected,
           isExpanded: true,
           decoration: const InputDecoration(
             labelText: 'Kargo süresi (hazır seçenek)',
@@ -50,8 +73,7 @@ class SellerDeliveryInfoField extends StatelessWidget {
             ),
           ],
           onChanged: (v) {
-            if (v == null) return;
-            if (v.isEmpty) return;
+            if (v == null || v.isEmpty) return;
             controller.text = v;
           },
         ),

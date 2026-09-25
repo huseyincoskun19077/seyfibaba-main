@@ -79,7 +79,7 @@ const ENDPOINTS_401_NO_SESSION_ACTION = new Set([
   "resendOtpApi",
 ]);
 
-const apiBase = (appConfig.BASE_URL || "https://admin.seyfibaba.com/") + "api/";
+const apiBase = (appConfig.BASE_URL || "https://admin.kuafortedarik.com/") + "api/";
 
 let refreshInFlight = null;
 

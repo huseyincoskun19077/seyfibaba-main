@@ -834,7 +834,7 @@ class _LedgerEntryCard extends StatelessWidget {
                     ),
                     if (entry.isMarketplace)
                       const _EntryTag(
-                        label: 'Seyfibaba',
+                        label: 'Kuaför Tedarik',
                         color: Color(0xFF6366F1),
                         bg: Color(0xFFEEF2FF),
                       ),

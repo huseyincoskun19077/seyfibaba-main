@@ -26,55 +26,15 @@ import {
   getPasswordChecks,
   isPasswordValid,
 } from "@/utils/passwordValidation";
-import LegalConsentCheckboxes, { allRequiredChecked } from "@/components/Legal/LegalConsentCheckboxes";
+import LegalConsentCheckboxes from "@/components/Legal/LegalConsentCheckboxes";
+import LegalConsentNotice from "@/components/Legal/LegalConsentNotice";
 import {
+  SIGNUP_AUTO_ACCEPT_NOTICE,
   SIGNUP_OPTIONAL_CONSENTS,
   SIGNUP_REQUIRED_CONSENTS,
 } from "@/config/legalDocuments";
 import { recordLegalConsents } from "@/api/recordLegalConsents";
 import SocialAuthButtons from "@/components/Auth/SocialAuthButtons";
-
-/**
- * Signup shape SVG component for the title decoration
- */
-const SignupShape = () => {
-  return (
-    <svg
-      width="354"
-      height="30"
-      viewBox="0 0 354 30"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M1 28.8027C17.6508 20.3626 63.9476 8.17089 113.509 17.8802C166.729 28.3062 341.329 42.704 353 1"
-        stroke="#FCBF49"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-};
-
-/**
- * Checked checkbox SVG component
- */
-const CheckedSvg = () => {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5"
-      viewBox="0 0 20 20"
-      fill="currentColor"
-    >
-      <path
-        fillRule="evenodd"
-        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
-};
 
 /**
  * SignupWidget Component
@@ -139,8 +99,6 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
   const strengthColors = ["", "bg-red-500", "bg-yellow-400", "bg-green-500"];
   const strengthTextColors = ["", "text-red-500", "text-yellow-500", "text-green-600"];
 
-  const requiredConsentsAccepted = allRequiredChecked(SIGNUP_REQUIRED_CONSENTS, consentValues);
-
   const handleConsentChange = (key, value) => {
     setConsentValues((prev) => ({ ...prev, [key]: value }));
   };
@@ -148,9 +106,9 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
   const buildLegalConsentsPayload = () => {
     const entries = [];
 
-    SIGNUP_REQUIRED_CONSENTS.forEach((item, index) => {
-      const key = item.key || item.slug || `consent-${index}`;
-      if (consentValues[key]) {
+    // Zorunlu metinler üyelikte otomatik kabul edilir
+    SIGNUP_REQUIRED_CONSENTS.forEach((item) => {
+      if (item.slug) {
         entries.push({ slug: item.slug, status: true });
       }
     });
@@ -158,18 +116,16 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
     SIGNUP_OPTIONAL_CONSENTS.forEach((item) => {
       const key = item.key || item.slug;
       if (consentValues[key]) {
-        entries.push({ slug: item.slug, status: true, title: item.linkLabel });
+        entries.push({
+          slug: item.slug,
+          status: true,
+          title: item.linkLabel || "Ticari elektronik ileti onayı",
+        });
       }
     });
 
     return entries;
   };
-
-  // Country selection state — locked to Turkey only
-  const trOnly = [{ name: "Turkey", dial_code: "+90", code: "TR" }];
-  const [getCountries] = useState(trOnly);
-  const [countryDropToggle] = useState(false);
-  const [selectedCountry] = useState("TR");
 
   const { phone_number_required } = settings();
 
@@ -371,11 +327,6 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
   };
 
   const doSignup = async (token) => {
-    if (!requiredConsentsAccepted) {
-      toast.error("Kayıt için zorunlu yasal metinleri kabul etmelisiniz.");
-      return;
-    }
-
     if (!validateSignupForm()) {
       return;
     }
@@ -388,7 +339,7 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
       password_confirmation: formData.confirmPassword,
       phone: formData.phone ? formData.phone : "",
       otp_verified_token: verifiedToken,
-      agree: requiredConsentsAccepted ? 1 : "",
+      agree: 1,
       legal_consents: buildLegalConsentsPayload(),
     };
 
@@ -411,18 +362,15 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
   if (currentStep === "otp") {
     return (
       <div className="w-full">
-        <div className="title-area flex flex-col justify-center items-center relative text-center mb-7">
-          <h2 className="text-[34px] font-bold leading-[74px] text-qblack">
-            {ServeLangItem()?.Verify_OTP || "Doğrula"}
-          </h2>
-          <div className="shape -mt-6">
-            <SignupShape />
-          </div>
+        <div className="mb-6 text-center">
+          <p className="text-sm text-[#04334a]/65">
+            {ServeLangItem()?.Verify_OTP || "Telefonunuza gelen doğrulama kodunu girin."}
+          </p>
         </div>
-        <div className="bg-[#FAFAFA] border border-qgray-border p-6 rounded-lg">
+        <div className="rounded-xl border border-[#04334a]/10 bg-[#F4F6F7] p-5">
           {devOtpCode && (
-            <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded text-center">
-              <span className="text-sm text-yellow-800 font-bold">
+            <div className="mb-4 rounded-lg border border-[#FCBF49]/50 bg-[#FFF8E8] p-3 text-center">
+              <span className="text-sm font-700 text-[#04334a]">
                 DEV MODE — OTP Kodu: {devOtpCode}
               </span>
             </div>
@@ -442,101 +390,86 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
 
   return (
     <div className="w-full">
-      {/* ===========================================
-          HEADER SECTION
-          =========================================== */}
-      <div className="title-area flex flex-col justify-center items-center relative text-center mb-7">
-        <h2 className="text-[34px] font-bold leading-[74px] text-qblack">
-          {ServeLangItem()?.Create_Account}
-        </h2>
-        <div className="shape -mt-6">
-          <SignupShape />
-        </div>
+      <div className="mb-6 text-center">
+        <p className="text-sm text-[#04334a]/65">
+          Bilgilerinizi doldurun; telefon doğrulaması ile hesabınızı açın.
+        </p>
       </div>
 
-      {/* ===========================================
-          FORM SECTION
-          =========================================== */}
       <div className="input-area">
-        {/* Name Fields */}
-        <div className="flex sm:flex-row flex-col space-y-5 sm:space-y-0 sm:space-x-5 rtl:space-x-reverse mb-5 w-full">
-          {/* First Name */}
-          <div className="sm:w-1/2 w-full h-full">
+        <div className="mb-5 flex w-full flex-col space-y-5 sm:flex-row sm:space-x-5 sm:space-y-0 rtl:space-x-reverse">
+          <div className="h-full w-full sm:w-1/2">
             <InputCom
               placeholder="Ad"
               label={ServeLangItem()?.First_Name + "*"}
               name="fname"
               type="text"
-              inputClasses="h-[50px]"
+              inputClasses="h-[50px] bg-[#F4F6F7] text-[#04334a]"
+              labelClasses="font-700 text-[#04334a] text-[13px]"
               value={formData.fname}
               inputHandler={(e) => handleInputChange("fname", e.target.value)}
               error={!!(errors && Object.hasOwn(errors, "name"))}
             />
             {errors && Object.hasOwn(errors, "name") ? (
-              <span className="text-sm mt-1 text-qred">{errors.name[0]}</span>
-            ) : (
-              ""
-            )}
+              <span className="mt-1 text-sm text-qred">{errors.name[0]}</span>
+            ) : null}
           </div>
 
-          {/* Last Name */}
-          <div className="sm:w-1/2 w-full h-full">
+          <div className="h-full w-full sm:w-1/2">
             <InputCom
               placeholder="Soyad"
               label={ServeLangItem()?.Last_Name + "*"}
               name="lname"
               type="text"
-              inputClasses="h-[50px]"
+              inputClasses="h-[50px] bg-[#F4F6F7] text-[#04334a]"
+              labelClasses="font-700 text-[#04334a] text-[13px]"
               value={formData.lname}
               error={!!(errors && Object.hasOwn(errors, "name"))}
               inputHandler={(e) => handleInputChange("lname", e.target.value)}
             />
             {errors && Object.hasOwn(errors, "name") ? (
-              <span className="text-sm mt-1 text-qred">{errors.name[0]}</span>
-            ) : (
-              ""
-            )}
+              <span className="mt-1 text-sm text-qred">{errors.name[0]}</span>
+            ) : null}
           </div>
         </div>
 
-        {/* Email Field */}
         <div className="input-item mb-5">
           <InputCom
             placeholder={ServeLangItem()?.Email}
             label={ServeLangItem()?.Email_Address + "*"}
             name="email"
             type="email"
-            inputClasses="h-[50px]"
+            inputClasses="h-[50px] bg-[#F4F6F7] text-[#04334a]"
+            labelClasses="font-700 text-[#04334a] text-[13px]"
             value={formData.email}
             error={!!(errors && Object.hasOwn(errors, "email"))}
             inputHandler={(e) => handleInputChange("email", e.target.value)}
           />
           {errors && Object.hasOwn(errors, "email") ? (
-            <span className="text-sm mt-1 text-qred">{errors.email[0]}</span>
-          ) : (
-            ""
-          )}
+            <span className="mt-1 text-sm text-qred">{errors.email[0]}</span>
+          ) : null}
         </div>
 
-        {/* Phone Field - Conditional based on settings */}
         {Number(phone_number_required) === 1 && (
-          <div className="input-item mb-5 relative">
-            <label className="input-label capitalize block mb-2 text-qgray text-[13px] font-normal">
+          <div className="input-item relative mb-5">
+            <label className="input-label mb-2 block text-[13px] font-700 capitalize text-[#04334a]">
               {ServeLangItem()?.Phone_Number || "Telefon"}*
             </label>
             <div
-              className={`h-[50px] rounded-md bg-white border flex items-center overflow-hidden ${
-                errors && Object.hasOwn(errors, "phone") ? "border-qred" : "border-qgray-border"
+              className={`flex h-[50px] items-center overflow-hidden rounded-md bg-[#F4F6F7] focus-within:ring-2 focus-within:ring-[#FCBF49]/60 ${
+                errors && Object.hasOwn(errors, "phone")
+                  ? "ring-2 ring-qred"
+                  : ""
               }`}
             >
-              <div className="h-full px-3 flex items-center gap-2 border-r border-qgray-border bg-[#f7f7f7]">
+              <div className="flex h-full items-center gap-2 border-r border-[#04334a]/10 px-3">
                 <Image
                   width="18"
                   height="12"
                   src="/assets/images/countries/TR.svg"
                   alt="Türkiye"
                 />
-                <span className="text-qblack text-sm font-medium">+90</span>
+                <span className="text-sm font-medium text-[#04334a]">+90</span>
               </div>
               <input
                 name="phone"
@@ -550,27 +483,24 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
                     `+90${String(e.target.value || "").replace(/\D/g, "").slice(0, 10)}`
                   )
                 }
-                className="flex-1 h-full bg-transparent text-qblack placeholder:text-qgray px-4 text-sm focus:outline-none"
+                className="h-full flex-1 bg-transparent px-4 text-sm text-[#04334a] placeholder:text-qgray focus:outline-none"
               />
             </div>
             {errors && Object.hasOwn(errors, "phone") ? (
-              <span className="text-sm mt-1 text-qred">{errors.phone[0]}</span>
-            ) : (
-              ""
-            )}
+              <span className="mt-1 text-sm text-qred">{errors.phone[0]}</span>
+            ) : null}
           </div>
         )}
 
-        {/* Password Fields */}
-        <div className="flex sm:flex-row flex-col space-y-5 sm:space-y-0 sm:space-x-5 rtl:space-x-reverse mb-5 w-full">
-          {/* Password */}
-          <div className="sm:w-1/2 w-full h-full">
+        <div className="mb-5 flex w-full flex-col space-y-5 sm:flex-row sm:space-x-5 sm:space-y-0 rtl:space-x-reverse">
+          <div className="h-full w-full sm:w-1/2">
             <InputCom
               placeholder="* * * * * *"
               label={ServeLangItem()?.Password + "*"}
               name="password"
               type="password"
-              inputClasses="h-[50px]"
+              inputClasses="h-[50px] bg-[#F4F6F7] text-[#04334a]"
+              labelClasses="font-700 text-[#04334a] text-[13px]"
               value={formData.password}
               inputHandler={(e) =>
                 handleInputChange("password", e.target.value)
@@ -578,9 +508,7 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
               error={!!(errors && Object.hasOwn(errors, "password"))}
             />
             {errors && Object.hasOwn(errors, "password") ? (
-              <span className="text-sm mt-1 text-qred">
-                {errors.password[0]}
-              </span>
+              <span className="mt-1 text-sm text-qred">{errors.password[0]}</span>
             ) : null}
             {(formData.password || formData.confirmPassword) && (
               <ul className="mt-2 space-y-1 text-xs">
@@ -597,14 +525,14 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
             )}
             {formData.password && (
               <div className="mt-2">
-                <div className="flex gap-1 mb-1">
+                <div className="mb-1 flex gap-1">
                   {[1, 2, 3].map((level) => (
                     <div
                       key={level}
                       className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
                         passwordStrength >= level
                           ? strengthColors[passwordStrength]
-                          : "bg-gray-200"
+                          : "bg-[#04334a]/10"
                       }`}
                     />
                   ))}
@@ -617,14 +545,14 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
             )}
           </div>
 
-          {/* Confirm Password */}
-          <div className="sm:w-1/2 w-full h-full">
+          <div className="h-full w-full sm:w-1/2">
             <InputCom
               placeholder="* * * * * *"
               label={ServeLangItem()?.Confirm_Password + "*"}
               name="confirm_password"
               type="password"
-              inputClasses="h-[50px]"
+              inputClasses="h-[50px] bg-[#F4F6F7] text-[#04334a]"
+              labelClasses="font-700 text-[#04334a] text-[13px]"
               value={formData.confirmPassword}
               inputHandler={(e) =>
                 handleInputChange("confirmPassword", e.target.value)
@@ -635,50 +563,35 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
               }
             />
             {confirmPasswordError ? (
-              <span className="text-sm mt-1 text-qred">{confirmPasswordError}</span>
+              <span className="mt-1 text-sm text-qred">{confirmPasswordError}</span>
             ) : errors && Object.hasOwn(errors, "password") ? (
-              <span className="text-sm mt-1 text-qred">
-                {errors.password[0]}
-              </span>
-            ) : (
-              ""
-            )}
+              <span className="mt-1 text-sm text-qred">{errors.password[0]}</span>
+            ) : null}
           </div>
         </div>
 
-        {/* ===========================================
-            TERMS AND CONDITIONS SECTION
-            =========================================== */}
         <div className="forgot-password-area mb-7 space-y-4">
-          <LegalConsentCheckboxes
-            items={SIGNUP_REQUIRED_CONSENTS}
-            values={consentValues}
-            onChange={handleConsentChange}
-            required
-          />
+          <LegalConsentNotice notice={SIGNUP_AUTO_ACCEPT_NOTICE} />
           <LegalConsentCheckboxes
             items={SIGNUP_OPTIONAL_CONSENTS}
             values={consentValues}
             onChange={handleConsentChange}
             required={false}
+            title=""
+            compact
           />
         </div>
 
-        {/* ===========================================
-            SIGNUP BUTTON SECTION
-            =========================================== */}
         <div className="signin-area mb-5">
           <div className="flex justify-center">
             {Number(phone_number_required) === 1 ? (
               <button
                 onClick={handleSendOtpAndNext}
                 type="button"
-                disabled={!requiredConsentsAccepted || isOtpSending || !isFormPasswordValid}
-                className="black-btn disabled:bg-opacity-50 disabled:cursor-not-allowed  w-full h-[50px] font-semibold flex justify-center bg-purple items-center"
+                disabled={isOtpSending || !isFormPasswordValid}
+                className="flex h-[50px] w-full items-center justify-center rounded-lg bg-[#04334a] text-sm font-800 text-white transition hover:bg-[#032736] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <span className="text-sm text-white block">
-                  {ServeLangItem()?.Get_OTP || "Doğrulama Kodu Al"}
-                </span>
+                <span>{ServeLangItem()?.Get_OTP || "Doğrulama Kodu Al"}</span>
                 {isOtpSending && (
                   <span className="ml-2 w-5 scale-50">
                     <LoaderStyleOne />
@@ -689,12 +602,10 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
               <button
                 onClick={() => doSignup()}
                 type="button"
-                disabled={!requiredConsentsAccepted || isSignupLoading || !isFormPasswordValid}
-                className="black-btn disabled:bg-opacity-50 disabled:cursor-not-allowed  w-full h-[50px] font-semibold flex justify-center bg-purple items-center"
+                disabled={isSignupLoading || !isFormPasswordValid}
+                className="flex h-[50px] w-full items-center justify-center rounded-lg bg-[#04334a] text-sm font-800 text-white transition hover:bg-[#032736] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <span className="text-sm text-white block">
-                  {ServeLangItem()?.Create_Account}
-                </span>
+                <span>{ServeLangItem()?.Create_Account}</span>
                 {isSignupLoading && (
                   <span className="ml-2 w-5 scale-50">
                     <LoaderStyleOne />
@@ -707,21 +618,18 @@ function SignupWidget({ redirect = true, signupActionPopup, changeContent }) {
 
         <SocialAuthButtons />
 
-        {/* ===========================================
-            LOGIN LINK SECTION
-            =========================================== */}
         <div className="signup-area flex justify-center">
-          <p className="text-base text-qgraytwo font-normal">
-            {ServeLangItem()?.Already_have_an_Account}?
+          <p className="text-sm font-normal text-[#04334a]/60">
+            {ServeLangItem()?.Already_have_an_Account}?{" "}
             {redirect ? (
               <Link href="/login">
-                <span className=" text-qblack cursor-pointer ml-1">
+                <span className="ml-1 cursor-pointer font-700 text-[#04334a] hover:text-qyellow">
                   {ServeLangItem()?.Log_In}
                 </span>
               </Link>
             ) : (
               <button onClick={signupActionPopup} type="button">
-                <span className=" text-qblack cursor-pointer ml-1">
+                <span className="ml-1 cursor-pointer font-700 text-[#04334a] hover:text-qyellow">
                   {ServeLangItem()?.Log_In}
                 </span>
               </button>

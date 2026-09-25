@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../utils/laravel_echo/pusher_info.dart';
 import '../../home/model/setting_model.dart';
+import '../../home/model/story_model.dart';
 import 'currencies_model.dart';
 import 'language_model.dart';
 import 'maintainance_mode_model.dart';
@@ -20,6 +21,7 @@ class WebsiteSetupModel extends Equatable {
   final Map<String, String>? imageContent;
 
   final PusherInfo? pusherInfo;
+  final List<StoryModel> stories;
 
   const WebsiteSetupModel({
     required this.setting,
@@ -31,6 +33,7 @@ class WebsiteSetupModel extends Equatable {
     required this.maintainTextModel,
     required this.imageContent,
     required this.pusherInfo,
+    this.stories = const [],
   });
 
   WebsiteSetupModel copyWith({
@@ -43,6 +46,7 @@ class WebsiteSetupModel extends Equatable {
     MaintainTextModel? maintainTextModel,
     Map<String, String>? imageContent,
     PusherInfo? pusherInfo,
+    List<StoryModel>? stories,
   }) {
     return WebsiteSetupModel(
       setting: setting ?? this.setting,
@@ -54,6 +58,7 @@ class WebsiteSetupModel extends Equatable {
       maintainTextModel: maintainTextModel ?? this.maintainTextModel,
       imageContent: imageContent ?? this.imageContent,
       pusherInfo: pusherInfo ?? this.pusherInfo,
+      stories: stories ?? this.stories,
     );
   }
 
@@ -68,10 +73,41 @@ class WebsiteSetupModel extends Equatable {
       'currencies': currencies?.map((x) => x.toMap()).toList(),
       'languages': languages?.map((x) => x.toMap()).toList(),
       'pusher_info': pusherInfo?.toMap(),
+      'stories': stories
+          .map((s) => {
+                'id': s.id,
+                'title': s.title,
+                'image': s.image,
+                'type': s.type,
+                'feed': s.feed,
+                'link': s.link,
+                'mobile_link': s.mobileLink,
+                'see_all_url': s.seeAllUrl,
+                'serial': s.serial,
+                'show_on_web': s.showOnWeb,
+                'show_on_mobile': s.showOnMobile,
+              })
+          .toList(),
     };
   }
 
   factory WebsiteSetupModel.fromMap(Map<String, dynamic> map) {
+    final rawStories = map['stories'];
+    final stories = <StoryModel>[];
+    if (rawStories is List) {
+      for (final item in rawStories) {
+        if (item is Map<String, dynamic>) {
+          stories.add(StoryModel.fromMap(item));
+        } else if (item is Map) {
+          stories.add(StoryModel.fromMap(Map<String, dynamic>.from(item)));
+        }
+      }
+      stories.sort((a, b) {
+        if (a.serial != b.serial) return a.serial.compareTo(b.serial);
+        return a.id.compareTo(b.id);
+      });
+    }
+
     return WebsiteSetupModel(
       setting: SettingModel.fromMap(map['setting'] as Map<String, dynamic>),
       flashSaleActive: map['flashSaleActive'] ?? false,
@@ -85,11 +121,6 @@ class WebsiteSetupModel extends Equatable {
           (x) => FlashSaleProductsModel.fromMap(x as Map<String, dynamic>),
         ),
       ),
-      // productCategories: List<CategoriesModel>.from(
-      //   (map['productCategories'] as List<dynamic>).map<CategoriesModel>(
-      //     (x) => CategoriesModel.fromMap(x as Map<String, dynamic>),
-      //   ),
-      // ),
       currencies: map['currencies'] != null
           ? List<CurrenciesModel>.from(
               (map['currencies'] as List<dynamic>).map<CurrenciesModel>(
@@ -107,7 +138,10 @@ class WebsiteSetupModel extends Equatable {
       imageContent: map['image_content'] != null
           ? Map<String, String>.from(map['image_content'] as Map)
           : null,
-      pusherInfo: map['pusher_info'] != null? PusherInfo.fromMap(map['pusher_info'] as Map<String, dynamic>):null,
+      pusherInfo: map['pusher_info'] != null
+          ? PusherInfo.fromMap(map['pusher_info'] as Map<String, dynamic>)
+          : null,
+      stories: stories,
     );
   }
 
@@ -130,8 +164,8 @@ class WebsiteSetupModel extends Equatable {
       flashSaleProducts,
       imageContent,
       maintainTextModel,
-      // productCategories,
       pusherInfo,
+      stories,
     ];
   }
 }

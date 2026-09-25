@@ -10,6 +10,7 @@ import '../../../utils/utils.dart';
 import '../models/seller_catalog_option.dart';
 import '../services/seller_api_service.dart';
 import '../widgets/seller_delivery_info_field.dart';
+import '../widgets/seller_simple_variants_editor.dart';
 
 class SellerQuickProductScreen extends StatefulWidget {
   const SellerQuickProductScreen({super.key});
@@ -47,7 +48,7 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
   int? _brandId;
   String? _imagePath;
   final List<String> _galleryPaths = [];
-  final List<_ColorDraft> _colors = [];
+  final _variantsKey = GlobalKey<SellerSimpleVariantsEditorState>();
   bool _loadingMeta = true;
   String? _metaError;
   bool _submitting = false;
@@ -87,9 +88,6 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
     _deliveryCtrl.dispose();
     _seoTitleCtrl.dispose();
     _seoDescCtrl.dispose();
-    for (final color in _colors) {
-      color.dispose();
-    }
     super.dispose();
   }
 
@@ -211,17 +209,6 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
     setState(() {
       _galleryPaths.addAll(files.map((f) => f.path));
     });
-  }
-
-  Future<void> _pickColorImage(int index) async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 1600,
-    );
-    if (file == null) return;
-    setState(() => _colors[index].imagePath = file.path);
   }
 
   Future<void> _fillAi() async {
@@ -351,17 +338,8 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
         saleUnitQty: _packQty,
         thumbImagePath: _imagePath!,
         galleryImagePaths: List<String>.from(_galleryPaths),
-        colors: _colors
-            .where((c) => c.nameCtrl.text.trim().isNotEmpty)
-            .map(
-              (c) => {
-                'name': c.nameCtrl.text.trim(),
-                'price': c.priceCtrl.text.trim(),
-                'qty': c.qtyCtrl.text.trim(),
-                if (c.imagePath != null) 'image': c.imagePath!,
-              },
-            )
-            .toList(),
+        colors: _variantsKey.currentState?.colorsPayload ?? const [],
+        optionGroups: _variantsKey.currentState?.optionGroupsPayload ?? const [],
       );
       if (!mounted) return;
       Utils.closeDialog(context);
@@ -561,20 +539,7 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
           title: 'Fiyat',
           hint: 'Birim fiyat yazınca toplam, toplam yazınca birim görünür.',
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFFBEB),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFF59E0B)),
-              ),
-              child: const Text(
-                'Kargo sizin üzerinizde: Müşteri kargo ücreti ödemez. Kargo bedelini siz ödersiniz; fiyatınızı buna göre yazın.',
-                style: TextStyle(height: 1.4, fontWeight: FontWeight.w600),
-              ),
-            ),
+            const SellerShippingNotice(),
             TextField(
               controller: _packQtyCtrl,
               keyboardType: TextInputType.number,
@@ -802,86 +767,12 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
         );
       case 7:
         return _card(
-          title: 'Renk ve ek görseller',
-          hint: 'Renk yoksa atlayın. En sonda ek fotoğraf da ekleyebilirsiniz.',
+          title: 'Varyantlar ve ek görseller',
+          hint: 'Web’deki gibi renk / hacim / boyut ekleyin. Yoksa atlayın.',
           children: [
-            ...List.generate(_colors.length, (index) {
-              final color = _colors[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: HomeTheme.border),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: color.nameCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Renk adı',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: color.priceCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                              decoration: const InputDecoration(
-                                labelText: 'Fiyat',
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: color.qtyCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Adet',
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          TextButton.icon(
-                            onPressed: () => _pickColorImage(index),
-                            icon: const Icon(Icons.photo),
-                            label: Text(
-                              color.imagePath == null ? 'Renk fotoğrafı' : 'Fotoğraf seçildi',
-                            ),
-                          ),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _colors.removeAt(index).dispose();
-                              });
-                            },
-                            child: const Text('Sil'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-            OutlinedButton.icon(
-              onPressed: () => setState(() => _colors.add(_ColorDraft())),
-              icon: const Icon(Icons.add),
-              label: const Text('Renk ekle'),
+            SellerSimpleVariantsEditor(
+              key: _variantsKey,
+              compact: true,
             ),
             const SizedBox(height: 16),
             const Text(
@@ -896,7 +787,12 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
                 ..._galleryPaths.map(
                   (path) => ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.file(File(path), width: 72, height: 72, fit: BoxFit.cover),
+                    child: Image.file(
+                      File(path),
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ],
@@ -959,13 +855,26 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
           'İndirimli fiyat',
           offer != null && offer > 0 ? '${_money(offer)} ₺' : 'Yok',
         ),
-        if (_colors.any((c) => c.nameCtrl.text.trim().isNotEmpty))
+        if ((_variantsKey.currentState?.colorsPayload.isNotEmpty ?? false) ||
+            (_variantsKey.currentState?.optionGroupsPayload.isNotEmpty ?? false))
           _previewRow(
-            'Renkler',
-            _colors
-                .where((c) => c.nameCtrl.text.trim().isNotEmpty)
-                .map((c) => c.nameCtrl.text.trim())
-                .join(', '),
+            'Varyantlar',
+            [
+              ...(_variantsKey.currentState?.colorsPayload ?? const [])
+                  .map((c) => 'Renk: ${c['name']}'),
+              ...(_variantsKey.currentState?.optionGroupsPayload ?? const [])
+                  .map((g) {
+                final items = g['items'];
+                final names = items is List
+                    ? items
+                        .whereType<Map>()
+                        .map((e) => '${e['name'] ?? ''}')
+                        .where((e) => e.isNotEmpty)
+                        .join(', ')
+                    : '';
+                return '${g['name']}: $names';
+              }),
+            ].join(' · '),
           ),
         if (_galleryPaths.isNotEmpty)
           _previewRow('Ek görsel', '${_galleryPaths.length} adet'),
@@ -1046,24 +955,6 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
   }
 
   String _money(double n) => n.toStringAsFixed(2).replaceAll('.', ',');
-}
-
-class _ColorDraft {
-  _ColorDraft()
-      : nameCtrl = TextEditingController(),
-        priceCtrl = TextEditingController(),
-        qtyCtrl = TextEditingController();
-
-  final TextEditingController nameCtrl;
-  final TextEditingController priceCtrl;
-  final TextEditingController qtyCtrl;
-  String? imagePath;
-
-  void dispose() {
-    nameCtrl.dispose();
-    priceCtrl.dispose();
-    qtyCtrl.dispose();
-  }
 }
 
 class _ImagePickerBox extends StatelessWidget {

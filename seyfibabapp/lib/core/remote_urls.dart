@@ -1,5 +1,5 @@
 class RemoteUrls {
-   static const String rootUrl = "https://admin.seyfibaba.com/";
+   static const String rootUrl = "https://admin.kuafortedarik.com/";
    //static const String rootUrl = "https://shopo.mamunuiux.com/";
    //static const String rootUrl = "https://workzone.minionionbd.com/";
   // static const String rootUrl = "https://cnth.store/admin/";
@@ -26,6 +26,9 @@ class RemoteUrls {
       '${baseUrl}user/notifications/read-all';
   static const String userProductView = '${baseUrl}user/product-view';
 
+  static String productReport(String token) =>
+      '${baseUrl}user/product-report?token=$token';
+
   static const String createDeliveryMan = '${baseUrl}deliveryman/registration';
 
   // static String createDeliveryMan(String orderId, String token) =>
@@ -46,6 +49,14 @@ class RemoteUrls {
 
   static String userProfile(String token) =>
       '${baseUrl}user/my-profile?token=$token';
+
+  static String personalizedProducts({String? token, int limit = 16}) {
+    final q = <String>['limit=$limit'];
+    if (token != null && token.isNotEmpty) {
+      q.add('token=${Uri.encodeComponent(token)}');
+    }
+    return '${baseUrl}personalized-products?${q.join('&')}';
+  }
 
   static String updateProfile(String token) =>
       '${baseUrl}user/update-profile?token=$token';
@@ -254,6 +265,7 @@ class RemoteUrls {
   static const String termsAndConditions = '${baseUrl}terms-and-conditions';
   static const String privacyPolicy = '${baseUrl}privacy-policy';
   static const String legalDocuments = '${baseUrl}legal-documents';
+  static const String checkoutLegalContracts = '${baseUrl}checkout/legal-contracts';
   static const String contactUs = '${baseUrl}contact-us';
   static const String sendContactMessage = '${baseUrl}send-contact-message';
   static const String productInquiry = '${baseUrl}product-inquiry';
@@ -298,6 +310,9 @@ class RemoteUrls {
 
   static String submitReviewUrl(String token) =>
       '${baseUrl}user/store-product-review?token=$token';
+
+  static String userReviews(String token) =>
+      '${baseUrl}user/review?token=$token';
 
   static String cartCheckout(String token, String coupon) =>
       "${baseUrl}user/checkout?token=$token&coupon=$coupon";
@@ -494,7 +509,7 @@ class RemoteUrls {
       '${baseUrl}product?sub_category=$slug';
 
   static String productShareUrl(String slug) =>
-      'https://seyfibaba.com/product/$slug';
+      'https://kuafortedarik.com/urun/$slug';
 
   static String imageUrl(String imageUrl) {
     final raw = imageUrl.trim();

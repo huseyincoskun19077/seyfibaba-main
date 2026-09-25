@@ -36,7 +36,7 @@ const MapComponent = dynamic(() => import("@/components/MapComponent/Index"), {
 function isUsableEmail(email) {
   const value = String(email || "").trim().toLowerCase();
   if (!value) return false;
-  if (value.endsWith("@pending.seyfibaba.local") || value.endsWith(".local")) {
+  if (value.endsWith("@pending.kuafortedarik.local") || value.endsWith(".local")) {
     return false;
   }
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);

@@ -9,7 +9,6 @@ import '../modules/onboarding/onboarding_screen.dart';
 import '../modules/order/model/order_model.dart';
 import '../modules/order/order_tracking_form_screen.dart';
 import '../modules/order/order_tracking_screen.dart';
-import '../modules/order/tracking_location_screen.dart';
 import '../modules/place_order/guest_place_order_screen.dart';
 import '../modules/product_details/component/more_video_screen.dart';
 import '../modules/product_details/model/video_model.dart';
@@ -64,6 +63,7 @@ class RouteNames {
   static const String guestCheckoutScreen = '/guestCheckoutScreen';
   static const String productDetailsScreen = '/productDetailsScreen';
   static const String submitFeedBackScreen = '/submitFeedBackScreen';
+  static const String buyerReviewsScreen = '/buyerReviewsScreen';
   static const String addressScreen = '/addressScreen';
   static const String paymentsScreen = '/paymentsScreen';
   static const String productSearchScreen = '/productSearchScreen';
@@ -72,7 +72,6 @@ class RouteNames {
   static const String changePasswordScreen = '/changePasswordScreen';
   static const String placeOrderScreen = '/placeOrderScreen';
   static const String guestPlaceOrderScreen = '/guestPlaceOrderScreen';
-  static const String trackingLocationScreen = '/trackingLocationScreen';
   static const String bankScreen = '/bankScreen';
   static const String iyzicoPaymentScreen = '/iyzicoPaymentScreen';
   static const String flashScreen = '/flashScreen';
@@ -138,8 +137,6 @@ class RouteNames {
   static const String salonCrmCustomerLinkScreen = '/salonCrmCustomerLinkScreen';
   static const String salonCrmCustomerQrScanScreen =
       '/salonCrmCustomerQrScanScreen';
-  static const String deliveryManRegistrationScreen =
-      '/deliveryManRegistrationScreen';
   static const String moreVideoScreen = '/moreVideoScreen';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -537,11 +534,6 @@ class RouteNames {
           builder: (_) => const SalonCrmCustomerQrScanScreen(),
         );
 
-      case RouteNames.deliveryManRegistrationScreen:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => const DeliveryManRegistrationScreen(),
-        );
       case RouteNames.moreVideoScreen:
         final videos = settings.arguments as List<VideoModel>;
         return MaterialPageRoute(
@@ -714,6 +706,12 @@ class RouteNames {
           builder: (_) => SubmitFeedBackScreen(orderItem: orderItem),
         );
 
+      case RouteNames.buyerReviewsScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const BuyerReviewsScreen(),
+        );
+
       case RouteNames.placeOrderScreen:
         // final shippingMethod = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
@@ -723,11 +721,6 @@ class RouteNames {
         // final shippingMethod = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
             settings: settings, builder: (_) => const GuestPlaceOrderScreen());
-
-      case RouteNames.trackingLocationScreen:
-        // final order = settings.arguments as OrderAddressModel;
-        return MaterialPageRoute(
-            settings: settings, builder: (_) => const TrackingLocationScreen());
 
       case RouteNames.bankScreen:
         final body = settings.arguments as Map<String, dynamic>;

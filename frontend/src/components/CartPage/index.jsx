@@ -20,6 +20,7 @@ import {
 } from "../../redux/features/cart/cartSlice";
 import useRefreshCartPrices from "@/hooks/useRefreshCartPrices";
 import { resolveCartLineUnitPrice } from "@/utils/variantPricing";
+import { MoneyText } from "../Shared/PriceDisplay";
 
 function CartPage() {
   // Redux hooks
@@ -205,12 +206,12 @@ function CartPage() {
 
   // Render cart with items
   return (
-    <div className="cart-page-wrapper w-full bg-white pb-[60px]">
-      {/* Page header — iyileştirildi (#11) */}
-      <div className="w-full bg-gradient-to-r from-[#f8f5f0] to-[#fff8ee] py-8">
+    <div className="cart-page-wrapper w-full bg-[#f4f7f9] pb-[60px]">
+      {/* Page header */}
+      <div className="w-full bg-white border-b border-[#04334a]/08 py-8">
         <div className="container-x mx-auto">
-          <h1 className="text-2xl font-bold text-qblack">{ServeLangItem()?.cart || "Sepetim"}</h1>
-          <p className="text-sm text-qgray mt-1">Sepetinizde {cartItems.length} ürün bulunuyor</p>
+          <h1 className="text-2xl font-800 text-[#04334a]">{ServeLangItem()?.cart || "Sepetim"}</h1>
+          <p className="text-sm text-[#04334a]/55 mt-1">Sepetinizde {cartItems.length} ürün bulunuyor</p>
         </div>
       </div>
 
@@ -292,14 +293,59 @@ function CartPage() {
               </Link>
             </div>
 
-            {/* Checkout button */}
-            <button onClick={handleCheckout} className="w-full sm:w-auto">
-              <div className="w-full sm:w-[280px] h-[50px] black-btn flex justify-center items-center cursor-pointer rounded">
-                <span className="text-sm font-semibold">
-                  {ServeLangItem()?.Proceed_to_Checkout}
-                </span>
+            {/* Checkout button + toplam */}
+            <div className="w-full sm:w-auto sm:min-w-[280px] flex flex-col gap-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-sm font-700 text-[#04334a]/70">Toplam</span>
+                <MoneyText value={totalPrice} size="lg" />
               </div>
-            </button>
+              <button onClick={handleCheckout} className="w-full" type="button">
+                <div className="w-full h-[50px] black-btn flex justify-center items-center cursor-pointer rounded">
+                  <span className="text-sm font-semibold">
+                    {ServeLangItem()?.Proceed_to_Checkout}
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Taksit uyarı kutusu */}
+          <div
+            className="mt-8 rounded-xl border border-[#c4a35a]/35 bg-[#fff9e6] pl-1 shadow-sm"
+            role="note"
+          >
+            <div className="rounded-xl border-l-[5px] border-l-[#a67c2d] px-4 py-4 md:px-5 md:py-5">
+              <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 shrink-0 text-[#a67c2d]" aria-hidden>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 3.5L21.5 20H2.5L12 3.5Z"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M12 10v4.5M12 17.5h.01"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+                <div className="min-w-0 text-[13px] leading-relaxed text-[#6b5420]">
+                  <p className="font-800 text-[#8a6a24] mb-1.5">Uyarı</p>
+                  <p>
+                    <span className="font-800">Taksit Seçeneği:</span> Sepetinizde
+                    yasal düzenleme sebebiyle taksit sınırlaması olan bir ürün
+                    varsa, ödeme adımında taksit sınırı tüm sepetinize uygulanır.
+                    Dilerseniz daha yüksek taksit seçeneği olan ürünleri ayrıca
+                    sipariş edebilirsiniz. Kart türüne göre bankaların taksit
+                    seçenekleri değişir, ödeme adımında kartınıza uygun
+                    taksitleri görebilirsiniz.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

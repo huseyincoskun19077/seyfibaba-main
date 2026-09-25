@@ -37,6 +37,37 @@ class OrderProductCargoModel extends Equatable {
       [carrierName, trackingNumber, trackingUrl, status];
 }
 
+class OrderProductVariantLine extends Equatable {
+  const OrderProductVariantLine({
+    required this.variantName,
+    required this.variantValue,
+    this.variantPrice = 0,
+  });
+
+  final String variantName;
+  final String variantValue;
+  final double variantPrice;
+
+  String get label {
+    final name = variantName.trim().isEmpty ? 'Seçenek' : variantName.trim();
+    final value = variantValue.trim();
+    return value.isEmpty ? name : '$name: $value';
+  }
+
+  factory OrderProductVariantLine.fromMap(Map<String, dynamic> map) {
+    return OrderProductVariantLine(
+      variantName:
+          '${map['variant_name'] ?? map['product_variant_name'] ?? ''}'.trim(),
+      variantValue: '${map['variant_value'] ?? map['name'] ?? ''}'.trim(),
+      variantPrice:
+          double.tryParse('${map['variant_price'] ?? 0}') ?? 0,
+    );
+  }
+
+  @override
+  List<Object?> get props => [variantName, variantValue, variantPrice];
+}
+
 class OrderedProductModel extends Equatable {
   final int id;
   final int orderId;
@@ -54,6 +85,7 @@ class OrderedProductModel extends Equatable {
   final String? autoConfirmedAt;
   final OrderProductCargoModel? cargo;
   final String thumbImage;
+  final List<OrderProductVariantLine> variants;
   final String createdAt;
   final String updatedAt;
 
@@ -74,9 +106,15 @@ class OrderedProductModel extends Equatable {
     this.autoConfirmedAt,
     this.cargo,
     this.thumbImage = '',
+    this.variants = const [],
     required this.createdAt,
     required this.updatedAt,
   });
+
+  String get variantsText {
+    if (variants.isEmpty) return '';
+    return variants.map((v) => v.label).join(' · ');
+  }
 
   bool get isDelivered => deliveredAt != null && deliveredAt!.isNotEmpty;
 
@@ -117,6 +155,7 @@ class OrderedProductModel extends Equatable {
     String? autoConfirmedAt,
     OrderProductCargoModel? cargo,
     String? thumbImage,
+    List<OrderProductVariantLine>? variants,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -137,6 +176,7 @@ class OrderedProductModel extends Equatable {
       autoConfirmedAt: autoConfirmedAt ?? this.autoConfirmedAt,
       cargo: cargo ?? this.cargo,
       thumbImage: thumbImage ?? this.thumbImage,
+      variants: variants ?? this.variants,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -161,6 +201,17 @@ class OrderedProductModel extends Equatable {
     result.addAll({'auto_confirmed_at': autoConfirmedAt});
     if (cargo != null) result.addAll({'cargo': cargo});
     result.addAll({'thumb_image': thumbImage});
+    result.addAll({
+      'order_product_variants': variants
+          .map(
+            (v) => {
+              'variant_name': v.variantName,
+              'variant_value': v.variantValue,
+              'variant_price': v.variantPrice,
+            },
+          )
+          .toList(),
+    });
     result.addAll({'created_at': createdAt});
     result.addAll({'updated_at': updatedAt});
 
@@ -169,6 +220,19 @@ class OrderedProductModel extends Equatable {
 
   factory OrderedProductModel.fromMap(Map<String, dynamic> map) {
     final cargoRaw = map['cargo'];
+    final variantsRaw = map['order_product_variants'] ??
+        map['orderProductVariants'] ??
+        map['variants'];
+    final variants = <OrderProductVariantLine>[];
+    if (variantsRaw is List) {
+      for (final v in variantsRaw) {
+        if (v is Map) {
+          variants.add(
+            OrderProductVariantLine.fromMap(Map<String, dynamic>.from(v)),
+          );
+        }
+      }
+    }
     return OrderedProductModel(
       id: map['id']?.toInt() ?? 0,
       orderId:
@@ -196,6 +260,7 @@ class OrderedProductModel extends Equatable {
           ? OrderProductCargoModel.fromMap(cargoRaw)
           : null,
       thumbImage: map['thumb_image']?.toString() ?? '',
+      variants: variants,
       createdAt: map['created_at'] ?? '',
       updatedAt: map['updated_at'] ?? '',
     );
@@ -229,6 +294,7 @@ class OrderedProductModel extends Equatable {
         autoConfirmedAt,
         cargo,
         thumbImage,
+        variants,
         createdAt,
         updatedAt,
       ];

@@ -170,7 +170,7 @@ function Consent() {
           <h3 className="text-lg font-700 text-qblacktext mb-2">Çerez kullanımı</h3>
           <p className="text-sm text-qgray leading-relaxed mb-3">
             {adminMessage ||
-              "Seyfibaba, siteyi çalıştırmak, deneyiminizi iyileştirmek ve (onayınızla) reklam / analitik ölçümü yapmak için çerezler kullanır. Tercihlerinizi dilediğiniz zaman değiştirebilirsiniz."}
+              "Kuaför Tedarik, siteyi çalıştırmak, deneyiminizi iyileştirmek ve (onayınızla) reklam / analitik ölçümü yapmak için çerezler kullanır. Tercihlerinizi dilediğiniz zaman değiştirebilirsiniz."}
           </p>
           <Link href="/privacy-policy" className="text-sm text-blue-600 underline">
             Gizlilik ve çerez politikası

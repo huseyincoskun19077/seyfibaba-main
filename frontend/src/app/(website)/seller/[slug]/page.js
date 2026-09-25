@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 export async function generateMetadata() {
   return {
-    title: "Sayfa Bulunamadı | Seyfibaba",
+    title: "Sayfa Bulunamadı | Kuaför Tedarik",
     robots: { index: false, follow: false },
   };
 }

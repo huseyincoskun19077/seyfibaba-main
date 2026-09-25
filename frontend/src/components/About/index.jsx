@@ -35,7 +35,7 @@ export default function About({ aboutData }) {
             <div className="w-full h-[400px] lg:h-[500px] relative rounded-2xl overflow-hidden shadow-lg">
               <Image
                 src={aboutBanner}
-                alt="Seyfibaba Hakkında"
+                alt="Kuaför Tedarik Hakkında"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"

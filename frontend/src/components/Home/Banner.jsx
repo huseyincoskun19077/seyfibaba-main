@@ -94,8 +94,8 @@ export default function Banner({
                       src={sidebarImageOne}
                       alt={
                         sidebarImgOne.title_one || sidebarImgOne.title_two
-                          ? `${sidebarImgOne.title_one || "Seyfibaba"} ${sidebarImgOne.title_two || "kampanya banneri"}`
-                          : "Seyfibaba berber ve kuafor kampanya banneri"
+                          ? `${sidebarImgOne.title_one || "Kuaför Tedarik"} ${sidebarImgOne.title_two || "kampanya banneri"}`
+                          : "Kuaför Tedarik berber ve kuafor kampanya banneri"
                       }
                       fill
                       className="object-cover"
@@ -160,8 +160,8 @@ export default function Banner({
                       src={sidebarImageTwo}
                       alt={
                         sidebarImgTwo.title_one || sidebarImgTwo.title_two
-                          ? `${sidebarImgTwo.title_one || "Seyfibaba"} ${sidebarImgTwo.title_two || "kampanya banneri"}`
-                          : "Seyfibaba profesyonel salon ekipmanlari banneri"
+                          ? `${sidebarImgTwo.title_one || "Kuaför Tedarik"} ${sidebarImgTwo.title_two || "kampanya banneri"}`
+                          : "Kuaför Tedarik profesyonel salon ekipmanlari banneri"
                       }
                       fill
                       className="object-cover"

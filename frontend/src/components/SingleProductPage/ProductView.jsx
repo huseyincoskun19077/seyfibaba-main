@@ -11,11 +11,11 @@ import { addItem } from "../../redux/features/cart/cartSlice";
 import useWishlist from "../../hooks/useWishlist";
 import Star from "../Helpers/icons/Star";
 import ThinLove from "../Helpers/icons/ThinLove";
-import CheckProductIsExistsInFlashSale from "../Shared/CheckProductIsExistsInFlashSale";
 import ServeLangItem from "../Helpers/ServeLangItem";
 import LoginContext from "../Contexts/LoginContext";
 import messageContext from "../Contexts/MessageContext";
 import CurrencyConvert from "../Shared/CurrencyConvert";
+import PriceDisplay from "../Shared/PriceDisplay";
 import ReportIco from "../Helpers/icons/ReportIco";
 import FbIco from "../Helpers/icons/FbIco";
 import TwiterIco from "../Helpers/icons/TwiterIco";
@@ -149,42 +149,45 @@ const StarRating = ({ rating }) => {
 const ProductImage = ({ src, alt, className = "", onClick }) => {
   const bfCacheKey = useBfCacheRemountKey();
   const { src: resolved, unoptimized } = getProductImageProps(src);
+  const isDimmed = String(className || "").includes("opacity-50");
   return (
-  <div
-    onClick={onClick}
-    className={`w-[110px] h-[110px] p-[15px] border border-qgray-border cursor-pointer relative ${
-      onClick ? "" : "cursor-default"
-    }`}
-  >
-    <Image
-      key={`pi-${resolved}-${bfCacheKey}`}
-      fill
-      style={{ objectFit: "scale-down" }}
-      src={resolved}
-      unoptimized={unoptimized}
-      alt={alt}
-      sizes="110px"
-      className={`w-full h-full object-contain transform scale-110 ${className}`}
-    />
-  </div>
+    <div
+      onClick={onClick}
+      className={`relative h-[88px] w-[88px] cursor-pointer overflow-hidden rounded-xl border-2 bg-white p-2 transition sm:h-[100px] sm:w-[100px] ${
+        isDimmed
+          ? "border-[#04334a]/10 opacity-60 hover:opacity-100"
+          : "border-qyellow shadow-sm"
+      } ${onClick ? "" : "cursor-default"}`}
+    >
+      <Image
+        key={`pi-${resolved}-${bfCacheKey}`}
+        fill
+        style={{ objectFit: "contain" }}
+        src={resolved}
+        unoptimized={unoptimized}
+        alt={alt}
+        sizes="100px"
+        className="object-contain"
+      />
+    </div>
   );
 };
 
 const QuantitySelector = ({ quantity, onIncrement, onDecrement }) => (
-  <div className="w-[120px] h-full px-[26px] flex items-center border border-qgray-border">
-    <div className="flex justify-between items-center w-full">
+  <div className="flex h-full w-[120px] items-center rounded-xl border border-[#04334a]/12 bg-[#F4F6F7] px-3">
+    <div className="flex w-full items-center justify-between">
       <button
         onClick={onDecrement}
         type="button"
-        className="text-base text-qgray"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-base text-[#04334a]/55 transition hover:bg-white hover:text-[#04334a]"
       >
         -
       </button>
-      <span className="text-qblack">{quantity}</span>
+      <span className="text-sm font-700 text-[#04334a]">{quantity}</span>
       <button
         onClick={onIncrement}
         type="button"
-        className="text-base text-qgray"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-base text-[#04334a]/55 transition hover:bg-white hover:text-[#04334a]"
       >
         +
       </button>
@@ -217,7 +220,7 @@ const VariantSelector = ({
   };
 
   return (
-    <div className="space-y-5 mb-6">
+    <div className="mb-2 space-y-5">
       {variants.map((variant) => {
         const items = Array.isArray(variant?.active_variant_items)
           ? variant.active_variant_items
@@ -243,10 +246,10 @@ const VariantSelector = ({
 
           return (
             <div key={variant.id || name}>
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <p className="text-sm font-700 text-qblack mb-0">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="mb-0 text-sm font-700 text-[#04334a]">
                   {name || "Renk"}
-                  <span className="ml-2 text-xs font-normal text-qgray">
+                  <span className="ml-2 text-xs font-normal text-[#04334a]/45">
                     ({items.length})
                   </span>
                 </p>
@@ -256,7 +259,7 @@ const VariantSelector = ({
                     value={colorQuery}
                     onChange={(e) => setColorQuery(e.target.value)}
                     placeholder="Renk ara…"
-                    className="h-9 w-full max-w-[200px] rounded-lg border border-qgray-border px-3 text-sm outline-none focus:border-qblack"
+                    className="h-9 w-full max-w-[200px] rounded-lg border-0 bg-[#F4F6F7] px-3 text-sm text-[#04334a] outline-none focus:ring-2 focus:ring-[#FCBF49]/50"
                   />
                 )}
               </div>
@@ -270,8 +273,8 @@ const VariantSelector = ({
                   onClick={() => onSelectStandard?.(variant)}
                   className={`inline-flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left transition ${
                     standardSelected
-                      ? "border-qblack ring-2 ring-qyellow"
-                      : "border-qgray-border hover:border-qblack"
+                      ? "border-[#04334a] bg-[#FFF8E8] ring-2 ring-qyellow"
+                      : "border-[#04334a]/12 hover:border-[#04334a]/40"
                   }`}
                 >
                   {thumbImage ? (
@@ -314,8 +317,8 @@ const VariantSelector = ({
                       onClick={() => selectItem(variant, item)}
                       className={`inline-flex max-w-[160px] items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left transition ${
                         selected
-                          ? "border-qblack ring-2 ring-qyellow"
-                          : "border-qgray-border hover:border-qblack"
+                          ? "border-[#04334a] bg-[#FFF8E8] ring-2 ring-qyellow"
+                          : "border-[#04334a]/12 hover:border-[#04334a]/40"
                       }`}
                     >
                       {imgSrc ? (
@@ -369,8 +372,8 @@ const VariantSelector = ({
                     onClick={() => selectItem(variant, item)}
                     className={`rounded-xl border px-3 py-2 text-sm transition ${
                       selected
-                        ? "border-qblack ring-2 ring-qyellow font-700"
-                        : "border-qgray-border hover:border-qblack"
+                        ? "border-[#04334a] bg-[#FFF8E8] font-700 ring-2 ring-qyellow"
+                        : "border-[#04334a]/12 hover:border-[#04334a]/40"
                     }`}
                   >
                     <span className="text-qblack">{item.name}</span>
@@ -711,6 +714,9 @@ export default function ProductView({
           offer_price: safeProduct?.offer_price,
           thumb_image: safeProduct?.thumb_image,
           slug: safeProduct?.slug,
+          barcode: safeProduct?.barcode || null,
+          sku: safeProduct?.sku || null,
+          sale_unit_qty: safeProduct?.sale_unit_qty || 1,
         },
         variants: parentVarients?.length
           ? parentVarients.map((item) => ({
@@ -865,7 +871,7 @@ export default function ProductView({
   if (!safeProduct?.id) {
     return (
       <div className={`product-view w-full ${className || ""}`}>
-        <div className="w-full rounded border border-qgray-border p-8 text-center text-qgray">
+        <div className="w-full rounded-2xl border border-[#04334a]/10 bg-white p-8 text-center text-[#04334a]/55">
           Ürün detayları şu anda görüntülenemiyor.
         </div>
       </div>
@@ -874,39 +880,39 @@ export default function ProductView({
 
   return (
     <div
-      className={`product-view w-full lg:flex justify-between ${
+      className={`product-view w-full lg:flex lg:items-start lg:justify-between lg:gap-8 ${
         className || ""
       }`}
     >
       {/* Product Images Section */}
-      <div data-aos="fade-right" className="lg:w-1/2 xl:mr-[70px] lg:mr-[50px]">
+      <div data-aos="fade-right" className="lg:w-1/2 lg:sticky lg:top-24">
         <div className="w-full">
-          <div className="w-full md:h-[600px] h-[350px] border border-qgray-border flex justify-center items-center overflow-hidden relative mb-3">
+          <div className="relative mb-3 flex h-[350px] items-center justify-center overflow-hidden rounded-2xl border border-[#04334a]/10 bg-white md:h-[560px]">
             <Image
               key={`pv-main-${safeProduct?.id}-${bfCacheKey}-${mainImageProps.src}`}
               fill
-              style={{ objectFit: "scale-down" }}
+              style={{ objectFit: "contain" }}
               src={mainImageProps.src}
               unoptimized={mainImageProps.unoptimized}
               alt={product?.name || "Ürün görseli"}
-              className="object-contain transform scale-110 cursor-zoom-in"
+              className="cursor-zoom-in object-contain p-4 transition duration-300 hover:scale-[1.02]"
               onClick={() => setIsImagePreviewOpen(true)}
               priority
               sizes="(max-width: 768px) 100vw, 50vw"
             />
             {isEffectiveOfferPrice(safeProduct?.offer_price, safeProduct?.price) &&
               pricePercent !== "" && pricePercent < 0 && (
-              <div className="w-[80px] h-[80px] rounded-full bg-qyellow text-qblack flex justify-center items-center text-xl font-medium absolute left-[30px] top-[30px]">
-                <span className="text-tblack">{Math.abs(pricePercent)}%</span>
+              <div className="absolute left-4 top-4 flex h-14 w-14 items-center justify-center rounded-full bg-qyellow text-lg font-800 text-[#04334a] shadow-sm">
+                <span>%{Math.abs(pricePercent)}</span>
               </div>
             )}
             {getSaleUnitQty(safeProduct) > 1 && (
-              <span className="absolute left-3 bottom-3 z-20 rounded-full border border-[#222] bg-qyellow px-2.5 py-1 text-[12px] font-700 leading-none text-[#222] md:left-4 md:bottom-4 md:text-sm">
+              <span className="absolute bottom-3 left-3 z-20 rounded-full border border-[#04334a]/15 bg-qyellow px-2.5 py-1 text-[12px] font-700 leading-none text-[#04334a] md:bottom-4 md:left-4 md:text-sm">
                 x{getSaleUnitQty(safeProduct)} adet
               </span>
             )}
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-wrap gap-2">
             <ProductImage
               src={safeProduct?.thumb_image}
               alt="Standart"
@@ -978,13 +984,13 @@ export default function ProductView({
       )}
 
       {/* Product Details Section */}
-      <div className="flex-1">
-        <div className="product-details w-full mt-10 lg:mt-0">
+      <div className="mt-8 flex-1 lg:mt-0">
+        <div className="product-details w-full rounded-2xl border border-[#04334a]/10 bg-white p-5 shadow-sm sm:p-7">
           {/* Brand */}
           {safeProduct?.brand && (
             <span
               data-aos="fade-up"
-              className="text-qgray text-xs font-normal uppercase tracking-wider mb-2 inline-block"
+              className="mb-2 inline-block text-xs font-800 uppercase tracking-widest text-[#04334a]/45"
             >
               {safeProduct?.brand?.name}
             </span>
@@ -993,7 +999,7 @@ export default function ProductView({
           {/* Product Name */}
           <h1
             data-aos="fade-up"
-            className="text-xl font-medium text-qblack mb-4 notranslate"
+            className="notranslate mb-3 text-xl font-800 leading-snug text-[#04334a] md:text-2xl"
           >
             {safeProduct?.name}
           </h1>
@@ -1001,56 +1007,32 @@ export default function ProductView({
           {/* Rating */}
           <div
             data-aos="fade-up"
-            className="flex space-x-[10px] items-center mb-6"
+            className="mb-5 flex items-center space-x-[10px]"
           >
             <StarRating rating={safeProduct?.averageRating} />
-            <span className="text-[13px] font-normal text-qblack">
+            <span className="text-[13px] font-600 text-[#04334a]">
               {averageRating > 0 ? averageRating.toFixed(1) : "0.0"} puan
             </span>
-            <span className="text-[13px] text-qgray">
+            <span className="text-[13px] text-[#04334a]/50">
               ({reviewCount} değerlendirme)
             </span>
           </div>
 
-          {/* Müşteri puanı/Satıcı ölçeği/Alışveriş sinyali — kaldırıldı (#6) */}
-
-          {/* Price — belirgin UI (#8) */}
+          {/* Price */}
           <div
             data-aos="fade-up"
-            className="mb-7 p-4 bg-gradient-to-r from-[#fff5f5] to-[#fff0f0] rounded-xl border border-[#ffe0e0]"
+            className="mb-6 rounded-xl border border-[#04334a]/10 bg-gradient-to-br from-[#FFF8E8] to-[#F4F6F7] p-4"
           >
             {(() => {
               const hasRealDiscount = isEffectiveOfferPrice(offerPrice, price);
               return (
                 <>
-                  <div className="flex items-baseline gap-3">
-                    <span
-                      suppressHydrationWarning
-                      className={`main-price font-700 text-[28px] ${
-                        hasRealDiscount ? "text-[#E11D48]" : "text-qblack"
-                      }`}
-                    >
-                      {hasRealDiscount ? (
-                        <CheckProductIsExistsInFlashSale
-                          id={safeProduct.id}
-                          price={offerPrice}
-                        />
-                      ) : (
-                        <CheckProductIsExistsInFlashSale
-                          id={safeProduct.id}
-                          price={price}
-                        />
-                      )}
-                    </span>
-                    {hasRealDiscount && (
-                      <span
-                        suppressHydrationWarning
-                        className="line-through text-qgray font-500 text-[16px]"
-                      >
-                        <CurrencyConvert price={price} />
-                      </span>
-                    )}
-                  </div>
+                  <PriceDisplay
+                    price={price}
+                    offerPrice={hasRealDiscount ? offerPrice : null}
+                    size="lg"
+                    layout="stack"
+                  />
                   <ProductSaleUnitInfo
                     product={safeProduct}
                     price={price}
@@ -1063,29 +1045,29 @@ export default function ProductView({
           </div>
 
           {/* Description */}
-          <div data-aos="fade-up" className="mb-[30px]">
+          <div data-aos="fade-up" className="mb-6">
             <div
-              className={`text-qgray text-sm text-normal leading-7 ${
+              className={`text-sm leading-7 text-[#04334a]/65 ${
                 more ? "" : "line-clamp-2"
               }`}
             >
               {safeProduct?.short_description || ""}
             </div>
-            <button
-              onClick={() => setMore(!more)}
-              type="button"
-              className="text-blue-500 text-xs font-bold"
-            >
-              {more ? "Daha az göster" : "Devamını göster"}
-            </button>
+            {safeProduct?.short_description ? (
+              <button
+                onClick={() => setMore(!more)}
+                type="button"
+                className="mt-1 text-xs font-700 text-[#04334a] underline underline-offset-2 hover:text-qyellow"
+              >
+                {more ? "Daha az göster" : "Devamını göster"}
+              </button>
+            ) : null}
           </div>
-
-          {/* Availability — gizlendi (#5) */}
 
           {/* Variants */}
           <div
             className={`rounded-2xl transition duration-300 ${
-              variantFlash ? "ring-2 ring-qyellow bg-qyellow/10" : ""
+              variantFlash ? "bg-qyellow/10 ring-2 ring-qyellow" : ""
             }`}
           >
             {(varients || []).some((v) =>
@@ -1093,7 +1075,7 @@ export default function ProductView({
             ) && (
               <div className="mb-3 flex flex-wrap gap-2">
                 {!hasColorVariantSelected && (
-                  <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-600 text-qblack">
+                  <span className="inline-flex items-center rounded-full bg-[#F4F6F7] px-3 py-1 text-xs font-600 text-[#04334a]">
                     Standart ürün
                   </span>
                 )}
@@ -1104,7 +1086,7 @@ export default function ProductView({
                   return (
                     <span
                       key={`${item.product_variant_id}-${item.id}`}
-                      className="inline-flex items-center rounded-full bg-qyellow/20 px-3 py-1 text-xs font-600 text-qblack"
+                      className="inline-flex items-center rounded-full bg-qyellow/30 px-3 py-1 text-xs font-600 text-[#04334a]"
                     >
                       {parent?.name || "Seçenek"}: {item.name}
                     </span>
@@ -1126,21 +1108,23 @@ export default function ProductView({
           {/* Quantity and Wishlist */}
           <div
             data-aos="fade-up"
-            className="quantity-card-wrapper w-full flex items-center h-[50px] space-x-[10px] mb-[30px]"
+            className="quantity-card-wrapper mb-2 mt-6 flex h-[52px] w-full items-center space-x-[10px]"
           >
             <QuantitySelector
               quantity={quantity}
               onIncrement={increment}
               onDecrement={decrement}
             />
-            <div className="w-[60px] h-full flex justify-center items-center border border-qgray-border">
+            <div className="flex h-full w-[56px] items-center justify-center rounded-xl border border-[#04334a]/12 bg-[#F4F6F7]">
               {!arWishlist ? (
                 <button
                   disabled={addToWishlistLoading}
                   type="button"
                   onClick={() => addToWishlist(safeProduct.id)}
+                  className="text-[#04334a]"
+                  aria-label="Favorilere ekle"
                 >
-                  <span className="w-10 h-10 flex justify-center items-center">
+                  <span className="flex h-10 w-10 items-center justify-center">
                     <ThinLove className="fill-current" />
                   </span>
                 </button>
@@ -1149,19 +1133,20 @@ export default function ProductView({
                   type="button"
                   onClick={() => removeToWishlist(wishlisted?.id)}
                   disabled={removeFromWishlistLoading}
+                  className="text-qred"
+                  aria-label="Favorilerden çıkar"
                 >
-                  <span className="w-10 h-10 flex justify-center items-center">
+                  <span className="flex h-10 w-10 items-center justify-center">
                     <ThinLove fill={true} />
                   </span>
                 </button>
               )}
             </div>
-            {/* Add to Cart Button */}
-            <div className="flex-1 h-full">
+            <div className="h-full flex-1">
               <button
                 onClick={(e) => addToCard(safeProduct.id, e)}
                 type="button"
-                className="black-btn text-sm font-semibold w-full h-full"
+                className="flex h-full w-full items-center justify-center rounded-xl bg-[#04334a] text-sm font-800 text-white transition hover:bg-[#032736]"
               >
                 {ServeLangItem()?.Add_To_Cart}
               </button>
@@ -1172,14 +1157,17 @@ export default function ProductView({
         <ProductFurnitureInquiry product={safeProduct} />
 
         {/* Product Info */}
-        <div data-aos="fade-up" className="mb-[20px]">
-          <p className="text-[13px] text-qgray leading-7">
-            <span className="text-qblack">Kategori:</span>{" "}
+        <div
+          data-aos="fade-up"
+          className="mt-4 mb-4 rounded-2xl border border-[#04334a]/10 bg-white p-4 text-[13px] leading-7 text-[#04334a]/60"
+        >
+          <p>
+            <span className="font-700 text-[#04334a]">Kategori:</span>{" "}
             {displayTurkishLabel(safeProduct?.category?.name || "")}
           </p>
           {tags.length > 0 && (
-            <p className="text-[13px] text-qgray leading-7">
-              <span className="text-qblack">Etiketler:</span>{" "}
+            <p>
+              <span className="font-700 text-[#04334a]">Etiketler:</span>{" "}
               {tags.map((item, i) => (
                 <span key={i}>
                   {(item?.value || item?.name || item || "") +
@@ -1189,8 +1177,8 @@ export default function ProductView({
             </p>
           )}
           {(safeProduct?.barcode || safeProduct?.sku) ? (
-            <p className="text-[13px] text-qgray leading-7">
-              <span className="text-qblack">Barkod:</span>{" "}
+            <p>
+              <span className="font-700 text-[#04334a]">Barkod:</span>{" "}
               {safeProduct?.barcode || safeProduct?.sku}
             </p>
           ) : null}
@@ -1199,7 +1187,7 @@ export default function ProductView({
         {/* Report Button */}
         <div
           data-aos="fade-up"
-          className="flex space-x-2 items-center mb-[20px] report-btn"
+          className="report-btn mb-4 flex items-center space-x-2"
         >
           <span>
             <ReportIco />
@@ -1207,7 +1195,7 @@ export default function ProductView({
           <button
             type="button"
             onClick={reportHandler}
-            className="text-qred font-semibold text-[13px]"
+            className="text-[13px] font-600 text-qred hover:underline"
           >
             {ServeLangItem()?.Report_This_Item}
           </button>
@@ -1216,15 +1204,13 @@ export default function ProductView({
         {/* Social Share */}
         <div
           data-aos="fade-up"
-          className="social-share flex items-center w-full mb-[20px]"
+          className="social-share mb-2 flex w-full items-center"
         >
-          <span className="text-qblack text-[13px] mr-[17px] inline-block">
+          <span className="mr-[17px] inline-block text-[13px] font-600 text-[#04334a]">
             {ServeLangItem()?.Share_This}
           </span>
           <SocialShareButtons product={safeProduct} />
         </div>
-
-        {/* Satıcıya mesaj — müşteri-satıcı mesajlaşma kaldırıldı (#35) */}
       </div>
     </div>
   );

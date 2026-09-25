@@ -335,7 +335,7 @@ export default function Drawer({ className, open, action, isSecondHandSite = fal
                 <MenuRow href="/privacy-policy" onClose={closeDrawer}>
                   {lang?.Privacy_Policy}
                 </MenuRow>
-                <MenuRow href="/faq" onClose={closeDrawer}>
+                <MenuRow href="/yardim" onClose={closeDrawer}>
                   {lang?.FAQ}
                 </MenuRow>
                 <MenuRow href="/terms-condition" onClose={closeDrawer}>

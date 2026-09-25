@@ -48,10 +48,25 @@ export const cartSlice = createSlice({
     updateAllItems: (state, { payload }) => {
       state.cart.cartProducts = payload;
     },
+    setItemQty: (state, { payload }) => {
+      const productId = Number(payload?.productId);
+      const qty = Math.max(1, parseInt(payload?.qty, 10) || 1);
+      const item = state.cart.cartProducts.find(
+        (row) => Number(row.product_id) === productId
+      );
+      if (item) {
+        item.qty = qty;
+      }
+    },
   },
 });
 
-export const { addItem, clearCartAction, deleteItemAction, updateAllItems } =
-  cartSlice.actions;
+export const {
+  addItem,
+  clearCartAction,
+  deleteItemAction,
+  updateAllItems,
+  setItemQty,
+} = cartSlice.actions;
 
 export default cartSlice.reducer;

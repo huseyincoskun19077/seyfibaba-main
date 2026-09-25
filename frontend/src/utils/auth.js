@@ -63,10 +63,11 @@ export default function auth() {
 
 function cookieDomain() {
   if (typeof window === "undefined") {
-    return process.env.NEXT_PUBLIC_COOKIE_DOMAIN || ".seyfibaba.com";
+    return process.env.NEXT_PUBLIC_COOKIE_DOMAIN || ".kuafortedarik.com";
   }
   const host = window.location.hostname.replace(/^www\./, "");
   if (host === "localhost" || host === "127.0.0.1") return undefined;
+  if (host.endsWith("kuafortedarik.com")) return ".kuafortedarik.com";
   if (host.endsWith("seyfibaba.com")) return ".seyfibaba.com";
   return undefined;
 }
@@ -88,6 +89,7 @@ export function authCookieOptions() {
 export function setAccessTokenCookie(token) {
   if (!token) return;
   deleteCookie("access_token", { path: "/" });
+  deleteCookie("access_token", { path: "/", domain: ".kuafortedarik.com" });
   deleteCookie("access_token", { path: "/", domain: ".seyfibaba.com" });
   setCookie("access_token", token, {
     ...authCookieOptions(),
@@ -97,6 +99,7 @@ export function setAccessTokenCookie(token) {
 
 export function clearAccessTokenCookie() {
   deleteCookie("access_token", { path: "/" });
+  deleteCookie("access_token", { path: "/", domain: ".kuafortedarik.com" });
   deleteCookie("access_token", { path: "/", domain: ".seyfibaba.com" });
 }
 
@@ -107,14 +110,20 @@ export function safePostLoginRedirect(raw) {
     const base =
       typeof window !== "undefined"
         ? window.location.origin
-        : "https://seyfibaba.com";
+        : "https://kuafortedarik.com";
     const url = new URL(value, base);
     const host = url.hostname.replace(/^www\./, "");
     if (host === "localhost" || host === "127.0.0.1") {
       if (url.protocol !== "https:" && url.protocol !== "http:") return "";
       return url.toString();
     }
-    if (host !== "seyfibaba.com" && host !== "ikinciel.seyfibaba.com") {
+    const allowed = new Set([
+      "kuafortedarik.com",
+      "ikinciel.kuafortedarik.com",
+      "seyfibaba.com",
+      "ikinciel.seyfibaba.com",
+    ]);
+    if (!allowed.has(host)) {
       return "";
     }
     if (url.protocol !== "https:" && url.protocol !== "http:") return "";

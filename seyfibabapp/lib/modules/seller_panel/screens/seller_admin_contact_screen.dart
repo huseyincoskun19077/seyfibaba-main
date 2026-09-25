@@ -96,7 +96,7 @@ class _SellerAdminContactScreenState extends State<SellerAdminContactScreen> {
     return Scaffold(
       backgroundColor: HomeTheme.bg,
       appBar: AppBar(
-        title: const Text('Seyfibaba Destek'),
+        title: const Text('Kuaför Tedarik Destek'),
         backgroundColor: HomeTheme.header,
         foregroundColor: HomeTheme.textDark,
         elevation: 0,
@@ -110,7 +110,7 @@ class _SellerAdminContactScreenState extends State<SellerAdminContactScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   const Text(
-                    'Sorularınız ve talepleriniz için seyfibaba.com üzerinden bizimle iletişime geçebilirsiniz. '
+                    'Sorularınız ve talepleriniz için kuafortedarik.com üzerinden bizimle iletişime geçebilirsiniz. '
                     'İsterseniz aşağıdaki formu da kullanabilirsiniz.',
                     style: TextStyle(color: HomeTheme.textMuted, height: 1.4),
                   ),

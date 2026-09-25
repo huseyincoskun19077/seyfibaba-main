@@ -118,7 +118,7 @@ export default function CampaignCountDown({
                     ? appConfig.BASE_URL + downloadData.image
                     : "/assets/images/download-app-cover.png"
                 }
-                alt="Seyfibaba mobil uygulama"
+                alt="Kuaför Tedarik mobil uygulama"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1200px) 100vw, 560px"

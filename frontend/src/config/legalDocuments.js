@@ -20,10 +20,16 @@ export const LEGAL_ROUTES = Object.fromEntries(
 );
 
 export const FOOTER_LEGAL_LINKS = [
-  { slug: LEGAL_SLUGS.TERMS, label: "Şartlar ve Koşullar" },
-  { slug: LEGAL_SLUGS.PRIVACY_POLICY, label: "Gizlilik Politikası" },
-  { slug: LEGAL_SLUGS.PRIVACY_AGREEMENT, label: "Gizlilik Sözleşmesi" },
-  { slug: LEGAL_SLUGS.KVKK_AYDINLATMA, label: "KVKK Aydınlatma Metni" },
+  { slug: LEGAL_SLUGS.TERMS, label: "Üyelik / Alıcı Sözleşmesi" },
+  { slug: LEGAL_SLUGS.PRIVACY_POLICY, label: "Ticari Kimlik Beyanı (Alıcı)" },
+  {
+    slug: LEGAL_SLUGS.PRIVACY_AGREEMENT,
+    label: "Kişisel Verilerin Korunmasına Yönelik Protokol (Satıcı)",
+  },
+  {
+    slug: LEGAL_SLUGS.KVKK_AYDINLATMA,
+    label: "Kişisel Verilerinizin Korunması ve İşlenmesi",
+  },
   { slug: LEGAL_SLUGS.KVKK_ACIK_RIZA, label: "KVKK Açık Rıza Metni" },
   { slug: LEGAL_SLUGS.KVKK_BASVURU, label: "KVKK Başvuru Formu" },
   { slug: LEGAL_SLUGS.DISTANCE_SALES, label: "Mesafeli Satış Sözleşmesi" },
@@ -38,7 +44,7 @@ export const FOOTER_CORPORATE_LINKS = [
   { href: "/about", label: "Hakkımızda" },
   { href: "/salon-crm", label: "Salon CRM" },
   { href: "/contact", label: "İletişim" },
-  { href: "/faq", label: "Sıkça Sorulan Sorular (SSS)" },
+  { href: "/yardim", label: "Sıkça Sorulan Sorular (SSS)" },
 ];
 
 export const PROFILE_LEGAL_LINKS = FOOTER_LEGAL_LINKS.filter(
@@ -51,61 +57,78 @@ export const SELLER_LEGAL_LINKS = [
   { slug: LEGAL_SLUGS.PROHIBITED_PRODUCTS, label: "Yasaklı Ürünler" },
   { slug: LEGAL_SLUGS.COMMISSION_POLICY, label: "Komisyon Politikası" },
   { slug: LEGAL_SLUGS.PAYOUT_INFO, label: "Hakediş Bilgileri" },
-  { href: "/faq", label: "SSS" },
+  { href: "/yardim", label: "SSS" },
 ];
 
 export const SIGNUP_REQUIRED_CONSENTS = [
-  { slug: LEGAL_SLUGS.TERMS, linkLabel: "Şartlar ve Koşullar", label: "'ı okudum ve kabul ediyorum." },
-  { slug: LEGAL_SLUGS.PRIVACY_POLICY, linkLabel: "Gizlilik Politikası", label: "'nı okudum." },
-  { slug: LEGAL_SLUGS.KVKK_AYDINLATMA, linkLabel: "KVKK Aydınlatma Metni", label: "'ni okudum." },
+  { slug: LEGAL_SLUGS.TERMS, linkLabel: "Üyelik / Alıcı Sözleşmesi", label: "" },
+  { slug: LEGAL_SLUGS.PRIVACY_POLICY, linkLabel: "Ticari Kimlik Beyanı", label: "" },
+  {
+    slug: LEGAL_SLUGS.KVKK_AYDINLATMA,
+    linkLabel: "Kişisel Verilerinizin Korunması ve İşlenmesi",
+    label: "",
+  },
 ];
 
+/** Üyelikte otomatik kabul — checkbox yok; belgeler tıklanabilir. */
+export const SIGNUP_AUTO_ACCEPT_NOTICE = {
+  prefix: "Bir hesap oluşturduğunuzda, Kuaför Tedarik'in ",
+  links: [
+    { slug: LEGAL_SLUGS.TERMS, label: "Üyelik / Alıcı Sözleşmesi" },
+    { slug: LEGAL_SLUGS.PRIVACY_POLICY, label: "Ticari Kimlik Beyanı" },
+    {
+      slug: LEGAL_SLUGS.KVKK_AYDINLATMA,
+      label: "Kişisel Verilerinizin Korunması ve İşlenmesi",
+    },
+  ],
+  suffix: " metinlerini kabul etmiş olursunuz.",
+};
+
 export const SIGNUP_OPTIONAL_CONSENTS = [
-  { key: "marketing_email", slug: LEGAL_SLUGS.KVKK_ACIK_RIZA, linkLabel: "Kampanya ve indirim e-postaları", label: " almak istiyorum.", required: false },
-  { key: "marketing_sms", slug: LEGAL_SLUGS.KVKK_ACIK_RIZA, linkLabel: "SMS", label: " almak istiyorum.", required: false },
-  { key: "marketing_push", slug: LEGAL_SLUGS.KVKK_ACIK_RIZA, linkLabel: "Push bildirim", label: " almak istiyorum.", required: false },
+  {
+    key: "marketing_commercial",
+    slug: LEGAL_SLUGS.KVKK_ACIK_RIZA,
+    required: false,
+    prefix:
+      "Bana özel indirim kuponları, kampanyalar dahil olmak üzere tüm ticari elektronik iletilerin ",
+    links: [
+      { slug: LEGAL_SLUGS.KVKK_AYDINLATMA, label: "Aydınlatma Metni" },
+    ],
+    label:
+      " kapsamında gönderilmesini ve kişisel verilerimin işlenmesini kabul ediyorum.",
+  },
 ];
 
 export const SELLER_REGISTER_REQUIRED_CONSENTS = [
   {
-    key: "seller-register-terms",
-    slugs: [LEGAL_SLUGS.SELLER_TERMS, LEGAL_SLUGS.PRIVACY_POLICY],
+    key: "seller-register-kvkk-protocol",
+    slugs: [LEGAL_SLUGS.PRIVACY_AGREEMENT],
     links: [
-      { slug: LEGAL_SLUGS.SELLER_TERMS, label: "Satıcı Şartları ve Koşulları" },
-      { slug: LEGAL_SLUGS.PRIVACY_POLICY, label: "Gizlilik Politikası" },
+      {
+        slug: LEGAL_SLUGS.PRIVACY_AGREEMENT,
+        label: "Kişisel Verilerin Korunmasına Yönelik Protokol",
+      },
     ],
-    label: " metinlerini okudum ve kabul ediyorum.",
-  },
-  {
-    key: "seller-register-kvkk",
-    slugs: [LEGAL_SLUGS.KVKK_AYDINLATMA],
-    links: [{ slug: LEGAL_SLUGS.KVKK_AYDINLATMA, label: "KVKK Aydınlatma Metni" }],
-    label: "'ni okudum ve kabul ediyorum.",
+    label: "'ü okudum ve onaylıyorum.",
   },
 ];
 
-export const SELLER_REGISTER_OPTIONAL_CONSENTS = [
-  { key: "commercial_email", slug: LEGAL_SLUGS.KVKK_ACIK_RIZA, linkLabel: "Ticari elektronik ileti", label: " almak istiyorum.", required: false },
-];
+export const SELLER_REGISTER_OPTIONAL_CONSENTS = [];
 
 export const CHECKOUT_REQUIRED_CONSENTS = [
   {
-    key: "checkout-sales",
-    slugs: [LEGAL_SLUGS.PRE_INFORMATION, LEGAL_SLUGS.DISTANCE_SALES],
-    links: [
-      { slug: LEGAL_SLUGS.PRE_INFORMATION, label: "Ön Bilgilendirme Formu" },
-      { slug: LEGAL_SLUGS.DISTANCE_SALES, label: "Mesafeli Satış Sözleşmesi" },
-    ],
-    label: " metinlerini okudum ve kabul ediyorum.",
+    key: "checkout-pre-information",
+    slug: LEGAL_SLUGS.PRE_INFORMATION,
+    dynamic: true,
+    linkLabel: "Ön Bilgilendirme Koşulları",
+    label: "'nı okudum, onaylıyorum.",
   },
   {
-    key: "checkout-terms",
-    slugs: [LEGAL_SLUGS.TERMS, LEGAL_SLUGS.PRIVACY_POLICY],
-    links: [
-      { slug: LEGAL_SLUGS.TERMS, label: "Şartlar ve Koşullar" },
-      { slug: LEGAL_SLUGS.PRIVACY_POLICY, label: "Gizlilik Politikası" },
-    ],
-    label: " metinlerini okudum ve kabul ediyorum.",
+    key: "checkout-distance-sales",
+    slug: LEGAL_SLUGS.DISTANCE_SALES,
+    dynamic: true,
+    linkLabel: "Ticari Nitelikli Mesafeli Satış Sözleşmesi",
+    label: "'ni okudum, onaylıyorum.",
   },
 ];
 

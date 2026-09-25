@@ -1,252 +1,399 @@
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../utils/k_images.dart';
-import '../../../widgets/confirm_dialog.dart';
-import '../../../widgets/custom_text.dart';
-import '/modules/animated_splash_screen/controller/currency/currency_cubit.dart';
-import '/widgets/capitalized_word.dart';
 
 import '../../../core/remote_urls.dart';
 import '../../../core/router_name.dart';
 import '../../../utils/constants.dart';
+import '../../../utils/k_images.dart';
 import '../../../utils/language_string.dart';
 import '../../../utils/utils.dart';
+import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/custom_image.dart';
+import '../../../widgets/custom_text.dart';
 import '../../animated_splash_screen/controller/app_setting_cubit/app_setting_cubit.dart';
-import '../controllers/cart/cart_cubit.dart';
 import '../../category/component/price_card_widget.dart';
+import '../controllers/cart/cart_cubit.dart';
 import '../model/cart_product_model.dart';
+import '../model/varient_model.dart';
 
-class AddToCartComponent extends StatefulWidget {
-  const AddToCartComponent(
-      {super.key,
-      required this.product,
-      required this.onChange,
-      required this.appSetting});
+/// Web ProductsTable kartına uyumlu sepet satırı.
+class AddToCartComponent extends StatelessWidget {
+  const AddToCartComponent({
+    super.key,
+    required this.product,
+    required this.onChange,
+    required this.appSetting,
+  });
 
   final CartProductModel product;
   final ValueChanged<int> onChange;
   final AppSettingCubit appSetting;
 
-  @override
-  State<AddToCartComponent> createState() => _AddToCartComponentState();
-}
+  String get _code {
+    final b = product.product.barcode.trim();
+    if (b.isNotEmpty) return b;
+    return product.product.sku.trim();
+  }
 
-class _AddToCartComponentState extends State<AddToCartComponent> {
-  int value = 0;
+  String get _variantsText {
+    if (product.variants.isEmpty) return '';
+    return product.variants
+        .map((VarientModel v) {
+          final vi = v.varientItem;
+          if (vi == null) return null;
+          final g = vi.productVariantName.trim().isEmpty
+              ? 'Seçenek'
+              : vi.productVariantName.trim();
+          return '$g: ${vi.name}';
+        })
+        .whereType<String>()
+        .join(' · ');
+  }
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width - 40;
-    const double height = 168;
-    int value = widget.product.qty;
+    final p = product.product;
+    final qty = product.qty < 1 ? 1 : product.qty;
+    final saleUnit = p.saleUnitQty < 1 ? 1 : p.saleUnitQty;
+    final maxInst = p.maxInstallment < 1 ? 1 : p.maxInstallment;
+    final cat = p.categoryName.trim();
+    final code = _code;
+    final variantsText = _variantsText;
+
     return Container(
-      height: height,
-      margin: Utils.symmetric(v: 6.0, h: 15.0),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
       decoration: BoxDecoration(
-          color: whiteColor,
-          borderRadius: Utils.borderRadius(r: 12.0),
-          boxShadow: [
-            BoxShadow(
-                offset: const Offset(0.0, 0.0),
-                spreadRadius: 0.0,
-                blurRadius: 0.0,
-                // color: whiteColor
-                color: const Color(0xFF000000).withOpacity(0.4)),
-          ]),
-      child: Row(
+        color: whiteColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF04334A).withValues(alpha: 0.10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: height - 2,
-            width: width / 2.7,
-            child: ClipRRect(
-              borderRadius: Utils.borderRadius(r: 6.0),
-              child: InkWell(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InkWell(
                 onTap: () {
-                  Navigator.pushNamed(context, RouteNames.productDetailsScreen,
-                      arguments: widget.product.product.slug);
+                  Navigator.pushNamed(
+                    context,
+                    RouteNames.productDetailsScreen,
+                    arguments: p.slug,
+                  );
                 },
-                child: CustomImage(
-                  path: RemoteUrls.imageUrl(widget.product.product.thumbImage),
-                  fit: BoxFit.contain,
+                child: Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: const Color(0xFF04334A).withValues(alpha: 0.12)),
+                    color: const Color(0xFFFAFAFA),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: CustomImage(
+                    path: RemoteUrls.imageUrl(p.thumbImage),
+                    fit: BoxFit.contain,
+                  ),
                 ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                RouteNames.productDetailsScreen,
+                                arguments: p.slug,
+                              );
+                            },
+                            child: CustomText(
+                              text: p.name,
+                              maxLine: 2,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                              height: 1.25,
+                              color: const Color(0xFF04334A),
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _confirmRemove(context),
+                          child: const Padding(
+                            padding: EdgeInsets.only(left: 6),
+                            child: Icon(Icons.delete_outline,
+                                size: 22, color: yellowColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (code.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        code,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: const Color(0xFF04334A).withValues(alpha: 0.50),
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Text.rich(
+                      TextSpan(
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: const Color(0xFF04334A).withValues(alpha: 0.70),
+                        ),
+                        children: [
+                          const TextSpan(
+                            text: 'İçindeki miktar: ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF04334A),
+                            ),
+                          ),
+                          TextSpan(text: '$saleUnit adet'),
+                          if (qty > 1)
+                            TextSpan(
+                              text:
+                                  ' · Sepette $qty × $saleUnit = ${qty * saleUnit} adet',
+                              style: TextStyle(
+                                color: const Color(0xFF04334A)
+                                    .withValues(alpha: 0.50),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text.rich(
+                      TextSpan(
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.35,
+                          color: const Color(0xFF04334A).withValues(alpha: 0.70),
+                        ),
+                        children: [
+                          const TextSpan(
+                            text: 'Bireysel kart: ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: yellowColor,
+                            ),
+                          ),
+                          TextSpan(
+                            text: maxInst > 1
+                                ? '$maxInst taksite kadar'
+                                : 'Tek çekim',
+                          ),
+                          if (cat.isNotEmpty)
+                            TextSpan(
+                              text: ' ($cat)',
+                              style: TextStyle(
+                                color: const Color(0xFF04334A)
+                                    .withValues(alpha: 0.45),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Text.rich(
+                      TextSpan(
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.35,
+                          color: const Color(0xFF04334A).withValues(alpha: 0.70),
+                        ),
+                        children: [
+                          const TextSpan(
+                            text: 'Ticari kart: ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: yellowColor,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '—',
+                            style: TextStyle(
+                              color: const Color(0xFF04334A)
+                                  .withValues(alpha: 0.35),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (variantsText.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        variantsText,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: const Color(0xFF04334A).withValues(alpha: 0.55),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _QtyControl(
+                qty: qty,
+                onDec: qty > 1
+                    ? () async {
+                        final result = await context
+                            .read<CartCubit>()
+                            .decrementQuantity(product.id.toString());
+                        result.fold(
+                          (f) => Utils.errorSnackBar(context, f.message),
+                          (_) => Future.microtask(
+                            () => context.read<CartCubit>().getCartProducts(),
+                          ),
+                        );
+                      }
+                    : null,
+                onInc: () async {
+                  final result = await context
+                      .read<CartCubit>()
+                      .incrementQuantity(product.id.toString());
+                  result.fold(
+                    (f) => Utils.errorSnackBar(context, f.message),
+                    (_) => Future.microtask(
+                      () => context.read<CartCubit>().getCartProducts(),
+                    ),
+                  );
+                },
+              ),
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  PriceCardWidget(
+                    price: Utils.cartProductRegularPrice(context, product)
+                        .toString(),
+                    offerPrice:
+                        Utils.cartProductPrice(context, product).toString(),
+                    textSize: 14,
+                    saleUnitQty: saleUnit,
+                  ),
+                  const SizedBox(height: 2),
+                  CustomText(
+                    text:
+                        'Toplam ${Utils.formatPrice(Utils.cartLineTotal(context, product), context)}',
+                    isTranslate: false,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF04334A),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmRemove(BuildContext context) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => ConfirmDialog(
+        icon: Kimages.deleteIcon2,
+        message: Language.wishToRemoveProduct,
+        confirmText: Language.yesRemove,
+        cancelText: Language.no,
+        onTap: () async {
+          final result =
+              await context.read<CartCubit>().removerCartItem(product.id.toString());
+          result.fold(
+            (failure) => Utils.errorSnackBar(context, failure.message),
+            (success) {
+              onChange(product.id);
+              Utils.showSnackBar(context, success);
+            },
+          );
+          if (ctx.mounted) Navigator.of(ctx).pop(true);
+        },
+      ),
+    );
+  }
+}
+
+class _QtyControl extends StatelessWidget {
+  const _QtyControl({
+    required this.qty,
+    required this.onInc,
+    this.onDec,
+  });
+
+  final int qty;
+  final VoidCallback? onDec;
+  final VoidCallback onInc;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 36,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF04334A).withValues(alpha: 0.15)),
+        color: whiteColor,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: onDec,
+            child: SizedBox(
+              width: 36,
+              height: 36,
+              child: Icon(
+                Icons.remove,
+                size: 18,
+                color: onDec == null
+                    ? Colors.grey.shade400
+                    : yellowColor,
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: CustomText(
-                        text: widget.product.product.name,
-                        textAlign: TextAlign.left,
-                        maxLine: 2,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () async {
-                        return await showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) => ConfirmDialog(
-                            icon: Kimages.deleteIcon2,
-                            message: Language.wishToRemoveProduct,
-                            confirmText: Language.yesRemove,
-                            cancelText: Language.no,
-                            onTap: () async {
-                              final result = await context
-                                  .read<CartCubit>()
-                                  .removerCartItem(
-                                      widget.product.id.toString());
-                              widget.product;
-                              result.fold(
-                                (failure) {
-                                  // setState(() {});
-                                  Utils.errorSnackBar(context, failure.message);
-                                },
-                                (success) {
-                                  widget.onChange(widget.product.id);
-                                  Utils.showSnackBar(context, success);
-                                },
-                              );
-                              Navigator.of(context).pop(true);
-                            },
-                          ),
-                        );
-                      },
-                      child: Padding(
-                        padding: Utils.only(right: 10.0),
-                        child: const Icon(Icons.clear_sharp,
-                            size: 20.0, color: redColor),
-                      ),
-                    ),
-                  ],
+          Container(
+            constraints: const BoxConstraints(minWidth: 36),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              border: Border.symmetric(
+                vertical: BorderSide(
+                  color: const Color(0xFF04334A).withValues(alpha: 0.10),
                 ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: PriceCardWidget(
-                        price: Utils.cartProductRegularPrice(
-                          context,
-                          widget.product,
-                        ).toString(),
-                        offerPrice: Utils.cartProductPrice(
-                          context,
-                          widget.product,
-                        ).toString(),
-                        textSize: 14,
-                        saleUnitQty: widget.product.product.saleUnitQty,
-                      ),
-                    ),
-                    if (widget.product.qty > 1)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 6, bottom: 2),
-                        child: CustomText(
-                          text: 'x${widget.product.qty}',
-                          isTranslate: false,
-                          fontSize: 12,
-                          color: textGreyColor,
-                        ),
-                      ),
-                  ],
-                ),
-                CustomText(
-                  text:
-                      'Toplam ${Utils.formatPrice(Utils.cartLineTotal(context, widget.product), context)}',
-                  isTranslate: false,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF0F766E),
-                ),
-                Row(
-                  // mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    InkWell(
-                      onTap: widget.product.qty > 1
-                          ? () async {
-                              final result = await context
-                                  .read<CartCubit>()
-                                  .decrementQuantity(
-                                      widget.product.id.toString());
-
-                              result.fold(
-                                (failure) {
-                                  // setState(() {});
-                                  Utils.errorSnackBar(context, failure.message);
-                                },
-                                (success) {
-                                  // widget.onChange(widget.product.id);
-                                  // Utils.showSnackBar(context, success);
-                                  Future.microtask(() => context
-                                      .read<CartCubit>()
-                                      .getCartProducts());
-                                  // value--;
-                                  // setState(() {
-                                  //
-                                  // });
-                                },
-                              );
-                            }
-                          : null,
-                      child: CircleAvatar(
-                        radius: 12,
-                        backgroundColor: Utils.dynamicPrimaryColor(context),
-                        child: const Icon(Icons.remove, color: blackColor),
-                      ),
-                      // child: Icon(Icons.remove_circle, color: Utils.dynamicPrimaryColor(context)),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 9, vertical: 5),
-                      child: CustomText(
-                          text: value.toString(),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600),
-                    ),
-                    InkWell(
-                      splashColor: transparent,
-                      splashFactory: NoSplash.splashFactory,
-                      onTap: () async {
-                        final result = await context
-                            .read<CartCubit>()
-                            .incrementQuantity(widget.product.id.toString());
-
-                        result.fold(
-                          (failure) {
-                            // setState(() {});
-                            Utils.errorSnackBar(context, failure.message);
-                          },
-                          (success) {
-                            // widget.onChange(widget.product.id);
-                            // Utils.showSnackBar(context, success);
-                            Future.microtask(() =>
-                                context.read<CartCubit>().getCartProducts());
-                            // value++;
-                            // setState(() {
-
-                            // });
-                          },
-                        );
-                      },
-                      child: CircleAvatar(
-                        radius: 12,
-                        backgroundColor: Utils.dynamicPrimaryColor(context),
-                        child: const Icon(Icons.add, color: blackColor),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
+            ),
+            child: Text(
+              '$qty',
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                color: Color(0xFF04334A),
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: onInc,
+            child: const SizedBox(
+              width: 36,
+              height: 36,
+              child: Icon(Icons.add, size: 18, color: yellowColor),
             ),
           ),
         ],

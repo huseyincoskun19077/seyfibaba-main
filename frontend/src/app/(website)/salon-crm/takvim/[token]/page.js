@@ -6,7 +6,7 @@ export const dynamicParams = true;
 export async function generateMetadata({ params }) {
   const { token } = await params;
   return {
-    title: "Salon takvimi | Seyfibaba",
+    title: "Salon takvimi | Kuaför Tedarik",
     robots: { index: false, follow: false },
     alternates: {
       canonical: `/salon-takvim/${token}`,

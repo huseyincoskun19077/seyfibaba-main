@@ -9,6 +9,10 @@ const variantUnitPrice = (variants = []) =>
 
 export const getStoredUnitPrice = (item) => {
   if (!item?.product) return 0;
+  // Daha önce sunucudan gelen birim fiyat varsa onu kullan (yanlış "fiyat değişti" uyarısını önler)
+  if (item.unit_price != null && Number.isFinite(Number(item.unit_price))) {
+    return Number(item.unit_price);
+  }
   const base = Number(item.product.offer_price || item.product.price || 0);
   return base + variantUnitPrice(item.variants);
 };

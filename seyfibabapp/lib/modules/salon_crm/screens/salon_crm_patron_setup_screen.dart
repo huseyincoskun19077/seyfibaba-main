@@ -9,7 +9,7 @@ import '../services/salon_crm_session.dart';
 import '../widgets/salon_crm_theme.dart';
 import '../widgets/salon_crm_ui.dart';
 
-/// Patron salon kurulumu — Seyfibaba hesabına bağlı, ayrı CRM şifresi yok.
+/// Patron salon kurulumu — Kuaför Tedarik hesabına bağlı, ayrı CRM şifresi yok.
 class SalonCrmPatronSetupScreen extends StatefulWidget {
   const SalonCrmPatronSetupScreen({super.key});
 
@@ -85,7 +85,7 @@ class _SalonCrmPatronSetupScreenState extends State<SalonCrmPatronSetupScreen> {
           Text('Salonunu bağla', style: SalonCrmTheme.titleMd),
           const SizedBox(height: 8),
           Text(
-            'Seyfibaba hesabın patron hesabın olacak. Personel ve müşteriler ayrı giriş kullanır.',
+            'Kuaför Tedarik hesabın patron hesabın olacak. Personel ve müşteriler ayrı giriş kullanır.',
             style: SalonCrmTheme.body,
           ),
           const SizedBox(height: 22),

@@ -37,7 +37,7 @@ class PushNotificationService {
   static const AndroidNotificationChannel _androidChannel =
       AndroidNotificationChannel(
     'seyfibaba_default',
-    'Seyfibaba Bildirimleri',
+    'Kuaför Tedarik Bildirimleri',
     description: 'Siparis ve mesaj bildirimleri',
     importance: Importance.high,
   );
@@ -207,7 +207,7 @@ class PushNotificationService {
   void _onForegroundMessage(RemoteMessage message) {
     final notification = message.notification;
     final title =
-        notification?.title ?? message.data['title']?.toString() ?? 'Seyfibaba';
+        notification?.title ?? message.data['title']?.toString() ?? 'Kuaför Tedarik';
     final body = notification?.body ?? message.data['body']?.toString() ?? '';
 
     _localNotifications.show(

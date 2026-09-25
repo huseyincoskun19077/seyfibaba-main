@@ -169,6 +169,9 @@ export default function ProductCard({
         offer_price: datas?.offer_price,
         thumb_image: datas?.image?.replace(appConfig.BASE_URL, ""),
         slug: datas?.slug,
+        barcode: datas?.barcode || null,
+        sku: datas?.sku || null,
+        sale_unit_qty: datas?.sale_unit_qty || 1,
       },
       variants:
         parentVarients && parentVarients.length

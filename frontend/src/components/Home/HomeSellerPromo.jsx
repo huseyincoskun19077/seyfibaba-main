@@ -20,7 +20,7 @@ export default function HomeSellerPromo() {
               Ürünlerinizi Türkiye genelindeki salonlara satmak ister misiniz?
             </h2>
             <p className="mt-3 text-sm md:text-base text-[#555] leading-relaxed">
-              Kuaför, berber ve güzellik ürünlerinizi Seyfibaba’da satışa açın.
+              Kuaför, berber ve güzellik ürünlerinizi Kuaför Tedarik’te satışa açın.
               Ürün yükleme desteği, pazarlama ve şeffaf komisyon hakkında tüm
               detaylar satıcı sayfasında.
             </p>

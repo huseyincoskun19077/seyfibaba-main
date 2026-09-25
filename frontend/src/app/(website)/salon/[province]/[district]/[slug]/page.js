@@ -10,7 +10,7 @@ export async function generateMetadata({ params }) {
 
   if (!data || data.status === "not_found") {
     return {
-      title: "Salon sitesi | Seyfibaba",
+      title: "Salon sitesi | Kuaför Tedarik",
       description: "Salon web sitesi bulunamadı.",
       robots: { index: false, follow: false },
     };
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
 
   if (data.status === "closed" || data.status === "subscription_inactive") {
     return {
-      title: `${data.salon_name || "Salon"} | Seyfibaba`,
+      title: `${data.salon_name || "Salon"} | Kuaför Tedarik`,
       description: data.message || "Salon sitesi şu an kapalı.",
       robots: { index: false, follow: false },
     };
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }) {
 
   const salon = data.salon || {};
   return {
-    title: salon.seo_title || `${salon.name || "Salon"} | Seyfibaba`,
+    title: salon.seo_title || `${salon.name || "Salon"} | Kuaför Tedarik`,
     description:
       salon.seo_description ||
       `${salon.name || "Salon"} randevu, hizmetler ve iletişim.`,

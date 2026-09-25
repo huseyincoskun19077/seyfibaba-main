@@ -8,7 +8,7 @@ import { deleteItemAction } from "../../redux/features/cart/cartSlice";
 import useRefreshCartPrices from "@/hooks/useRefreshCartPrices";
 import CheckProductIsExistsInFlashSale from "../Shared/CheckProductIsExistsInFlashSale";
 import ServeLangItem from "../Helpers/ServeLangItem";
-import CurrencyConvert from "../Shared/CurrencyConvert";
+import { MoneyText } from "../Shared/PriceDisplay";
 import CartDeleteIco from "../Helpers/icons/CartDeleteIco";
 import { getProductImageProps } from "@/utils/productImage";
 import { resolveCartLineUnitPrice } from "@/utils/variantPricing";
@@ -190,7 +190,7 @@ export default function Cart({ className }) {
               suppressHydrationWarning
               className="text-[15px] font-500 text-qred "
             >
-              <CurrencyConvert price={totalPrice || 0} />
+              <MoneyText value={totalPrice || 0} size="sm" />
             </span>
           </div>
           {/* Action Buttons */}

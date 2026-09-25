@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   return {
     title: "Giriş Yap",
-    description: "Seyfibaba hesabınıza giriş yapın. Siparişlerinizi takip edin, favorilerinizi yönetin.",
+    description: "Kuaför Tedarik hesabınıza giriş yapın. Siparişlerinizi takip edin, favorilerinizi yönetin.",
     alternates: {
       canonical: "/login",
     },

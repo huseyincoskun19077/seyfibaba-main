@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/error/exception.dart';
 import '../../../utils/utils.dart';
+import '../../../widgets/app_brand_logo.dart';
 import '../../../widgets/seyfibaba_loading.dart';
 import 'salon_crm_dates.dart';
 import 'salon_crm_theme.dart';
@@ -18,6 +19,7 @@ class CrmScaffold extends StatelessWidget {
     this.bottomNavigationBar,
     this.showBack = true,
     this.onBack,
+    this.showLogo = true,
   });
 
   final Widget body;
@@ -27,6 +29,7 @@ class CrmScaffold extends StatelessWidget {
   final Widget? bottomNavigationBar;
   final bool showBack;
   final VoidCallback? onBack;
+  final bool showLogo;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +42,10 @@ class CrmScaffold extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
-              if (title != null || showBack || (actions?.isNotEmpty ?? false))
+              if (title != null ||
+                  showBack ||
+                  showLogo ||
+                  (actions?.isNotEmpty ?? false))
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
                   child: Row(
@@ -51,10 +57,16 @@ class CrmScaffold extends StatelessWidget {
                           color: SalonCrmTheme.ink,
                         )
                       else
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
+                      if (showLogo) ...[
+                        const AppBrandLogo(height: 28, width: 108),
+                        const SizedBox(width: 10),
+                      ],
                       Expanded(
                         child: Text(
                           title ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,

@@ -7,7 +7,7 @@ import '../../authentication/controller/login/login_bloc.dart';
 import '../services/salon_crm_service.dart';
 import '../services/salon_crm_session.dart';
 
-/// Patron (Seyfibaba alıcı) CRM girişi — alışveriş JWT ile.
+/// Patron (Kuaför Tedarik alıcı) CRM girişi — alışveriş JWT ile.
 class SalonCrmEntry {
   SalonCrmEntry._();
 
@@ -17,7 +17,7 @@ class SalonCrmEntry {
       debugPrint('[SalonCrm] openPatron → not logged in');
       Utils.errorSnackBar(
         context,
-        'Salon paneli için önce Seyfibaba hesabınızla giriş yapın.',
+        'Salon paneli için önce Kuaför Tedarik hesabınızla giriş yapın.',
       );
       Navigator.pushNamed(context, RouteNames.authenticationScreen);
       return;

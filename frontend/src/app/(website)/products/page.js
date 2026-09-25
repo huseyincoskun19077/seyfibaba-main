@@ -1,10 +1,22 @@
 import products from "@/api/products";
 import AllProductPage from "@/components/AllProductPage";
 import { cache } from "react";
-import JsonLd, { generateItemListSchema, generateBreadcrumbSchema } from "@/components/Helpers/JsonLd";
+import JsonLd, {
+  generateItemListSchema,
+  generateBreadcrumbSchema,
+} from "@/components/Helpers/JsonLd";
 import { buildPageTitle } from "@/utils/pageTitle";
 
 export const revalidate = 60;
+
+const HIGHLIGHT_TITLES = {
+  popular_category: "Popüler Ürünler",
+  top_product: "Öne Çıkan Ürünler",
+  new_arrival: "Yeni Gelenler",
+  featured_product: "Vitrin Ürünleri",
+  best_product: "Çok Satanlar",
+  discounted: "İndirimli Ürünler",
+};
 
 const resolveProductsQuery = (searchParamsObj = {}) => {
   const query = {};
@@ -48,49 +60,64 @@ const resolvePrimarySearchType = (query = {}) => {
   };
 };
 
+function resolveListingTitle(query = {}, data = {}) {
+  if (query?.highlight && HIGHLIGHT_TITLES[query.highlight]) {
+    return HIGHLIGHT_TITLES[query.highlight];
+  }
+  const activeCategory = data?.categories?.find(
+    (item) => item.slug === query?.category
+  );
+  if (activeCategory?.name) {
+    return `${activeCategory.name} Ürünleri`;
+  }
+  if (query?.search) {
+    return `"${query.search}" araması`;
+  }
+  return "Tüm Ürünler";
+}
+
 export const getProductsData = cache(async (query) => {
   return await products(query);
 });
 
-// generate seo metadata
 export async function generateMetadata({ searchParams }) {
   const searchParamsObj = await searchParams;
   const query = resolveProductsQuery(searchParamsObj);
   const data = await getProductsData(query);
-  const { seoSetting } = data;
+  const listingTitle = resolveListingTitle(query, data);
   const activeCategory = data?.categories?.find(
     (item) => item.slug === query?.category
   );
 
   return {
-    title: buildPageTitle(
-      activeCategory?.name
-        ? `${activeCategory.name} Ürünleri`
-        : seoSetting?.seo_title || "Tüm Ürünler"
-    ),
+    title: buildPageTitle(listingTitle),
     description:
       activeCategory?.description ||
-      seoSetting?.seo_description,
+      data?.seoSetting?.seo_description ||
+      "Kuaför Tedarik ürün kataloğu — kuaför, berber ve güzellik salonu malzemeleri.",
     alternates: {
       canonical: "/products",
     },
   };
 }
 
-// main page
 export default async function Products({ searchParams }) {
   const searchParamsObj = await searchParams;
   const query = resolveProductsQuery(searchParamsObj);
   const searchType = resolvePrimarySearchType(query);
   const data = await getProductsData(query);
-  
+  const listingTitle = resolveListingTitle(query, data);
+
   const itemListSchema = generateItemListSchema(data?.products?.data || []);
   const breadcrumbItems = [
     { name: "Anasayfa", item: "/" },
-    { name: "Ürünler", item: "/products" }
+    { name: "Ürünler", item: "/products" },
   ];
-  if (searchType.slug && searchType.type !== 'allProducts') {
-    breadcrumbItems.push({ name: searchType.slug });
+  if (searchType.slug && searchType.type !== "allProducts") {
+    breadcrumbItems.push({
+      name: listingTitle,
+      item: `/products?${searchType.type}=${searchType.slug}`,
+    });
   }
   const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
@@ -98,7 +125,7 @@ export default async function Products({ searchParams }) {
     <>
       <JsonLd data={itemListSchema} />
       <JsonLd data={breadcrumbSchema} />
-      <AllProductPage response={data} />
+      <AllProductPage response={data} listingTitle={listingTitle} />
     </>
   );
 }

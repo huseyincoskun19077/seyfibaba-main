@@ -2,9 +2,9 @@ import SellerQuickRegister from "@/components/SellerQuickRegister";
 
 export async function generateMetadata() {
   return {
-    title: "Satıcı Ol | Hızlı Kayıt",
+    title: "Satıcı Olmak İçin Başvurun | Kuaför Tedarik",
     description:
-      "Seyfibaba'da hızlı satıcı kaydı oluşturun. SMS ile gelen şifreyle satıcı paneline giriş yapın.",
+      "Kuaför Tedarik satıcı başvuru formu. Firma bilgilerinizi doldurun, yasal metinleri onaylayın ve satıcı paneline başlayın.",
     alternates: {
       canonical: "/satici-kayit",
     },

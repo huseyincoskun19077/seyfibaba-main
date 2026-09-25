@@ -81,6 +81,15 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       ProfileMenuTile(
+                        title: 'Yorumlarım',
+                        icon: Icons.rate_review_outlined,
+                        iconColor: const Color(0xFFF59E0B),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          RouteNames.buyerReviewsScreen,
+                        ),
+                      ),
+                      ProfileMenuTile(
                         title: 'İade Taleplerim',
                         icon: Icons.assignment_return_outlined,
                         iconColor: const Color(0xFFEF262C),

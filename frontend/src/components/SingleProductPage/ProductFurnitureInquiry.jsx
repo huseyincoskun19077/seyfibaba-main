@@ -157,7 +157,7 @@ export default function ProductFurnitureInquiry({ product }) {
               Destek talebi
             </h3>
             <p className="mt-1 text-[13px] leading-6 text-qgray">
-              {product?.name} için bilgi talebiniz Seyfibaba destek ekibine iletilir.
+              {product?.name} için bilgi talebiniz Kuaför Tedarik destek ekibine iletilir.
             </p>
             <div className="mt-4 space-y-3">
               <InputCom

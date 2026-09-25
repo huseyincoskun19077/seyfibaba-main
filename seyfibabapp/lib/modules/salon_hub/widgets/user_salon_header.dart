@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../utils/utils.dart';
+import '../../../widgets/app_brand_logo.dart';
 import '../../authentication/controller/login/login_bloc.dart';
 import '../../home/widgets/home_theme.dart';
 import '../../profile/controllers/updated_info/updated_info_cubit.dart';
@@ -42,6 +43,9 @@ class _UserSalonHeaderState extends State<UserSalonHeader> {
       final salon = summary['salon'];
       setState(() {
         _salonName = salon is Map ? '${salon['name'] ?? ''}' : null;
+        if (_salonName != null && _salonName!.trim().isEmpty) {
+          _salonName = null;
+        }
       });
     } catch (_) {}
   }
@@ -59,6 +63,8 @@ class _UserSalonHeaderState extends State<UserSalonHeader> {
         ? null
         : (profileCubit.updatedInfo?.updateUserInfo.name ??
             loginBloc.userInfo?.user.name);
+    final hasName = userName?.trim().isNotEmpty ?? false;
+    final hasSalon = _salonName?.trim().isNotEmpty ?? false;
 
     return DecoratedBox(
       decoration: const BoxDecoration(
@@ -79,28 +85,8 @@ class _UserSalonHeaderState extends State<UserSalonHeader> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (widget.showBrand)
-                      RichText(
-                        text: const TextSpan(
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3,
-                            height: 1.1,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: 'Seyfibaba',
-                              style: TextStyle(color: HomeTheme.textDark),
-                            ),
-                            TextSpan(
-                              text: '.com',
-                              style: TextStyle(color: HomeTheme.brandYellow),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (isLoggedIn &&
-                        (userName?.trim().isNotEmpty ?? false)) ...[
+                      const AppBrandLogo(height: 36, width: 140),
+                    if (isLoggedIn && hasName) ...[
                       if (widget.showBrand) const SizedBox(height: 8),
                       Text(
                         userName!.trim(),
@@ -112,8 +98,7 @@ class _UserSalonHeaderState extends State<UserSalonHeader> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      if (_salonName != null &&
-                          _salonName!.trim().isNotEmpty) ...[
+                      if (hasSalon) ...[
                         const SizedBox(height: 2),
                         Text(
                           _salonName!.trim(),

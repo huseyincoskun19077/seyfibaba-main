@@ -17,7 +17,7 @@ function CategoryCard({ item, selectedCategorySlug, onSelectCategory }) {
     position: "relative",
     width: "100%",
     aspectRatio: "1 / 1",
-    borderRadius: 28,
+    borderRadius: 20,
     overflow: "hidden",
     border: "1px solid #E8E8E8",
     background: "#fff",
@@ -35,7 +35,7 @@ function CategoryCard({ item, selectedCategorySlug, onSelectCategory }) {
           {item.image && (
             <Image
               fill
-              sizes="50vw"
+              sizes="25vw"
               className="object-cover"
               src={appConfig.BASE_URL + item.image}
               alt={alt}
@@ -44,7 +44,7 @@ function CategoryCard({ item, selectedCategorySlug, onSelectCategory }) {
           )}
         </div>
         <p
-          className={`text-sm text-center mt-2.5 px-1 leading-snug ${
+          className={`text-[11px] sm:text-sm text-center mt-2 px-0.5 leading-snug line-clamp-2 ${
             isSelected ? "text-qblack font-700" : "text-qgray"
           }`}
         >
@@ -53,11 +53,11 @@ function CategoryCard({ item, selectedCategorySlug, onSelectCategory }) {
       </Link>
 
       <Link className="hidden md:block w-full" href={productsHref}>
-        <div style={frameStyle}>
+        <div style={{ ...frameStyle, borderRadius: 28 }}>
           {item.image && (
             <Image
               fill
-              sizes="(max-width: 1200px) 40vw, 360px"
+              sizes="(max-width: 1200px) 22vw, 280px"
               className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
               src={appConfig.BASE_URL + item.image}
               alt={alt}
@@ -65,7 +65,7 @@ function CategoryCard({ item, selectedCategorySlug, onSelectCategory }) {
             />
           )}
         </div>
-        <p className="text-base md:text-lg text-qgray text-center mt-3 font-600 group-hover:text-qgreen transition">
+        <p className="text-sm lg:text-base text-qgray text-center mt-3 font-600 group-hover:text-qgreen transition line-clamp-2">
           {displayTurkishLabel(item.name)}
         </p>
       </Link>
@@ -80,24 +80,6 @@ function CategorySection({
   onSelectCategory = () => {},
 }) {
   const visible = (categories || []).slice(0, 4);
-  const topRow = visible.slice(0, 2);
-  const bottomRow = visible.slice(2, 4);
-
-  const rowStyle = {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-    width: "100%",
-  };
-
-  const wrapStyle = {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    width: "100%",
-    maxWidth: 720,
-    margin: "0 auto",
-  };
 
   return (
     <div
@@ -118,30 +100,15 @@ function CategorySection({
           </Link>
         </div>
 
-        <div style={wrapStyle} className="md:!max-w-[860px] md:!gap-4">
-          <div style={rowStyle} className="md:!gap-4">
-            {topRow.map((item, i) => (
-              <CategoryCard
-                key={item.id || item.slug || `top-${i}`}
-                item={item}
-                selectedCategorySlug={selectedCategorySlug}
-                onSelectCategory={onSelectCategory}
-              />
-            ))}
-          </div>
-
-          {bottomRow.length > 0 && (
-            <div style={rowStyle} className="md:!gap-4">
-              {bottomRow.map((item, i) => (
-                <CategoryCard
-                  key={item.id || item.slug || `bottom-${i}`}
-                  item={item}
-                  selectedCategorySlug={selectedCategorySlug}
-                  onSelectCategory={onSelectCategory}
-                />
-              ))}
-            </div>
-          )}
+        <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4 w-full">
+          {visible.map((item, i) => (
+            <CategoryCard
+              key={item.id || item.slug || `cat-${i}`}
+              item={item}
+              selectedCategorySlug={selectedCategorySlug}
+              onSelectCategory={onSelectCategory}
+            />
+          ))}
         </div>
       </div>
     </div>

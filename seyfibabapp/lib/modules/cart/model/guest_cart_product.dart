@@ -83,6 +83,9 @@ class GuestProduct extends Equatable {
   final String thumbImage;
   final double price;
   final double offerPrice;
+  final int maxInstallment;
+  final String categoryName;
+  final int saleUnitQty;
   const GuestProduct({
     required this.id,
     required this.vendorId,
@@ -93,6 +96,9 @@ class GuestProduct extends Equatable {
     required this.thumbImage,
     required this.price,
     required this.offerPrice,
+    this.maxInstallment = 1,
+    this.categoryName = '',
+    this.saleUnitQty = 1,
   });
 
   GuestProduct copyWith({
@@ -105,6 +111,9 @@ class GuestProduct extends Equatable {
     String? thumbImage,
     double? price,
     double? offerPrice,
+    int? maxInstallment,
+    String? categoryName,
+    int? saleUnitQty,
   }) {
     return GuestProduct(
       id: id ?? this.id,
@@ -116,6 +125,9 @@ class GuestProduct extends Equatable {
       thumbImage: thumbImage ?? this.thumbImage,
       price: price ?? this.price,
       offerPrice: offerPrice ?? this.offerPrice,
+      maxInstallment: maxInstallment ?? this.maxInstallment,
+      categoryName: categoryName ?? this.categoryName,
+      saleUnitQty: saleUnitQty ?? this.saleUnitQty,
     );
   }
 
@@ -130,6 +142,9 @@ class GuestProduct extends Equatable {
       'thumb_image': thumbImage,
       'price': price,
       'offer_price': offerPrice,
+      'max_installment': maxInstallment,
+      'category_name': categoryName,
+      'sale_unit_qty': saleUnitQty,
     };
   }
 
@@ -144,6 +159,11 @@ class GuestProduct extends Equatable {
       thumbImage: map['thumb_image'] ?? '',
       price: map['price'] != null? double.parse(map['price'].toString()):0.0,
       offerPrice: map['offer_price'] != null? double.parse(map['offer_price'].toString()):0.0,
+      maxInstallment:
+          int.tryParse('${map['max_installment'] ?? 1}')?.clamp(1, 99) ?? 1,
+      categoryName: '${map['category_name'] ?? ''}',
+      saleUnitQty:
+          int.tryParse('${map['sale_unit_qty'] ?? 1}')?.clamp(1, 9999) ?? 1,
     );
   }
 
@@ -166,6 +186,9 @@ class GuestProduct extends Equatable {
       thumbImage,
       price,
       offerPrice,
+      maxInstallment,
+      categoryName,
+      saleUnitQty,
     ];
   }
 }

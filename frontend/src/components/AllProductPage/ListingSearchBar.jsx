@@ -34,7 +34,7 @@ export default function ListingSearchBar({ value = "", onSubmit }) {
           e.preventDefault();
           submit(draft);
         }}
-        className="flex h-11 items-center gap-2 rounded-xl border border-qgray-border bg-white px-3"
+        className="flex h-11 items-center gap-2 rounded-xl border border-[#04334a]/10 bg-white px-3 shadow-sm focus-within:ring-2 focus-within:ring-[#FCBF49]/40"
       >
         <svg
           className="h-4 w-4 shrink-0 text-qgray"

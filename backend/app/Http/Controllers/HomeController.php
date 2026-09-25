@@ -2283,6 +2283,18 @@ class HomeController extends Controller
         $relatedProducts = $this->slimProductCards($relatedProducts);
         $this_seller_products = $this->slimProductCards($this_seller_products);
 
+        try {
+            $installmentInfo = app(\App\Services\CategoryInstallmentService::class)
+                ->resolveInstallmentForProduct($product);
+            $product->setAttribute('max_installment', (int) ($installmentInfo['max_installment'] ?? 1));
+            $product->setAttribute('category_name', (string) ($installmentInfo['category_name'] ?? ''));
+            $product->setAttribute('installment_source', (string) ($installmentInfo['source'] ?? ''));
+        } catch (\Throwable $e) {
+            $product->setAttribute('max_installment', 1);
+            $product->setAttribute('category_name', '');
+            $product->setAttribute('installment_source', '');
+        }
+
         return response()->json([
 
             'product' => $product,

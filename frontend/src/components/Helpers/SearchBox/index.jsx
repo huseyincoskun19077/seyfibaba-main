@@ -7,6 +7,7 @@ import ArrowDownIcoCheck from "../icons/ArrowDownIcoCheck";
 import appConfig from "@/appConfig";
 import { resolveProductImageUrl } from "@/utils/productImage";
 import { buildProductPath } from "@/utils/url";
+import { formatMoneyTR } from "@/utils/priceFormat";
 
 export default function SearchBox({ className }) {
   const router = useRouter();
@@ -43,7 +44,6 @@ export default function SearchBox({ className }) {
     debounceRef.current = setTimeout(() => fetchSuggestions(value), 300);
   };
 
-  // Dışarı tıklayınca kapat
   useEffect(() => {
     const handler = (e) => {
       if (searchBoxRef.current && !searchBoxRef.current.contains(e.target)) {
@@ -90,11 +90,11 @@ export default function SearchBox({ className }) {
   return (
     <div
       ref={searchBoxRef}
-      className={`w-full h-full flex items-center border border-qgray-border bg-white relative ${
+      className={`w-full h-full flex items-center border-2 border-[#04334a]/15 bg-white relative overflow-hidden rounded-xl focus-within:border-qyellow focus-within:shadow-[0_0_0_3px_rgba(255,187,56,0.25)] transition-all ${
         className || ""
       }`}
     >
-      <div className="flex-1 h-full">
+      <div className="flex-[1.4] h-full min-w-0">
         <div className="h-full">
           <input
             value={searchKey}
@@ -106,17 +106,17 @@ export default function SearchBox({ className }) {
           />
         </div>
       </div>
-      <div className="w-[1px] h-[22px] bg-qgray-border"></div>
-      <div className="flex-1 flex items-center px-4 relative">
+      <div className="w-px h-6 bg-qblack/10 shrink-0"></div>
+      <div className="w-[140px] shrink-0 flex items-center px-3 relative">
         <button
           onClick={() => setToggleCat(!toggleCat)}
           type="button"
-          className="w-full text-xs font-500 text-[#4B5563] flex justify-between items-center capitalize"
+          className="w-full text-xs font-500 text-qblack/70 flex justify-between items-center capitalize gap-1"
         >
-          <span className="line-clamp-1">
+          <span className="line-clamp-1 text-left">
             {selectedCat ? selectedCat.name : ServeLangItem()?.category}
           </span>
-          <span>
+          <span className="shrink-0">
             <ArrowDownIcoCheck fill="#8E8E8E" />
           </span>
         </button>
@@ -127,14 +127,14 @@ export default function SearchBox({ className }) {
               onClick={() => setToggleCat(!toggleCat)}
             ></div>
             <div
-              className="w-[227px] h-auto absolute bg-white left-0 top-[29px] z-50 p-5"
-              style={{ boxShadow: "0px 15px 50px 0px rgba(0, 0, 0, 0.14)" }}
+              className="w-[227px] h-auto absolute bg-white left-0 top-[32px] z-50 p-4 rounded-xl border border-qblack/10"
+              style={{ boxShadow: "0px 12px 40px 0px rgba(0, 0, 0, 0.12)" }}
             >
               <ul className="flex flex-col space-y-2">
                 {categories &&
                   categories.map((item, i) => (
                     <li onClick={() => categoryHandler(item)} key={i}>
-                      <span className="text-[#4B5563] text-sm font-400 border-b border-transparent hover:border-qyellow hover:text-qyellow cursor-pointer">
+                      <span className="text-qblack/70 text-sm font-400 border-b border-transparent hover:border-qyellow hover:text-qblack cursor-pointer">
                         {item.name}
                       </span>
                     </li>
@@ -146,32 +146,31 @@ export default function SearchBox({ className }) {
       </div>
       <button
         onClick={searchHandler}
-        className="search-btn w-[93px] h-full text-sm font-600"
+        className="search-btn w-[96px] h-full text-sm font-700 shrink-0 hover:brightness-95 transition"
         type="button"
       >
         {ServeLangItem()?.Search}
       </button>
 
-      {/* Autocomplete Suggestions */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 bg-white border border-qgray-border shadow-lg rounded-b max-h-[300px] overflow-y-auto">
+        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 bg-white border border-qblack/10 shadow-lg rounded-xl max-h-[300px] overflow-y-auto">
           {suggestions.map((item) => (
             <Link
               key={item.id}
               href={buildProductPath(item.slug)}
               onClick={() => { setShowSuggestions(false); setSearchkey(""); }}
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+              className="flex items-center gap-3 px-4 py-2.5 hover:bg-qyellow/20 transition-colors border-b border-qblack/5 last:border-0"
             >
               {item.thumb_image && (
                 <img
                   src={resolveProductImageUrl(item.thumb_image)}
                   alt=""
-                  className="w-10 h-10 object-cover rounded"
+                  className="w-10 h-10 object-cover rounded-lg"
                 />
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-qblack truncate">{item.name}</p>
-                <p className="text-xs text-qgray">{item.price} ₺</p>
+                <p className="text-xs text-qblack/50">{formatMoneyTR(item.price)}</p>
               </div>
             </Link>
           ))}

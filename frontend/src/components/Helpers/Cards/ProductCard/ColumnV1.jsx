@@ -1,8 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import CurrencyConvert from "@/components/Shared/CurrencyConvert";
-import CheckProductIsExistsInFlashSale from "@/components/Shared/CheckProductIsExistsInFlashSale";
+import PriceDisplay from "@/components/Shared/PriceDisplay";
 import QuickViewIco from "../../icons/QuickViewIco";
 import ThinLove from "../../icons/ThinLove";
 import Compair from "../../icons/Compair";
@@ -84,7 +83,7 @@ function ColumnV1({
               unoptimized={productImageUnoptimized}
               alt={datas.title || "Profesyonel berber ve kuaför ürünü görseli"}
               fill
-              sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 20vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
               className="object-cover transform scale-100 group-hover:scale-105 transition duration-300 ease-in-out"
               loading="lazy"
             />
@@ -183,41 +182,13 @@ function ColumnV1({
               {colorSwatches.length} renk seçeneği
             </p>
           )}
-          <p className="price flex items-baseline flex-wrap gap-x-1.5 gap-y-0.5">
-            <span
-              suppressHydrationWarning
-              className={`font-700 leading-tight ${
-                compact ? "text-[13px] md:text-[16px]" : "text-[14px] md:text-[18px]"
-              } ${hasRealDiscount ? "text-[#E11D48]" : "text-qblack"}`}
-            >
-              {hasRealDiscount ? (
-                <CheckProductIsExistsInFlashSale
-                  id={datas.id}
-                  price={offerPrice}
-                />
-              ) : (
-                <>
-                  {isProductInFlashSale && (
-                    <span className="line-through text-qgray font-500 text-[11px] mr-1">
-                      <CurrencyConvert price={price} />
-                    </span>
-                  )}
-                  <CheckProductIsExistsInFlashSale
-                    id={datas.id}
-                    price={price}
-                  />
-                </>
-              )}
-            </span>
-            {hasRealDiscount && (
-              <span
-                suppressHydrationWarning
-                className="line-through text-qgray font-500 text-[10px] md:text-[13px]"
-              >
-                <CurrencyConvert price={price} />
-              </span>
-            )}
-          </p>
+          <PriceDisplay
+            price={price}
+            offerPrice={hasRealDiscount ? offerPrice : null}
+            size={compact ? "sm" : "md"}
+            layout="stack"
+            className="mb-0"
+          />
           <ProductSaleUnitInfo
             product={datas}
             price={price}

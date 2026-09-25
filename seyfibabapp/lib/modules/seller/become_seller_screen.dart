@@ -1,12 +1,13 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '/widgets/loading_widget.dart';
 
-import '../../widgets/custom_text.dart';
 import '../../widgets/translate_form_text.dart';
 import '../profile/controllers/map/map_cubit.dart';
 import '../profile/controllers/map/map_state_model.dart';
 import '../setting/component/map_address.dart';
+import '../setting/legal_document_popup.dart';
 import '/modules/authentication/widgets/sign_up_form.dart';
 import '/modules/seller/component/banner_image.dart';
 import '/modules/seller/component/logo_image.dart';
@@ -287,15 +288,29 @@ class BecomeSellerScreen extends StatelessWidget {
   Widget _buildRememberMe() {
     return BlocBuilder<BecomeSellerCubit, BecomeSellerStateModel>(
       builder: (context, state) {
+        final linkStyle = TextStyle(
+          color: deepGreenColor,
+          fontWeight: FontWeight.w600,
+          decoration: TextDecoration.underline,
+          fontSize: 13,
+          height: 1.4,
+          decorationColor: deepGreenColor,
+        );
+        final baseStyle = TextStyle(
+          fontSize: 13,
+          height: 1.4,
+          color: blackColor.withOpacity(0.65),
+        );
+
         return Padding(
           padding: Utils.only(top: 0.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 height: Utils.vSize(24.0),
                 width: Utils.vSize(24.0),
-                margin: Utils.only(right: 10.0),
+                margin: Utils.only(right: 10.0, top: 2),
                 child: Checkbox(
                   value: state.agreeTermsAndCondition == '1',
                   checkColor: whiteColor,
@@ -305,13 +320,32 @@ class BecomeSellerScreen extends StatelessWidget {
                     context
                         .read<BecomeSellerCubit>()
                         .conditionChange(v ? '1' : '0');
-                    //context.read<BecomeSellerCubit>().add(SignUpEventAgree(v ? 1 : 0));
                   },
                 ),
               ),
-              CustomText(
-                  text: 'Agree Terms & Condition',
-                  color: blackColor.withOpacity(.5))
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: baseStyle,
+                    children: [
+                      TextSpan(
+                        text: 'Kişisel Verilerin Korunmasına Yönelik Protokol',
+                        style: linkStyle,
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            showLegalDocumentPopup(
+                              context,
+                              slug: 'privacy-agreement',
+                              title:
+                                  'Kişisel Verilerin Korunmasına Yönelik Protokol',
+                            );
+                          },
+                      ),
+                      const TextSpan(text: "'ü okudum ve onaylıyorum."),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         );

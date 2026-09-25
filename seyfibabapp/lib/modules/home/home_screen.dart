@@ -6,7 +6,6 @@ import '/widgets/loading_widget.dart';
 
 import '/widgets/page_refresh.dart';
 import '../../../core/router_name.dart';
-import '../../../utils/constants.dart';
 import '../../utils/utils.dart';
 import '../animated_splash_screen/controller/app_setting_cubit/app_setting_cubit.dart';
 import '../cart/controllers/cart/add_to_cart/add_to_cart_cubit.dart';
@@ -16,10 +15,11 @@ import 'component/flash_sale_component.dart';
 import 'component/home_brands_section.dart';
 import 'component/home_product_hubs_section.dart';
 import 'component/home_app_bar.dart';
+import 'component/stories_strip.dart';
+import 'component/home_sana_ozel_strip.dart';
 import 'widgets/home_theme.dart';
 import 'component/hot_deal_banner_slider.dart';
 import 'component/new_arrival_component.dart';
-import 'component/offer_banner_slider.dart';
 import 'component/populer_product_component.dart';
 import 'controller/cubit/home_controller_cubit.dart';
 import 'controller/cubit/product/products_cubit.dart';
@@ -130,21 +130,14 @@ class _LoadedHomePage extends StatelessWidget {
         parent: AlwaysScrollableScrollPhysics(),
       ),
       slivers: [
-        const SliverToBoxAdapter(child: SizedBox(height: 12)),
-        //Slider visibility start
-        if (homeModel.sliderVisibilty is bool ||
-            homeModel.sliderVisibilty is int ||
-            homeModel.sliderVisibilty is String) ...[
-          if (homeModel.sliderVisibilty == true ||
-              homeModel.sliderVisibilty == 1 ||
-              homeModel.sliderVisibilty == '1') ...[
-            SliverToBoxAdapter(child: OfferBannerSlider())
-          ],
-        ] else ...[
-          const SliverToBoxAdapter(child: SizedBox.shrink())
-        ],
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+        const SliverToBoxAdapter(child: HomeStoriesStrip()),
+        SliverToBoxAdapter(
+          child: HomeSanaOzelStrip(
+            fallbackProducts: homeModel.popularCategoryProducts,
+          ),
+        ),
 
-        //Slider visibility end
         CategoryGridView(model: homeModel),
 
         HomeProductHubsSection(

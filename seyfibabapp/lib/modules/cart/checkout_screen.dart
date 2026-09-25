@@ -379,7 +379,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
     final email = (billing?.email ?? '').trim().toLowerCase();
     if (email.isEmpty ||
         email.endsWith('.local') ||
-        email.endsWith('@pending.seyfibaba.local') ||
+        email.endsWith('@pending.kuafortedarik.local') ||
         !email.contains('@')) {
       Utils.errorSnackBar(
         context,
@@ -456,6 +456,13 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                   onChanged: (key, value) {
                     setState(() => _legalConsents[key] = value);
                   },
+                  shippingAddressId:
+                      shippingAddressId > 0 ? shippingAddressId : null,
+                  billingAddressId:
+                      billingAddressId > 0 ? billingAddressId : null,
+                  shippingCharge: Utils.isMapEnable(context)
+                      ? 0
+                      : selectedShippingFee,
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 16)),

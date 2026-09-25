@@ -27,16 +27,25 @@ class NetworkParser {
     } on SocketException {
       log('SocketException', name: _className);
       throw const NetworkException('İnternet bağlantısı yok', 10061);
+    } on HandshakeException catch (e) {
+      log('HandshakeException: $e', name: _className);
+      throw const NetworkException('SSL bağlantısı başarısız (sertifika/DNS)', 495);
+    } on TlsException catch (e) {
+      log('TlsException: $e', name: _className);
+      throw const NetworkException('SSL bağlantısı başarısız', 495);
     } on FormatException {
       log('FormatException', name: _className);
       throw const DataFormatException('Data format exception', 422);
     } on TimeoutException {
       log('TimeoutException', name: _className);
       throw const NetworkException('Request timeout', 408);
-    } on http.ClientException {
+    } on http.ClientException catch (e) {
       ///503 Service Unavailable
-      log('http ClientException', name: _className);
-      throw const NetworkException('Service unavailable', 503);
+      log('http ClientException: $e', name: _className);
+      throw NetworkException(
+        e.message.isNotEmpty ? e.message : 'Service unavailable',
+        503,
+      );
     }
   }
 

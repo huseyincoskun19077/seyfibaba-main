@@ -62,12 +62,6 @@ class OnboardingScreenState extends State<OnboardingScreen> {
     final bottomPad = MediaQuery.paddingOf(context).bottom;
     final setting = context.read<AppSettingCubit>().settingModel?.setting;
     final bg = _hex(setting?.mobileOnboardingBg, const Color(0xFFF4F0FA));
-    final remotes = [
-      setting?.mobileOnboardingImage1 ?? '',
-      setting?.mobileOnboardingImage2 ?? '',
-      setting?.mobileOnboardingImage3 ?? '',
-    ];
-
     return Scaffold(
       backgroundColor: bg,
       body: Stack(
@@ -80,7 +74,6 @@ class OnboardingScreenState extends State<OnboardingScreen> {
             itemBuilder: (context, index) {
               return OnboardingArt(
                 art: onBoardingList[index].art,
-                remotePath: remotes[index],
                 background: bg,
               );
             },
@@ -95,7 +88,13 @@ class OnboardingScreenState extends State<OnboardingScreen> {
                   'Atla',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: HomeTheme.textMuted,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 8,
+                        color: Colors.black54,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -111,13 +110,13 @@ class OnboardingScreenState extends State<OnboardingScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    bg.withValues(alpha: 0),
-                    bg,
+                    Colors.black.withValues(alpha: 0),
+                    Colors.black.withValues(alpha: 0.45),
                   ],
                 ),
               ),
               child: Padding(
-                padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + bottomPad),
+                padding: EdgeInsets.fromLTRB(24, 28, 24, 16 + bottomPad),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

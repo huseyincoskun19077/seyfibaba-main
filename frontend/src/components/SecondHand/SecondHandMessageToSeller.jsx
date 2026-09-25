@@ -95,7 +95,7 @@ export default function SecondHandMessageToSeller({ listingId, sellerUserId }) {
       "https://play.google.com/store/apps/details?id=com.seyfibaba.app";
     const appStoreUrl =
       (typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_STORE_URL) ||
-      "https://apps.apple.com/tr/search?term=Seyfibaba";
+      "https://apps.apple.com/tr/search?term=Kuaför Tedarik";
     const isIos =
       typeof navigator !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
     const storeUrl = isIos ? appStoreUrl : playStoreUrl;

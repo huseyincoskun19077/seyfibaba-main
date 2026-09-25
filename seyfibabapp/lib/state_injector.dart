@@ -218,11 +218,6 @@ class StateInjector {
       ),
     ),
 
-    BlocProvider<DeliveryManCubit>(
-      create: (BuildContext context) => DeliveryManCubit(
-        authRepository: context.read(),
-      ),
-    ),
     BlocProvider<SignUpBloc>(
       create: (BuildContext context) => SignUpBloc(
         context.read(),

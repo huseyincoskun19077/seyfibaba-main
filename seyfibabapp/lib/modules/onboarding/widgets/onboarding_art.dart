@@ -24,22 +24,20 @@ class OnboardingArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.paddingOf(context).bottom;
     final remote = remotePath?.trim() ?? '';
     final asset = _images[art.clamp(0, _images.length - 1)];
 
     return ColoredBox(
       color: background,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(28, 40, 28, 118 + bottom),
+      child: SizedBox.expand(
         child: remote.isNotEmpty
             ? CustomImage(
                 path: RemoteUrls.imageUrl(remote),
-                fit: BoxFit.contain,
+                fit: BoxFit.cover,
               )
             : Image.asset(
                 asset,
-                fit: BoxFit.contain,
+                fit: BoxFit.cover,
                 alignment: Alignment.center,
               ),
       ),

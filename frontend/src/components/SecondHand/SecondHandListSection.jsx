@@ -133,7 +133,7 @@ export default function SecondHandListSection({ data, query = {}, filterCategori
           ) : (
             <div className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-yellow-50 shadow-sm ring-1 ring-amber-900/5">
               <div className="relative px-4 py-6 sm:px-8 sm:py-10 md:px-10 md:py-12">
-                <p className="text-[11px] font-800 uppercase tracking-[0.18em] text-amber-800/80">Seyfibaba İkinci El</p>
+                <p className="text-[11px] font-800 uppercase tracking-[0.18em] text-amber-800/80">Kuaför Tedarik İkinci El</p>
                 <h1 className="mt-2 max-w-3xl text-2xl font-800 leading-tight text-qblack sm:text-4xl md:text-[42px]">
                   {home.title}
                 </h1>

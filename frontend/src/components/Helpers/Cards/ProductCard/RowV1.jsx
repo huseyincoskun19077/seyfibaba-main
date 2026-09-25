@@ -1,6 +1,5 @@
 import Image from "next/image";
-import CurrencyConvert from "@/components/Shared/CurrencyConvert";
-import CheckProductIsExistsInFlashSale from "@/components/Shared/CheckProductIsExistsInFlashSale";
+import PriceDisplay from "@/components/Shared/PriceDisplay";
 import ServeLangItem from "../../ServeLangItem";
 import Link from "next/link";
 import QuickViewIco from "../../icons/QuickViewIco";
@@ -63,46 +62,14 @@ function RowV1({
                   {datas.title}
                 </h3>
               </Link>
-              <p className="price mb-[26px]">
-                <span
-                  suppressHydrationWarning
-                className={`main-price  font-600 text-[18px] ${
-                  hasRealDiscount ? "line-through text-qgray" : "text-qred"
-                }`}
-              >
-                {hasRealDiscount ? (
-                    <span>
-                      {" "}
-                      <CurrencyConvert price={price} />
-                    </span>
-                  ) : (
-                    <>
-                      {isProductInFlashSale && (
-                        <span
-                          className={`line-through text-qgray font-500 text-[16px] mr-2`}
-                        >
-                          <CurrencyConvert price={price} />
-                        </span>
-                      )}
-                      <CheckProductIsExistsInFlashSale
-                        id={datas.id}
-                        price={price}
-                      />
-                    </>
-                  )}
-                </span>
-                {hasRealDiscount && (
-                  <span
-                    suppressHydrationWarning
-                    className="offer-price text-qred font-600 text-[18px] ml-2"
-                  >
-                    <CheckProductIsExistsInFlashSale
-                      id={datas.id}
-                      price={offerPrice}
-                    />
-                  </span>
-                )}
-              </p>
+              <div className="price mb-[26px]">
+                <PriceDisplay
+                  price={price}
+                  offerPrice={hasRealDiscount ? offerPrice : null}
+                  size="md"
+                  layout="stack"
+                />
+              </div>
               <ProductSaleUnitInfo
                 product={datas}
                 price={price}

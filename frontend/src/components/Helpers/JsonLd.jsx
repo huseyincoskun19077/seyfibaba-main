@@ -55,7 +55,7 @@ export const generateProductSchema = (product) => {
     "sku": `PROD-${product.product?.id}`,
     "brand": {
       "@type": "Brand",
-      "name": product.product?.brand?.name || "Seyfibaba"
+      "name": product.product?.brand?.name || "Kuaför Tedarik"
     },
     "offers": {
       "@type": "Offer",
@@ -67,7 +67,7 @@ export const generateProductSchema = (product) => {
       "availability": product.product?.qty > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "seller": {
         "@type": "Organization",
-        "name": product.seller?.shop_name || product.seller?.user?.name || "Seyfibaba"
+        "name": product.seller?.shop_name || product.seller?.user?.name || "Kuaför Tedarik"
       }
     }
   };
@@ -82,7 +82,7 @@ export const generateProductSchema = (product) => {
     };
     schema.review = reviews.slice(0, 5).map(rev => ({
       "@type": "Review",
-      "author": { "@type": "Person", "name": rev?.user?.name || rev?.name || "Seyfibaba Musterisi" },
+      "author": { "@type": "Person", "name": rev?.user?.name || rev?.name || "Kuaför Tedarik Musterisi" },
       "reviewRating": { "@type": "Rating", "ratingValue": rev.rating },
       "reviewBody": rev.review
     }));
@@ -100,10 +100,10 @@ export const generateOrganizationSchema = () => {
       "@context": "https://schema.org",
       "@type": "Organization",
       "@id": `${appConfig.APPLICATION_URL}#organization`,
-      "name": "Seyfibaba",
+      "name": "Kuaför Tedarik",
       "url": appConfig.APPLICATION_URL,
       "logo": `${appConfig.APPLICATION_URL}/assets/images/logo.png`,
-      "description": "Seyfibaba, berber ve kuaför profesyonelleri için ekipman, mobilya, sarf malzeme ve salon teknolojilerini bir araya getiren Türkiye merkezli pazaryeridir.",
+      "description": "Kuaför Tedarik, berber ve kuaför profesyonelleri için ekipman, mobilya, sarf malzeme ve salon teknolojilerini bir araya getiren Türkiye merkezli pazaryeridir.",
       "foundingDate": "2025",
       "sameAs": [
         "https://facebook.com/seyfibaba",
@@ -123,7 +123,7 @@ export const generateOrganizationSchema = () => {
   };
 
 /**
- * Generate Store (LocalBusiness) Schema for Seyfibaba
+ * Generate Store (LocalBusiness) Schema for Kuaför Tedarik
  * @returns {Object} JSON-LD structured data
  */
 export const generateStoreSchema = () => {
@@ -131,13 +131,13 @@ export const generateStoreSchema = () => {
     "@context": "https://schema.org",
     "@type": "Store",
     "@id": `${appConfig.APPLICATION_URL}#store`,
-    "name": "Seyfibaba",
+    "name": "Kuaför Tedarik",
     "url": appConfig.APPLICATION_URL,
     "logo": `${appConfig.APPLICATION_URL}/assets/images/logo.png`,
     "image": `${appConfig.BASE_URL}uploads/website-images/logo-2025-12-18-04-53-36-7704.png`,
     "description": "Berber malzemeleri, kuaför malzemeleri, berber koltuğu, kuaför ekipmanları, salon ekipmanları. Profesyoneller için en uygun fiyatlı alışveriş sitesi.",
     "telephone": "+908503035073",
-    "email": "info@seyfibaba.com",
+    "email": "info@kuafortedarik.com",
     "address": {
       "@type": "PostalAddress",
       "addressCountry": "TR",
@@ -211,7 +211,7 @@ export const generateWebSiteSchema = () => {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "Seyfibaba",
+    "name": "Kuaför Tedarik",
     "url": appConfig.APPLICATION_URL,
     "potentialAction": {
       "@type": "SearchAction",
@@ -317,7 +317,7 @@ export const generateSellerSchema = (seller) => {
 
   schema.parentOrganization = {
     "@type": "Organization",
-    "name": "Seyfibaba",
+    "name": "Kuaför Tedarik",
     "url": appConfig.APPLICATION_URL,
   };
 

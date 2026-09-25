@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shop_o/widgets/fetch_error_text.dart';
 import 'package:shop_o/widgets/loading_widget.dart';
 import '../../widgets/custom_text.dart';
-import '/widgets/empty_widget.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import '../../widgets/app_empty_state.dart';
@@ -19,6 +18,7 @@ import '../../widgets/confirm_dialog.dart';
 import '../../widgets/please_signin_widget.dart';
 import '../../widgets/rounded_app_bar.dart';
 import 'component/add_to_cart_component.dart';
+import 'component/cart_installment_warning.dart';
 import 'component/panel_widget.dart';
 import 'controllers/cart/cart_cubit.dart';
 import 'model/cart_response_model.dart';
@@ -241,28 +241,26 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
         ),
         if (cartResponseModel != null &&
             cartResponseModel!.cartProducts.isNotEmpty) ...[
-          SliverPadding(
-            padding: Utils.symmetric(h: 12.0),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  return AddToCartComponent(
-                    product: cartResponseModel!.cartProducts[index],
-                    onChange: (int id) {
-                      cartResponseModel!.cartProducts
-                          .removeWhere((element) => element.id == id);
-                      setState(() {
-                        calculate();
-                      });
-                    },
-                    appSetting: appSetting,
-                  );
-                },
-                childCount: cartResponseModel!.cartProducts.length,
-                addAutomaticKeepAlives: true,
-              ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return AddToCartComponent(
+                  product: cartResponseModel!.cartProducts[index],
+                  onChange: (int id) {
+                    cartResponseModel!.cartProducts
+                        .removeWhere((element) => element.id == id);
+                    setState(() {
+                      calculate();
+                    });
+                  },
+                  appSetting: appSetting,
+                );
+              },
+              childCount: cartResponseModel!.cartProducts.length,
+              addAutomaticKeepAlives: true,
             ),
           ),
+          const SliverToBoxAdapter(child: CartInstallmentWarning()),
         ] else ...[
           SliverFillRemaining(
             hasScrollBody: false,

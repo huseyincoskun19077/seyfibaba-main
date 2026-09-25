@@ -42,6 +42,9 @@ class ProductModel extends Equatable {
   final double rating;
   final int soldQty;
   final int saleUnitQty;
+  final int maxInstallment;
+  final String categoryName;
+  final String barcode;
   final List<GalleryModel> gallery;
   final CategoriesModel? category;
   final List<ActiveVariantModel> productVariants;
@@ -75,6 +78,9 @@ class ProductModel extends Equatable {
     required this.rating,
     this.soldQty = 0,
     this.saleUnitQty = 1,
+    this.maxInstallment = 1,
+    this.categoryName = '',
+    this.barcode = '',
   });
 
   ProductModel copyWith({
@@ -106,6 +112,9 @@ class ProductModel extends Equatable {
     List<ActiveVariantModel>? productVariants,
     int? soldQty,
     int? saleUnitQty,
+    int? maxInstallment,
+    String? categoryName,
+    String? barcode,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -136,6 +145,9 @@ class ProductModel extends Equatable {
       rating: rating ?? this.rating,
       soldQty: soldQty ?? this.soldQty,
       saleUnitQty: saleUnitQty ?? this.saleUnitQty,
+      maxInstallment: maxInstallment ?? this.maxInstallment,
+      categoryName: categoryName ?? this.categoryName,
+      barcode: barcode ?? this.barcode,
     );
   }
 
@@ -172,13 +184,16 @@ class ProductModel extends Equatable {
         {'active_variants': productVariants.map((x) => x.toMap()).toList()});
     result.addAll({'sold_qty': soldQty});
     result.addAll({'sale_unit_qty': saleUnitQty});
+    result.addAll({'max_installment': maxInstallment});
+    result.addAll({'category_name': categoryName});
+    result.addAll({'barcode': barcode});
 
     return result;
   }
 
   factory ProductModel.fromMap(Map<String, dynamic> map) {
     return ProductModel(
-      id: map['id']?.toInt() ?? 0,
+      id: int.tryParse('${map['id'] ?? 0}') ?? 0,
       name: map['name'] ?? '',
       shortName: map['short_name'] ?? '',
       slug: map['slug'] ?? '',
@@ -216,6 +231,10 @@ class ProductModel extends Equatable {
       rating: Utils.toDouble(map['averageRating']?.toString()),
       soldQty: parseProductSoldQty(map),
       saleUnitQty: parseProductSaleUnitQty(map),
+      maxInstallment:
+          int.tryParse('${map['max_installment'] ?? 1}')?.clamp(1, 99) ?? 1,
+      categoryName: '${map['category_name'] ?? ''}',
+      barcode: '${map['barcode'] ?? ''}',
       gallery: map['gallery'] != null
           ? List<GalleryModel>.from(
               map['gallery']?.map((x) => GalleryModel.fromMap(x)))
@@ -272,6 +291,9 @@ class ProductModel extends Equatable {
       productVariants,
       soldQty,
       saleUnitQty,
+      maxInstallment,
+      categoryName,
+      barcode,
     ];
   }
 }

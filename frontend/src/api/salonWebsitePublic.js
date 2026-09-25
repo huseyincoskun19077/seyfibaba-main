@@ -10,8 +10,8 @@ function websiteApiBase() {
   }
   try {
     const host = new URL(appConfig.BASE_URL).hostname.replace(/^www\./, "");
-    if (host.endsWith("seyfibaba.com")) {
-      return "https://admin.seyfibaba.com/api";
+    if (host.endsWith("kuafortedarik.com")) {
+      return "https://admin.kuafortedarik.com/api";
     }
   } catch {
     /* fallthrough */

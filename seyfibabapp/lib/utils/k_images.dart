@@ -75,15 +75,17 @@ class Kimages {
 
   ////images
   static const String logoColor = "assets/images/logo_color.png";
+  static const String appLogo = "assets/images/logo.png";
   static const String splashRoundLogo = "assets/images/splash-round-logo.png";
+  static const String splashScreen = "assets/images/splashscreen.png";
 
   static const String timeCurve = "assets/images/time_curve.svg";
-  static const String onboarding1 = "assets/images/onboarding1.png";
-  static const String onboarding2 = "assets/images/onboarding2.png";
-  static const String onboarding3 = "assets/images/onboarding3.png";
-  static const String onboarding_1 = "assets/images/onboarding_1.svg";
-  static const String onboarding_2 = "assets/images/onboarding_2.svg";
-  static const String onboarding_3 = "assets/images/onboarding_3.svg";
+  static const String onboarding1 = "assets/images/onboarding_1.png";
+  static const String onboarding2 = "assets/images/onboarding_2.png";
+  static const String onboarding3 = "assets/images/onboarding_3.png";
+  static const String onboarding_1 = "assets/images/onboarding_1.png";
+  static const String onboarding_2 = "assets/images/onboarding_2.png";
+  static const String onboarding_3 = "assets/images/onboarding_3.png";
   static const String enableLocation = "assets/images/enable-location.svg";
   static const String sponsor_1 = "assets/images/sponsor_1.png";
   static const String sponsor_2 = "assets/images/sponsor_2.png";

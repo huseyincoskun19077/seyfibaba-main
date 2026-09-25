@@ -10,10 +10,10 @@ import '../../profile/controllers/updated_info/updated_info_cubit.dart';
 import '../../salon_crm/services/salon_crm_service.dart';
 import '../../../core/router_name.dart';
 import '../../../utils/constants.dart';
-import '../../../utils/k_strings.dart';
 import '../../../utils/k_images.dart';
 import '../../../utils/language_string.dart';
 import '../../../utils/utils.dart';
+import '../../../widgets/app_brand_logo.dart';
 import '../../../widgets/custom_image.dart';
 import '../../../widgets/custom_text.dart';
 import '../widgets/home_theme.dart';
@@ -234,9 +234,15 @@ class _HomeIdentityState extends State<_HomeIdentity> {
     final token = context.read<LoginBloc>().userInfo?.accessToken ?? '';
     if (token.isEmpty) return;
     try {
-      final status = await _service.fetchStatus(token);
+      final summary = await _service.patronSalonSummary(token);
       if (!mounted) return;
-      setState(() => _salonName = status.salon?.name);
+      final salon = summary['salon'];
+      setState(() {
+        _salonName = salon is Map ? '${salon['name'] ?? ''}' : null;
+        if (_salonName != null && _salonName!.trim().isEmpty) {
+          _salonName = null;
+        }
+      });
     } catch (_) {}
   }
 
@@ -252,58 +258,40 @@ class _HomeIdentityState extends State<_HomeIdentity> {
         ? (profileCubit.updatedInfo?.updateUserInfo.name ??
             loginBloc.userInfo?.user.name)
         : null;
+    final hasName = userName?.trim().isNotEmpty ?? false;
+    final hasSalon = _salonName?.trim().isNotEmpty ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        RichText(
-          text: const TextSpan(
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.3,
-              height: 1.1,
-            ),
-            children: [
-              TextSpan(
-                text: 'Seyfibaba',
-                style: TextStyle(color: HomeTheme.textDark),
-              ),
-              TextSpan(
-                text: '.com',
-                style: TextStyle(color: HomeTheme.brandYellow),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 3),
-        if (isLoggedIn && (userName?.trim().isNotEmpty ?? false)) ...[
+        const AppBrandLogo(height: 34, width: 128),
+        if (isLoggedIn && hasName) ...[
+          const SizedBox(height: 6),
           Text(
             userName!.trim(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: HomeTheme.textDark,
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
           ),
-          if (_salonName != null && _salonName!.trim().isNotEmpty)
+          if (hasSalon) ...[
+            const SizedBox(height: 2),
             Text(
               _salonName!.trim(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: HomeTheme.textMuted,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
             ),
-        ] else
-          Text(
-            KStrings.splashTitle,
-            style: const TextStyle(
-              color: HomeTheme.textMuted,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          ],
+        ],
       ],
     );
   }
