@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\WEB\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\HomeBlock;
+use App\Models\Product;
+use App\Models\Vendor;
 use File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -30,15 +33,34 @@ class HomeBlockController extends Controller
 
         $blocks = HomeBlock::query()->orderBy('serial')->orderBy('id')->get();
         $edit = null;
+        $selectedProducts = collect();
+        $selectedCategories = [];
         if ($request->filled('edit')) {
             $edit = HomeBlock::query()->find((int) $request->query('edit'));
+            if ($edit) {
+                $pids = $edit->decodeIds($edit->product_ids);
+                if ($pids) {
+                    $selectedProducts = Product::query()
+                        ->with('seller:id,shop_name')
+                        ->whereIn('id', $pids)
+                        ->get(['id', 'name', 'short_name', 'vendor_id'])
+                        ->sortBy(fn ($p) => array_search((int) $p->id, $pids, true))
+                        ->values();
+                }
+                $selectedCategories = $edit->decodeIds($edit->category_ids);
+            }
         }
+
+        $categoryOptions = $this->flatCategoryOptions();
 
         return view('admin.home_blocks', [
             'blocks' => $blocks,
             'edit' => $edit,
             'types' => HomeBlock::TYPES,
             'feeds' => HomeBlock::FEEDS,
+            'selectedProducts' => $selectedProducts,
+            'selectedCategories' => $selectedCategories,
+            'categoryOptions' => $categoryOptions,
         ]);
     }
 
@@ -58,8 +80,8 @@ class HomeBlockController extends Controller
             'link' => ['nullable', 'string', 'max:500'],
             'mobile_link' => ['nullable', 'string', 'max:500'],
             'see_all_url' => ['nullable', 'string', 'max:500'],
-            'product_ids' => ['nullable', 'string', 'max:4000'],
-            'category_ids' => ['nullable', 'string', 'max:2000'],
+            'product_ids' => ['nullable'],
+            'category_ids' => ['nullable'],
             'limit_count' => ['nullable', 'integer', 'min:1', 'max:48'],
             'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         ]);
@@ -76,8 +98,8 @@ class HomeBlockController extends Controller
         $block->link = trim((string) $request->input('link', '')) ?: null;
         $block->mobile_link = trim((string) $request->input('mobile_link', '')) ?: null;
         $block->see_all_url = trim((string) $request->input('see_all_url', '')) ?: null;
-        $block->product_ids = $block->encodeIds($request->input('product_ids'));
-        $block->category_ids = $block->encodeIds($request->input('category_ids'));
+        $block->product_ids = $block->encodeIds($request->input('product_ids', []));
+        $block->category_ids = $block->encodeIds($request->input('category_ids', []));
         $block->limit_count = (int) ($request->input('limit_count') ?: 12);
         $block->status = $request->boolean('status');
         $block->show_on_web = $request->boolean('show_on_web');
@@ -140,5 +162,87 @@ class HomeBlockController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => 'Sıralama güncellendi.']);
+    }
+
+    /** Select2 AJAX — tüm ürünler (admin + satıcı), isimle ara */
+    public function searchProducts(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+        $query = Product::query()
+            ->with('seller:id,shop_name')
+            ->where('approve_by_admin', 1)
+            ->where('status', 1)
+            ->orderByDesc('id')
+            ->limit(40);
+
+        if ($q !== '') {
+            $query->where(function ($w) use ($q) {
+                $w->where('name', 'like', '%'.$q.'%')
+                    ->orWhere('short_name', 'like', '%'.$q.'%')
+                    ->orWhere('slug', 'like', '%'.$q.'%');
+                if (ctype_digit($q)) {
+                    $w->orWhere('id', (int) $q);
+                }
+            });
+        }
+
+        $results = $query->get(['id', 'name', 'short_name', 'vendor_id'])->map(function ($p) {
+            $seller = $p->seller?->shop_name ?: 'Platform';
+            $label = trim((string) ($p->short_name ?: $p->name));
+
+            return [
+                'id' => $p->id,
+                'text' => $label.' — '.$seller.' (#'.$p->id.')',
+            ];
+        });
+
+        return response()->json(['results' => $results]);
+    }
+
+    /** Select2 AJAX — satıcılar, mağaza adıyla ara */
+    public function searchVendors(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+        $query = Vendor::query()->orderBy('shop_name')->limit(40);
+
+        if ($q !== '') {
+            $query->where(function ($w) use ($q) {
+                $w->where('shop_name', 'like', '%'.$q.'%')
+                    ->orWhere('email', 'like', '%'.$q.'%');
+                if (ctype_digit($q)) {
+                    $w->orWhere('id', (int) $q);
+                }
+            });
+        }
+
+        $results = $query->get(['id', 'shop_name'])->map(fn ($v) => [
+            'id' => $v->id,
+            'text' => ($v->shop_name ?: 'Satıcı').' (#'.$v->id.')',
+        ]);
+
+        return response()->json(['results' => $results]);
+    }
+
+    /** @return array<int, array{id:int,label:string}> */
+    private function flatCategoryOptions(): array
+    {
+        $out = [];
+        $cats = Category::query()
+            ->where('status', 1)
+            ->with(['activeSubCategories.activeChildCategories'])
+            ->ordered()
+            ->get(['id', 'name']);
+
+        foreach ($cats as $cat) {
+            $out[] = ['id' => (int) $cat->id, 'label' => $cat->name];
+            foreach ($cat->activeSubCategories as $sub) {
+                $out[] = ['id' => (int) $sub->id, 'label' => '└ '.$sub->name];
+                foreach ($sub->activeChildCategories as $child) {
+                    $out[] = ['id' => (int) $child->id, 'label' => '└─ '.$child->name];
+                }
+            }
+        }
+
+        return $out;
     }
 }

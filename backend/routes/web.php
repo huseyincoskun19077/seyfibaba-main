@@ -1062,6 +1062,8 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::post('home-blocks', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'store'])->name('home-blocks.store');
         Route::post('home-blocks-reorder', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'reorder'])->name('home-blocks.reorder');
         Route::delete('home-blocks/{id}', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'destroy'])->name('home-blocks.destroy');
+        Route::get('lookup/products', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'searchProducts'])->name('lookup.products');
+        Route::get('lookup/vendors', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'searchVendors'])->name('lookup.vendors');
 
         Route::get('personalization-showcase', [\App\Http\Controllers\WEB\Admin\PersonalizationShowcaseController::class, 'index'])->name('personalization-showcase.index');
         Route::post('personalization-showcase', [\App\Http\Controllers\WEB\Admin\PersonalizationShowcaseController::class, 'store'])->name('personalization-showcase.store');

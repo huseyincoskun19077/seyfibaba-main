@@ -23,7 +23,7 @@
             <ul class="mb-0 pl-3">
               <li><strong>Anasayfa:</strong> yalnızca burada seçtiğiniz kategori / ürün / satıcıdan <strong>{{ (int)($edit->home_limit ?? 12) }}</strong> ürün gösterilir.</li>
               <li><strong>Tümünü gör:</strong> aynı seçimler + (tikliyse) tüm ürünlerden yüksek görüntülenme.</li>
-              <li>Kategori, alt kategori ve child kategorileri listeden işaretleyin — ID yazmanıza gerek yok.</li>
+              <li>Ürün ve satıcıyı <strong>isimle arayıp</strong> seçin — ID yazmanız gerekmez. Kategoriler listeden işaretlenir.</li>
             </ul>
           </div>
 
@@ -114,17 +114,27 @@
             <div class="row">
               <div class="col-md-6">
                 <div class="form-group">
-                  <label>Ürün ID’leri (opsiyonel — önce bunlar, max anasayfa adedi)</label>
-                  <input type="text" name="product_ids" class="form-control" placeholder="101,202,303"
-                    value="{{ old('product_ids', !empty($edit) ? implode(',', $edit->decodeIds($edit->product_ids)) : '') }}">
-                  <small class="text-muted">Boş bırakırsanız seçili kategorilerden otomatik dolar.</small>
+                  <label>Ürünler (isimle ara — opsiyonel)</label>
+                  <select name="product_ids[]" class="form-control js-ajax-products" multiple style="width:100%" data-placeholder="Ürün adı yazın…">
+                    @foreach($selectedProducts ?? [] as $p)
+                      @php
+                        $seller = $p->seller?->shop_name ?: 'Platform';
+                        $label = trim((string) ($p->short_name ?: $p->name));
+                      @endphp
+                      <option value="{{ $p->id }}" selected>{{ $label }} — {{ $seller }} (#{{ $p->id }})</option>
+                    @endforeach
+                  </select>
+                  <small class="text-muted">Önce bunlar gösterilir (max anasayfa adedi). Boşsa kategorilerden dolar.</small>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="form-group">
-                  <label>Satıcı (vendor) ID’leri (opsiyonel)</label>
-                  <input type="text" name="vendor_ids" class="form-control" placeholder="3,8"
-                    value="{{ old('vendor_ids', !empty($edit) ? implode(',', $edit->decodeIds($edit->vendor_ids)) : '') }}">
+                  <label>Satıcılar (mağaza adıyla ara — opsiyonel)</label>
+                  <select name="vendor_ids[]" class="form-control js-ajax-vendors" multiple style="width:100%" data-placeholder="Mağaza adı yazın…">
+                    @foreach($selectedVendors ?? [] as $v)
+                      <option value="{{ $v->id }}" selected>{{ $v->shop_name }} (#{{ $v->id }})</option>
+                    @endforeach
+                  </select>
                 </div>
               </div>
             </div>
@@ -159,16 +169,26 @@
             <div class="row">
               <div class="col-md-6">
                 <div class="form-group">
-                  <label>Açılış ürün ID</label>
-                  <input type="text" name="opening_product_ids" class="form-control"
-                    value="{{ old('opening_product_ids', !empty($edit) ? implode(',', $edit->decodeIds($edit->opening_product_ids)) : '') }}">
+                  <label>Açılış ürünleri (isimle ara)</label>
+                  <select name="opening_product_ids[]" class="form-control js-ajax-products" multiple style="width:100%" data-placeholder="Ürün adı yazın…">
+                    @foreach($selectedOpeningProducts ?? [] as $p)
+                      @php
+                        $seller = $p->seller?->shop_name ?: 'Platform';
+                        $label = trim((string) ($p->short_name ?: $p->name));
+                      @endphp
+                      <option value="{{ $p->id }}" selected>{{ $label }} — {{ $seller }} (#{{ $p->id }})</option>
+                    @endforeach
+                  </select>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="form-group">
-                  <label>Açılış satıcı ID</label>
-                  <input type="text" name="opening_vendor_ids" class="form-control"
-                    value="{{ old('opening_vendor_ids', !empty($edit) ? implode(',', $edit->decodeIds($edit->opening_vendor_ids)) : '') }}">
+                  <label>Açılış satıcıları (mağaza adıyla ara)</label>
+                  <select name="opening_vendor_ids[]" class="form-control js-ajax-vendors" multiple style="width:100%" data-placeholder="Mağaza adı yazın…">
+                    @foreach($selectedOpeningVendors ?? [] as $v)
+                      <option value="{{ $v->id }}" selected>{{ $v->shop_name }} (#{{ $v->id }})</option>
+                    @endforeach
+                  </select>
                 </div>
               </div>
             </div>
@@ -178,15 +198,6 @@
               <a href="{{ route('admin.personalization-showcase.index') }}" class="btn btn-light">İptal</a>
             @endif
           </form>
-
-          <details class="mb-3">
-            <summary>Satıcı listesi (vendor ID)</summary>
-            <ul class="small mb-0" style="max-height:180px;overflow:auto">
-              @foreach($vendors as $v)
-                <li>{{ $v->id }} — {{ $v->shop_name }}</li>
-              @endforeach
-            </ul>
-          </details>
 
           <div class="table-responsive">
             <table class="table table-striped">
@@ -207,8 +218,8 @@
                   <tr>
                     <td>{{ $types[$row->business_type] ?? $row->business_type }}</td>
                     <td>{{ $row->title }}</td>
-                    <td><small>{{ implode(', ', $row->decodeIds($row->category_ids)) ?: '—' }}</small></td>
-                    <td><small>{{ implode(', ', $row->decodeIds($row->product_ids)) ?: '—' }}</small></td>
+                    <td><small>{{ count($row->decodeIds($row->category_ids)) }} seçili</small></td>
+                    <td><small>{{ count($row->decodeIds($row->product_ids)) }} ürün</small></td>
                     <td>{{ $row->home_limit ?? 12 }}</td>
                     <td>{{ $row->include_high_views ? 'Evet' : 'Hayır' }}</td>
                     <td>{{ $row->status ? 'Aktif' : 'Pasif' }}</td>
@@ -232,4 +243,8 @@
     </div>
   </section>
 </div>
+@include('admin.partials.ajax_entity_select', [
+  'productUrl' => route('admin.lookup.products'),
+  'vendorUrl' => route('admin.lookup.vendors'),
+])
 @endsection

@@ -22,9 +22,9 @@
           <div class="alert alert-info">
             <ul class="mb-0 pl-3">
               <li>Stories + Sana Özel üstte sabittir. Bu listedeki bloklar onların <strong>altında</strong> sırayla gelir.</li>
-              <li><strong>Kampanya görseli:</strong> yalnızca resim + link (ürün/kategori URL). Önerilen boyut: <code>800 × 320 px</code> (yatay afiş).</li>
-              <li><strong>Ürün listesi:</strong> popüler / indirimli / öne çıkan / yeni / en iyi / hafta sonu / özel ID.</li>
-              <li>Hafta sonu ve özel listede ürün ID’lerini girin: <code>12,45,78</code></li>
+              <li><strong>Kampanya görseli:</strong> yalnızca resim + link. Önerilen: <code>800 × 320 px</code>.</li>
+              <li><strong>Ürün listesi:</strong> kaynak seçin veya ürün adıyla arayıp ekleyin (admin + satıcı ürünleri).</li>
+              <li>Sıralamak için satırın solundaki <strong>☰</strong> tutamacını sürükleyin.</li>
             </ul>
           </div>
 
@@ -97,16 +97,30 @@
             <div class="row" id="hb-products-wrap">
               <div class="col-md-6">
                 <div class="form-group">
-                  <label>Ürün ID’leri (hafta sonu / özel / pin)</label>
-                  <input type="text" name="product_ids" class="form-control" placeholder="101,202,303"
-                    value="{{ old('product_ids', !empty($edit) ? implode(',', $edit->decodeIds($edit->product_ids)) : '') }}">
+                  <label>Ürünler (isimle ara — admin + satıcı)</label>
+                  <select name="product_ids[]" id="hb-product-ids" class="form-control js-ajax-products" multiple style="width:100%">
+                    @foreach($selectedProducts ?? [] as $p)
+                      @php
+                        $seller = $p->seller?->shop_name ?: 'Platform';
+                        $label = trim((string) ($p->short_name ?: $p->name));
+                      @endphp
+                      <option value="{{ $p->id }}" selected>{{ $label }} — {{ $seller }} (#{{ $p->id }})</option>
+                    @endforeach
+                  </select>
+                  <small class="text-muted">Yazmaya başlayın, listeden seçin. Hafta sonu / özel kaynak için gerekli.</small>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="form-group">
-                  <label>Kategori ID’leri (filtre, opsiyonel)</label>
-                  <input type="text" name="category_ids" class="form-control" placeholder="1,5,12"
-                    value="{{ old('category_ids', !empty($edit) ? implode(',', $edit->decodeIds($edit->category_ids)) : '') }}">
+                  <label>Kategoriler (filtre / kategori grid)</label>
+                  <select name="category_ids[]" id="hb-category-ids" class="form-control js-local-select" multiple style="width:100%">
+                    @foreach($categoryOptions ?? [] as $opt)
+                      <option value="{{ $opt['id'] }}" {{ in_array((int)$opt['id'], array_map('intval', (array)($selectedCategories ?? [])), true) ? 'selected' : '' }}>
+                        {{ $opt['label'] }}
+                      </option>
+                    @endforeach
+                  </select>
+                  <small class="text-muted">Dropdown’dan ara ve seç. Ürün filtresi veya kategori grid için.</small>
                 </div>
               </div>
               <div class="col-md-6">
@@ -157,8 +171,8 @@
               <tbody id="home-blocks-sortable">
                 @forelse($blocks as $row)
                   <tr data-id="{{ $row->id }}">
-                    <td class="text-muted" style="cursor:grab">☰</td>
-                    <td>{{ $row->serial }}</td>
+                    <td class="drag-handle" title="Sürükle"><i class="fas fa-grip-vertical"></i></td>
+                    <td class="sort-number">{{ $row->serial }}</td>
                     <td>{{ $row->title }}</td>
                     <td><small>{{ $types[$row->type] ?? $row->type }}</small></td>
                     <td><small>{{ $row->feed ? ($feeds[$row->feed] ?? $row->feed) : '—' }}</small></td>
@@ -214,6 +228,10 @@
   if(t){ t.addEventListener('change', syncType); syncType(); }
 })();
 </script>
+@include('admin.partials.ajax_entity_select', [
+  'productUrl' => route('admin.lookup.products'),
+  'vendorUrl' => null,
+])
 @include('admin.partials.category_sortable_script', [
   'tableId' => 'homeBlocksTable',
   'sortableBodyId' => 'home-blocks-sortable',

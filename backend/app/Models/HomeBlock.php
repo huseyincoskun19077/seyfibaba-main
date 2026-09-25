@@ -47,7 +47,7 @@ class HomeBlock extends Model
         'new' => 'Yeni gelen ürünler',
         'best' => 'En iyi / çok satan',
         'weekend' => 'Hafta sonuna özel',
-        'custom' => 'Seçili ürün ID’leri',
+        'custom' => 'Seçili ürünler (isimle ara)',
     ];
 
     public function decodeIds(?string $raw): array
