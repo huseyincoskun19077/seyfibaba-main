@@ -65,6 +65,17 @@ class ContentController extends Controller
 
     public function announcementModal(){
         $announcement = AnnouncementModal::first();
+        if (!$announcement) {
+            $announcement = AnnouncementModal::create([
+                'title' => '',
+                'description' => '',
+                'image' => '',
+                'status' => 0,
+                'expired_date' => 7,
+                'show_on_web' => 1,
+                'show_on_mobile' => 1,
+            ]);
+        }
 
         return view('admin.announcement', compact('announcement'));
     }
@@ -72,41 +83,50 @@ class ContentController extends Controller
     public function announcementModalUpdate(Request $request)
     {
         $rules = [
-            'description' => 'required',
-            'title' => 'required',
-            'expired_date' => 'required',
+            'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'expired_date' => 'required|integer|min:1|max:365',
+            'link' => 'nullable|string|max:500',
+            'mobile_link' => 'nullable|string|max:500',
+            'cta_text' => 'nullable|string|max:120',
+            'image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
         ];
         $customMessages = [
-            'description.required' => trans('admin_validation.Description is required'),
-            'title.required' => trans('admin_validation.Title is required'),
-            'status.required' => trans('admin_validation.Status is required'),
             'expired_date.required' => trans('admin_validation.Expired date is required'),
         ];
-        $this->validate($request, $rules,$customMessages);
+        $this->validate($request, $rules, $customMessages);
 
         $announcement = AnnouncementModal::first();
-        if($request->image){
-            $old_image=$announcement->image;
-            $image=$request->image;
-            $ext=$image->getClientOriginalExtension();
-            $image_name= 'announcement-'.date('Y-m-d-h-i-s-').rand(999,9999).'.'.$ext;
-            $image_name='uploads/website-images/'.$image_name;
-            Image::make($image)
-                ->save(public_path().'/'.$image_name);
-            $announcement->image=$image_name;
-            $announcement->save();
-            if($old_image){
-                if(File::exists(public_path().'/'.$old_image))unlink(public_path().'/'.$old_image);
+        if (!$announcement) {
+            $announcement = new AnnouncementModal();
+            $announcement->image = '';
+        }
+
+        if ($request->image) {
+            $old_image = $announcement->image;
+            $image = $request->image;
+            $ext = $image->getClientOriginalExtension();
+            $image_name = 'announcement-'.date('Y-m-d-h-i-s-').rand(999, 9999).'.'.$ext;
+            $image_name = 'uploads/website-images/'.$image_name;
+            Image::make($image)->save(public_path().'/'.$image_name);
+            $announcement->image = $image_name;
+            if ($old_image && File::exists(public_path().'/'.$old_image)) {
+                unlink(public_path().'/'.$old_image);
             }
         }
-        $announcement->description = $request->description;
-        $announcement->title = $request->title;
-        $announcement->expired_date = $request->expired_date;
+
+        $announcement->title = $request->title ?? '';
+        $announcement->description = $request->description ?? '';
+        $announcement->expired_date = (int) $request->expired_date;
+        $announcement->link = $request->link ? trim($request->link) : null;
+        $announcement->mobile_link = $request->mobile_link ? trim($request->mobile_link) : null;
+        $announcement->cta_text = $request->cta_text ? trim($request->cta_text) : null;
         $announcement->status = $request->status ? 1 : 0;
+        $announcement->show_on_web = $request->show_on_web ? 1 : 0;
+        $announcement->show_on_mobile = $request->show_on_mobile ? 1 : 0;
         $announcement->save();
 
-        $notification= trans('admin_validation.Updated Successfully');
-        $notification=array('messege'=>$notification,'alert-type'=>'success');
+        $notification = array('messege' => trans('admin_validation.Updated Successfully'), 'alert-type' => 'success');
         return redirect()->back()->with($notification);
     }
 

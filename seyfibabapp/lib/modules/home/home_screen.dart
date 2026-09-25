@@ -18,6 +18,7 @@ import 'component/home_app_bar.dart';
 import 'component/stories_strip.dart';
 import 'component/home_sana_ozel_strip.dart';
 import 'widgets/home_theme.dart';
+import 'component/home_promo_popup.dart';
 import 'component/hot_deal_banner_slider.dart';
 import 'component/new_arrival_component.dart';
 import 'component/populer_product_component.dart';
@@ -97,17 +98,32 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _LoadedHomePage extends StatelessWidget {
+class _LoadedHomePage extends StatefulWidget {
   const _LoadedHomePage({required this.homeModel});
 
   final HomeModel homeModel;
 
   @override
+  State<_LoadedHomePage> createState() => _LoadedHomePageState();
+}
+
+class _LoadedHomePageState extends State<_LoadedHomePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final modal =
+          context.read<AppSettingCubit>().settingModel?.announcementModal;
+      HomePromoPopup.maybeShow(context, modal);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final homeModel = widget.homeModel;
     final appSetting = context.read<AppSettingCubit>().settingModel;
-    // final homeCubit = context.read<HomeControllerCubit>();
     final productCubit = context.read<ProductsCubit>();
-    //print('banner-slider ${homeCubit.sliderBanner.length}');
     final combineBannerList = <BannerModel>[];
     final map = <String, String>{};
     homeModel.sectionTitle.map((e) {

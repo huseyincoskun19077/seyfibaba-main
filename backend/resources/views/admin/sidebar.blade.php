@@ -331,7 +331,7 @@
 
                 <li class="{{ Route::is('admin.maintainance-mode') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.maintainance-mode') }}">{{__('admin.Maintainance Mode')}}</a></li>
 
-                <li class="{{ Route::is('admin.announcement') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.announcement') }}">{{__('admin.Announcement')}}</a></li>
+                <li class="{{ Route::is('admin.announcement') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.announcement') }}">Kampanya Popup</a></li>
 
                 <li class="{{ Route::is('admin.topbar-contact') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.topbar-contact') }}">Üst Bar (Topbar)</a></li>
 

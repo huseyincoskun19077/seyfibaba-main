@@ -6,6 +6,7 @@ import 'package:equatable/equatable.dart';
 import '../../../utils/laravel_echo/pusher_info.dart';
 import '../../home/model/setting_model.dart';
 import '../../home/model/story_model.dart';
+import 'announcement_modal_model.dart';
 import 'currencies_model.dart';
 import 'language_model.dart';
 import 'maintainance_mode_model.dart';
@@ -22,6 +23,7 @@ class WebsiteSetupModel extends Equatable {
 
   final PusherInfo? pusherInfo;
   final List<StoryModel> stories;
+  final AnnouncementModalModel? announcementModal;
 
   const WebsiteSetupModel({
     required this.setting,
@@ -34,6 +36,7 @@ class WebsiteSetupModel extends Equatable {
     required this.imageContent,
     required this.pusherInfo,
     this.stories = const [],
+    this.announcementModal,
   });
 
   WebsiteSetupModel copyWith({
@@ -47,6 +50,7 @@ class WebsiteSetupModel extends Equatable {
     Map<String, String>? imageContent,
     PusherInfo? pusherInfo,
     List<StoryModel>? stories,
+    AnnouncementModalModel? announcementModal,
   }) {
     return WebsiteSetupModel(
       setting: setting ?? this.setting,
@@ -59,6 +63,7 @@ class WebsiteSetupModel extends Equatable {
       imageContent: imageContent ?? this.imageContent,
       pusherInfo: pusherInfo ?? this.pusherInfo,
       stories: stories ?? this.stories,
+      announcementModal: announcementModal ?? this.announcementModal,
     );
   }
 
@@ -73,6 +78,8 @@ class WebsiteSetupModel extends Equatable {
       'currencies': currencies?.map((x) => x.toMap()).toList(),
       'languages': languages?.map((x) => x.toMap()).toList(),
       'pusher_info': pusherInfo?.toMap(),
+      if (announcementModal != null)
+        'announcementModal': announcementModal!.toMap(),
       'stories': stories
           .map((s) => {
                 'id': s.id,
@@ -106,6 +113,16 @@ class WebsiteSetupModel extends Equatable {
         if (a.serial != b.serial) return a.serial.compareTo(b.serial);
         return a.id.compareTo(b.id);
       });
+    }
+
+    AnnouncementModalModel? announcement;
+    final rawAnnouncement = map['announcementModal'];
+    if (rawAnnouncement is Map<String, dynamic>) {
+      announcement = AnnouncementModalModel.fromMap(rawAnnouncement);
+    } else if (rawAnnouncement is Map) {
+      announcement = AnnouncementModalModel.fromMap(
+        Map<String, dynamic>.from(rawAnnouncement),
+      );
     }
 
     return WebsiteSetupModel(
@@ -142,6 +159,7 @@ class WebsiteSetupModel extends Equatable {
           ? PusherInfo.fromMap(map['pusher_info'] as Map<String, dynamic>)
           : null,
       stories: stories,
+      announcementModal: announcement,
     );
   }
 
@@ -166,6 +184,7 @@ class WebsiteSetupModel extends Equatable {
       maintainTextModel,
       pusherInfo,
       stories,
+      announcementModal,
     ];
   }
 }
