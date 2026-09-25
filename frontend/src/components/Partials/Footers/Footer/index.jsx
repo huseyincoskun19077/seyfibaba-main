@@ -9,11 +9,11 @@ import { getProductImageProps } from "@/utils/productImage";
 import { legalPath } from "@/config/legalDocuments";
 import { marketplaceUrl } from "@/utils/secondHandSite";
 
-const seyfibabaLinks = [
+const brandLinks = [
   { href: "/about", label: "Biz Kimiz" },
   { href: "/contact", label: "Kariyer" },
   { href: "/contact", label: "İletişim" },
-  { href: legalPath("privacy-policy"), label: "Seyfibaba'da Güvenlik" },
+  { href: legalPath("privacy-policy"), label: "Kuaför Tedarik'te Güvenlik" },
   { href: legalPath("prohibited-products"), label: "Geri Çağrılan Ürünler" },
 ];
 
@@ -24,9 +24,9 @@ const campaignLinks = [
 ];
 
 const sellerLinks = [
-  { href: "/satici", label: "Seyfibaba'da Satış Yap" },
+  { href: "/satici", label: "Kuaför Tedarik'te Satış Yap" },
   { href: "/satici/nasil-satici-olunur", label: "Temel Kavramlar" },
-  { href: "/satici", label: "Seyfibaba Akademi" },
+  { href: "/satici", label: "Kuaför Tedarik Akademi" },
 ];
 
 const helpLinksFallback = [
@@ -262,7 +262,7 @@ export default function Footer({ settings, isSecondHandSite = false }) {
       <footer className="footer-section-wrapper bg-white print:hidden border-t border-gray-100">
         <div className="container-x mx-auto py-10">
           <div className="flex flex-col items-center gap-4 text-center">
-            <p className="text-sm font-800 text-[#04334a]">Seyfibaba İkinci El</p>
+            <p className="text-sm font-800 text-[#04334a]">Kuaför Tedarik İkinci El</p>
             <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-[#04334a]/70">
               <Link href="/" className="hover:text-[#04334a]">İlanlar</Link>
               <Link href="/ikinci-el-sozlesmesi" className="hover:text-[#04334a]">Sözleşme</Link>
@@ -302,8 +302,8 @@ export default function Footer({ settings, isSecondHandSite = false }) {
         <div className="container-x mx-auto py-10 md:py-12">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
             <div>
-              <ColTitle>Seyfibaba</ColTitle>
-              <SimpleLinks items={seyfibabaLinks} />
+              <ColTitle>Kuaför Tedarik</ColTitle>
+              <SimpleLinks items={brandLinks} />
             </div>
 
             <div>
@@ -438,13 +438,13 @@ export default function Footer({ settings, isSecondHandSite = false }) {
                     sizes="112px"
                     className="object-contain brightness-0 invert opacity-90"
                     {...getProductImageProps(settings.logo)}
-                    alt="Seyfibaba"
+                    alt="Kuaför Tedarik"
                   />
                 </Link>
               ) : null}
               <span className="text-[11px] text-white/60">
                 {footerContent?.copyright ||
-                  `© ${new Date().getFullYear()} Seyfibaba. Tüm hakları saklıdır.`}
+                  `© ${new Date().getFullYear()} Kuaför Tedarik. Tüm hakları saklıdır.`}
               </span>
             </div>
             <span className="text-[11px] text-white/45">Türkiye</span>

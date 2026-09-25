@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import CategorySection from "./CategorySection";
 import PopularProductsStrip from "./PopularProductsStrip";
 import StoriesStrip from "./StoriesStrip";
+import HomeBlocks from "./HomeBlocks";
 import { isFlashSaleActive } from "@/utils/flashSale";
 import apiRoutes from "@/appConfig/apiRoutes";
 import { resolveProductImageUrl } from "@/utils/productImage";
@@ -157,16 +158,28 @@ export default function Home({ homepageData }) {
     sale_unit_qty: item.sale_unit_qty,
   });
 
+  const homeBlocks = Array.isArray(homepage?.homeBlocks)
+    ? homepage.homeBlocks
+    : [];
+  const useHomeBlocks = homeBlocks.length > 0;
+
   return (
     <div className="w-full pt-1 pb-12 md:pb-16 space-y-4 md:space-y-7 bg-[#fdfdfd]">
       <Ads />
 
-      {/* Stories — sadece anasayfa, popüler ürünlerin üstünde */}
       <StoriesStrip />
 
-      {/* Popüler ürünler — eski slider yerine sola kayan şerit */}
       <PopularProductsStrip products={homepage?.popularCategoryProducts} />
 
+      {useHomeBlocks ? (
+        <HomeBlocks
+          blocks={homeBlocks}
+          homepage={homepage}
+          formatProduct={formatProduct}
+          downloadData={downloadData}
+        />
+      ) : (
+        <>
       {/* Mobil: kategoriler */}
       <div className="md:hidden space-y-3">
         <section className="bg-white/50">
@@ -341,6 +354,8 @@ export default function Home({ homepageData }) {
             lastDate={homepage.flashSale?.end_time}
           />
         </section>
+      )}
+        </>
       )}
 
       <HomeSellerPromo />

@@ -717,11 +717,13 @@ class HomeController extends Controller
     }
 
     /**
-     * Sana Özel ürün şeridi (sektör vitrini; boşsa popüler).
+     * Sana Özel ürün şeridi (sektör vitrini; scope=home|all).
      */
     public function personalizedProducts(Request $request)
     {
-        $limit = min(24, max(4, (int) $request->query('limit', 16)));
+        $scope = $request->query('scope', 'home') === 'all' ? 'all' : 'home';
+        $defaultLimit = $scope === 'all' ? 48 : 12;
+        $limit = min(48, max(4, (int) $request->query('limit', $defaultLimit)));
         $user = null;
         try {
             $user = Auth::guard('api')->user();
@@ -737,7 +739,7 @@ class HomeController extends Controller
         }
 
         $payload = (new \App\Services\PersonalizationProductService())
-            ->productsForUser($user, $limit);
+            ->productsForUser($user, $limit, $scope);
 
         return response()->json($payload);
     }
@@ -923,6 +925,16 @@ class HomeController extends Controller
 
         $homepage_categories = Category::where(['status' => 1])->ordered()->select('id','name','slug','description','icon','image')->get()->take(15);
 
+        $platform = strtolower((string) request()->query('platform', ''));
+        if (! in_array($platform, ['web', 'mobile'], true)) {
+            $ua = strtolower((string) request()->userAgent());
+            $platform = (str_contains($ua, 'okhttp') || str_contains($ua, 'dart') || request()->header('X-Client-Platform') === 'mobile')
+                ? 'mobile'
+                : 'web';
+        }
+        $homeBlocks = (new \App\Services\HomeBlockService())->resolvedBlocks($platform);
+
+
 
 
 
@@ -948,6 +960,8 @@ class HomeController extends Controller
             'services' => $services,
 
             'homepage_categories' => $homepage_categories,
+
+            'homeBlocks' => $homeBlocks,
 
             'popularCategorySidebarBanner' => $popularCategorySidebarBanner,
 
@@ -1735,6 +1749,27 @@ class HomeController extends Controller
 
             }
 
+            if ($request->highlight == 'sana_ozel') {
+                $authUser = null;
+                try {
+                    $authUser = \Illuminate\Support\Facades\Auth::guard('api')->user();
+                } catch (\Throwable $e) {
+                }
+                if (! $authUser && $request->filled('token')) {
+                    try {
+                        $authUser = auth('api')->setToken((string) $request->query('token'))->user();
+                    } catch (\Throwable $e) {
+                    }
+                }
+                [, $sanaIds] = (new \App\Services\PersonalizationProductService())
+                    ->productIdsForUser($authUser, 'all');
+                if ($sanaIds === []) {
+                    $products = $products->whereRaw('1 = 0');
+                } else {
+                    $products = $products->whereIn('id', $sanaIds);
+                }
+            }
+
 
 
         }
@@ -2040,6 +2075,27 @@ class HomeController extends Controller
 
                 $products = ProductFilterHelper::applyDiscountedFilter($products);
 
+            }
+
+            if ($request->highlight == 'sana_ozel') {
+                $authUser = null;
+                try {
+                    $authUser = \Illuminate\Support\Facades\Auth::guard('api')->user();
+                } catch (\Throwable $e) {
+                }
+                if (! $authUser && $request->filled('token')) {
+                    try {
+                        $authUser = auth('api')->setToken((string) $request->query('token'))->user();
+                    } catch (\Throwable $e) {
+                    }
+                }
+                [, $sanaIds] = (new \App\Services\PersonalizationProductService())
+                    ->productIdsForUser($authUser, 'all');
+                if ($sanaIds === []) {
+                    $products = $products->whereRaw('1 = 0');
+                } else {
+                    $products = $products->whereIn('id', $sanaIds);
+                }
             }
 
 

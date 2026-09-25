@@ -3,9 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../error/exception.dart';
 import '../../../modules/home/controller/cubit/product/product_state_model.dart';
+import '../../../utils/k_strings.dart';
 import 'remote_data_source_packages.dart';
 
 Map<String, dynamic> myMap = {};
@@ -1113,16 +1115,31 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     String? categorySlug,
     String? subCategorySlug,
   }) async {
+    String? token;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(KStrings.cachedUserResponseKey);
+      if (raw != null && raw.isNotEmpty) {
+        token = UserLoginResponseModel.fromJson(raw).accessToken;
+      }
+    } catch (_) {}
+
     final uri = Uri.parse(
       RemoteUrls.searchHighlightProducts(
         highlight: keyWord,
         page: page,
         categorySlug: categorySlug,
         subCategorySlug: subCategorySlug,
+        token: token,
       ),
     );
 
-    final clientMethod = client.get(uri, headers: defaultHeader);
+    final headers = Map<String, String>.from(defaultHeader);
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final clientMethod = client.get(uri, headers: headers);
     final responseJsonBody =
         await NetworkParser.callClientWithCatchException(() => clientMethod);
     final productsPayload = responseJsonBody['products'];

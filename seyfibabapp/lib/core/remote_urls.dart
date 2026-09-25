@@ -50,8 +50,12 @@ class RemoteUrls {
   static String userProfile(String token) =>
       '${baseUrl}user/my-profile?token=$token';
 
-  static String personalizedProducts({String? token, int limit = 16}) {
-    final q = <String>['limit=$limit'];
+  static String personalizedProducts({
+    String? token,
+    int limit = 12,
+    String scope = 'home',
+  }) {
+    final q = <String>['limit=$limit', 'scope=$scope'];
     if (token != null && token.isNotEmpty) {
       q.add('token=${Uri.encodeComponent(token)}');
     }
@@ -476,6 +480,7 @@ class RemoteUrls {
     required String page,
     String? categorySlug,
     String? subCategorySlug,
+    String? token,
     int perPage = 12,
   }) {
     final params = <String, String>{
@@ -488,6 +493,9 @@ class RemoteUrls {
     }
     if (subCategorySlug != null && subCategorySlug.isNotEmpty) {
       params['sub_category'] = subCategorySlug;
+    }
+    if (token != null && token.isNotEmpty) {
+      params['token'] = token;
     }
     return Uri.parse('${baseUrl}search-product')
         .replace(queryParameters: params)

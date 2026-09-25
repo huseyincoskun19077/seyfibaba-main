@@ -11,6 +11,7 @@ export const revalidate = 60;
 
 const HIGHLIGHT_TITLES = {
   popular_category: "Popüler Ürünler",
+  sana_ozel: "Sana Özel",
   top_product: "Öne Çıkan Ürünler",
   new_arrival: "Yeni Gelenler",
   featured_product: "Vitrin Ürünleri",

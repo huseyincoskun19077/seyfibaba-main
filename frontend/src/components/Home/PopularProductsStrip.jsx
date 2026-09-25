@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import appConfig from "@/appConfig";
+import auth from "@/utils/auth";
 import { resolveProductImageUrl } from "@/utils/productImage";
 import { buildProductPath } from "@/utils/url";
 import PriceDisplay from "@/components/Shared/PriceDisplay";
@@ -42,17 +44,61 @@ function ProductSlideCard({ product }) {
   );
 }
 
-export default function PopularProductsStrip({ products = [] }) {
+/**
+ * Anasayfa Sana Özel / Popüler şerit — API’den 12 ürün (admin seçimi).
+ */
+export default function PopularProductsStrip({ products: fallbackProducts = [] }) {
   const [paused, setPaused] = useState(false);
+  const [title, setTitle] = useState("Popüler ürünler");
+  const [list, setList] = useState([]);
 
-  const list = useMemo(() => {
-    if (!Array.isArray(products) || products.length === 0) return [];
-    return products.slice(0, 16);
-  }, [products]);
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const token = auth()?.access_token;
+        const qs = new URLSearchParams({ limit: "12", scope: "home" });
+        if (token) qs.set("token", token);
+        const res = await fetch(
+          `${appConfig.BASE_URL}api/personalized-products?${qs.toString()}`,
+          {
+            headers: {
+              Accept: "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            cache: "no-store",
+          }
+        );
+        if (!res.ok) throw new Error("fetch failed");
+        const data = await res.json();
+        const products = Array.isArray(data?.products) ? data.products : [];
+        if (cancelled) return;
+        if (products.length) {
+          setList(products.slice(0, 12));
+          setTitle(
+            String(data?.title || "").trim() ||
+              (data?.source === "personalized" ? "Sana Özel" : "Popüler ürünler")
+          );
+          return;
+        }
+      } catch {
+        /* fallback below */
+      }
+      if (cancelled) return;
+      const fb = Array.isArray(fallbackProducts) ? fallbackProducts.slice(0, 12) : [];
+      setList(fb);
+      setTitle("Popüler ürünler");
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [fallbackProducts]);
 
   const loop = useMemo(() => {
     if (!list.length) return [];
-    // Sonsuz sola kayma için iki kopya
     return [0, 1].flatMap((copy) =>
       list.map((product, index) => ({
         product,
@@ -67,11 +113,9 @@ export default function PopularProductsStrip({ products = [] }) {
     <section className="w-full">
       <div className="container-x mx-auto">
         <div className="flex items-center justify-between gap-3 mb-3 md:mb-4">
-          <h2 className="text-lg md:text-xl font-800 text-[#04334a]">
-            Popüler ürünler
-          </h2>
+          <h2 className="text-lg md:text-xl font-800 text-[#04334a]">{title}</h2>
           <Link
-            href="/products?highlight=popular_category"
+            href="/products?highlight=sana_ozel"
             className="text-xs md:text-sm font-700 text-[#04334a] bg-qyellow px-3 py-1.5 rounded-lg hover:brightness-95 shrink-0"
           >
             Tümünü gör

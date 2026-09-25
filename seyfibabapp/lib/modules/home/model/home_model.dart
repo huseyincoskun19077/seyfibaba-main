@@ -7,6 +7,7 @@ import '../../category/model/category_model.dart';
 import 'banner_model.dart';
 import 'brand_model.dart';
 import 'flash_sale_model.dart';
+import 'home_block_model.dart';
 import 'home_category_model.dart';
 import 'home_seller_model.dart';
 import 'product_model.dart';
@@ -39,6 +40,7 @@ class HomeModel extends Equatable {
   final List<BrandModel> brands;
   final List<HomeSellerModel> sellers;
   final List<HomePageCategoriesModel> homePageCategory;
+  final List<HomeBlockModel> homeBlocks;
   final dynamic sliderVisibilty;
   final dynamic popularCategoryVisibilty;
   final dynamic brandVisibility;
@@ -63,6 +65,7 @@ class HomeModel extends Equatable {
     required this.brands,
     required this.sellers,
     required this.homePageCategory,
+    this.homeBlocks = const [],
     required this.sliderVisibilty,
     required this.popularCategoryVisibilty,
     required this.brandVisibility,
@@ -137,6 +140,12 @@ class HomeModel extends Equatable {
           ? List<HomePageCategoriesModel>.from(map['homepage_categories']
               .map((x) => HomePageCategoriesModel.fromMap(x)))
           : [],
+      homeBlocks: map['homeBlocks'] is List
+          ? (map['homeBlocks'] as List)
+              .whereType<Map>()
+              .map((x) => HomeBlockModel.fromMap(Map<String, dynamic>.from(x)))
+              .toList()
+          : const [],
       singleBannerTwo: map['singleBannerTwo'] != null
           ? BannerModel.fromMap(map['singleBannerTwo'])
           : null,
@@ -201,6 +210,7 @@ class HomeModel extends Equatable {
       featuredProductVisibility,
       newArrivalProductVisibility,
       bestProductVisibility,
+      homeBlocks,
     ];
   }
 }

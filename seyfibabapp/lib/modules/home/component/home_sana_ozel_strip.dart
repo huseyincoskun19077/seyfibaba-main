@@ -9,17 +9,17 @@ import '../../../core/remote_urls.dart';
 import '../../../core/router_name.dart';
 import '../../authentication/controller/login/login_bloc.dart';
 import '../../category/component/product_card.dart';
+import '../controller/cubit/product/products_cubit.dart';
 import '../model/product_model.dart';
 import '../widgets/home_theme.dart';
 
-/// Stories altı / kategoriler üstü — Sana Özel; yoksa Popüler (sola kayar).
+/// Stories altı — Sana Özel (admin 12 ürün); Tümünü gör → sana_ozel listing.
 class HomeSanaOzelStrip extends StatefulWidget {
   const HomeSanaOzelStrip({
     super.key,
     this.fallbackProducts = const [],
   });
 
-  /// API boş/hata olursa home popüler ürünleri
   final List<ProductModel> fallbackProducts;
 
   @override
@@ -33,12 +33,13 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
   final _scroll = ScrollController();
   Timer? _autoTimer;
 
+  static const _homeLimit = 12;
+
   @override
   void initState() {
     super.initState();
-    // Önce local fallback ile hemen göster
     if (widget.fallbackProducts.isNotEmpty) {
-      _products = widget.fallbackProducts.take(16).toList();
+      _products = widget.fallbackProducts.take(_homeLimit).toList();
       _title = 'Popüler ürünler';
       _loading = false;
     }
@@ -50,7 +51,7 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
     super.didUpdateWidget(oldWidget);
     if (_products.isEmpty && widget.fallbackProducts.isNotEmpty) {
       setState(() {
-        _products = widget.fallbackProducts.take(16).toList();
+        _products = widget.fallbackProducts.take(_homeLimit).toList();
         _title = 'Popüler ürünler';
         _loading = false;
       });
@@ -73,7 +74,11 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
       } catch (_) {}
 
       final uri = Uri.parse(
-        RemoteUrls.personalizedProducts(token: token, limit: 16),
+        RemoteUrls.personalizedProducts(
+          token: token,
+          limit: _homeLimit,
+          scope: 'home',
+        ),
       );
       final headers = <String, String>{'Accept': 'application/json'};
       if (token != null && token.isNotEmpty) {
@@ -110,23 +115,22 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
         }
       }
 
-      // Sana özel yok / parse boş → popüler fallback
       if (products.isEmpty) {
-        products = widget.fallbackProducts.take(16).toList();
+        products = widget.fallbackProducts.take(_homeLimit).toList();
         title = 'Popüler ürünler';
       }
 
       if (!mounted) return;
       setState(() {
         _title = title;
-        _products = products;
+        _products = products.take(_homeLimit).toList();
         _loading = false;
       });
       _startAutoScroll();
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _products = widget.fallbackProducts.take(16).toList();
+        _products = widget.fallbackProducts.take(_homeLimit).toList();
         _title = 'Popüler ürünler';
         _loading = false;
       });
@@ -201,10 +205,15 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
                 ),
                 TextButton(
                   onPressed: () {
+                    final productCubit = context.read<ProductsCubit>();
+                    if (productCubit.state.initialPage > 1) {
+                      productCubit.initPage();
+                    }
+                    productCubit.nameChange(_title);
                     Navigator.pushNamed(
                       context,
                       RouteNames.allPopularProductScreen,
-                      arguments: 'popular_category',
+                      arguments: 'sana_ozel',
                     );
                   },
                   style: TextButton.styleFrom(

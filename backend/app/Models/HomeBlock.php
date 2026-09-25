@@ -4,45 +4,51 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class PersonalizationShowcase extends Model
+class HomeBlock extends Model
 {
     protected $fillable = [
-        'business_type',
         'title',
-        'category_ids',
+        'type',
+        'feed',
+        'image',
+        'link',
+        'mobile_link',
+        'see_all_url',
         'product_ids',
-        'vendor_ids',
-        'opening_category_ids',
-        'opening_product_ids',
-        'opening_vendor_ids',
+        'category_ids',
+        'limit_count',
+        'serial',
         'status',
-        'include_high_views',
-        'home_limit',
+        'show_on_web',
+        'show_on_mobile',
     ];
 
     protected $casts = [
         'status' => 'boolean',
-        'include_high_views' => 'boolean',
-        'home_limit' => 'integer',
+        'show_on_web' => 'boolean',
+        'show_on_mobile' => 'boolean',
+        'limit_count' => 'integer',
+        'serial' => 'integer',
     ];
 
-    public const BUSINESS_TYPES = [
-        'female_hairdresser' => 'Bayan kuaförü',
-        'male_hairdresser' => 'Erkek kuaförü',
-        'barber' => 'Berber',
-        'beauty_salon' => 'Güzellik salonu',
-        'nail_art' => 'Nail art / Protez tırnak',
-        'other' => 'Diğer',
+    public const TYPES = [
+        'campaign' => 'Kampanya görseli (tek afiş)',
+        'product_feed' => 'Ürün listesi / şerit',
+        'all_products' => 'Tüm ürünler (grid)',
+        'category_grid' => 'Kategoriler',
+        'flash_sale' => 'Flaş / countdown',
+        'brands' => 'Markalar',
     ];
 
-    public const HOME_LIMIT_DEFAULT = 12;
-
-    public function homeLimit(): int
-    {
-        $n = (int) ($this->home_limit ?: self::HOME_LIMIT_DEFAULT);
-
-        return min(24, max(4, $n ?: self::HOME_LIMIT_DEFAULT));
-    }
+    public const FEEDS = [
+        'popular' => 'Popüler ürünler',
+        'discounted' => 'İndirimli ürünler',
+        'featured' => 'Öne çıkan ürünler',
+        'new' => 'Yeni gelen ürünler',
+        'best' => 'En iyi / çok satan',
+        'weekend' => 'Hafta sonuna özel',
+        'custom' => 'Seçili ürün ID’leri',
+    ];
 
     public function decodeIds(?string $raw): array
     {

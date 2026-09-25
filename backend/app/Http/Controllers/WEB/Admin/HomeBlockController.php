@@ -1,0 +1,144 @@
+<?php
+
+namespace App\Http\Controllers\WEB\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\HomeBlock;
+use File;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
+
+class HomeBlockController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth:admin');
+    }
+
+    public function index(Request $request)
+    {
+        if (! Schema::hasTable('home_blocks')) {
+            return response(
+                '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Anasayfa Blokları</title></head><body style="font-family:sans-serif;padding:24px">'
+                .'<h1>home_blocks tablosu yok</h1>'
+                .'<pre>cd /opt/seyfibaba-main/backend'."\n".'php artisan migrate --force</pre>'
+                .'</body></html>',
+                503
+            );
+        }
+
+        $blocks = HomeBlock::query()->orderBy('serial')->orderBy('id')->get();
+        $edit = null;
+        if ($request->filled('edit')) {
+            $edit = HomeBlock::query()->find((int) $request->query('edit'));
+        }
+
+        return view('admin.home_blocks', [
+            'blocks' => $blocks,
+            'edit' => $edit,
+            'types' => HomeBlock::TYPES,
+            'feeds' => HomeBlock::FEEDS,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        if (! Schema::hasTable('home_blocks')) {
+            return redirect()->route('admin.dashboard')->with([
+                'messege' => 'Tablo yok. Migrate çalıştırın.',
+                'alert-type' => 'error',
+            ]);
+        }
+
+        $request->validate([
+            'title' => ['required', 'string', 'max:120'],
+            'type' => ['required', Rule::in(array_keys(HomeBlock::TYPES))],
+            'feed' => ['nullable', Rule::in(array_keys(HomeBlock::FEEDS))],
+            'link' => ['nullable', 'string', 'max:500'],
+            'mobile_link' => ['nullable', 'string', 'max:500'],
+            'see_all_url' => ['nullable', 'string', 'max:500'],
+            'product_ids' => ['nullable', 'string', 'max:4000'],
+            'category_ids' => ['nullable', 'string', 'max:2000'],
+            'limit_count' => ['nullable', 'integer', 'min:1', 'max:48'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+        ]);
+
+        $block = $request->filled('id')
+            ? HomeBlock::query()->findOrFail((int) $request->input('id'))
+            : new HomeBlock();
+
+        $block->title = trim((string) $request->input('title'));
+        $block->type = (string) $request->input('type');
+        $block->feed = $block->type === 'product_feed'
+            ? (trim((string) $request->input('feed', '')) ?: 'popular')
+            : null;
+        $block->link = trim((string) $request->input('link', '')) ?: null;
+        $block->mobile_link = trim((string) $request->input('mobile_link', '')) ?: null;
+        $block->see_all_url = trim((string) $request->input('see_all_url', '')) ?: null;
+        $block->product_ids = $block->encodeIds($request->input('product_ids'));
+        $block->category_ids = $block->encodeIds($request->input('category_ids'));
+        $block->limit_count = (int) ($request->input('limit_count') ?: 12);
+        $block->status = $request->boolean('status');
+        $block->show_on_web = $request->boolean('show_on_web');
+        $block->show_on_mobile = $request->boolean('show_on_mobile');
+
+        if (! $request->filled('id')) {
+            $max = (int) HomeBlock::query()->max('serial');
+            $block->serial = $max + 1;
+        }
+
+        if ($request->hasFile('image')) {
+            $dir = public_path('uploads/website-images');
+            if (! File::isDirectory($dir)) {
+                File::makeDirectory($dir, 0755, true);
+            }
+            $file = $request->file('image');
+            $name = 'home-block-'.date('Y-m-d-His').'-'.rand(1000, 9999).'.'.$file->getClientOriginalExtension();
+            $file->move($dir, $name);
+            if ($block->image && File::exists(public_path($block->image))) {
+                File::delete(public_path($block->image));
+            }
+            $block->image = 'uploads/website-images/'.$name;
+        }
+
+        $block->save();
+
+        return redirect()->route('admin.home-blocks.index')->with([
+            'messege' => $request->filled('id') ? 'Blok güncellendi' : 'Blok eklendi',
+            'alert-type' => 'success',
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $block = HomeBlock::query()->findOrFail((int) $id);
+        if ($block->image && File::exists(public_path($block->image))) {
+            File::delete(public_path($block->image));
+        }
+        $block->delete();
+
+        return redirect()->route('admin.home-blocks.index')->with([
+            'messege' => 'Blok silindi',
+            'alert-type' => 'success',
+        ]);
+    }
+
+    public function reorder(Request $request)
+    {
+        if (! Schema::hasTable('home_blocks')) {
+            return response()->json(['success' => false, 'message' => 'Tablo yok'], 422);
+        }
+
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:home_blocks,id',
+        ]);
+
+        foreach (array_values($request->input('ids', [])) as $index => $id) {
+            HomeBlock::query()->where('id', (int) $id)->update(['serial' => $index + 1]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Sıralama güncellendi.']);
+    }
+}

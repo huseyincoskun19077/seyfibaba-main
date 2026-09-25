@@ -17,6 +17,7 @@ import 'component/home_product_hubs_section.dart';
 import 'component/home_app_bar.dart';
 import 'component/stories_strip.dart';
 import 'component/home_sana_ozel_strip.dart';
+import 'component/home_blocks_section.dart';
 import 'widgets/home_theme.dart';
 import 'component/home_promo_popup.dart';
 import 'component/hot_deal_banner_slider.dart';
@@ -153,6 +154,11 @@ class _LoadedHomePageState extends State<_LoadedHomePage> {
             fallbackProducts: homeModel.popularCategoryProducts,
           ),
         ),
+
+        if (homeModel.homeBlocks.isNotEmpty) ...[
+          ...buildHomeBlockSlivers(context, homeModel),
+          const SliverToBoxAdapter(child: SizedBox(height: 60)),
+        ] else ...[
 
         CategoryGridView(model: homeModel),
 
@@ -323,6 +329,7 @@ class _LoadedHomePageState extends State<_LoadedHomePage> {
         ],
         //new arrival visibility end
         const SliverToBoxAdapter(child: SizedBox(height: 60)),
+        ], // end legacy homeBlocks else
       ],
     );
   }
