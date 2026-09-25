@@ -368,7 +368,8 @@ class SofttrProductSyncService
         );
         $product->thumb_image = $thumbImage ?: ($product->thumb_image ?: '');
         $product->status = $canPublish ? 1 : 0;
-        $product->approve_by_admin = $canPublish ? 1 : 0;
+        // Taslak = status=0; admin kilidi koyma
+        $product->approve_by_admin = 1;
         $product->save();
 
         try {
@@ -493,7 +494,7 @@ class SofttrProductSyncService
             $dupe->status = 0;
             $dupe->qty = 0;
             $dupe->sku = trim((string) $dupe->sku) . '-dup-' . $dupe->id;
-            $dupe->approve_by_admin = 0;
+            $dupe->approve_by_admin = 1;
             $dupe->save();
         }
     }

@@ -106,7 +106,8 @@ class ProductController extends Controller
         $status = (string) $request->get('status', 'all');
         $categoryId = (string) $request->get('category_id', 'all');
 
-        $products = Product::with(['category', 'subCategory', 'seller.user', 'brand'])
+        $products = Product::withTrashed()
+            ->with(['category', 'subCategory', 'seller.user', 'brand'])
             ->where('vendor_id', '!=', 0)
             ->where('approve_by_admin', 1)
             ->whereHas('seller')
@@ -116,6 +117,7 @@ class ProductController extends Controller
                         ->orWhere('short_name', 'like', '%'.$search.'%')
                         ->orWhere('slug', 'like', '%'.$search.'%')
                         ->orWhere('sku', 'like', '%'.$search.'%')
+                        ->orWhere('barcode', 'like', '%'.$search.'%')
                         ->orWhereHas('seller', function ($seller) use ($search) {
                             $seller->where('shop_name', 'like', '%'.$search.'%')
                                 ->orWhereHas('user', function ($user) use ($search) {
@@ -125,8 +127,14 @@ class ProductController extends Controller
                         });
                 });
             })
+            ->when($status === 'deleted', function ($query) {
+                $query->onlyTrashed();
+            })
             ->when(in_array($status, ['0', '1'], true), function ($query) use ($status) {
-                $query->where('status', (int) $status);
+                $query->whereNull('deleted_at')->where('status', (int) $status);
+            })
+            ->when($status === 'all' || $status === '', function ($query) {
+                // aktif + pasif + satıcı soft-delete
             })
             ->when($categoryId !== '' && $categoryId !== 'all', function ($query) use ($categoryId) {
                 $query->where('category_id', (int) $categoryId);
@@ -297,7 +305,7 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $product = Product::with('category','brand','gallery','specifications','reviews','variants','variantItems')->find($id);
+        $product = Product::withTrashed()->with('category','brand','gallery','specifications','reviews','variants','variantItems')->find($id);
         if($product->vendor_id == 0){
             $notification = 'Something went wrong';
             return response()->json(['error'=>$notification],403);
@@ -309,7 +317,7 @@ class ProductController extends Controller
 
     public function edit($id)
     {
-        $product = Product::with('category','brand','gallery','variants','variantItems')->find($id);
+        $product = Product::withTrashed()->with('category','brand','gallery','variants','variantItems')->find($id);
         $categories = Category::ordered()->get();
         $subCategories = SubCategory::where('category_id', $product->category_id)->ordered()->get();
         $childCategories = ChildCategory::where('sub_category_id', $product->sub_category_id)->ordered()->get();
@@ -444,10 +452,15 @@ class ProductController extends Controller
 
     public function destroy($id)
     {
-        $product = Product::find($id);
+        $product = Product::withTrashed()->find($id);
+        if (! $product) {
+            $notification = ['messege' => trans('admin_validation.Something went wrong'), 'alert-type' => 'error'];
+
+            return redirect()->back()->with($notification);
+        }
         $gallery = $product->gallery;
         $old_thumbnail = $product->thumb_image;
-        $product->delete();
+        $product->forceDelete();
         if($old_thumbnail){
             if(File::exists(public_path().'/'.$old_thumbnail))unlink(public_path().'/'.$old_thumbnail);
         }

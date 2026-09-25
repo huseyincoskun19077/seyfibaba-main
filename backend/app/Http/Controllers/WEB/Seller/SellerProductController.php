@@ -612,48 +612,14 @@ class SellerProductController extends Controller
             return redirect()->route('seller.product.index')->with($notification);
         }
 
-        if (OrderProduct::where('product_id', $id)->exists()) {
-            $notification = ['messege' => 'Satışı olan ürün silinemez. Pasife alabilirsiniz.', 'alert-type' => 'error'];
+        if (app(\App\Support\ProductSellerPublishStatus::class)->isBlockedByAdmin($product)) {
+            $notification = ['messege' => 'Admin tarafından pasife alınan ürün silinemez.', 'alert-type' => 'error'];
             return redirect()->route('seller.product.index')->with($notification);
         }
 
-        $gallery = $product->gallery;
-        $old_thumbnail = $product->thumb_image;
-
         try {
-            // Related rows first, product last — avoids 500 after partial delete.
-            ProductVariantItem::where('product_id', $id)->delete();
-            ProductVariant::where('product_id', $id)->delete();
-            ProductReport::where('product_id', $id)->delete();
-            FlashSaleProduct::where('product_id', $id)->delete();
-            ProductReview::where('product_id', $id)->delete();
-            ProductSpecification::where('product_id', $id)->delete();
-            Wishlist::where('product_id', $id)->delete();
-            CompareProduct::where('product_id', $id)->delete();
-
-            if (class_exists(\App\Models\StockNotify::class)) {
-                \App\Models\StockNotify::where('product_id', $id)->delete();
-            }
-
-            $cartProducts = ShoppingCart::where('product_id', $id)->get();
-            foreach ($cartProducts as $cartProduct) {
-                ShoppingCartVariant::where('shopping_cart_id', $cartProduct->id)->delete();
-                $cartProduct->delete();
-            }
-
-            foreach ($gallery as $image) {
-                $old_image = $image->image;
-                $image->delete();
-                if ($old_image && File::exists(public_path().'/'.$old_image)) {
-                    @unlink(public_path().'/'.$old_image);
-                }
-            }
-
-            $product->delete();
-
-            if ($old_thumbnail && File::exists(public_path().'/'.$old_thumbnail)) {
-                @unlink(public_path().'/'.$old_thumbnail);
-            }
+            // Soft delete: admin listede görür, vitrinde görünmez. Dosyalar korunur.
+            app(\App\Support\SellerProductSoftDelete::class)->hide($product);
         } catch (Throwable $e) {
             Log::error('Seller product delete failed', [
                 'product_id' => $id,

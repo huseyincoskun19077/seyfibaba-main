@@ -38,6 +38,7 @@
                       <option value="all" {{ request('status', 'all') === 'all' ? 'selected' : '' }}>Tümü</option>
                       <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Aktif</option>
                       <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Pasif</option>
+                      <option value="deleted" {{ request('status') === 'deleted' ? 'selected' : '' }}>Satıcı sildi</option>
                     </select>
                   </div>
                   <div class="col-md-2">
@@ -112,7 +113,10 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if($product->status == 1)
+                                            @if($product->trashed())
+                                                <span class="badge badge-secondary">Satıcı sildi</span>
+                                                <br><small class="text-muted">{{ optional($product->deleted_at)->format('d.m.Y H:i') }}</small>
+                                            @elseif($product->status == 1)
                                             <a href="javascript:;" onclick="changeProductStatus({{ $product->id }})">
                                                 <input id="status_toggle" type="checkbox" checked data-toggle="toggle" data-on="{{__('admin.Active')}}" data-off="{{__('admin.InActive')}}" data-onstyle="success" data-offstyle="danger">
                                             </a>

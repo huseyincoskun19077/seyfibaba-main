@@ -529,46 +529,12 @@ class SellerProductController extends Controller
             return response()->json(['message' => trans('Something went wrong')], 403);
         }
 
-        if (OrderProduct::where('product_id', $id)->exists()) {
-            return response()->json(['message' => 'Satışı olan ürün silinemez. Pasife alabilirsiniz.'], 422);
+        if (app(\App\Support\ProductSellerPublishStatus::class)->isBlockedByAdmin($product)) {
+            return response()->json(['message' => 'Admin tarafından pasife alınan ürün silinemez.'], 403);
         }
 
-        $gallery = $product->gallery;
-        $old_thumbnail = $product->thumb_image;
-
         try {
-            ProductVariantItem::where('product_id', $id)->delete();
-            ProductVariant::where('product_id', $id)->delete();
-            ProductReport::where('product_id', $id)->delete();
-            FlashSaleProduct::where('product_id', $id)->delete();
-            ProductReview::where('product_id', $id)->delete();
-            ProductSpecification::where('product_id', $id)->delete();
-            Wishlist::where('product_id', $id)->delete();
-            CompareProduct::where('product_id', $id)->delete();
-
-            if (class_exists(\App\Models\StockNotify::class)) {
-                \App\Models\StockNotify::where('product_id', $id)->delete();
-            }
-
-            $cartProducts = ShoppingCart::where('product_id', $id)->get();
-            foreach ($cartProducts as $cartProduct) {
-                ShoppingCartVariant::where('shopping_cart_id', $cartProduct->id)->delete();
-                $cartProduct->delete();
-            }
-
-            foreach ($gallery as $image) {
-                $old_image = $image->image;
-                $image->delete();
-                if ($old_image && File::exists(public_path().'/'.$old_image)) {
-                    @unlink(public_path().'/'.$old_image);
-                }
-            }
-
-            $product->delete();
-
-            if ($old_thumbnail && File::exists(public_path().'/'.$old_thumbnail)) {
-                @unlink(public_path().'/'.$old_thumbnail);
-            }
+            app(\App\Support\SellerProductSoftDelete::class)->hide($product);
         } catch (\Throwable $e) {
             return response()->json(['message' => 'Ürün silinemedi. Lütfen tekrar deneyin.'], 500);
         }
@@ -585,11 +551,7 @@ class SellerProductController extends Controller
             return response()->json(['message' => trans('Something went wrong')], 403);
         }
 
-        if ((int) $product->approve_by_admin === 0) {
-            if ($request->boolean('activate') || ((int) $product->status === 0 && ! $request->boolean('deactivate'))) {
-                return response()->json(['message' => 'Bu ürün admin tarafından pasife alındı.'], 403);
-            }
-        }
+        $publishStatus = app(\App\Support\ProductSellerPublishStatus::class);
 
         if ($request->boolean('deactivate')) {
             if ((int) $product->status === 0) {
@@ -601,8 +563,21 @@ class SellerProductController extends Controller
             return response()->json(['message' => trans('Inactive Successfully')], 200);
         }
 
-        if ($request->boolean('activate')) {
+        $tryingToActivate = $request->boolean('activate')
+            || (! $request->boolean('deactivate') && (int) $product->status === 0);
+
+        if ($tryingToActivate) {
+            if ($publishStatus->isBlockedByAdmin($product)) {
+                return response()->json(['message' => 'Bu ürün admin tarafından pasife alındı. Tekrar aktive etmek için destek ile iletişime geçin.'], 403);
+            }
+
+            $issues = $publishStatus->issues($product);
+            if ($issues !== []) {
+                return response()->json(['message' => 'Yayına almak için eksikleri tamamlayın: '.implode(', ', $issues)], 422);
+            }
+
             $product->status = 1;
+            $product->approve_by_admin = 1;
             $product->save();
 
             return response()->json(['message' => trans('Active Successfully')], 200);
@@ -616,6 +591,7 @@ class SellerProductController extends Controller
         }
 
         $product->status = 1;
+        $product->approve_by_admin = 1;
         $product->save();
 
         return response()->json(['message' => trans('Active Successfully')], 200);

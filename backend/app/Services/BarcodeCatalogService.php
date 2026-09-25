@@ -159,7 +159,8 @@ class BarcodeCatalogService
         $product->thumb_image = $thumb ?: '';
         $canPublish = ProductImageUrl::hasImage($product->thumb_image);
         $product->status = $canPublish ? 1 : 0;
-        $product->approve_by_admin = $canPublish ? 1 : 0;
+        // Satıcı taslağı: yalnızca status=0. approve_by_admin=0 = admin kilidi (kirletme).
+        $product->approve_by_admin = 1;
         $product->new_product = 1;
         $product->save();
 

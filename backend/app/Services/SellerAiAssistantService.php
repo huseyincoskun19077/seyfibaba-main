@@ -6,6 +6,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Vendor;
+use App\Support\ProductSellerPublishStatus;
+use App\Support\SellerProductSoftDelete;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -128,8 +130,8 @@ class SellerAiAssistantService
         $products = Product::query()
             ->where('vendor_id', $seller->id)
             ->orderByDesc('id')
-            ->limit(60)
-            ->get(['id', 'name', 'price', 'offer_price', 'qty', 'status']);
+            ->limit(80)
+            ->get(['id', 'name', 'sku', 'barcode', 'price', 'offer_price', 'qty', 'status', 'approve_by_admin', 'thumb_image']);
 
         $todayOrders = Order::query()
             ->whereHas('orderProducts', fn ($q) => $q->where('seller_id', $seller->id))
@@ -151,10 +153,12 @@ class SellerAiAssistantService
             'products' => $products->map(fn (Product $p) => [
                 'id' => $p->id,
                 'name' => $p->name,
+                'sku' => (string) ($p->sku ?? ''),
+                'barcode' => (string) ($p->barcode ?? ''),
                 'price' => (float) $p->price,
                 'offer_price' => (float) $p->offer_price,
                 'qty' => (int) $p->qty,
-                'status' => (int) $p->status === 1 ? 'yayinda' : 'taslak',
+                'status' => (int) $p->status === 1 ? 'yayinda' : 'pasif',
             ])->values()->all(),
         ];
     }
@@ -171,35 +175,36 @@ class SellerAiAssistantService
 Sen Kuaför Tedarik satıcı paneli AI asistanısın. Sadece bu satıcının ({$shop}) mağazasına yardım edersin. Türkçe, kısa ve net konuş.
 
 Satıcı verileri (yalnızca bu mağaza):
-- Toplam ürün: {$context['product_count']} (yayında: {$context['published_count']}, taslak: {$context['draft_count']})
+- Toplam ürün: {$context['product_count']} (yayında: {$context['published_count']}, pasif: {$context['draft_count']})
 - Bugünkü sipariş: {$context['today_orders']}
 - Bekleyen sipariş: {$context['pending_orders']}
 
-Örnek ürün listesi (eşleştirme için; toplu işlemde tüm mağaza ürünleri kullanılır, sadece bu listeyle sınırlı değilsin):
+Örnek ürün listesi (eşleştirme için; toplu işlemde tüm mağaza ürünleri kullanılır):
 {$productsJson}
 
 Yapabileceklerin (HEPSİNİ sen uygularsın — "panelden yapın" DEME):
 1. Bilgi: stok, sipariş özeti, ürün sayısı (sadece bu mağaza)
-2. Tek ürün güncelle: fiyat, indirimli fiyat, stok, ad, kısa/uzun açıklama, yayına al/kapat
-3. Toplu durum: tüm yayındakileri pasife/taslağa al; tüm taslakları (görseli olanları) yayına al
+2. Tek ürün güncelle: fiyat, indirimli fiyat, stok, ad, kısa/uzun açıklama, yayına al/pasife al
+3. Toplu durum: tüm yayındakileri pasife al; tüm pasifleri (görseli olanları) yayına al
+4. Ürün sil (soft): SKU / barkod / SN / ürün adı veya id ile — satıcı listesinden kalkar, admin kaydı görür
 
-Tek ürün ACTION (yanıt SONUNA ekle):
-<!--ACTION{"type":"update_product","product_id":0,"product_name":"ürün adı parçası","fields":{"price":0,"offer_price":0,"qty":0,"short_description":"","long_description":"","name":"","status":1}}-->
+Tek ürün ACTION:
+<!--ACTION{"type":"update_product","product_id":0,"product_name":"","sku":"","barcode":"","fields":{"price":0,"offer_price":0,"qty":0,"status":0}}-->
+
+Silme ACTION:
+<!--ACTION{"type":"delete_product","product_id":0,"sku":"","barcode":"","product_name":""}-->
 
 Toplu durum ACTION:
 <!--ACTION{"type":"bulk_set_status","status":0,"scope":"published"}-->
 scope: "published" | "draft" | "all"
-status: 0 = pasif/taslak, 1 = yayında
+status: 0 = pasif (satıcı pasifi), 1 = yayında
+NOT: Pasife alırken approve/admin kilidi koyma. Admin kilidi varsa yayına alma.
 
 ZORUNLU KURALLAR:
-- Satıcı "tüm yayındakileri pasife al", "hepsini pasif yap", "sen pasif hale getir" derse MUTLAKA bulk_set_status ACTION ekle; paneli önerme
-- Desteklenen işlemi "yapamam / panelden yapın" diye reddetme
-- product_id biliniyorsa kullan, yoksa product_name ile eşleştir
-- fields içinde SADECE istenen alanları koy
-- Başka satıcının ürün/siparişine asla erişme veya iddia etme
-- Altyapı, model, API, .env, özel sistem bilgisi verme
-- Ürün kalıcı silme yok — yönlendir: panelden silsin
-- Hızlı ürün: /seller/product/quick-create | Toplu Excel: /seller/product-import-page
+- Satıcı "pasife al / sil" derse ACTION ekle; paneli önerme
+- product_id, sku, barcode (SN) biliniyorsa kullan; yoksa product_name
+- Başka satıcının ürününe erişme
+- Kalıcı hard-delete yok — soft silme kullan
 PROMPT;
     }
 
@@ -221,9 +226,22 @@ PROMPT;
 
         $wantsPassive = (bool) preg_match('/pasif|taslak\s*(yap|al|et)|yayindan\s*kaldir|yayin\s*kapat/u', $text);
         $wantsPublish = (bool) preg_match('/yayina\s*al|yayinla|aktif\s*(et|hale|yap)/u', $text);
+        $wantsDelete = (bool) preg_match('/\b(sil|kaldir|remove|delete)\b/u', $text);
         $allScope = (bool) preg_match('/\b(tum|tumu|hepsi|hepsini|butun|butunu)\b/u', $text)
             || (bool) preg_match('/yayinda/u', $text)
             || (bool) preg_match('/\b(tum|tumu|hepsi|hepsini)\b|yayinda|2629|urunleriniz var/u', $prev);
+
+        if ($wantsDelete && ! $allScope) {
+            $code = null;
+            if (preg_match('/(?:sku|barkod|sn|kod)\s*[:=]?\s*([0-9A-Za-z\-]{4,})/u', $text, $m)) {
+                $code = $m[1];
+            } elseif (preg_match('/\b([0-9]{8,14})\b/', $text, $m)) {
+                $code = $m[1];
+            }
+            if ($code) {
+                return ['type' => 'delete_product', 'sku' => $code, 'barcode' => $code];
+            }
+        }
 
         if ($wantsPassive && $allScope) {
             return ['type' => 'bulk_set_status', 'status' => 0, 'scope' => 'published'];
@@ -267,17 +285,22 @@ PROMPT;
             return $this->executeBulkSetStatus($seller, $action);
         }
 
+        if ($type === 'delete_product') {
+            return $this->executeDeleteProduct($seller, $action);
+        }
+
         if ($type !== 'update_product') {
             return ['summary' => null, 'error' => 'Bu işlem desteklenmiyor.'];
         }
 
         $product = $this->findSellerProduct($seller, $action);
         if (! $product) {
-            return ['summary' => null, 'error' => 'Ürün bulunamadı. Lütfen ürün adını daha net yazın.'];
+            return ['summary' => null, 'error' => 'Ürün bulunamadı. Lütfen ürün adı, SKU veya barkod yazın.'];
         }
 
         $fields = $action['fields'] ?? [];
         $changes = [];
+        $publishStatus = app(ProductSellerPublishStatus::class);
 
         if (isset($fields['price']) && is_numeric($fields['price'])) {
             $product->price = (float) $fields['price'];
@@ -304,16 +327,23 @@ PROMPT;
             $changes[] = 'açıklama güncellendi';
         }
         if (isset($fields['status']) && in_array((int) $fields['status'], [0, 1], true)) {
-            if ((int) $fields['status'] === 1 && empty($product->thumb_image)) {
-                return ['summary' => null, 'error' => 'Görsel olmadan ürün yayına alınamaz. Önce fotoğraf ekleyin.'];
-            }
-            $product->status = (int) $fields['status'];
-            // Satıcı pasife alma: yalnızca status=0 (approve_by_admin dokunulmaz).
-            // Admin pasifi approve_by_admin=0 ile işaretlenir; onu taklit etme.
             if ((int) $fields['status'] === 1) {
-                $product->approve_by_admin = 1;
+                if ($publishStatus->isBlockedByAdmin($product)) {
+                    return ['summary' => null, 'error' => 'Bu ürün admin tarafından pasife alındı; yayına alınamaz.'];
+                }
+                $issues = $publishStatus->issues($product);
+                if ($issues !== []) {
+                    return ['summary' => null, 'error' => 'Yayına almak için eksikleri tamamlayın: '.implode(', ', $issues)];
+                }
+                $product->status = 1;
+                if ((int) $product->approve_by_admin === 0) {
+                    $product->approve_by_admin = 1;
+                }
+                $changes[] = 'yayına alındı';
+            } else {
+                $product->status = 0;
+                $changes[] = 'pasife alındı';
             }
-            $changes[] = (int) $fields['status'] === 1 ? 'yayına alındı' : 'pasif/taslak yapıldı';
         }
 
         if ($changes === []) {
@@ -324,6 +354,29 @@ PROMPT;
 
         return [
             'summary' => '"'.$product->name.'" güncellendi: '.implode(', ', $changes).'.',
+            'error' => null,
+        ];
+    }
+
+    /**
+     * @return array{summary:?string,error:?string}
+     */
+    private function executeDeleteProduct(Vendor $seller, array $action): array
+    {
+        $product = $this->findSellerProduct($seller, $action);
+        if (! $product) {
+            return ['summary' => null, 'error' => 'Silinecek ürün bulunamadı. SKU, barkod (SN) veya ürün adı yazın.'];
+        }
+
+        if (app(ProductSellerPublishStatus::class)->isBlockedByAdmin($product)) {
+            return ['summary' => null, 'error' => 'Admin tarafından pasife alınan ürün silinemez.'];
+        }
+
+        $name = $product->name;
+        app(SellerProductSoftDelete::class)->hide($product);
+
+        return [
+            'summary' => '"'.$name.'" satıcı listesinden kaldırıldı (admin kaydı duruyor).',
             'error' => null,
         ];
     }
@@ -355,43 +408,61 @@ PROMPT;
             return [
                 'summary' => $status === 0
                     ? 'Pasife alınacak yayında ürün bulunamadı.'
-                    : 'Yayına alınacak taslak ürün bulunamadı.',
+                    : 'Yayına alınacak pasif ürün bulunamadı.',
                 'error' => null,
             ];
         }
 
         $skippedNoImage = 0;
+        $skippedAdmin = 0;
         if ($status === 1) {
-            $withImage = Product::query()
+            $publishStatus = app(ProductSellerPublishStatus::class);
+            $candidates = Product::query()
                 ->where('vendor_id', $seller->id)
                 ->whereIn('id', $ids)
-                ->whereNotNull('thumb_image')
-                ->where('thumb_image', '!=', '')
-                ->pluck('id');
-            $skippedNoImage = $ids->count() - $withImage->count();
-            $ids = $withImage;
+                ->get();
+            $allowed = [];
+            foreach ($candidates as $p) {
+                if ($publishStatus->isBlockedByAdmin($p)) {
+                    $skippedAdmin++;
+                    continue;
+                }
+                if ($publishStatus->issues($p) !== []) {
+                    $skippedNoImage++;
+                    continue;
+                }
+                $allowed[] = (int) $p->id;
+            }
+            $ids = collect($allowed);
             if ($ids->isEmpty()) {
                 return [
                     'summary' => null,
-                    'error' => 'Yayına alınacak ürünlerde görsel yok. Önce fotoğraf ekleyin.',
+                    'error' => $skippedAdmin > 0
+                        ? 'Yayına alınacak uygun ürün yok (bazıları admin kilidi veya eksik bilgi).'
+                        : 'Yayına alınacak ürünlerde görsel/bilgi eksik.',
                 ];
             }
         }
 
-        $updated = Product::query()
-            ->where('vendor_id', $seller->id)
-            ->whereIn('id', $ids)
-            ->update(
-                $status === 1
-                    ? ['status' => 1, 'approve_by_admin' => 1]
-                    // Satıcı pasifi: admin kilidi (approve_by_admin=0) koyma
-                    : ['status' => 0]
-            );
+        if ($status === 1) {
+            $updated = Product::query()
+                ->where('vendor_id', $seller->id)
+                ->whereIn('id', $ids)
+                ->update(['status' => 1, 'approve_by_admin' => 1]);
+        } else {
+            $updated = Product::query()
+                ->where('vendor_id', $seller->id)
+                ->whereIn('id', $ids)
+                ->update(['status' => 0]);
+        }
 
-        $label = $status === 1 ? 'yayına alındı' : 'pasif/taslak yapıldı';
+        $label = $status === 1 ? 'yayına alındı' : 'pasife alındı';
         $summary = "{$updated} ürün {$label} (yalnızca sizin mağazanız).";
         if ($skippedNoImage > 0) {
-            $summary .= " {$skippedNoImage} ürün görselsiz olduğu için atlandı.";
+            $summary .= " {$skippedNoImage} ürün eksik bilgi/görsel nedeniyle atlandı.";
+        }
+        if ($skippedAdmin > 0) {
+            $summary .= " {$skippedAdmin} ürün admin kilidi nedeniyle atlandı.";
         }
 
         return ['summary' => $summary, 'error' => null];
@@ -407,9 +478,47 @@ PROMPT;
                 ->first();
         }
 
+        $sku = trim((string) ($action['sku'] ?? $action['sn'] ?? ''));
+        if ($sku !== '') {
+            $bySku = Product::query()
+                ->where('vendor_id', $seller->id)
+                ->where(function ($q) use ($sku) {
+                    $q->where('sku', $sku)->orWhere('barcode', $sku);
+                })
+                ->first();
+            if ($bySku) {
+                return $bySku;
+            }
+        }
+
+        $barcode = trim((string) ($action['barcode'] ?? ''));
+        if ($barcode !== '') {
+            $byBarcode = Product::query()
+                ->where('vendor_id', $seller->id)
+                ->where(function ($q) use ($barcode) {
+                    $q->where('barcode', $barcode)->orWhere('sku', $barcode);
+                })
+                ->first();
+            if ($byBarcode) {
+                return $byBarcode;
+            }
+        }
+
         $nameQuery = trim((string) ($action['product_name'] ?? ''));
         if ($nameQuery === '') {
             return null;
+        }
+
+        if (preg_match('/^[0-9A-Za-z\-]{6,}$/', $nameQuery)) {
+            $byCode = Product::query()
+                ->where('vendor_id', $seller->id)
+                ->where(function ($q) use ($nameQuery) {
+                    $q->where('sku', $nameQuery)->orWhere('barcode', $nameQuery);
+                })
+                ->first();
+            if ($byCode) {
+                return $byCode;
+            }
         }
 
         $products = Product::query()
@@ -462,7 +571,7 @@ PROMPT;
             return is_array($decoded) ? $decoded : null;
         }
 
-        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status)"[\s\S]*\}/', $raw, $m)) {
+        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status|delete_product)"[\s\S]*\}/', $raw, $m)) {
             $decoded = json_decode($m[0], true);
 
             return is_array($decoded) ? $decoded : null;

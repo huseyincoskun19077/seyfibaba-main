@@ -274,7 +274,8 @@ class BulkProductImportService
             } else {
                 $statusFromFile = (int) ($normalizedRow['status'] ?? 1);
                 $product->status = $canPublish ? ($statusFromFile === 1 ? 1 : 0) : 0;
-                $product->approve_by_admin = $canPublish ? 1 : 0;
+                // Taslak ürün admin kilidi gibi görünmesin
+                $product->approve_by_admin = 1;
             }
 
             $product->save();
