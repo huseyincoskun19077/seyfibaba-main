@@ -24,68 +24,82 @@ const inter = localFont({
   display: "swap",
 });
 
-export const metadata = {
-  metadataBase: new URL(appConfig.APPLICATION_URL),
-  title: {
-    default: "Berber ve Kuaför Malzemeleri | Kuaför Tedarik",
-    template: "%s | Kuaför Tedarik",
-  },
-  description: "Berber malzemeleri, kuaför ekipmanları, berber koltuğu ve salon mobilyaları. Profesyoneller için en uygun fiyatlı alışveriş sitesi.",
-  authors: [{ name: "Kuaför Tedarik", url: appConfig.APPLICATION_URL }],
-  publisher: "Kuaför Tedarik",
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+const DEFAULT_FAVICON = "uploads/website-images/favicon.png";
+
+function resolveAssetUrl(path) {
+  const raw = String(path || "").trim();
+  if (!raw) return appConfig.BASE_URL + DEFAULT_FAVICON;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return appConfig.BASE_URL + raw.replace(/^\//, "");
+}
+
+export async function generateMetadata() {
+  const setup = await getSetupData();
+  const faviconUrl = resolveAssetUrl(setup?.setting?.favicon || DEFAULT_FAVICON);
+
+  return {
+    metadataBase: new URL(appConfig.APPLICATION_URL),
+    title: {
+      default: "Berber ve Kuaför Malzemeleri | Kuaför Tedarik",
+      template: "%s | Kuaför Tedarik",
+    },
+    description: "Berber malzemeleri, kuaför ekipmanları, berber koltuğu ve salon mobilyaları. Profesyoneller için en uygun fiyatlı alışveriş sitesi.",
+    authors: [{ name: "Kuaför Tedarik", url: appConfig.APPLICATION_URL }],
+    publisher: "Kuaför Tedarik",
+    robots: {
       index: true,
       follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-  icons: {
-    icon: appConfig.BASE_URL + "uploads/website-images/favicon.png",
-    shortcut: appConfig.BASE_URL + "uploads/website-images/favicon.png",
-    apple: appConfig.BASE_URL + "uploads/website-images/favicon.png",
-  },
-  verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
-    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || "",
-    other: {
-      "msvalidate.01": process.env.NEXT_PUBLIC_BING_VERIFICATION || "",
-    },
-  },
-  alternates: {
-    canonical: "/",
-  },
-  facebook: {
-    appId: process.env.NEXT_PUBLIC_FB_APP_ID || "",
-  },
-  openGraph: {
-    type: "website",
-    siteName: "Kuaför Tedarik",
-    title: "Berber ve Kuaför Malzemeleri | Kuaför Tedarik",
-    description: "Berber malzemeleri, kuaför ekipmanları, berber koltuğu ve salon mobilyaları. Profesyoneller için en uygun fiyatlı alışveriş sitesi.",
-    url: appConfig.APPLICATION_URL,
-    locale: "tr_TR",
-    images: [
-      {
-        url: appConfig.BASE_URL + "uploads/website-images/logo-2025-12-18-04-53-36-7704.png",
-        width: 1200,
-        height: 630,
-        alt: "Kuaför Tedarik Pazaryeri",
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
       },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    site: "@seyfibaba",
-    title: "Berber ve Kuaför Malzemeleri | Kuaför Tedarik",
-    description: "Berber malzemeleri, kuaför ekipmanları, berber koltuğu ve salon mobilyaları. Profesyoneller için en uygun fiyatlı alışveriş sitesi.",
-    images: [appConfig.BASE_URL + "uploads/website-images/logo-2025-12-18-04-53-36-7704.png"],
-  },
-};
+    },
+    icons: {
+      icon: faviconUrl,
+      shortcut: faviconUrl,
+      apple: faviconUrl,
+    },
+    verification: {
+      google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
+      yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || "",
+      other: {
+        "msvalidate.01": process.env.NEXT_PUBLIC_BING_VERIFICATION || "",
+      },
+    },
+    alternates: {
+      canonical: "/",
+    },
+    facebook: {
+      appId: process.env.NEXT_PUBLIC_FB_APP_ID || "",
+    },
+    openGraph: {
+      type: "website",
+      siteName: "Kuaför Tedarik",
+      title: "Berber ve Kuaför Malzemeleri | Kuaför Tedarik",
+      description: "Berber malzemeleri, kuaför ekipmanları, berber koltuğu ve salon mobilyaları. Profesyoneller için en uygun fiyatlı alışveriş sitesi.",
+      url: appConfig.APPLICATION_URL,
+      locale: "tr_TR",
+      images: [
+        {
+          url: appConfig.BASE_URL + "uploads/website-images/logo-2025-12-18-04-53-36-7704.png",
+          width: 1200,
+          height: 630,
+          alt: "Kuaför Tedarik Pazaryeri",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      site: "@seyfibaba",
+      title: "Berber ve Kuaför Malzemeleri | Kuaför Tedarik",
+      description: "Berber malzemeleri, kuaför ekipmanları, berber koltuğu ve salon mobilyaları. Profesyoneller için en uygun fiyatlı alışveriş sitesi.",
+      images: [appConfig.BASE_URL + "uploads/website-images/logo-2025-12-18-04-53-36-7704.png"],
+    },
+  };
+}
 
 export const viewport = {
   width: "device-width",

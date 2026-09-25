@@ -164,6 +164,130 @@ class HomeBlockController extends Controller
         return response()->json(['success' => true, 'message' => 'Sıralama güncellendi.']);
     }
 
+    /** İndirimli ürünler — satıcıya göre liste + anasayfa seçimi */
+    public function discountedIndex(Request $request)
+    {
+        if (! Schema::hasTable('home_blocks')) {
+            return redirect()->route('admin.home-blocks.index');
+        }
+
+        $q = trim((string) $request->query('q', ''));
+        $vendorId = (int) $request->query('vendor_id', 0);
+
+        $query = Product::query()
+            ->with('seller:id,shop_name,email')
+            ->where('approve_by_admin', 1)
+            ->where('status', 1)
+            ->whereNotNull('offer_price')
+            ->where('offer_price', '>', 0)
+            ->whereColumn('offer_price', '<', 'price')
+            ->orderByDesc('id');
+
+        if ($q !== '') {
+            $query->where(function ($w) use ($q) {
+                $w->where('name', 'like', '%'.$q.'%')
+                    ->orWhere('short_name', 'like', '%'.$q.'%');
+                if (ctype_digit($q)) {
+                    $w->orWhere('id', (int) $q);
+                }
+            });
+        }
+
+        if ($vendorId > 0) {
+            $query->where('vendor_id', $vendorId);
+        } elseif ($request->query('vendor_id') === '0') {
+            $query->where(function ($w) {
+                $w->whereNull('vendor_id')->orWhere('vendor_id', 0);
+            });
+        }
+
+        $products = $query->paginate(40)->withQueryString();
+
+        $sellersWithDiscount = Product::query()
+            ->where('approve_by_admin', 1)
+            ->where('status', 1)
+            ->whereNotNull('offer_price')
+            ->where('offer_price', '>', 0)
+            ->whereColumn('offer_price', '<', 'price')
+            ->selectRaw('vendor_id, COUNT(*) as cnt')
+            ->groupBy('vendor_id')
+            ->orderByDesc('cnt')
+            ->get();
+
+        $vendorIds = $sellersWithDiscount->pluck('vendor_id')->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
+        $vendors = $vendorIds
+            ? Vendor::query()->whereIn('id', $vendorIds)->get(['id', 'shop_name', 'email'])->keyBy('id')
+            : collect();
+
+        $block = HomeBlock::query()
+            ->where('type', 'product_feed')
+            ->where('feed', 'discounted')
+            ->orderBy('serial')
+            ->first();
+
+        $homepageIds = $block ? $block->decodeIds($block->product_ids) : [];
+
+        return view('admin.discounted_products', [
+            'products' => $products,
+            'sellersWithDiscount' => $sellersWithDiscount,
+            'vendors' => $vendors,
+            'homepageIds' => $homepageIds,
+            'block' => $block,
+            'q' => $q,
+            'vendorId' => $request->query('vendor_id'),
+        ]);
+    }
+
+    /** Seçilen indirimli ürünleri anasayfa “İndirimli” bloğuna yaz */
+    public function discountedSave(Request $request)
+    {
+        if (! Schema::hasTable('home_blocks')) {
+            return redirect()->route('admin.dashboard')->with([
+                'messege' => 'Tablo yok. Migrate çalıştırın.',
+                'alert-type' => 'error',
+            ]);
+        }
+
+        $request->validate([
+            'product_ids' => ['nullable', 'array'],
+            'product_ids.*' => ['integer'],
+        ]);
+
+        $ids = array_values(array_unique(array_map('intval', $request->input('product_ids', []))));
+
+        $block = HomeBlock::query()
+            ->where('type', 'product_feed')
+            ->where('feed', 'discounted')
+            ->orderBy('serial')
+            ->first();
+
+        if (! $block) {
+            $max = (int) HomeBlock::query()->max('serial');
+            $block = new HomeBlock();
+            $block->title = 'İndirimli Ürünler';
+            $block->type = 'product_feed';
+            $block->feed = 'discounted';
+            $block->serial = $max + 1;
+            $block->status = true;
+            $block->show_on_web = true;
+            $block->show_on_mobile = true;
+            $block->limit_count = max(12, count($ids) ?: 12);
+        }
+
+        $block->product_ids = $block->encodeIds($ids);
+        if ($ids !== []) {
+            $block->limit_count = max((int) ($block->limit_count ?: 12), count($ids));
+        }
+        $block->save();
+
+        return redirect()->route('admin.home-blocks.discounted')->with([
+            'messege' => $ids === []
+                ? 'Anasayfa seçimi temizlendi (otomatik indirimli listesi kullanılır).'
+                : count($ids).' ürün anasayfa indirimli bölümüne eklendi.',
+            'alert-type' => 'success',
+        ]);
+    }
+
     /** Select2 AJAX — tüm ürünler (admin + satıcı), isimle ara */
     public function searchProducts(Request $request)
     {

@@ -1062,6 +1062,8 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::post('home-blocks', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'store'])->name('home-blocks.store');
         Route::post('home-blocks-reorder', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'reorder'])->name('home-blocks.reorder');
         Route::delete('home-blocks/{id}', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'destroy'])->name('home-blocks.destroy');
+        Route::get('home-blocks-discounted', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'discountedIndex'])->name('home-blocks.discounted');
+        Route::post('home-blocks-discounted', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'discountedSave'])->name('home-blocks.discounted.save');
         Route::get('lookup/products', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'searchProducts'])->name('lookup.products');
         Route::get('lookup/vendors', [\App\Http\Controllers\WEB\Admin\HomeBlockController::class, 'searchVendors'])->name('lookup.vendors');
 
