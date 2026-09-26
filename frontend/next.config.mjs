@@ -101,7 +101,8 @@ const contentSecurityPolicy = [
   "style-src 'self' https: 'unsafe-inline'",
   `script-src 'self' https: ${isDev ? "http:" : ""} 'unsafe-inline' 'unsafe-eval'`,
   `connect-src 'self' https: ${isDev ? "http:" : ""} wss: ${isDev ? "ws:" : ""} ${connectSrcOrigins}`,
-  "frame-src 'self' https://www.google.com https://*.google.com https://maps.google.com https://*.google.de https://www.youtube.com",
+  // Meta Pixel / GTM Facebook tag iframe'leri için facebook.com şart
+  "frame-src 'self' https://www.google.com https://*.google.com https://maps.google.com https://*.google.de https://www.youtube.com https://www.facebook.com https://facebook.com https://*.facebook.com https://connect.facebook.net https://*.facebook.net https://www.googletagmanager.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https:",
