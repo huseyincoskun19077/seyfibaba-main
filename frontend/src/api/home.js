@@ -20,7 +20,8 @@ const EMPTY_HOMEPAGE = {
 
 export default async function home() {
   try {
-    const res = await serverApiGet("");
+    // 60 sn ISR — her ziyarette backend'i bekletmez, anasayfa hızlanır
+    const res = await serverApiGet("", { timeoutMs: 10000, revalidate: 60 });
 
     if (!res.ok) {
       return EMPTY_HOMEPAGE;

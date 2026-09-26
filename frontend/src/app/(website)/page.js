@@ -2,7 +2,8 @@ import { cache } from "react";
 import home from "@/api/home";
 import Home from "@/components/Home";
 
-export const dynamic = "force-dynamic";
+// Her istekte API bekleme → ~60 sn cache (ürün/kampanya güncelliği yeterli)
+export const revalidate = 60;
 
 // api data cache for reducing multiple request to the api
 export const getHomeData = cache(async () => {

@@ -8,7 +8,6 @@ import PopularProductsStrip from "./PopularProductsStrip";
 import StoriesStrip from "./StoriesStrip";
 import HomeBlocks from "./HomeBlocks";
 import { isFlashSaleActive } from "@/utils/flashSale";
-import apiRoutes from "@/appConfig/apiRoutes";
 import { resolveProductImageUrl } from "@/utils/productImage";
 import ProductCard from "../Helpers/Cards/ProductCard";
 
@@ -40,29 +39,8 @@ export default function Home({ homepageData }) {
     setHomepage(homepageData);
   }, [homepageData]);
 
-  // Mobil gibi: sayfa açılınca anasayfa ürünlerini canlı API'den yenile
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(apiRoutes.shopo, {
-          method: "GET",
-          cache: "no-store",
-          headers: { Accept: "application/json" },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!cancelled && data && typeof data === "object") {
-          setHomepage(data);
-        }
-      } catch {
-        /* SSR verisi kalsın */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Canlı tam-API yenileme kaldırıldı: SSR + revalidate=60 yeterince güncel;
+  // her ziyarette ikinci büyük istek anasayfayı yavaşlatıyordu.
 
   const getsectionTitles = homepage?.section_title;
 

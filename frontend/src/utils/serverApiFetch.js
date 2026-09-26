@@ -21,17 +21,23 @@ export function serverApiBases() {
   return [...new Set(bases)];
 }
 
-export async function serverApiGet(path, { timeoutMs = 8000 } = {}) {
+export async function serverApiGet(path, { timeoutMs = 8000, revalidate } = {}) {
   const rel = String(path || "").replace(/^\//, "");
   let lastError;
   for (const base of serverApiBases()) {
     const { signal, cancel } = withTimeout(timeoutMs);
     try {
-      const res = await fetch(`${base}/${rel}`, {
+      /** @type {RequestInit & { next?: { revalidate: number } }} */
+      const opts = {
         signal,
-        cache: "no-store",
         headers: { Accept: "application/json" },
-      });
+      };
+      if (typeof revalidate === "number" && revalidate >= 0) {
+        opts.next = { revalidate };
+      } else {
+        opts.cache = "no-store";
+      }
+      const res = await fetch(`${base}/${rel}`, opts);
       cancel();
       if (res.ok) return res;
       lastError = new Error(`${res.status} ${base}/${rel}`);

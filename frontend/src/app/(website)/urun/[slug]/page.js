@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import appConfig from "@/appConfig";
 import { resolveProductImageUrl } from "@/utils/productImage";
 import getProductDetails from "@/api/getProductDetails";
@@ -67,8 +67,16 @@ export default async function ProductDetailsPage({ params }) {
   let data;
   try {
     data = await getProductDetailsData(slug);
-  } catch {
-    notFound();
+  } catch (err) {
+    // Gerçek 404 → notFound; geçici API hatası → yukarı fırlat (error.js)
+    if (
+      err?.digest === "NEXT_NOT_FOUND" ||
+      (typeof err?.message === "string" &&
+        err.message.includes("NEXT_HTTP_ERROR_FALLBACK;404"))
+    ) {
+      notFound();
+    }
+    throw err;
   }
   if (!data?.product?.id) {
     notFound();
@@ -89,7 +97,16 @@ export default async function ProductDetailsPage({ params }) {
   return (
     <>
       {productSchema ? <JsonLd data={productSchema} /> : null}
-      <ClientProductPage details={data} />
+      {/* useSearchParams (ProductView) → Suspense şart; yoksa React #419 */}
+      <Suspense
+        fallback={
+          <div className="container-x mx-auto px-4 py-16 text-center text-[#04334a]/55">
+            Ürün yükleniyor…
+          </div>
+        }
+      >
+        <ClientProductPage details={data} />
+      </Suspense>
     </>
   );
 }

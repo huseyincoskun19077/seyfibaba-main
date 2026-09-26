@@ -456,8 +456,14 @@ export default function ProductView({
   const [more, setMore] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [src, setSrc] = useState(safeProduct?.thumb_image || "");
-  const [price, setPrice] = useState(null);
-  const [offerPrice, setOffer] = useState(null);
+  const [price, setPrice] = useState(() => {
+    const initial = resolveProductUnitPrice(safeProduct, [], safeVariants);
+    return initial.price;
+  });
+  const [offerPrice, setOffer] = useState(() => {
+    const initial = resolveProductUnitPrice(safeProduct, [], safeVariants);
+    return initial.offerPrice;
+  });
   const [pricePercent, setPricePercent] = useState("");
   const [variantFlash, setVariantFlash] = useState(false);
 

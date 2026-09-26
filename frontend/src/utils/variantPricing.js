@@ -7,7 +7,19 @@
 export const COLOR_VARIANT_GROUP = /renk|color/i;
 
 export const parseAmount = (value) => {
-  const n = Number(value);
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (value == null || value === "") return 0;
+  let s = String(value).trim().replace(/[^\d,.\-]/g, "");
+  if (!s) return 0;
+  // TR: 1.518,00 → 1518.00 | 1518,00 → 1518.00
+  if (s.includes(",") && s.includes(".")) {
+    s = s.replace(/\./g, "").replace(",", ".");
+  } else if (s.includes(",")) {
+    s = s.replace(",", ".");
+  }
+  const n = Number(s);
   return Number.isFinite(n) ? n : 0;
 };
 
