@@ -55,6 +55,9 @@
                   @if(($draftProductCount ?? 0) > 0)
                     <span class="badge badge-warning">{{ $draftProductCount }} taslak</span>
                   @endif
+                  @if(($stockoutProductCount ?? 0) > 0)
+                    <a href="{{ route('seller.stockout-product') }}" class="badge badge-danger text-white">{{ $stockoutProductCount }} stokta yok</a>
+                  @endif
                 </div>
               </div>
             </div>
@@ -158,6 +161,24 @@
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+              <a href="{{ route('seller.stockout-product') }}" class="text-decoration-none">
+              <div class="card card-statistic-1">
+                <div class="card-icon bg-danger">
+                  <i class="fas fa-box-open"></i>
+                </div>
+                <div class="card-wrap">
+                  <div class="card-header">
+                    <h4>{{__('admin.Stock out products')}}</h4>
+                  </div>
+                  <div class="card-body">
+                    {{ $stockoutProductCount ?? 0 }}
+                  </div>
+                </div>
+              </div>
+              </a>
             </div>
 
             <div class="col-lg-3 col-md-6 col-sm-6 col-12">

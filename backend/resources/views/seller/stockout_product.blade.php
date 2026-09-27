@@ -8,31 +8,40 @@
         <section class="section">
           <div class="section-header">
             <h1>{{__('admin.Stock out products')}}</h1>
+            <div class="section-header-breadcrumb">
+              <div class="breadcrumb-item active"><a href="{{ route('seller.dashboard') }}">{{__('admin.Dashboard')}}</a></div>
+              <div class="breadcrumb-item">{{__('admin.Stock out products')}}</div>
+            </div>
           </div>
 
           <div class="section-body">
-            <div class="row mt-4">
+            <a href="{{ route('seller.product.index', ['filter' => 'out']) }}" class="btn btn-outline-primary btn-sm mb-3">Ürün listesinde de filtrele</a>
+            <div class="row mt-2">
                 <div class="col">
                   <div class="card">
+                    <div class="card-header">
+                      <h4 class="mb-0">Stok adedi 0 veya daha az olan ürünler</h4>
+                    </div>
                     <div class="card-body">
                       <div class="table-responsive table-invoice">
-                        <table class="table table-striped" id="dataTable">
+                        <table class="table table-striped">
                             <thead>
                                 <tr>
                                     <th width="5%">{{__('admin.SN')}}</th>
-                                    <th width="30%">{{__('admin.Name')}}</th>
+                                    <th width="28%">{{__('admin.Name')}}</th>
                                     <th width="10%">{{__('admin.Price')}}</th>
-                                    <th width="10%">{{__('admin.Offer Price')}}</th>
-                                    <th width="15%">{{__('admin.Photo')}}</th>
-                                    <th width="15%">{{__('admin.Type')}}</th>
+                                    <th width="10%">İndirimli</th>
+                                    <th width="12%">{{__('admin.Photo')}}</th>
+                                    <th width="12%">Kategori</th>
+                                    <th width="8%">Stok</th>
                                     <th width="15%">{{__('admin.Action')}}</th>
                                   </tr>
                             </thead>
                             <tbody>
-                                @foreach ($products as $index => $product)
+                                @forelse ($products as $index => $product)
                                     <tr>
-                                        <td>{{ ++$index }}</td>
-                                        <td><a href="javascript:;">{{ $product->short_name }}</a></td>
+                                        <td>{{ $products->firstItem() + $index }}</td>
+                                        <td>{{ $product->short_name ?: $product->name }}</td>
                                         <td>{{ $setting->currency_icon }}{{ $product->price }}</td>
                                         <td>
                                             @if ($product->offer_price > 0)
@@ -41,51 +50,38 @@
                                                 <span class="text-muted">—</span>
                                             @endif
                                         </td>
-                                        <td> <img class="rounded-circle" src="{{ product_image_url($product->thumb_image) }}" alt="" width="80px"></td>
+                                        <td><img class="rounded-circle" src="{{ product_image_url($product->thumb_image) }}" alt="" width="80px"></td>
                                         <td>
-                                            @if ($product->new_product == 1)
-                                            <span class="badge badge-primary p-1">{{__('admin.New')}}</span>
+                                            @if ($product->category)
+                                                <span class="d-block">{{ $product->category->name }}</span>
                                             @endif
-
-                                            @if ($product->is_featured == 1)
-                                            <span class="badge badge-success p-1">{{__('admin.Featured')}}</span>
+                                            @if ($product->subCategory)
+                                                <small class="text-muted">{{ $product->subCategory->name }}</small>
                                             @endif
-
-                                            @if ($product->is_top == 1)
-                                            <span class="badge badge-warning p-1">{{__('admin.Top')}}</span>
-                                            @endif
-
-                                            @if ($product->is_best == 1)
-                                            <span class="badge badge-danger p-1">{{__('admin.Best')}}</span>
+                                            @if ($product->childCategory)
+                                                <small class="d-block text-muted">{{ $product->childCategory->name }}</small>
                                             @endif
                                         </td>
-
+                                        <td><span class="badge badge-danger">{{ (int) $product->qty }}</span></td>
                                         <td>
-                                            <a href="{{ route('seller.product.edit',$product->id) }}" class="btn btn-primary btn-sm"><i class="fa fa-edit" aria-hidden="true"></i></a>
-                                            <form action="{{ route('seller.product.duplicate', $product->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-secondary btn-sm" title="Kopyala">
-                                                    <i class="fa fa-copy" aria-hidden="true"></i>
-                                                </button>
-                                            </form>
-
-                                            <div class="dropdown d-inline">
-                                                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                <i class="fas fa-cog"></i>
-                                                </button>
-
-                                                <div class="dropdown-menu" x-placement="top-start" style="position: absolute; will-change: transform; top: 0px; left: 0px; transform: translate3d(0px, -131px, 0px);">
-                                                <a class="dropdown-item has-icon" href="{{ route('seller.product-gallery',$product->id) }}"><i class="far fa-image"></i> {{__('admin.Image Gallery')}}</a>
-
-                                                <a class="dropdown-item has-icon" href="{{ route('seller.product-variant',$product->id) }}"><i class="fas fa-cog"></i> {{__('admin.Product Variant')}}</a>
-                                                </div>
-                                            </div>
+                                            <a href="{{ route('seller.product.edit',$product->id) }}" class="btn btn-primary btn-sm" title="Düzenle / Stok güncelle"><i class="fa fa-edit" aria-hidden="true"></i></a>
+                                            <a href="{{ route('seller.inventory') }}" class="btn btn-warning btn-sm" title="Envanter"><i class="fas fa-boxes"></i></a>
                                         </td>
                                     </tr>
-                                @endforeach
+                                @empty
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">Stokta olmayan ürün yok.</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                       </div>
+                      @if ($products->hasPages())
+                        <div class="mt-3 d-flex justify-content-center">
+                          {{ $products->onEachSide(1)->links('pagination::bootstrap-4') }}
+                        </div>
+                      @endif
+                      <div class="text-muted small mt-2">Toplam {{ $products->total() }} ürün</div>
                     </div>
                   </div>
                 </div>

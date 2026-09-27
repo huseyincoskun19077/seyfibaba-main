@@ -22,13 +22,13 @@
                 <div class="col">
                   <div class="card">
                     <div class="card-body">
-                      <form method="GET" action="{{ route('seller.product.index') }}" class="mb-3">
-                        <div class="form-row align-items-end" style="gap:8px 0;">
-                          <div class="form-group col-12 col-md-5 mb-2">
+                      <form method="GET" action="{{ route('seller.product.index') }}" class="mb-3" id="sellerProductFilterForm">
+                        <div class="form-row align-items-end">
+                          <div class="form-group col-12 col-md-4 mb-2">
                             <label>Ara</label>
                             <input type="text" name="q" class="form-control" value="{{ $q ?? '' }}" placeholder="Ürün adı, SKU veya slug">
                           </div>
-                          <div class="form-group col-12 col-md-3 mb-2">
+                          <div class="form-group col-12 col-md-2 mb-2">
                             <label>Durum</label>
                             <select name="filter" class="form-control">
                               <option value="all" {{ ($filter ?? 'all') === 'all' ? 'selected' : '' }}>Tümü</option>
@@ -38,9 +38,36 @@
                               <option value="out" {{ ($filter ?? '') === 'out' ? 'selected' : '' }}>Tükendi</option>
                             </select>
                           </div>
-                          <div class="form-group col-12 col-md-4 mb-2">
+                          <div class="form-group col-12 col-md-2 mb-2">
+                            <label>Kategori</label>
+                            <select name="category_id" id="filter_category" class="form-control">
+                              <option value="0">Tümü</option>
+                              @foreach(($categories ?? []) as $category)
+                                <option value="{{ $category->id }}" {{ (int) ($categoryId ?? 0) === (int) $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                          <div class="form-group col-12 col-md-2 mb-2">
+                            <label>Alt Kategori</label>
+                            <select name="sub_category_id" id="filter_sub_category" class="form-control">
+                              <option value="0">Tümü</option>
+                              @foreach(($subCategories ?? []) as $subCategory)
+                                <option value="{{ $subCategory->id }}" {{ (int) ($subCategoryId ?? 0) === (int) $subCategory->id ? 'selected' : '' }}>{{ $subCategory->name }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                          <div class="form-group col-12 col-md-2 mb-2">
+                            <label>Child Kategori</label>
+                            <select name="child_category_id" id="filter_child_category" class="form-control">
+                              <option value="0">Tümü</option>
+                              @foreach(($childCategories ?? []) as $childCategory)
+                                <option value="{{ $childCategory->id }}" {{ (int) ($childCategoryId ?? 0) === (int) $childCategory->id ? 'selected' : '' }}>{{ $childCategory->name }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                          <div class="form-group col-12 mb-2">
                             <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filtrele</button>
-                            @if (($q ?? '') !== '' || ($filter ?? 'all') !== 'all')
+                            @if (($q ?? '') !== '' || ($filter ?? 'all') !== 'all' || (int) ($categoryId ?? 0) > 0 || (int) ($subCategoryId ?? 0) > 0 || (int) ($childCategoryId ?? 0) > 0)
                               <a href="{{ route('seller.product.index') }}" class="btn btn-outline-secondary">Temizle</a>
                             @endif
                           </div>
@@ -55,8 +82,9 @@
                                     <th width="8%">{{__('admin.Price')}}</th>
                                     <th width="8%">İndirimli</th>
                                     <th width="12%">{{__('admin.Photo')}}</th>
-                                    <th width="12%">Kategori</th>
-                                    <th width="12%">Alt Kategori</th>
+                                    <th width="10%">Kategori</th>
+                                    <th width="10%">Alt Kategori</th>
+                                    <th width="10%">Child</th>
                                     <th width="10%">{{__('admin.Status')}}</th>
                                     <th width="20%">{{__('admin.Action')}}</th>
                                   </tr>
@@ -100,6 +128,13 @@
                                             @endif
                                         </td>
                                         <td>
+                                            @if ($product->childCategory)
+                                                <span class="d-block">{{ $product->childCategory->name }}</span>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
+                                        <td>
                                             @include('seller.partials.product_status_badges', ['product' => $product])
                                         </td>
                                         <td>
@@ -136,8 +171,8 @@
                                     </tr>
                                   @empty
                                     <tr>
-                                      <td colspan="9" class="text-center text-muted py-4">
-                                        {{ ($q ?? '') !== '' || ($filter ?? 'all') !== 'all' ? 'Filtreye uyan ürün yok.' : 'Henüz ürün yok.' }}
+                                      <td colspan="10" class="text-center text-muted py-4">
+                                        {{ ($q ?? '') !== '' || ($filter ?? 'all') !== 'all' || (int) ($categoryId ?? 0) > 0 || (int) ($subCategoryId ?? 0) > 0 || (int) ($childCategoryId ?? 0) > 0 ? 'Filtreye uyan ürün yok.' : 'Henüz ürün yok.' }}
                                       </td>
                                     </tr>
                                   @endforelse
@@ -224,5 +259,52 @@
             }
         });
     }
+
+    $("#filter_category").on("change", function () {
+        var categoryId = $(this).val();
+        $("#filter_sub_category").html("<option value='0'>Tümü</option>");
+        $("#filter_child_category").html("<option value='0'>Tümü</option>");
+        if (!categoryId || categoryId === "0") {
+            return;
+        }
+        $.ajax({
+            type: "get",
+            url: "{{ url('/seller/subcategory-by-category') }}/" + categoryId,
+            success: function (response) {
+                var html = "<option value='0'>Tümü</option>";
+                var tmp = $("<select>" + (response.subCategories || "") + "</select>");
+                tmp.find("option").each(function () {
+                    var v = $(this).attr("value");
+                    if (v) {
+                        html += "<option value='" + v + "'>" + $(this).text() + "</option>";
+                    }
+                });
+                $("#filter_sub_category").html(html);
+            }
+        });
+    });
+
+    $("#filter_sub_category").on("change", function () {
+        var subId = $(this).val();
+        $("#filter_child_category").html("<option value='0'>Tümü</option>");
+        if (!subId || subId === "0") {
+            return;
+        }
+        $.ajax({
+            type: "get",
+            url: "{{ url('/seller/childcategory-by-subcategory') }}/" + subId,
+            success: function (response) {
+                var html = "<option value='0'>Tümü</option>";
+                var tmp = $("<select>" + (response.childCategories || "") + "</select>");
+                tmp.find("option").each(function () {
+                    var v = $(this).attr("value");
+                    if (v) {
+                        html += "<option value='" + v + "'>" + $(this).text() + "</option>";
+                    }
+                });
+                $("#filter_child_category").html(html);
+            }
+        });
+    });
 </script>
 @endsection

@@ -56,8 +56,11 @@ class SellerProductController extends Controller
         $seller = Auth::guard('web')->user()->seller;
         $q = trim((string) $request->input('q', ''));
         $filter = (string) $request->input('filter', 'all');
+        $categoryId = (int) $request->input('category_id', 0);
+        $subCategoryId = (int) $request->input('sub_category_id', 0);
+        $childCategoryId = (int) $request->input('child_category_id', 0);
 
-        $query = Product::with('category', 'subCategory', 'seller', 'brand')
+        $query = Product::with('category', 'subCategory', 'childCategory', 'seller', 'brand')
             ->withCount('variantItems')
             ->where('vendor_id', $seller->id)
             ->orderByDesc('id');
@@ -69,6 +72,16 @@ class SellerProductController extends Controller
                     ->orWhere('slug', 'like', '%'.$q.'%')
                     ->orWhere('sku', 'like', '%'.$q.'%');
             });
+        }
+
+        if ($categoryId > 0) {
+            $query->where('category_id', $categoryId);
+        }
+        if ($subCategoryId > 0) {
+            $query->where('sub_category_id', $subCategoryId);
+        }
+        if ($childCategoryId > 0) {
+            $query->where('child_category_id', $childCategoryId);
         }
 
         if ($filter === 'active') {
@@ -84,8 +97,27 @@ class SellerProductController extends Controller
         $products = $query->paginate(20)->withQueryString();
         $orderProducts = OrderProduct::whereIn('product_id', $products->pluck('id'))->get();
         $setting = Setting::first();
+        $categories = Category::query()->active()->ordered()->get(['id', 'name']);
+        $subCategories = $categoryId > 0
+            ? SubCategory::query()->where('category_id', $categoryId)->active()->ordered()->get(['id', 'name'])
+            : collect();
+        $childCategories = $subCategoryId > 0
+            ? ChildCategory::query()->where('sub_category_id', $subCategoryId)->active()->ordered()->get(['id', 'name'])
+            : collect();
 
-        return view('seller.product', compact('products', 'orderProducts', 'setting', 'q', 'filter'));
+        return view('seller.product', compact(
+            'products',
+            'orderProducts',
+            'setting',
+            'q',
+            'filter',
+            'categories',
+            'subCategories',
+            'childCategories',
+            'categoryId',
+            'subCategoryId',
+            'childCategoryId'
+        ));
     }
 
     public function pendingProduct(){
@@ -96,10 +128,14 @@ class SellerProductController extends Controller
 
     public function stockoutProduct(){
         $seller = Auth::guard('web')->user()->seller;
-        $products = Product::with('category','seller','brand')->orderBy('id','desc')->where('qty',0)->where('vendor_id',$seller->id)->get();
+        $products = Product::with('category', 'subCategory', 'childCategory', 'seller', 'brand')
+            ->where('vendor_id', $seller->id)
+            ->where('qty', '<=', 0)
+            ->orderByDesc('id')
+            ->paginate(30);
         $setting = Setting::first();
 
-        return view('seller.stockout_product',compact('products','setting'));
+        return view('seller.stockout_product', compact('products', 'setting'));
     }
 
 
