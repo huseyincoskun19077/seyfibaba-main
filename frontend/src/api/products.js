@@ -39,6 +39,7 @@ const buildQueryFromObject = (query = {}) => {
     "min_price",
     "max_price",
     "shorting_id",
+    "segment",
   ].forEach((key) => {
     if (
       query?.[key] !== undefined &&

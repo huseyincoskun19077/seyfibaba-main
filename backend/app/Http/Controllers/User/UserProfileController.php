@@ -282,8 +282,10 @@ class UserProfileController extends Controller
             'is_e_invoice',
             'shop_name',
             'business_type',
+            'business_types',
             'business_type_other',
             'business_status',
+            'personalization_enabled',
             'personalization_completed_at',
             'personalization_skipped_at'
         )->find($user->id);
@@ -385,32 +387,80 @@ class UserProfileController extends Controller
     {
         $user = Auth::guard('api')->user();
 
+        $allowed = ['female_hairdresser', 'male_hairdresser', 'barber', 'beauty_salon', 'nail_art', 'other'];
+
         $request->validate([
             'shop_name' => ['nullable', 'string', 'max:150'],
-            'business_type' => ['required', 'in:female_hairdresser,male_hairdresser,barber,beauty_salon,nail_art,other'],
+            'business_types' => ['nullable', 'array', 'min:1'],
+            'business_types.*' => ['in:'.implode(',', $allowed)],
+            'business_type' => ['nullable', 'in:'.implode(',', $allowed)],
             'business_type_other' => ['nullable', 'string', 'max:120'],
             'business_status' => ['required', 'in:own_shop,opening_soon,employed_in_salon,planning'],
+            'personalization_enabled' => ['nullable', 'boolean'],
         ]);
 
-        if ($request->input('business_type') === 'other') {
+        $types = $request->input('business_types');
+        if (! is_array($types) || $types === []) {
+            $single = $request->input('business_type');
+            $types = $single ? [$single] : [];
+        }
+        $types = array_values(array_unique(array_filter(array_map('strval', $types))));
+
+        if ($types === []) {
+            return response()->json(['message' => 'En az bir işletme türü seçin.'], 422);
+        }
+
+        if (in_array('other', $types, true)) {
             $request->validate([
                 'business_type_other' => ['required', 'string', 'max:120'],
             ]);
         }
 
         $user->shop_name = trim((string) $request->input('shop_name', '')) ?: null;
-        $user->business_type = $request->input('business_type');
-        $user->business_type_other = $request->input('business_type') === 'other'
+        $user->business_types = $types;
+        $user->business_type = $types[0]; // geriye uyumluluk
+        $user->business_type_other = in_array('other', $types, true)
             ? trim((string) $request->input('business_type_other', ''))
             : null;
         $user->business_status = $request->input('business_status');
+        if ($request->has('personalization_enabled')) {
+            $user->personalization_enabled = $request->boolean('personalization_enabled');
+        }
         $user->personalization_completed_at = now();
         $user->personalization_skipped_at = null;
         $user->save();
 
         return response()->json([
-            'notification' => 'Bilgileriniz kaydedildi',
+            'notification' => 'İşletme türü bilgileriniz kaydedildi.',
             'should_show_personalization' => false,
+            'business_types' => $types,
+            'business_type' => $user->business_type,
+        ]);
+    }
+
+    public function clearBrowseHistory(\App\Services\RecommendationService $recommendations)
+    {
+        $user = Auth::guard('api')->user();
+        $n = $recommendations->clearUserHistory($user);
+
+        return response()->json([
+            'notification' => 'Ürün görüntüleme geçmişiniz silindi.',
+            'deleted' => $n,
+        ]);
+    }
+
+    public function updatePersonalizationToggle(Request $request)
+    {
+        $user = Auth::guard('api')->user();
+        $request->validate(['personalization_enabled' => ['required', 'boolean']]);
+        $user->personalization_enabled = $request->boolean('personalization_enabled');
+        $user->save();
+
+        return response()->json([
+            'notification' => $user->personalization_enabled
+                ? 'Kişiselleştirme açıldı.'
+                : 'Kişiselleştirme kapatıldı.',
+            'personalization_enabled' => (bool) $user->personalization_enabled,
         ]);
     }
 

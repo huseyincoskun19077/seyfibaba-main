@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import SingleProductPage from "@/components/SingleProductPage";
 import { useLazyGetProductBySlugApiQuery } from "@/redux/features/product/apiSlice";
+import useProductViewTracker from "@/hooks/useProductViewTracker";
+import auth from "@/utils/auth";
 
 /**
  * SSR details for SEO/first paint; on every client open refetch like mobile
@@ -11,6 +13,9 @@ import { useLazyGetProductBySlugApiQuery } from "@/redux/features/product/apiSli
 export default function ClientProductPage({ details }) {
   const [liveDetails, setLiveDetails] = useState(details);
   const [trigger] = useLazyGetProductBySlugApiQuery();
+  const token =
+    typeof auth === "function" ? auth()?.access_token : auth?.access_token;
+  useProductViewTracker(liveDetails?.product?.id, token);
 
   useEffect(() => {
     setLiveDetails(details);

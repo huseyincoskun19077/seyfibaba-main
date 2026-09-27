@@ -168,6 +168,10 @@ Route::group([], function () {
     Route::get('/story-products', [HomeController::class, 'storyProducts'])->name('story-products');
     Route::post('/story-view', [HomeController::class, 'recordStoryView'])->middleware('throttle:60,1')->name('story-view');
     Route::get('/personalized-products', [HomeController::class, 'personalizedProducts'])->name('personalized-products');
+    Route::get('/customer-segments', [\App\Http\Controllers\CustomerSegmentApiController::class, 'index'])->name('customer-segments.index');
+    Route::get('/customer-segments/{slug}', [\App\Http\Controllers\CustomerSegmentApiController::class, 'show'])->name('customer-segments.show');
+    Route::get('/customer-segments/{slug}/products', [\App\Http\Controllers\CustomerSegmentApiController::class, 'products'])->name('customer-segments.products');
+    Route::post('/guest-product-view', [\App\Http\Controllers\User\ProductViewController::class, 'storeGuest'])->middleware('throttle:60,1')->name('guest-product-view');
     Route::get('/about-us', [HomeController::class, 'aboutUs'])->name('about-us');
     Route::get('/contact-us', [HomeController::class, 'contactUs'])->name('contact-us');
     Route::post('/send-contact-message', [HomeController::class, 'sendContactMessage'])->middleware('throttle:public-form')->name('send-contact-message');
@@ -289,6 +293,8 @@ Route::group([], function () {
         Route::post('update-profile', [UserProfileController::class, 'updateProfile'])->name('update-profile');
         Route::post('update-buyer-personalization', [UserProfileController::class, 'updateBuyerPersonalization'])->name('update-buyer-personalization');
         Route::post('skip-buyer-personalization', [UserProfileController::class, 'skipBuyerPersonalization'])->name('skip-buyer-personalization');
+        Route::post('clear-browse-history', [UserProfileController::class, 'clearBrowseHistory'])->name('clear-browse-history');
+        Route::post('personalization-toggle', [UserProfileController::class, 'updatePersonalizationToggle'])->name('personalization-toggle');
         Route::post('update-device-token', [UserProfileController::class, 'updateDeviceToken'])->name('update-device-token');
         Route::get('notifications', [\App\Http\Controllers\User\NotificationController::class, 'index'])->middleware('auth:api')->name('notifications.index');
         Route::put('notifications/{id}/read', [\App\Http\Controllers\User\NotificationController::class, 'markAsRead'])->middleware('auth:api')->name('notifications.read');

@@ -97,13 +97,51 @@ class ProductFilterHelper
             ->values();
     }
 
+    /**
+     * Sıralama:
+     * - 2 / price_asc → fiyat artan
+     * - 3 / price_desc → fiyat azalan
+     * - newest / 1 → en yeni (id desc)
+     * - recommended / boş → satıcı çeşitliliği (sayfalar arası kararlı)
+     */
     public static function applySorting(Builder $query, ?string $shortingId): Builder
     {
-        return match ((string) $shortingId) {
-            '2' => $query->orderByRaw('COALESCE(NULLIF(offer_price, 0), price) ASC'),
-            '3' => $query->orderByRaw('COALESCE(NULLIF(offer_price, 0), price) DESC'),
-            default => $query->orderBy('id', 'desc'),
+        $key = strtolower(trim((string) $shortingId));
+
+        return match ($key) {
+            '2', 'price_asc' => $query->orderByRaw('COALESCE(NULLIF(offer_price, 0), price) ASC')->orderByDesc('id'),
+            '3', 'price_desc' => $query->orderByRaw('COALESCE(NULLIF(offer_price, 0), price) DESC')->orderByDesc('id'),
+            '1', 'newest' => $query->orderByDesc('id'),
+            default => self::applyVendorDiversitySort($query),
         };
+    }
+
+    /**
+     * Önerilen: her satıcının en yeni ürünü önce (rank 1), sonra 2., 3.…
+     * Kararlı — sayfalar arası tekrar/atlama yok.
+     * MySQL 8 / MariaDB / SQLite: window ROW_NUMBER (correlated COUNT yok).
+     */
+    public static function applyVendorDiversitySort(Builder $query): Builder
+    {
+        $table = $query->getModel()->getTable();
+        $query->reorder();
+
+        $driver = $query->getConnection()->getDriverName();
+        if (in_array($driver, ['mysql', 'mariadb', 'sqlite'], true)) {
+            // Tek geçişli sıralama — DEPENDENT SUBQUERY / satır başı COUNT yok
+            return $query
+                ->orderByRaw(
+                    "ROW_NUMBER() OVER (PARTITION BY {$table}.vendor_id ORDER BY {$table}.id DESC)"
+                )
+                ->orderByDesc($table.'.id');
+        }
+
+        // Eski sürücüler için son çare (yavaş)
+        return $query
+            ->orderByRaw(
+                "(SELECT COUNT(*) FROM {$table} AS _vd WHERE _vd.vendor_id = {$table}.vendor_id AND _vd.id >= {$table}.id AND _vd.deleted_at IS NULL AND _vd.status = 1 AND _vd.approve_by_admin = 1) ASC"
+            )
+            ->orderByDesc($table.'.id');
     }
 
     public static function applyPriceFilter(Builder $query, $minPrice, $maxPrice): Builder

@@ -140,6 +140,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
         "type",
         "slug",
         "seller",
+        "segment",
       ];
       originalParams.forEach((param) => {
         try {
@@ -677,12 +678,15 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     // Preserve original page parameters
     const originalParams = [
       "category",
+      "sub_category",
+      "child_category",
       "brand",
       "highlight",
       "search",
       "type",
       "slug",
       "seller",
+      "segment",
     ];
     originalParams.forEach((param) => {
       const value = searchParams.get(param);
@@ -799,7 +803,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     const searchTerm = String(listingSearch || "").trim();
     const searching = searchTerm.length >= 2;
     if (!searching) {
-      ["category", "sub_category", "child_category", "highlight"].forEach(
+      ["category", "sub_category", "child_category", "highlight", "segment"].forEach(
         (key) => appendScalar(key, searchParams.get(key))
       );
     }
@@ -1089,7 +1093,8 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
               onChange={handleSortChange}
               className="h-10 min-w-[170px] px-3 rounded-lg border-0 bg-[#F4F6F7] text-[13px] text-[#04334a] focus:outline-none focus:ring-2 focus:ring-[#FCBF49]/50"
             >
-              <option value="">En yeni</option>
+              <option value="">Önerilen</option>
+              <option value="newest">En yeni</option>
               <option value="2">Fiyat: Düşükten yükseğe</option>
               <option value="3">Fiyat: Yüksekten düşüğe</option>
             </select>

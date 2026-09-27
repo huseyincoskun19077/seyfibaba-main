@@ -56,6 +56,8 @@ class User extends Authenticatable implements JWTSubject
         'last_seen_at' => 'datetime',
         'personalization_completed_at' => 'datetime',
         'personalization_skipped_at' => 'datetime',
+        'business_types' => 'array',
+        'personalization_enabled' => 'boolean',
     ];
 
     public function seller(){

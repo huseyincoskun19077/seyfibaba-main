@@ -35,6 +35,7 @@ const resolveProductsQuery = (searchParamsObj = {}) => {
     "min_price",
     "max_price",
     "shorting_id",
+    "segment",
   ].forEach((key) => {
     if (searchParamsObj?.[key] !== undefined) {
       query[key] = searchParamsObj[key];
@@ -64,6 +65,17 @@ const resolvePrimarySearchType = (query = {}) => {
 function resolveListingTitle(query = {}, data = {}) {
   if (query?.highlight && HIGHLIGHT_TITLES[query.highlight]) {
     return HIGHLIGHT_TITLES[query.highlight];
+  }
+  const SEGMENT_TITLES = {
+    "kadin-kuaforu": "Kadın Kuaförü",
+    "erkek-kuaforu-berber": "Erkek Kuaförü ve Berber",
+    "guzellik-salonu": "Güzellik Salonu",
+    "tirnak-manikur": "Tırnak ve Manikür",
+    "ortak-salon-ihtiyaclari": "Ortak Salon İhtiyaçları",
+    "yedek-parcalar": "Yedek Parçalar",
+  };
+  if (query?.segment && SEGMENT_TITLES[query.segment]) {
+    return SEGMENT_TITLES[query.segment];
   }
   const activeCategory = data?.categories?.find(
     (item) => item.slug === query?.category

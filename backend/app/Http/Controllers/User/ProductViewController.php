@@ -4,7 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
-use App\Models\UserProductView;
+use App\Services\RecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,10 +12,10 @@ class ProductViewController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
+        $this->middleware('auth:api')->except(['storeGuest']);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, RecommendationService $recommendations)
     {
         $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
@@ -30,21 +30,50 @@ class ProductViewController extends Controller
             ->first();
 
         if (! $product) {
-            return response()->json(['message' => 'Product not found'], 404);
+            return response()->json(['message' => 'Ürün bulunamadı.'], 404);
         }
 
-        $view = UserProductView::query()->firstOrNew([
-            'user_id' => $user->id,
-            'product_id' => $productId,
-        ]);
-
-        $view->view_count = (int) ($view->view_count ?? 0) + 1;
-        $view->last_viewed_at = now();
-        $view->save();
+        $recommendations->recordUserView($user, $productId);
 
         return response()->json([
             'success' => true,
-            'view_count' => $view->view_count,
+            'message' => 'Görüntüleme kaydedildi.',
+        ]);
+    }
+
+    /**
+     * Misafir görüntüleme — yalnızca çerez/pazarlama izni ile.
+     */
+    public function storeGuest(Request $request, RecommendationService $recommendations)
+    {
+        $request->validate([
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'guest_key' => ['required', 'string', 'max:64'],
+            'consent' => ['required', 'boolean'],
+        ]);
+
+        if (! $request->boolean('consent')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kişiselleştirme izni yok; görüntüleme kaydedilmedi.',
+            ]);
+        }
+
+        $productId = (int) $request->input('product_id');
+        $product = Product::query()->where('id', $productId)->where('status', 1)->first();
+        if (! $product) {
+            return response()->json(['message' => 'Ürün bulunamadı.'], 404);
+        }
+
+        $recommendations->recordGuestView(
+            (string) $request->input('guest_key'),
+            $productId,
+            true
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Görüntüleme kaydedildi.',
         ]);
     }
 }

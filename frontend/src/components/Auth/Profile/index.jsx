@@ -29,6 +29,7 @@ import Dashboard from "./tabs/Dashboard";
 import OrderTab from "./tabs/OrderTab";
 import PasswordTab from "./tabs/PasswordTab";
 import ProfileTab from "./tabs/ProfileTab";
+import BusinessTypeTab from "./tabs/BusinessTypeTab";
 import ReviewTab from "./tabs/ReviewTab";
 import WishlistTab from "./tabs/WishlistTab";
 import { AUTH_STORAGE_SYNC_EVENT } from "@/redux/api/apiSlice";
@@ -605,7 +606,12 @@ function ProfileContent() {
                   ) : active === "profile" ? (
                     <>
                       {!isProfileInfoFetching && profileInfoApi ? (
-                        <ProfileTab profileInfo={profileInfoApi} />
+                        <>
+                          <ProfileTab profileInfo={profileInfoApi} />
+                          <div className="mt-6">
+                            <BusinessTypeTab profileInfo={profileInfoApi} />
+                          </div>
+                        </>
                       ) : (
                         <div className="flex justify-center items-center h-full">
                           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>

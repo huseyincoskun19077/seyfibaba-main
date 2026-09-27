@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import appConfig from "@/appConfig";
 import auth from "@/utils/auth";
 import { resolveProductImageUrl } from "@/utils/productImage";
 import { buildProductPath } from "@/utils/url";
 import PriceDisplay from "@/components/Shared/PriceDisplay";
+import {
+  consumePersonalizedDirty,
+  PERSONALIZED_DIRTY_KEY,
+} from "@/hooks/useProductViewTracker";
 
 function ProductSlideCard({ product }) {
   const hasOffer =
@@ -18,6 +23,7 @@ function ProductSlideCard({ product }) {
     <Link
       href={buildProductPath(product.slug)}
       className="w-[160px] md:w-[200px] shrink-0 rounded-2xl bg-white border border-[#04334a]/10 overflow-hidden hover:shadow-md transition-shadow"
+      data-product-id={product.id}
     >
       <div className="aspect-square bg-neutral-50">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -44,21 +50,32 @@ function ProductSlideCard({ product }) {
   );
 }
 
+function isHomePath(pathname) {
+  const p = String(pathname || "").replace(/\/+$/, "") || "/";
+  return p === "/" || p === "";
+}
+
 /**
- * Anasayfa Sana Özel / Popüler şerit — API’den 12 ürün (admin seçimi).
+ * Anasayfa Size Özel / Popüler şerit.
+ * Ürün gezintisi sonrası ana sayfaya dönüşte (pathname + dirty bayrak + pageshow) yeniden çeker.
  */
 export default function PopularProductsStrip({ products: fallbackProducts = [] }) {
+  const pathname = usePathname() || "";
   const [paused, setPaused] = useState(false);
   const [title, setTitle] = useState("Popüler ürünler");
   const [list, setList] = useState([]);
+  const [lastFetchAt, setLastFetchAt] = useState(null);
+  const prevPathRef = useRef(pathname);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const run = async () => {
+  const loadPersonalized = useCallback(
+    async (cancelledRef, reason = "mount") => {
       try {
         const token = auth()?.access_token;
-        const qs = new URLSearchParams({ limit: "12", scope: "home" });
+        const qs = new URLSearchParams({
+          limit: "12",
+          scope: "home",
+          _ts: String(Date.now()),
+        });
         if (token) qs.set("token", token);
         const res = await fetch(
           `${appConfig.BASE_URL}api/personalized-products?${qs.toString()}`,
@@ -73,29 +90,85 @@ export default function PopularProductsStrip({ products: fallbackProducts = [] }
         if (!res.ok) throw new Error("fetch failed");
         const data = await res.json();
         const products = Array.isArray(data?.products) ? data.products : [];
-        if (cancelled) return;
+        if (cancelledRef.current) return;
+        consumePersonalizedDirty();
+        setLastFetchAt({ at: Date.now(), reason, count: products.length });
         if (products.length) {
           setList(products.slice(0, 12));
           setTitle(
             String(data?.title || "").trim() ||
-              (data?.source === "personalized" ? "Sana Özel" : "Popüler ürünler")
+              (data?.source === "personalized" ||
+              data?.source === "recommendation"
+                ? "Size Özel"
+                : "Popüler ürünler")
           );
           return;
         }
       } catch {
-        /* fallback below */
+        /* fallback */
       }
-      if (cancelled) return;
-      const fb = Array.isArray(fallbackProducts) ? fallbackProducts.slice(0, 12) : [];
+      if (cancelledRef.current) return;
+      const fb = Array.isArray(fallbackProducts)
+        ? fallbackProducts.slice(0, 12)
+        : [];
       setList(fb);
       setTitle("Popüler ürünler");
-    };
+    },
+    [fallbackProducts]
+  );
 
-    run();
+  // Ana sayfa yolu / ürün sayfasından dönüş
+  useEffect(() => {
+    const cancelledRef = { current: false };
+    const prev = prevPathRef.current;
+    prevPathRef.current = pathname;
+
+    const cameFromProduct =
+      typeof prev === "string" &&
+      (prev.includes("/urun/") || prev.includes("/product/"));
+    const onHome = isHomePath(pathname);
+    const dirty =
+      typeof window !== "undefined" &&
+      !!sessionStorage.getItem(PERSONALIZED_DIRTY_KEY);
+
+    if (onHome) {
+      const reason = cameFromProduct
+        ? "return_from_product"
+        : dirty
+          ? "dirty_flag"
+          : "home_path";
+      loadPersonalized(cancelledRef, reason);
+    }
+
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
-  }, [fallbackProducts]);
+  }, [loadPersonalized, pathname]);
+
+  useEffect(() => {
+    const cancelledRef = { current: false };
+    const refreshIfHome = (reason) => {
+      if (!isHomePath(pathname)) return;
+      if (
+        reason === "visibility" &&
+        document.visibilityState !== "visible"
+      ) {
+        return;
+      }
+      loadPersonalized(cancelledRef, reason);
+    };
+    const onVisible = () => refreshIfHome("visibility");
+    const onPageShow = () => refreshIfHome("pageshow");
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("focus", onPageShow);
+    return () => {
+      cancelledRef.current = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("focus", onPageShow);
+    };
+  }, [loadPersonalized, pathname]);
 
   const loop = useMemo(() => {
     if (!list.length) return [];
@@ -109,8 +182,15 @@ export default function PopularProductsStrip({ products: fallbackProducts = [] }
 
   if (!list.length) return null;
 
+  const idSignature = list.map((p) => p.id).join(",");
+
   return (
-    <section className="w-full">
+    <section
+      className="w-full"
+      data-size-ozel-ids={idSignature}
+      data-size-ozel-fetched-at={lastFetchAt?.at || ""}
+      data-size-ozel-fetch-reason={lastFetchAt?.reason || ""}
+    >
       <div className="container-x mx-auto">
         <div className="flex items-center justify-between gap-3 mb-3 md:mb-4">
           <h2 className="text-lg md:text-xl font-800 text-[#04334a]">{title}</h2>

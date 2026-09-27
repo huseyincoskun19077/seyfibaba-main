@@ -1071,6 +1071,22 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::post('personalization-showcase', [\App\Http\Controllers\WEB\Admin\PersonalizationShowcaseController::class, 'store'])->name('personalization-showcase.store');
         Route::delete('personalization-showcase/{id}', [\App\Http\Controllers\WEB\Admin\PersonalizationShowcaseController::class, 'destroy'])->name('personalization-showcase.destroy');
 
+        Route::get('customer-segments', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'index'])->name('customer-segments.index');
+        Route::get('customer-segments/preview', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'preview'])->name('customer-segments.preview');
+        Route::post('customer-segments/apply-unambiguous', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'applyUnambiguous'])->name('customer-segments.apply-unambiguous');
+        Route::get('customer-segments/queue', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'queue'])->name('customer-segments.queue');
+        Route::post('customer-segments/queue/scan', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'queueScan'])->name('customer-segments.queue.scan');
+        Route::post('customer-segments/queue/{queueId}/resolve', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'queueResolve'])->name('customer-segments.queue.resolve');
+        Route::get('customer-segments/{id}/edit', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'edit'])->name('customer-segments.edit');
+        Route::put('customer-segments/{id}', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'update'])->name('customer-segments.update');
+        Route::post('customer-segments/{id}/taxonomy', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'storeTaxonomy'])->name('customer-segments.taxonomy.store');
+        Route::delete('customer-segments/{id}/taxonomy/{taxonomyId}', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'destroyTaxonomy'])->name('customer-segments.taxonomy.destroy');
+        Route::post('customer-segments/{id}/featured', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'storeFeaturedProduct'])->name('customer-segments.featured.store');
+        Route::delete('customer-segments/{id}/featured/{rowId}', [\App\Http\Controllers\WEB\Admin\CustomerSegmentController::class, 'destroyFeaturedProduct'])->name('customer-segments.featured.destroy');
+
+        Route::get('recommendation-settings', [\App\Http\Controllers\WEB\Admin\RecommendationSettingController::class, 'edit'])->name('recommendation-settings.edit');
+        Route::put('recommendation-settings', [\App\Http\Controllers\WEB\Admin\RecommendationSettingController::class, 'update'])->name('recommendation-settings.update');
+
 
         Route::get('popular-category', [HomePageController::class, 'popularCategory'])->name('popular-category');
         Route::post('store-popular-category', [HomePageController::class, 'storePopularCategory'])->name('store-popular-category');

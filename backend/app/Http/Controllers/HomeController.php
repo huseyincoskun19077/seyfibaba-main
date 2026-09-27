@@ -739,7 +739,15 @@ class HomeController extends Controller
         }
 
         $payload = (new \App\Services\PersonalizationProductService())
-            ->productsForUser($user, $limit, $scope);
+            ->productsForUser(
+                $user,
+                $limit,
+                $scope,
+                $request->query('guest_key'),
+                $request->boolean('consent'),
+                $request->query('segment'),
+                $request->filled('category_id') ? (int) $request->query('category_id') : null
+            );
 
         return response()->json($payload);
     }
@@ -1680,9 +1688,16 @@ class HomeController extends Controller
 
         }
 
-
-
-
+        if ($request->filled('segment')) {
+            $segment = \App\Models\CustomerSegment::query()
+                ->active()
+                ->where('slug', (string) $request->segment)
+                ->first();
+            if ($segment) {
+                $segmentQuery = app(\App\Services\CustomerSegmentService::class)->productQueryForSegment($segment);
+                $products = $products->whereIn('id', $segmentQuery->select('products.id'));
+            }
+        }
 
         $popularCategoryArr = [];
 
@@ -1762,7 +1777,14 @@ class HomeController extends Controller
                     }
                 }
                 [, $sanaIds] = (new \App\Services\PersonalizationProductService())
-                    ->productIdsForUser($authUser, 'all');
+                    ->productIdsForUser(
+                        $authUser,
+                        'all',
+                        $request->query('guest_key'),
+                        $request->boolean('consent'),
+                        $request->query('segment'),
+                        null
+                    );
                 if ($sanaIds === []) {
                     $products = $products->whereRaw('1 = 0');
                 } else {
@@ -1966,6 +1988,17 @@ class HomeController extends Controller
 
         }
 
+        if ($request->filled('segment')) {
+            $segment = \App\Models\CustomerSegment::query()
+                ->active()
+                ->where('slug', (string) $request->segment)
+                ->first();
+            if ($segment) {
+                $segmentQuery = app(\App\Services\CustomerSegmentService::class)->productQueryForSegment($segment);
+                $products = $products->whereIn('id', $segmentQuery->select('products.id'));
+            }
+        }
+
         if($request->brand) {
 
             $brand = Brand::where('slug',$request->brand)->first();
@@ -2090,7 +2123,14 @@ class HomeController extends Controller
                     }
                 }
                 [, $sanaIds] = (new \App\Services\PersonalizationProductService())
-                    ->productIdsForUser($authUser, 'all');
+                    ->productIdsForUser(
+                        $authUser,
+                        'all',
+                        $request->query('guest_key'),
+                        $request->boolean('consent'),
+                        $request->query('segment'),
+                        null
+                    );
                 if ($sanaIds === []) {
                     $products = $products->whereRaw('1 = 0');
                 } else {

@@ -16,7 +16,15 @@ class PersonalizationProductService
     /**
      * @param  string  $scope  home = anasayfa (yalnız admin seçimi), all = Tümünü gör (+ opsiyonel yüksek görüntülenme)
      */
-    public function productsForUser(?User $user, int $limit = self::HOME_LIMIT, string $scope = 'home'): array
+    public function productsForUser(
+        ?User $user,
+        int $limit = self::HOME_LIMIT,
+        string $scope = 'home',
+        ?string $guestKey = null,
+        bool $guestConsent = false,
+        ?string $segmentSlug = null,
+        ?int $lockCategoryId = null
+    ): array
     {
         $scope = $scope === 'all' ? 'all' : 'home';
         $title = 'Sana Özel';
@@ -24,13 +32,41 @@ class PersonalizationProductService
         $includeHighViews = false;
         $products = collect();
         $showcase = null;
+        $rec = app(RecommendationService::class);
 
         if ($user && Schema::hasTable('personalization_showcases')) {
-            $type = trim((string) ($user->business_type ?? ''));
+            $types = $rec->userBusinessTypeCodes($user);
+            $type = $types[0] ?? trim((string) ($user->business_type ?? ''));
             $status = trim((string) ($user->business_status ?? ''));
             $isOpening = in_array($status, ['opening_soon', 'planning'], true);
 
-            if ($type !== '') {
+            // Çoklu işletme türü: her tür için vitrin ürünlerini birleştir (çeşitlilik)
+            if ($types !== [] && $rec->personalizationAllowed($user)) {
+                $merged = collect();
+                foreach ($types as $t) {
+                    $row = PersonalizationShowcase::query()
+                        ->where('business_type', $t)
+                        ->where('status', true)
+                        ->first();
+                    if (! $row) {
+                        continue;
+                    }
+                    $showcase = $showcase ?: $row;
+                    $title = trim((string) $row->title) ?: $title;
+                    $includeHighViews = $includeHighViews || (bool) $row->include_high_views;
+                    $chunk = $this->resolveShowcaseProducts($row, $isOpening, $limit, $scope);
+                    $merged = $merged->merge($chunk);
+                }
+                if ($merged->isNotEmpty()) {
+                    $products = $merged->unique('id')->take($limit)->values();
+                    $source = 'personalized';
+                } elseif ($type !== '') {
+                    $showcase = PersonalizationShowcase::query()
+                        ->where('business_type', $type)
+                        ->where('status', true)
+                        ->first();
+                }
+            } elseif ($type !== '') {
                 $showcase = PersonalizationShowcase::query()
                     ->where('business_type', $type)
                     ->where('status', true)
@@ -50,23 +86,77 @@ class PersonalizationProductService
                     }
                 }
             }
+
+            // Vitrin boşsa veya slot kaldıysa: gezinme geçmişi + alan önerisi
+            if ($rec->personalizationAllowed($user)) {
+                $need = max(0, $limit - $products->count());
+                if ($products->isEmpty() || $need > 0) {
+                    $ids = $rec->recommendProductIds(
+                        $user,
+                        $segmentSlug,
+                        $lockCategoryId,
+                        null,
+                        null,
+                        false,
+                        $limit
+                    );
+                    if ($ids !== []) {
+                        $existing = $products->pluck('id')->map(fn ($id) => (int) $id)->all();
+                        $ids = array_values(array_filter($ids, fn ($id) => ! in_array((int) $id, $existing, true)));
+                        if ($ids !== []) {
+                            $extra = Product::query()
+                                ->whereIn('id', $ids)
+                                ->get()
+                                ->sortBy(fn ($p) => array_search((int) $p->id, $ids, true))
+                                ->values();
+                            if ($products->isEmpty()) {
+                                $products = $extra->take($limit)->values();
+                                $source = 'recommendation';
+                                $title = 'Size Özel';
+                            } else {
+                                $products = $products->merge($extra)->unique('id')->take($limit)->values();
+                                $source = $source === 'personalized' ? 'personalized' : 'recommendation';
+                            }
+                        }
+                    }
+                }
+            }
+        } elseif ($guestConsent && $guestKey) {
+            // Misafir: yalnızca pazarlama izni varken gezinme geçmişine dayalı öneri
+            $ids = $rec->recommendProductIds(
+                null,
+                $segmentSlug,
+                $lockCategoryId,
+                null,
+                $guestKey,
+                true,
+                $limit
+            );
+            if ($ids !== []) {
+                $products = Product::query()
+                    ->whereIn('id', $ids)
+                    ->get()
+                    ->sortBy(fn ($p) => array_search((int) $p->id, $ids, true))
+                    ->values()
+                    ->take($limit);
+                $source = 'recommendation';
+                $title = 'Size Özel';
+            }
         }
 
-        // Anasayfa: sektörü olmayan misafir / vitrin yoksa popüler (eski davranış)
-        // Sektörü olan kullanıcıda admin seçimi yoksa boş bırak — otomatik karışık ürün gösterme
+        // Anasayfa: sektörü olmayan misafir / vitrin yoksa / kişiselleştirme kapalıysa popüler
         if ($products->isEmpty()) {
-            $hasType = $user && trim((string) ($user->business_type ?? '')) !== '';
-            if ($scope === 'home' && ! $hasType) {
-                $products = $this->popularFallback(self::HOME_LIMIT);
+            $allowed = $user && $rec->personalizationAllowed($user);
+            $hasType = $allowed && $rec->userBusinessTypeCodes($user) !== [];
+            if (! $allowed || ($scope === 'home' && ! $hasType) || ($scope === 'all' && ! $hasType)) {
+                $products = $this->popularFallback(
+                    $scope === 'home' ? self::HOME_LIMIT : min(48, max(12, $limit))
+                );
                 $source = 'popular';
                 $title = 'Popüler ürünler';
-            } elseif ($scope === 'all' && ! $hasType) {
-                $products = $this->popularFallback(min(48, max(12, $limit)));
-                $source = 'popular';
-                $title = 'Popüler ürünler';
-            } elseif ($hasType && $source !== 'personalized') {
+            } elseif ($hasType && $source !== 'personalized' && $source !== 'recommendation') {
                 $source = 'personalized';
-                $title = $title ?: 'Sana Özel';
+                $title = $title ?: 'Size Özel';
             }
         }
 
@@ -77,6 +167,7 @@ class PersonalizationProductService
             'include_high_views' => $includeHighViews,
             'home_limit' => $showcase ? $showcase->homeLimit() : self::HOME_LIMIT,
             'business_type' => $user->business_type ?? null,
+            'business_types' => $user ? app(RecommendationService::class)->userBusinessTypeCodes($user) : [],
             'business_status' => $user->business_status ?? null,
             'products' => $products->values(),
         ];
@@ -87,9 +178,23 @@ class PersonalizationProductService
      *
      * @return array{0: string, 1: int[]}
      */
-    public function productIdsForUser(?User $user, string $scope = 'all'): array
-    {
-        $payload = $this->productsForUser($user, $scope === 'home' ? self::HOME_LIMIT : 48, $scope);
+    public function productIdsForUser(
+        ?User $user,
+        string $scope = 'all',
+        ?string $guestKey = null,
+        bool $guestConsent = false,
+        ?string $segmentSlug = null,
+        ?int $lockCategoryId = null
+    ): array {
+        $payload = $this->productsForUser(
+            $user,
+            $scope === 'home' ? self::HOME_LIMIT : 48,
+            $scope,
+            $guestKey,
+            $guestConsent,
+            $segmentSlug,
+            $lockCategoryId
+        );
         $ids = collect($payload['products'])->pluck('id')->map(fn ($id) => (int) $id)->filter()->values()->all();
 
         return [$payload['title'] ?? 'Sana Özel', $ids];

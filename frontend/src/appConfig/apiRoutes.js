@@ -108,6 +108,12 @@ const combinedUrl = (url) => {
 const apiRoutes = {
   // shopo
   shopo: combinedUrl(""),
+  customerSegments: combinedUrl("customer-segments"),
+  productView: combinedUrl("user/product-view"),
+  guestProductView: combinedUrl("guest-product-view"),
+  updateBuyerPersonalization: combinedUrl("user/update-buyer-personalization"),
+  clearBrowseHistory: combinedUrl("user/clear-browse-history"),
+  personalizationToggle: combinedUrl("user/personalization-toggle"),
   about: combinedUrl(ABOUT_US),
 
   // Website Setup
