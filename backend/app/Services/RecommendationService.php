@@ -160,6 +160,16 @@ class RecommendationService
         $settings = $this->settings();
         $scores = [];
 
+        $history = $this->loadHistorySignals($user, $guestKey, $guestConsent, $settings);
+        $types = ($user && $this->personalizationAllowed($user))
+            ? $this->userBusinessTypeCodes($user)
+            : [];
+
+        // Kişisel sinyal yoksa boş dön → üst katman popüler fallback kullanır
+        if ($history === [] && ! $segmentSlug && $types === []) {
+            return [];
+        }
+
         $base = Product::query()->where('status', 1)->where('approve_by_admin', 1);
         if ($lockCategoryId) {
             $base->where('category_id', $lockCategoryId);
@@ -191,8 +201,7 @@ class RecommendationService
             }
         }
 
-        // 2) Gezinme geçmişi (tekrarlayan görüntülemeler + zaman azalması)
-        $history = $this->loadHistorySignals($user, $guestKey, $guestConsent, $settings);
+        // 2) Gezinme geçmişi → aynı kategori/alt kategorideki ürünler (Trendyol tarzı)
         $viewedIds = [];
         foreach ($history as $h) {
             $viewedIds[] = (int) $h['product_id'];
@@ -201,20 +210,23 @@ class RecommendationService
                 ->where('approve_by_admin', 1)
                 ->where('id', '!=', $h['product_id'])
                 ->where(function ($q) use ($h) {
-                    $q->where('category_id', $h['category_id'])
-                        ->orWhere('sub_category_id', $h['sub_category_id']);
+                    $q->where('category_id', $h['category_id']);
+                    if (! empty($h['sub_category_id'])) {
+                        $q->orWhere('sub_category_id', $h['sub_category_id']);
+                    }
                 })
                 ->when($lockCategoryId, fn ($q) => $q->where('category_id', $lockCategoryId))
                 ->when($lockSubCategoryId, fn ($q) => $q->where('sub_category_id', $lockSubCategoryId))
                 ->orderByDesc('id')
-                ->limit(40)
+                ->limit(60)
                 ->pluck('id');
 
             foreach ($related as $rid) {
-                if (! isset($scores[(int) $rid])) {
-                    continue;
+                $rid = (int) $rid;
+                if (! isset($scores[$rid])) {
+                    $scores[$rid] = 0.0;
                 }
-                $scores[(int) $rid] += $settings->weight_browse_history * $h['weight'];
+                $scores[$rid] += $settings->weight_browse_history * $h['weight'];
             }
         }
 
@@ -225,8 +237,7 @@ class RecommendationService
         }
 
         // 3) İşletme türleri — taxonomy varsa onu kullan; yoksa kategori/ürün adına göre eşle
-        $types = $this->userBusinessTypeCodes($user);
-        if ($types !== [] && $this->personalizationAllowed($user)) {
+        if ($types !== []) {
             $this->applyBusinessTypeBoost($scores, $types, $settings);
         }
 
@@ -322,7 +333,8 @@ class RecommendationService
     private function loadHistorySignals(?User $user, ?string $guestKey, bool $guestConsent, RecommendationSetting $settings): array
     {
         $since = Carbon::now()->subDays(max(1, (int) $settings->history_days));
-        $minViews = max(1, (int) $settings->min_views_for_signal);
+        // Tek tıklama = sinyal (Trendyol tarzı)
+        $minViews = 1;
         $rows = collect();
 
         if ($user && $this->personalizationAllowed($user)) {
@@ -350,8 +362,9 @@ class RecommendationService
                 continue;
             }
             $daysAgo = max(0, $row->last_viewed_at?->diffInDays(now()) ?? 0);
-            $decay = max(0.15, 1 - ($daysAgo / max(1, (int) $settings->history_days)));
-            $freq = min(3, (int) $row->view_count) / 3;
+            $decay = max(0.25, 1 - ($daysAgo / max(1, (int) $settings->history_days)));
+            // İlk tıklamada tam sinyal; tekrar bakışlarda biraz daha güçlenir
+            $freq = min(1.0, 0.85 + (0.15 * min(2, max(0, (int) $row->view_count - 1))));
             $out[] = [
                 'product_id' => (int) $product->id,
                 'category_id' => (int) $product->category_id,

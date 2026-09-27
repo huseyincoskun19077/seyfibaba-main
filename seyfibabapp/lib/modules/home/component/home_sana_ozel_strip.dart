@@ -12,8 +12,10 @@ import '../../category/component/product_card.dart';
 import '../controller/cubit/product/products_cubit.dart';
 import '../model/product_model.dart';
 import '../widgets/home_theme.dart';
+import 'product_view_tracker.dart';
+import 'story_view_tracker.dart';
 
-/// Stories altı — Sana Özel (admin 12 ürün); Tümünü gör → sana_ozel listing.
+/// Stories altı — Size Özel (admin vitrin yoksa gezinme geçmişi); Tümünü gör → sana_ozel.
 class HomeSanaOzelStrip extends StatefulWidget {
   const HomeSanaOzelStrip({
     super.key,
@@ -26,7 +28,8 @@ class HomeSanaOzelStrip extends StatefulWidget {
   State<HomeSanaOzelStrip> createState() => _HomeSanaOzelStripState();
 }
 
-class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
+class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip>
+    with WidgetsBindingObserver {
   String _title = 'Popüler ürünler';
   List<ProductModel> _products = [];
   bool _loading = true;
@@ -38,12 +41,35 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.fallbackProducts.isNotEmpty) {
       _products = widget.fallbackProducts.take(_homeLimit).toList();
       _title = 'Popüler ürünler';
       _loading = false;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _reloadIfDirty();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null && route.isCurrent) {
+      _reloadIfDirty();
+    }
+  }
+
+  Future<void> _reloadIfDirty() async {
+    if (await ProductViewTracker.hasDirty()) {
+      await _load();
+    }
   }
 
   @override
@@ -61,6 +87,7 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _autoTimer?.cancel();
     _scroll.dispose();
     super.dispose();
@@ -73,9 +100,16 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
         token = context.read<LoginBloc>().userInfo?.accessToken;
       } catch (_) {}
 
+      String? guestKey;
+      if (token == null || token.isEmpty) {
+        guestKey = await StoryViewTracker.guestKey();
+      }
+
       final uri = Uri.parse(
         RemoteUrls.personalizedProducts(
           token: token,
+          guestKey: guestKey,
+          consent: guestKey != null && guestKey.isNotEmpty,
           limit: _homeLimit,
           scope: 'home',
         ),
@@ -109,8 +143,9 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
             }
           }
           if (products.isNotEmpty && title.isEmpty) {
-            title =
-                source == 'personalized' ? 'Sana Özel' : 'Popüler ürünler';
+            title = (source == 'personalized' || source == 'recommendation')
+                ? 'Size Özel'
+                : 'Popüler ürünler';
           }
         }
       }
@@ -119,6 +154,8 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip> {
         products = widget.fallbackProducts.take(_homeLimit).toList();
         title = 'Popüler ürünler';
       }
+
+      await ProductViewTracker.consumeDirty();
 
       if (!mounted) return;
       setState(() {

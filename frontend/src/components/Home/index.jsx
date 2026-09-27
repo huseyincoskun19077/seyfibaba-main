@@ -7,12 +7,9 @@ import CategorySection from "./CategorySection";
 import PopularProductsStrip from "./PopularProductsStrip";
 import StoriesStrip from "./StoriesStrip";
 import HomeBlocks from "./HomeBlocks";
-import CustomerSegmentPicker from "./CustomerSegmentPicker";
 import { isFlashSaleActive } from "@/utils/flashSale";
 import { resolveProductImageUrl } from "@/utils/productImage";
 import ProductCard from "../Helpers/Cards/ProductCard";
-import auth from "@/utils/auth";
-import apiRoutes from "@/appConfig/apiRoutes";
 
 const Ads = dynamic(() => import("./Ads"), { ssr: false });
 const ViewMoreTitle = dynamic(() => import("../Helpers/ViewMoreTitle"));
@@ -37,38 +34,10 @@ function resolveStoreUrl(value, fallback) {
 export default function Home({ homepageData }) {
   const pathname = usePathname() || "";
   const [homepage, setHomepage] = useState(homepageData);
-  const [businessTypeKeys, setBusinessTypeKeys] = useState([]);
 
   useEffect(() => {
     setHomepage(homepageData);
   }, [homepageData]);
-
-  useEffect(() => {
-    const session = auth();
-    const token = session?.access_token;
-    if (!token) {
-      setBusinessTypeKeys([]);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(apiRoutes.profileInfo, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        const p = data?.personInfo || data?.user || {};
-        const multi = Array.isArray(p.business_types) ? p.business_types : [];
-        const single = p.business_type ? [p.business_type] : [];
-        if (!cancelled) setBusinessTypeKeys(multi.length ? multi : single);
-      } catch {
-        if (!cancelled) setBusinessTypeKeys([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // Canlı tam-API yenileme kaldırıldı: SSR + revalidate=60 yeterince güncel;
   // her ziyarette ikinci büyük istek anasayfayı yavaşlatıyordu.
@@ -175,8 +144,6 @@ export default function Home({ homepageData }) {
   return (
     <div className="w-full pt-1 pb-12 md:pb-16 space-y-4 md:space-y-7 bg-[#fdfdfd]">
       <Ads />
-
-      <CustomerSegmentPicker businessTypeKeys={businessTypeKeys} />
 
       <StoriesStrip />
 

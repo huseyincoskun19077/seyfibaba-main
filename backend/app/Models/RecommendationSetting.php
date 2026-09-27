@@ -41,7 +41,7 @@ class RecommendationSetting extends Model
             'weight_business_type' => 20,
             'weight_popularity' => 10,
             'history_days' => 30,
-            'min_views_for_signal' => 2,
+            'min_views_for_signal' => 1,
             'vendor_diversity' => 3,
             'exclude_viewed_product' => true,
         ]);

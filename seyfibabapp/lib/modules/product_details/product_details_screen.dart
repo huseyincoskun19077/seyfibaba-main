@@ -8,7 +8,7 @@ import '/utils/language_string.dart';
 import '/widgets/capitalized_word.dart';
 import '../../core/router_name.dart';
 import '../authentication/controller/login/login_bloc.dart';
-import '../notification/services/buyer_notification_service.dart';
+import '../home/component/product_view_tracker.dart';
 import '../../utils/constants.dart';
 import '../../utils/utils.dart';
 import '../../widgets/primary_button.dart';
@@ -42,7 +42,6 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   int selectedIndex = 0;
   late ProductDetailsCubit detailCubit;
-  final _buyerNotificationService = BuyerNotificationService();
   int? _trackedProductId;
 
   @override
@@ -57,15 +56,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       return;
     }
 
-    final loginBloc = context.read<LoginBloc>();
-    if (!loginBloc.isLogedIn) {
-      return;
-    }
-
     _trackedProductId = productId;
-    _buyerNotificationService
-        .recordProductView(loginBloc.userInfo!.accessToken, productId)
-        .catchError((_) {});
+    final loginBloc = context.read<LoginBloc>();
+    final token =
+        loginBloc.isLogedIn ? loginBloc.userInfo?.accessToken : null;
+    ProductViewTracker.track(productId: productId, accessToken: token);
   }
 
   @override

@@ -7,7 +7,7 @@ import { hasMarketingConsent } from "@/components/Helpers/Consent";
 const GUEST_KEY = "kt_guest_view_key";
 export const PERSONALIZED_DIRTY_KEY = "kt_size_ozel_dirty";
 
-function getGuestKey() {
+export function getGuestKey() {
   if (typeof window === "undefined") return "";
   try {
     let k = localStorage.getItem(GUEST_KEY);

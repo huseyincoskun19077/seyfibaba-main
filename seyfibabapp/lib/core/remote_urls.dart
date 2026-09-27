@@ -25,6 +25,7 @@ class RemoteUrls {
   static const String userNotificationsReadAll =
       '${baseUrl}user/notifications/read-all';
   static const String userProductView = '${baseUrl}user/product-view';
+  static const String guestProductView = '${baseUrl}guest-product-view';
 
   static String productReport(String token) =>
       '${baseUrl}user/product-report?token=$token';
@@ -52,12 +53,21 @@ class RemoteUrls {
 
   static String personalizedProducts({
     String? token,
+    String? guestKey,
+    bool consent = false,
     int limit = 12,
     String scope = 'home',
   }) {
-    final q = <String>['limit=$limit', 'scope=$scope'];
+    final q = <String>[
+      'limit=$limit',
+      'scope=$scope',
+      '_ts=${DateTime.now().millisecondsSinceEpoch}',
+    ];
     if (token != null && token.isNotEmpty) {
       q.add('token=${Uri.encodeComponent(token)}');
+    } else if (consent && guestKey != null && guestKey.isNotEmpty) {
+      q.add('guest_key=${Uri.encodeComponent(guestKey)}');
+      q.add('consent=1');
     }
     return '${baseUrl}personalized-products?${q.join('&')}';
   }

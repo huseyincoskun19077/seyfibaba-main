@@ -8,8 +8,10 @@ import auth from "@/utils/auth";
 import { resolveProductImageUrl } from "@/utils/productImage";
 import { buildProductPath } from "@/utils/url";
 import PriceDisplay from "@/components/Shared/PriceDisplay";
+import { hasMarketingConsent } from "@/components/Helpers/Consent";
 import {
   consumePersonalizedDirty,
+  getGuestKey,
   PERSONALIZED_DIRTY_KEY,
 } from "@/hooks/useProductViewTracker";
 
@@ -57,7 +59,8 @@ function isHomePath(pathname) {
 
 /**
  * Anasayfa Size Özel / Popüler şerit.
- * Ürün gezintisi sonrası ana sayfaya dönüşte (pathname + dirty bayrak + pageshow) yeniden çeker.
+ * Gezilen ürüne göre otomatik yenilenir (admin vitrin yoksa).
+ * Misafir: guest_key + pazarlama izni ile geçmiş gönderilir.
  */
 export default function PopularProductsStrip({ products: fallbackProducts = [] }) {
   const pathname = usePathname() || "";
@@ -76,7 +79,15 @@ export default function PopularProductsStrip({ products: fallbackProducts = [] }
           scope: "home",
           _ts: String(Date.now()),
         });
-        if (token) qs.set("token", token);
+        if (token) {
+          qs.set("token", token);
+        } else if (hasMarketingConsent()) {
+          const guestKey = getGuestKey();
+          if (guestKey) {
+            qs.set("guest_key", guestKey);
+            qs.set("consent", "1");
+          }
+        }
         const res = await fetch(
           `${appConfig.BASE_URL}api/personalized-products?${qs.toString()}`,
           {
