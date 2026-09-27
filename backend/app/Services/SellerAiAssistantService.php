@@ -101,7 +101,11 @@ class SellerAiAssistantService
             ];
         }
 
-        $action = $this->extractAction($raw) ?? $forcedAction;
+        $extracted = $this->extractAction($raw);
+        // Net toplu komutlarda model yanlış/tekil ACTION üretse bile forced intent kazanır
+        $action = ($forcedAction && in_array($forcedAction['type'] ?? '', ['bulk_delete_products', 'bulk_set_status'], true))
+            ? $forcedAction
+            : ($extracted ?? $forcedAction);
         $reply = $this->stripActionBlock($raw);
         $reply = $this->promptGuard->sanitizeOutput($reply, 'seller');
         $actionTaken = null;
@@ -220,7 +224,7 @@ Yapabileceklerin (HEPSİNİ sen uygularsın — "panelden yapın" DEME):
 1. Bilgi: stok, sipariş, ürün sayısı
 2. Tek ürün güncelle: fiyat, indirim, stok, ad, açıklama, yayına/pasife, kategori, SEO
 3. Toplu durum: tüm veya kategori/alt/child bazlı yayına al / pasife al
-4. Ürün sil (soft): SN / SKU / barkod / ad
+4. Ürün sil (soft): tek SN / SKU / barkod / ad VEYA SN aralığı (ör. 1 ile 400 arası)
 5. Kategori yerleştir: ürünü doğru kategori + alt + child'a taşı
 6. SEO üret/güncelle: tek ürün veya kategori/tüm mağaza
 
@@ -235,8 +239,12 @@ SEO:
 <!--ACTION{"type":"generate_seo","scope":"category","category_name":"Makas"}-->
 <!--ACTION{"type":"generate_seo","scope":"all"}-->
 
-Silme:
+Silme (tek):
 <!--ACTION{"type":"delete_product","sn":5}-->
+
+Toplu silme (SN aralığı — panel sırası, id DESC):
+<!--ACTION{"type":"bulk_delete_products","sn_from":1,"sn_to":400}-->
+"1 ile 400 arası sil" / "1-400 sil" → mutlaka bulk_delete_products (tek tek delete_product YAZMA)
 
 Toplu durum:
 <!--ACTION{"type":"bulk_set_status","status":1,"scope":"draft","category_name":"Makas","sub_category_name":"","child_category_name":""}-->
@@ -248,6 +256,7 @@ ZORUNLU:
 - "X kategorisini yayına/pasife al" → bulk_set_status + category_name
 - SEO isteğinde generate_seo ACTION
 - SN = sıra no (SKU değil)
+- SN aralığı silmede tek ACTION: bulk_delete_products
 - Admin kilidini açma
 PROMPT;
     }
@@ -274,6 +283,25 @@ PROMPT;
         $allScope = (bool) preg_match('/\b(tum|tumu|hepsi|hepsini|butun|butunu)\b/u', $text)
             || (bool) preg_match('/yayinda/u', $text)
             || (bool) preg_match('/\b(tum|tumu|hepsi|hepsini)\b|yayinda|2629|urunleriniz var/u', $prev);
+
+        if ($wantsDelete) {
+            // "1 ile 400 arası sil" / "1-400 sil" / "SN 1 den 400 e kadar"
+            if (preg_match('/\b(\d{1,5})\s*(?:ile|-|–|—)\s*(\d{1,5})\b/u', $text, $m)
+                || preg_match('/\b(\d{1,5})\s*(?:den|dan)\s*(\d{1,5})\s*(?:e|ye|a|ya)?\s*(?:kadar)?/u', $text, $m)) {
+                $from = (int) $m[1];
+                $to = (int) $m[2];
+                if ($from > $to) {
+                    [$from, $to] = [$to, $from];
+                }
+                if ($from >= 1 && $to > $from) {
+                    return [
+                        'type' => 'bulk_delete_products',
+                        'sn_from' => $from,
+                        'sn_to' => $to,
+                    ];
+                }
+            }
+        }
 
         if ($wantsDelete && ! $allScope) {
             // Panel SN = sıra numarası (1,2,3…), SKU değil
@@ -364,6 +392,10 @@ PROMPT;
 
         if ($type === 'delete_product') {
             return $this->executeDeleteProduct($seller, $action);
+        }
+
+        if ($type === 'bulk_delete_products') {
+            return $this->executeBulkDeleteProducts($seller, $action);
         }
 
         if ($type === 'set_category') {
@@ -491,6 +523,73 @@ PROMPT;
             'summary' => '"'.$name.'" satıcı listesinden kaldırıldı (admin kaydı duruyor).',
             'error' => null,
         ];
+    }
+
+    /**
+     * Panel SN aralığına göre soft-delete (orderByDesc id, 1-based).
+     *
+     * @return array{summary:?string,error:?string}
+     */
+    private function executeBulkDeleteProducts(Vendor $seller, array $action): array
+    {
+        $from = (int) ($action['sn_from'] ?? $action['from'] ?? 0);
+        $to = (int) ($action['sn_to'] ?? $action['to'] ?? 0);
+        if ($from < 1 || $to < 1) {
+            return ['summary' => null, 'error' => 'Geçersiz SN aralığı. Örnek: 1 ile 400 arası sil.'];
+        }
+        if ($from > $to) {
+            [$from, $to] = [$to, $from];
+        }
+
+        $count = $to - $from + 1;
+        if ($count > 2000) {
+            return ['summary' => null, 'error' => 'Tek seferde en fazla 2000 ürün silinebilir. Aralığı bölün.'];
+        }
+
+        $products = Product::query()
+            ->where('vendor_id', $seller->id)
+            ->orderByDesc('id')
+            ->skip($from - 1)
+            ->take($count)
+            ->get();
+
+        if ($products->isEmpty()) {
+            return ['summary' => null, 'error' => "SN {$from}–{$to} aralığında ürün bulunamadı."];
+        }
+
+        $publishStatus = app(ProductSellerPublishStatus::class);
+        $softDelete = app(SellerProductSoftDelete::class);
+        $deleted = 0;
+        $skippedAdmin = 0;
+
+        foreach ($products as $product) {
+            if ($publishStatus->isBlockedByAdmin($product)) {
+                $skippedAdmin++;
+                continue;
+            }
+            $softDelete->hide($product);
+            $deleted++;
+        }
+
+        if ($deleted === 0) {
+            return [
+                'summary' => null,
+                'error' => $skippedAdmin > 0
+                    ? 'Bu aralıktaki ürünler admin kilidi nedeniyle silinemedi.'
+                    : "SN {$from}–{$to} aralığında silinecek ürün yok.",
+            ];
+        }
+
+        $summary = "SN {$from}–{$to}: {$deleted} ürün satıcı listesinden kaldırıldı (admin kaydı duruyor).";
+        if ($skippedAdmin > 0) {
+            $summary .= " {$skippedAdmin} ürün admin kilidi nedeniyle atlandı.";
+        }
+        $found = $products->count();
+        if ($found < $count) {
+            $summary .= " (Listede {$found} ürün vardı; istenen aralık {$count}.)";
+        }
+
+        return ['summary' => $summary, 'error' => null];
     }
 
     /**
@@ -816,7 +915,7 @@ PROMPT;
             return is_array($decoded) ? $decoded : null;
         }
 
-        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status|delete_product|set_category|generate_seo)"[\s\S]*\}/', $raw, $m)) {
+        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status|bulk_delete_products|delete_product|set_category|generate_seo)"[\s\S]*\}/', $raw, $m)) {
             $decoded = json_decode($m[0], true);
 
             return is_array($decoded) ? $decoded : null;
