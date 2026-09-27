@@ -103,7 +103,7 @@ class SellerAiAssistantService
 
         $extracted = $this->extractAction($raw);
         // Net toplu komutlarda model yanlış/tekil ACTION üretse bile forced intent kazanır
-        $action = ($forcedAction && in_array($forcedAction['type'] ?? '', ['bulk_delete_products', 'bulk_set_status'], true))
+        $action = ($forcedAction && in_array($forcedAction['type'] ?? '', ['bulk_delete_products', 'bulk_set_status', 'bulk_set_category'], true))
             ? $forcedAction
             : ($extracted ?? $forcedAction);
         $reply = $this->stripActionBlock($raw);
@@ -114,13 +114,19 @@ class SellerAiAssistantService
             $result = $this->executeAction($seller, $action);
             $actionTaken = $result['summary'];
             if ($result['summary']) {
-                $reply = trim($reply."\n\n✅ ".$result['summary']);
+                if (in_array($action['type'] ?? '', ['bulk_set_category', 'bulk_delete_products', 'bulk_set_status'], true)) {
+                    $reply = '✅ '.$result['summary'];
+                } else {
+                    $reply = trim($reply."\n\n✅ ".$result['summary']);
+                }
             }
             if ($result['error']) {
                 $reply = trim($reply."\n\n⚠️ ".$result['error']);
             }
         } elseif ($this->looksLikeUnsupportedPanelRedirect($reply)) {
-            $reply = trim($reply."\n\nNot: Desteklenen mağaza işlemlerini (ürün pasife/yayına alma, fiyat, stok) burada doğrudan yapabilirim. Komutu net yazmanız yeterli.");
+            $reply = trim($reply."\n\nNot: Desteklenen mağaza işlemlerini (ürün pasife/yayına alma, fiyat, stok, kategori taşıma) burada doğrudan yapabilirim. Komutu net yazmanız yeterli.");
+        } elseif ($this->looksLikeFakeCategorySuccess($reply) && ! $action) {
+            $reply = 'Kategori taşıma henüz uygulanmadı. Örnek: «VENÜS LİNE FIRÇA ürünlerini Kuaför Malzemeleri - Fırçalar kategorisine al»';
         }
 
         $history[] = ['role' => 'user', 'content' => $message];
@@ -225,14 +231,18 @@ Yapabileceklerin (HEPSİNİ sen uygularsın — "panelden yapın" DEME):
 2. Tek ürün güncelle: fiyat, indirim, stok, ad, açıklama, yayına/pasife, kategori, SEO
 3. Toplu durum: tüm veya kategori/alt/child bazlı yayına al / pasife al
 4. Ürün sil (soft): tek SN / SKU / barkod / ad VEYA SN aralığı (ör. 1 ile 400 arası)
-5. Kategori yerleştir: ürünü doğru kategori + alt + child'a taşı
+5. Kategori yerleştir: tek ürün VEYA isim/seri ile toplu (ör. "VENÜS LİNE FIRÇA … Fırçalar'a al")
 6. SEO üret/güncelle: tek ürün veya kategori/tüm mağaza
 
 Tek ürün ACTION:
 <!--ACTION{"type":"update_product","sn":0,"product_id":0,"product_name":"","sku":"","fields":{"price":0,"offer_price":0,"qty":0,"status":0,"category_name":"","sub_category_name":"","child_category_name":"","seo_title":"","seo_description":"","generate_seo":true}}-->
 
-Kategori ata:
+Kategori ata (tek):
 <!--ACTION{"type":"set_category","sn":0,"product_name":"","category_name":"Makas","sub_category_name":"","child_category_name":""}-->
+
+Toplu kategori (isim içeren tüm ürünler):
+<!--ACTION{"type":"bulk_set_category","name_contains":"VENÜS LİNE FIRÇA","category_name":"Kuaför Malzemeleri","sub_category_name":"Fırçalar"}-->
+"X ürünlerini/serilerini Y kategorisine al/taşı" → mutlaka bulk_set_category (tek set_category YAZMA, işlemi yapmadan "yaptım" DEME)
 
 SEO:
 <!--ACTION{"type":"generate_seo","sn":0,"product_name":"","scope":"one"}-->
@@ -252,11 +262,13 @@ status 0=pasif 1=yayında | scope published|draft|all
 Kategori verilirse yalnız o kategori/alt/child etkilenir.
 
 ZORUNLU:
-- Kategori adını ağaçtan eşleştir
+- Kategori adını ağaçtan eşleştir ("Üst - Alt" yolunu ayır)
 - "X kategorisini yayına/pasife al" → bulk_set_status + category_name
 - SEO isteğinde generate_seo ACTION
 - SN = sıra no (SKU değil)
 - SN aralığı silmede tek ACTION: bulk_delete_products
+- Seri/marka kategori taşımada tek ACTION: bulk_set_category
+- ACTION yazmadan "taşıdım/yaptım" DEME
 - Admin kilidini açma
 PROMPT;
     }
@@ -269,6 +281,19 @@ PROMPT;
     private function detectForcedAction(string $message, array $history = []): ?array
     {
         $text = Str::lower(Str::ascii($message));
+
+        // "yaptın mı?" → önceki kullanıcı komutunu yeniden uygula
+        if (preg_match('/^(yaptin\s*mi|yapildi\s*mi|basardin\s*mi|gercekten\s*yaptin|neden\s*yapmadin)\b/u', trim($text))) {
+            foreach (array_reverse($history) as $item) {
+                if (($item['role'] ?? '') === 'user') {
+                    $prevMsg = trim((string) ($item['content'] ?? ''));
+                    if ($prevMsg !== '' && ! preg_match('/^(yaptin\s*mi|yapildi\s*mi)/u', Str::lower(Str::ascii($prevMsg)))) {
+                        return $this->detectForcedAction($prevMsg, []);
+                    }
+                }
+            }
+        }
+
         $prev = '';
         foreach (array_reverse($history) as $item) {
             if (($item['role'] ?? '') === 'assistant') {
@@ -283,6 +308,11 @@ PROMPT;
         $allScope = (bool) preg_match('/\b(tum|tumu|hepsi|hepsini|butun|butunu)\b/u', $text)
             || (bool) preg_match('/yayinda/u', $text)
             || (bool) preg_match('/\b(tum|tumu|hepsi|hepsini)\b|yayinda|2629|urunleriniz var/u', $prev);
+
+        $bulkCategory = $this->detectBulkSetCategoryIntent($text, $wantsDelete, $wantsPassive, $wantsPublish);
+        if ($bulkCategory) {
+            return $bulkCategory;
+        }
 
         if ($wantsDelete) {
             // "1 ile 400 arası sil" / "1-400 sil" / "SN 1 den 400 e kadar"
@@ -379,6 +409,75 @@ PROMPT;
             );
     }
 
+    private function looksLikeFakeCategorySuccess(string $reply): bool
+    {
+        $t = Str::lower(Str::ascii($reply));
+
+        return (bool) preg_match('/(tasidim|tasiyorum|kategori(?:sine|ye)\s*(?:aldim|aliyorum)|yerlestirdim)/u', $t);
+    }
+
+    /**
+     * "X ürünlerini/serilerini Y kategorisine al" → bulk_set_category
+     */
+    private function detectBulkSetCategoryIntent(
+        string $text,
+        bool $wantsDelete,
+        bool $wantsPassive,
+        bool $wantsPublish
+    ): ?array {
+        if ($wantsDelete || $wantsPassive || $wantsPublish) {
+            return null;
+        }
+
+        $mentionsMove = (bool) preg_match('/kategori(?:sine|ye|si)?|kismina|tas[iy]|yerlestir/u', $text);
+        if (! $mentionsMove) {
+            return null;
+        }
+
+        $name = null;
+        $path = null;
+
+        // Ascii metin üzerinde eşle (Türkçe karakter / tüm / kısmına)
+        if (preg_match('/^(.+?)\s+(?:tum\s+)?(?:serilerini|urunlerini|urunleri|serisi)\s+(.+?)\s+(?:kismina|kategorisine|kategoriye)/u', $text, $m)) {
+            $name = trim($m[1]);
+            $path = trim($m[2]);
+        } elseif (preg_match('/(.+?)\s+(?:urunlerini|urunleri|serilerini)\s+["\']([^"\']+)["\']/u', $text, $m)) {
+            $name = trim($m[1]);
+            $path = trim($m[2]);
+        } elseif (preg_match('/(.+?)\s+(?:urunlerini|urunleri|serilerini)\s+(.+?)\s+kategori(?:sine|ye)/u', $text, $m)) {
+            $name = trim($m[1]);
+            $path = trim($m[2]);
+        }
+
+        if ($name === null || $path === null || mb_strlen($name) < 2 || mb_strlen($path) < 2) {
+            return null;
+        }
+
+        // "kısmına kategorisine" artıkları
+        $path = trim(preg_replace('/\s*(kismina|kategorisine|kategoriye|kategorisi)\s*$/u', '', $path) ?? $path);
+        $name = trim(preg_replace('/\s+(tum|bu|su)$/u', '', $name) ?? $name);
+
+        $action = [
+            'type' => 'bulk_set_category',
+            'name_contains' => $name,
+            'category_name' => $path,
+        ];
+
+        if (preg_match('/\s*[-–—\/|>]\s*/u', $path)) {
+            $parts = preg_split('/\s*[-–—\/|>]\s*/u', $path);
+            $parts = array_values(array_filter(array_map('trim', $parts)));
+            if (count($parts) >= 2) {
+                $action['category_name'] = $parts[0];
+                $action['sub_category_name'] = $parts[1];
+                if (isset($parts[2])) {
+                    $action['child_category_name'] = $parts[2];
+                }
+            }
+        }
+
+        return $action;
+    }
+
     /**
      * @return array{summary:?string,error:?string}
      */
@@ -400,6 +499,10 @@ PROMPT;
 
         if ($type === 'set_category') {
             return $this->executeSetCategory($seller, $action);
+        }
+
+        if ($type === 'bulk_set_category') {
+            return $this->executeBulkSetCategory($seller, $action);
         }
 
         if ($type === 'generate_seo') {
@@ -802,6 +905,71 @@ PROMPT;
     }
 
     /**
+     * İsim içeren ürünleri toplu kategoriye taşı.
+     *
+     * @return array{summary:?string,error:?string}
+     */
+    private function executeBulkSetCategory(Vendor $seller, array $action): array
+    {
+        $needle = trim((string) ($action['name_contains'] ?? $action['product_name'] ?? $action['query'] ?? ''));
+        if ($needle === '') {
+            return ['summary' => null, 'error' => 'Hangi ürün/seri? Örnek: VENÜS LİNE FIRÇA'];
+        }
+
+        $resolved = app(SellerAiCatalogHelper::class)->resolveFromAction($action);
+        if (! $resolved || empty($resolved['category_id'])) {
+            return ['summary' => null, 'error' => 'Hedef kategori bulunamadı. Platformdaki kategori adını net yazın (ör. Kuaför Malzemeleri - Fırçalar).'];
+        }
+
+        $needleAscii = Str::lower(Str::ascii($needle));
+        $candidates = Product::query()
+            ->where('vendor_id', $seller->id)
+            ->orderByDesc('id')
+            ->limit(4000)
+            ->get(['id', 'name', 'category_id', 'sub_category_id', 'child_category_id']);
+
+        $matched = $candidates->filter(function (Product $p) use ($needle, $needleAscii) {
+            $name = (string) $p->name;
+            if (stripos($name, $needle) !== false) {
+                return true;
+            }
+
+            return str_contains(Str::lower(Str::ascii($name)), $needleAscii);
+        })->take(800)->values();
+
+        if ($matched->isEmpty()) {
+            return ['summary' => null, 'error' => '"'.$needle.'" içeren ürün bulunamadı.'];
+        }
+
+        $updated = 0;
+        $already = 0;
+        $catId = (int) $resolved['category_id'];
+        $subId = (int) ($resolved['sub_category_id'] ?? 0);
+        $childId = (int) ($resolved['child_category_id'] ?? 0);
+
+        foreach ($matched as $product) {
+            if ((int) $product->category_id === $catId
+                && (int) $product->sub_category_id === $subId
+                && (int) $product->child_category_id === $childId) {
+                $already++;
+                continue;
+            }
+            $product->category_id = $catId;
+            $product->sub_category_id = $subId;
+            $product->child_category_id = $childId;
+            $product->save();
+            $updated++;
+        }
+
+        $summary = '"'.$needle.'" içeren '.$updated.' ürün «'.$resolved['label'].'» kategorisine taşındı.';
+        if ($already > 0) {
+            $summary .= " {$already} ürün zaten bu kategorideydi.";
+        }
+
+        return ['summary' => $summary, 'error' => null];
+    }
+
+    /**
      * @return array{summary:?string,error:?string}
      */
     private function executeGenerateSeo(Vendor $seller, array $action): array
@@ -915,7 +1083,7 @@ PROMPT;
             return is_array($decoded) ? $decoded : null;
         }
 
-        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status|bulk_delete_products|delete_product|set_category|generate_seo)"[\s\S]*\}/', $raw, $m)) {
+        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status|bulk_set_category|bulk_delete_products|delete_product|set_category|generate_seo)"[\s\S]*\}/', $raw, $m)) {
             $decoded = json_decode($m[0], true);
 
             return is_array($decoded) ? $decoded : null;

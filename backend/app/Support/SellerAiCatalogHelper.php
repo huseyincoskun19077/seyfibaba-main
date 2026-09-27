@@ -34,6 +34,20 @@ class SellerAiCatalogHelper
         $subName = trim((string) ($src['sub_category_name'] ?? $src['subcategory_name'] ?? $src['alt_kategori'] ?? ''));
         $catName = trim((string) ($src['category_name'] ?? $src['kategori'] ?? ''));
 
+        // "Kuaför Malzemeleri - Fırçalar" gibi yol → üst + alt (+ child)
+        if ($catName !== '' && $subName === '' && $childName === ''
+            && preg_match('/\s*[-–—\/|>]\s*/u', $catName)) {
+            $parts = preg_split('/\s*[-–—\/|>]\s*/u', $catName);
+            $parts = array_values(array_filter(array_map('trim', $parts), fn ($p) => $p !== ''));
+            if (count($parts) >= 2) {
+                $catName = $parts[0];
+                $subName = $parts[1];
+                if (count($parts) >= 3) {
+                    $childName = $parts[2];
+                }
+            }
+        }
+
         if ($childId > 0) {
             $child = ChildCategory::query()->where('status', 1)->find($childId);
             if ($child) {
@@ -84,6 +98,40 @@ class SellerAiCatalogHelper
             }
         }
 
+        // Üst kategori + alt kategori birlikte verildiyse altı o üstün altında ara
+        if ($subName !== '' && $catName !== '') {
+            $parentCat = $this->fuzzyFind(Category::query()->where('status', 1)->get(['id', 'name']), $catName);
+            $subs = SubCategory::query()->where('status', 1)->get(['id', 'name', 'category_id']);
+            if ($parentCat) {
+                $under = $subs->where('category_id', (int) $parentCat->id)->values();
+                $sub = $this->fuzzyFind($under, $subName) ?: $this->fuzzyFind($subs, $subName);
+            } else {
+                $sub = $this->fuzzyFind($subs, $subName);
+            }
+            if ($sub) {
+                $label = ($parentCat->name ?? '').' / '.$sub->name;
+
+                return [
+                    'category_id' => (int) $sub->category_id,
+                    'sub_category_id' => (int) $sub->id,
+                    'child_category_id' => 0,
+                    'label' => trim($label, ' /'),
+                ];
+            }
+            // Alt bulunamadıysa child adı olarak da dene
+            $child = $this->fuzzyFind(ChildCategory::query()->where('status', 1)->get(['id', 'name', 'sub_category_id', 'category_id']), $subName);
+            if ($child) {
+                $subRow = SubCategory::query()->find((int) $child->sub_category_id);
+
+                return [
+                    'category_id' => (int) ($child->category_id ?: ($subRow->category_id ?? 0)),
+                    'sub_category_id' => (int) $child->sub_category_id,
+                    'child_category_id' => (int) $child->id,
+                    'label' => $child->name,
+                ];
+            }
+        }
+
         if ($subName !== '') {
             $sub = $this->fuzzyFind(SubCategory::query()->where('status', 1)->get(['id', 'name', 'category_id']), $subName);
             if ($sub) {
@@ -104,6 +152,16 @@ class SellerAiCatalogHelper
                     'sub_category_id' => 0,
                     'child_category_id' => 0,
                     'label' => $cat->name,
+                ];
+            }
+            // Tek parça aslında alt kategori olabilir ("Fırçalar")
+            $sub = $this->fuzzyFind(SubCategory::query()->where('status', 1)->get(['id', 'name', 'category_id']), $catName);
+            if ($sub) {
+                return [
+                    'category_id' => (int) $sub->category_id,
+                    'sub_category_id' => (int) $sub->id,
+                    'child_category_id' => 0,
+                    'label' => $sub->name,
                 ];
             }
         }
