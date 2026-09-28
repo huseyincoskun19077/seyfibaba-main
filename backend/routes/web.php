@@ -281,6 +281,8 @@ Route::group(['middleware' => ['XSS']], function () {
             Route::put('remove-seller-social-link/{id}', [SellerProfileController::class, 'removeSellerSocialLink'])->name('remove-seller-social-link');
             Route::get('email-history', [SellerProfileController::class, 'emailHistory'])->name('email-history');
             Route::post('update-lat-long', [SellerProfileController::class, 'updateLocation'])->name('update.lat-long');
+            Route::get('shipping-tiers', [\App\Http\Controllers\WEB\Seller\SellerShippingController::class, 'edit'])->name('shipping-tiers.edit');
+            Route::put('shipping-tiers', [\App\Http\Controllers\WEB\Seller\SellerShippingController::class, 'update'])->name('shipping-tiers.update');
 
             Route::get('brand', [SellerBrandController::class, 'index'])->name('brand');
             Route::post('brand', [SellerBrandController::class, 'store'])->name('brand.store');
@@ -815,6 +817,8 @@ Route::group(['middleware' => ['XSS']], function () {
             Route::get('/create', [SmsCampaignController::class, 'create'])->name('create');
             Route::post('/', [SmsCampaignController::class, 'store'])->name('store');
             Route::post('/preview', [SmsCampaignController::class, 'preview'])->name('preview');
+            Route::post('/users', [SmsCampaignController::class, 'usersForSegment'])->name('users');
+            Route::post('/search-users', [SmsCampaignController::class, 'searchUsers'])->name('search-users');
             Route::get('/messages', [SmsCampaignController::class, 'messages'])->name('messages');
             Route::get('/messages/create', [SmsCampaignController::class, 'createMessage'])->name('messages.create');
             Route::post('/messages', [SmsCampaignController::class, 'storeMessage'])->name('messages.store');

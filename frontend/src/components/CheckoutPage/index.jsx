@@ -37,6 +37,7 @@ import { isGuestCheckoutEnabled } from "@/utils/guestCheckout";
 import useRefreshCartPrices from "@/hooks/useRefreshCartPrices";
 import CheckoutAddressForm from "./components/CheckoutAddressForm";
 import GuestCheckoutAddressForm from "./components/GuestCheckoutAddressForm";
+import apiRoutes from "@/appConfig/apiRoutes";
 import {
   defaultInvoiceState,
   invoiceFromAddress,
@@ -154,6 +155,52 @@ export default function CheckoutPage() {
     setPaymentStatuses,
     updatePaymentStatuses,
   } = useCheckoutState();
+
+  const [sellerShippingGroups, setSellerShippingGroups] = useState([]);
+
+  // Satıcı kargo kademeleri (checkout özeti)
+  useEffect(() => {
+    const products = cart?.cartProducts || [];
+    if (!products.length) {
+      setSellerShippingGroups([]);
+      return;
+    }
+    let cancelled = false;
+    const items = products
+      .map((item) => ({
+        product_id: item.product_id || item.product?.id,
+        qty: item.qty || 1,
+      }))
+      .filter((i) => i.product_id);
+
+    (async () => {
+      try {
+        const res = await fetch(apiRoutes.cartShippingPreview, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ items }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        const groups = Array.isArray(data?.groups) ? data.groups : [];
+        setSellerShippingGroups(groups);
+        setShippingCharge(Number(data?.total_shipping_fee || 0));
+        if (!selectedRule && shippingRules?.length > 0) {
+          setSelectedRule(String(shippingRules[0].id));
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cart?.cartProducts, shippingRules, selectedRule, setSelectedRule, setShippingCharge]);
 
   // Calculate total price from subtotal
   const totalPrice = calculateTotalPrice(subTotal);
@@ -818,6 +865,7 @@ export default function CheckoutPage() {
                     shippingCharge={shippingCharge}
                     locationShippingPrice={locationShippingPrice}
                     webSettings={webSettings}
+                    sellerShippingGroups={sellerShippingGroups}
                     selectedRuleHandler={selectedRuleHandler}
                     price={price}
                     totalWeight={totalWeight}

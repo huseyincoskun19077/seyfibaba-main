@@ -13,6 +13,7 @@ import '../../../widgets/custom_image.dart';
 import '../../../widgets/custom_text.dart';
 import '../../animated_splash_screen/controller/app_setting_cubit/app_setting_cubit.dart';
 import '../../category/component/price_card_widget.dart';
+import '../../category/controller/cubit/category_cubit.dart';
 import '../../category/model/category_navigation_args.dart';
 import '../controller/cubit/product_details_cubit.dart';
 import '../model/product_details_product_model.dart';
@@ -100,6 +101,28 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
               offerPrice: offerPrice.toString(),
               textSize: 22,
               saleUnitQty: widget.product.saleUnitQty,
+            ),
+          ],
+          if (widget.detailsModel.sellerProfile?.shopName != null &&
+              widget.detailsModel.sellerProfile!.shopName.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () {
+                final profile = widget.detailsModel.sellerProfile!;
+                if (profile.slug.isEmpty) return;
+                context
+                    .read<CategoryCubit>()
+                    .sellerTitleSlug(profile.shopName, profile.slug);
+                Navigator.pushNamed(context, RouteNames.sellerScreen);
+              },
+              child: Text(
+                'Bu ürün ${widget.detailsModel.sellerProfile!.shopName} satıcısı tarafından gönderilir. Kuaför Tedarik aracı platformdur.',
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.35,
+                  color: Colors.black.withValues(alpha: 0.38),
+                ),
+              ),
             ),
           ],
           const SizedBox(height: 4),

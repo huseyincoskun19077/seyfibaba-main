@@ -157,6 +157,54 @@ class ProductFilterHelper
         return $query;
     }
 
+    /**
+     * child_categories[] / child_categories=a,b / child_category=slug — çoklu child kategori.
+     *
+     * @return array{0: Builder, 1: list<int>} [query, category_ids]
+     */
+    public static function applyChildCategoryFilter(Builder $query, $request): array
+    {
+        $raw = $request->input('child_categories', $request->input('child_category'));
+        $slugs = self::normalizeSlugList($raw);
+
+        if ($slugs === []) {
+            return [$query, []];
+        }
+
+        $children = \App\Models\ChildCategory::query()
+            ->whereIn('slug', $slugs)
+            ->get(['id', 'category_id']);
+
+        if ($children->isEmpty()) {
+            return [$query, []];
+        }
+
+        $query->whereIn('child_category_id', $children->pluck('id')->all());
+
+        return [
+            $query,
+            $children->pluck('category_id')->unique()->values()->all(),
+        ];
+    }
+
+    /**
+     * @param  mixed  $raw
+     * @return list<string>
+     */
+    public static function normalizeSlugList($raw): array
+    {
+        if ($raw === null || $raw === '' || $raw === []) {
+            return [];
+        }
+
+        $items = is_array($raw) ? $raw : explode(',', (string) $raw);
+
+        return array_values(array_unique(array_filter(array_map(
+            static fn ($s) => trim((string) $s),
+            $items
+        ))));
+    }
+
     /** Indirimli urunler: offer_price > 0 ve offer_price < price */
     public static function applyDiscountedFilter(Builder $query): Builder
     {

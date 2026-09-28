@@ -723,6 +723,30 @@ class SellerApiService {
     return Map<String, dynamic>.from(response);
   }
 
+  Future<Map<String, dynamic>> fetchShippingTiers(String token) async {
+    final response = await NetworkParser.callClientWithCatchException(
+      () => _client.get(
+        Uri.parse(RemoteUrls.sellerShippingTiers),
+        headers: _jsonHeaders(token),
+      ),
+    );
+    return Map<String, dynamic>.from(response);
+  }
+
+  Future<Map<String, dynamic>> saveShippingTiers({
+    required String token,
+    required List<Map<String, dynamic>> tiers,
+  }) async {
+    final response = await NetworkParser.callClientWithCatchException(
+      () => _client.put(
+        Uri.parse(RemoteUrls.sellerShippingTiers),
+        headers: _jsonHeaders(token),
+        body: jsonEncode({'tiers': tiers}),
+      ),
+    );
+    return Map<String, dynamic>.from(response);
+  }
+
   Future<String> updateShopProfile({
     required String token,
     required Map<String, String> fields,

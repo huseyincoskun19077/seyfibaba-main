@@ -50,24 +50,32 @@ function ProductStrip({ title, products = [], href }) {
                 href={buildProductPath(p.slug)}
                 className="w-[150px] md:w-[180px] shrink-0 rounded-2xl bg-white border border-[#04334a]/10 overflow-hidden"
               >
-                <div className="aspect-square bg-neutral-50">
+                <div className="relative aspect-square bg-neutral-50">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={resolveProductImageUrl(p.thumb_image)}
                     alt=""
                     className="h-full w-full object-cover"
                   />
+                  {hasOffer ? (
+                    <span className="absolute right-1.5 top-1.5 z-10 rounded-md bg-[#E11D48] px-1.5 py-0.5 text-[10px] font-800 uppercase tracking-wide text-white shadow-sm">
+                      İndirimli
+                    </span>
+                  ) : null}
                 </div>
                 <div className="p-2.5">
                   <p className="text-[12px] font-600 text-[#04334a] line-clamp-2 min-h-[32px]">
                     {p.short_name || p.name}
                   </p>
-                  <PriceDisplay
-                    price={p.price}
-                    offerPrice={hasOffer ? p.offer_price : null}
-                    size="sm"
-                    layout="stack"
-                  />
+                  <div className="min-h-[36px]">
+                    <PriceDisplay
+                      price={p.price}
+                      offerPrice={hasOffer ? p.offer_price : null}
+                      size="sm"
+                      layout="stack"
+                      showSavings={false}
+                    />
+                  </div>
                 </div>
               </Link>
             );

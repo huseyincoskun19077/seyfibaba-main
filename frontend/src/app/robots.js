@@ -16,8 +16,6 @@ export default function robots() {
         "/tracking-order",
         "/wishlist",
         "/become-seller",
-        "/seller/",
-        "/sellers",
         "/seller-products",
         "/products-compare",
         "/login",

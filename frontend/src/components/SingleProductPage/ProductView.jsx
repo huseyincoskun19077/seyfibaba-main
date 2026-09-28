@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { useContext, useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
@@ -715,6 +716,7 @@ export default function ProductView({
         product: {
           id: id,
           vendor_id: vendor_id,
+          shop_name: seller?.shop_name || safeProduct?.shop_name || null,
           name: safeProduct?.name,
           price: safeProduct?.price,
           offer_price: safeProduct?.offer_price,
@@ -782,6 +784,7 @@ export default function ProductView({
     [
       cart,
       safeProduct,
+      seller,
       selectedVariantItems,
       varients,
       quantity,
@@ -1049,6 +1052,27 @@ export default function ProductView({
               );
             })()}
           </div>
+
+          {/* Satıcı — yasal bilgilendirme, telefon yok; mağaza linki */}
+          {seller?.shop_name ? (
+            <p
+              data-aos="fade-up"
+              className="mb-5 text-[11px] leading-relaxed text-[#04334a]/40"
+            >
+              Bu ürün{" "}
+              {seller?.slug ? (
+                <Link
+                  href={`/seller/${seller.slug}`}
+                  className="font-600 text-[#04334a]/55 underline-offset-2 hover:underline hover:text-[#04334a]/70"
+                >
+                  {seller.shop_name}
+                </Link>
+              ) : (
+                <span className="font-600 text-[#04334a]/55">{seller.shop_name}</span>
+              )}{" "}
+              satıcısı tarafından gönderilir. Kuaför Tedarik aracı platformdur.
+            </p>
+          ) : null}
 
           {/* Description */}
           <div data-aos="fade-up" className="mb-6">

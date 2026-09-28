@@ -32,6 +32,8 @@ const resolveProductsQuery = (searchParamsObj = {}) => {
     "brands",
     "categories",
     "variantItems",
+    "sub_categories",
+    "child_categories",
     "min_price",
     "max_price",
     "shorting_id",

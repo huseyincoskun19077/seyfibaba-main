@@ -192,6 +192,8 @@ class RemoteUrls {
   static const String sellerContactAdmin = '${baseUrl}seller/contact-admin';
   static const String sellerShopProfile = '${baseUrl}seller/shop-profile';
   static const String sellerUpdateShop = '${baseUrl}seller/update-seller-shop';
+  static const String sellerShippingTiers = '${baseUrl}seller/shipping-tiers';
+  static const String cartShippingPreview = '${baseUrl}cart/shipping-preview';
   static String sellerProductGallery(int productId) =>
       '${baseUrl}seller/product-gallery/$productId';
   static const String sellerStoreProductGallery =

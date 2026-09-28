@@ -54,6 +54,11 @@ function RowV1({
               className="object-cover"
               loading="lazy"
             />
+            {hasRealDiscount && (
+              <span className="absolute right-1.5 top-1.5 z-20 rounded-md bg-[#E11D48] px-1.5 py-0.5 text-[10px] font-800 uppercase tracking-wide text-white shadow-sm">
+                İndirimli
+              </span>
+            )}
           </div>
           <div className="flex-1 flex flex-col justify-center h-full z-10">
             <div>
@@ -62,12 +67,13 @@ function RowV1({
                   {datas.title}
                 </h3>
               </Link>
-              <div className="price mb-[26px]">
+              <div className="price mb-[26px] min-h-[44px]">
                 <PriceDisplay
                   price={price}
                   offerPrice={hasRealDiscount ? offerPrice : null}
                   size="md"
                   layout="stack"
+                  showSavings={false}
                 />
               </div>
               <ProductSaleUnitInfo

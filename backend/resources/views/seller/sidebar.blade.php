@@ -108,6 +108,8 @@
 
           <li class="{{ Route::is('seller.kyc') ? 'active' : '' }}"><a class="nav-link" href="{{ route('seller.kyc') }}"><i class="fas fa-id-card"></i> <span>Hesap Doğrulama</span></a></li>
 
+          <li class="{{ Route::is('seller.shipping-tiers.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('seller.shipping-tiers.edit') }}"><i class="fas fa-truck"></i> <span>Kargo Ücretleri</span></a></li>
+
           <li class="menu-header mt-3">Yasal Belgeler</li>
 
           <li class="{{ Route::is('seller.guide') ? 'active' : '' }}"><a class="nav-link" href="{{ route('seller.guide') }}"><i class="fas fa-book-open"></i> <span>Şartlar ve Tanıtım</span></a></li>

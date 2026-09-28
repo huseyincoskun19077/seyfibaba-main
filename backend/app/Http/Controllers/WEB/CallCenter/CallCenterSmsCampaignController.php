@@ -36,7 +36,7 @@ class CallCenterSmsCampaignController extends SmsCampaignController
         return view('call-center.sms_campaigns.create', compact('setting', 'segments', 'messages'));
     }
 
-    public function store(Request $request, SmsServiceInterface $sms)
+    public function store(Request $request, SmsServiceInterface $sms, ?\App\Services\CallCenter\QuickSellerRegistrationService $quickSeller = null)
     {
         $request->validate([
             'title' => 'required|string|max:255',

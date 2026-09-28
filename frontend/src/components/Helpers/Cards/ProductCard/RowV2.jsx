@@ -28,6 +28,11 @@ function RowV2({ styleType, datas, offerPrice, price }) {
               style={{ objectFit: "scale-down" }}
               className="w-full h-full"
             />
+            {hasRealDiscount && (
+              <span className="absolute right-0 top-1 z-10 rounded bg-[#E11D48] px-1 py-0.5 text-[9px] font-800 uppercase text-white">
+                İndirimli
+              </span>
+            )}
           </div>
           <div className="flex-1 h-full flex flex-col justify-center">
             <Link href={buildProductPath(datas.slug)}>
@@ -41,6 +46,7 @@ function RowV2({ styleType, datas, offerPrice, price }) {
               offerPrice={hasRealDiscount ? offerPrice : null}
               size="md"
               layout="stack"
+              showSavings={false}
             />
           </div>
         </div>

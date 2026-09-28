@@ -159,6 +159,7 @@ const apiRoutes = {
   incrementQuantity: combinedUrl(INCREMENT_QUANTITY),
   decrementQuantity: combinedUrl(DECREMENT_QUANTITY),
   cartRefreshPrices: combinedUrl(CART_REFRESH_PRICES),
+  cartShippingPreview: combinedUrl("cart/shipping-preview"),
 
   // Address
   address: combinedUrl(ADDRESS),

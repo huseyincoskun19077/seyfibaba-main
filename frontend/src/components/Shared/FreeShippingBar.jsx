@@ -1,54 +1,40 @@
 "use client";
-import CurrencyConvert from "./CurrencyConvert";
+import { MoneyText } from "./PriceDisplay";
 
-const FREE_SHIPPING_THRESHOLD = 500;
+/**
+ * Satıcı bazlı ücretsiz kargo teşviki (sepetteki satıcı gruplarından).
+ */
+export default function FreeShippingBar({ sellerGroups = [] }) {
+  const pending = (sellerGroups || []).filter(
+    (g) => !g.is_free_shipping && g.amount_until_free != null && g.amount_until_free > 0
+  );
 
-export default function FreeShippingBar({ totalPrice }) {
-  if (!totalPrice || totalPrice <= 0) return null;
-
-  const remaining = FREE_SHIPPING_THRESHOLD - totalPrice;
-  const progress = Math.min((totalPrice / FREE_SHIPPING_THRESHOLD) * 100, 100);
-
-  if (remaining > 0) {
-    return (
-      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-        <div className="flex items-center gap-2 mb-2">
-          <svg
-            className="w-5 h-5 text-amber-600 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
-            />
-          </svg>
-          <span className="text-sm font-medium text-amber-800">
-            Ücretsiz kargo için{" "}
-            <span className="font-bold" suppressHydrationWarning>
-              <CurrencyConvert price={remaining} />
-            </span>{" "}
-            daha ekleyin!
+  if (!pending.length) {
+    const anyPaid = (sellerGroups || []).some(
+      (g) => !g.is_free_shipping && Number(g.shipping_fee) > 0
+    );
+    if (!anyPaid && sellerGroups?.length) {
+      return (
+        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+          <span className="text-sm font-medium text-green-800">
+            Sepetinizdeki satıcılar için kargo ücretsiz veya dahil!
           </span>
         </div>
-        <div className="w-full bg-amber-200 rounded-full h-2">
-          <div
-            className="bg-amber-500 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-    );
+      );
+    }
+    return null;
   }
 
+  // En yakın ücretsiz kargo eşiği
+  const nearest = pending.reduce((a, b) =>
+    Number(a.amount_until_free) <= Number(b.amount_until_free) ? a : b
+  );
+
   return (
-    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-      <div className="flex items-center gap-2">
+    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+      <div className="flex items-start gap-2">
         <svg
-          className="w-5 h-5 text-green-600 flex-shrink-0"
+          className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -57,12 +43,26 @@ export default function FreeShippingBar({ totalPrice }) {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M5 13l4 4L19 7"
+            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
           />
         </svg>
-        <span className="text-sm font-medium text-green-800">
-          Tebrikler! Ücretsiz kargo kazandınız!
-        </span>
+        <div className="text-sm text-emerald-900">
+          <p className="font-700">
+            <span className="font-800">{nearest.shop_name}</span> satıcısında
+            kargonuzun bedava olması için{" "}
+            <MoneyText
+              value={nearest.amount_until_free}
+              size="sm"
+              className="inline font-800"
+            />{" "}
+            ürün daha ekleyin.
+          </p>
+          {pending.length > 1 ? (
+            <p className="mt-1 text-[12px] text-emerald-800/80">
+              Diğer satıcılar için de ayrı kargo kademeleri geçerlidir.
+            </p>
+          ) : null}
+        </div>
       </div>
     </div>
   );

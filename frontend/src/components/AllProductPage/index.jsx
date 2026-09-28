@@ -11,8 +11,6 @@ import ServeLangItem from "../Helpers/ServeLangItem";
 import ProductCard from "../Helpers/Cards/ProductCard";
 import appConfig from "@/appConfig";
 import { resolveProductImageUrl } from "@/utils/productImage";
-import ShopEmailIco from "../Helpers/icons/ShopEmailIco";
-import ShopPhoneIco from "../Helpers/icons/ShopPhoneIco";
 import ShopLocationIco from "../Helpers/icons/ShopLocationIco";
 import ShopArrowIco from "../Helpers/icons/ShopArrowIco";
 import ViewColIco from "../Helpers/icons/ViewColIco";
@@ -62,7 +60,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     []
   );
   const [selectedSubCategorySlug, setSelectedSubCategorySlug] = useState([]);
-  const [selectedChildCategorySlug, setSelectedChildCategorySlug] = useState("");
+  const [selectedChildCategorySlug, setSelectedChildCategorySlug] = useState([]);
   const [selectedBrandsFilterItem, setSelectedBrandsFilterItem] = useState([]);
   const [desktopFilterOpen, setDesktopFilterOpen] = useState(true);
   const [minPriceInput, setMinPriceInput] = useState("");
@@ -79,7 +77,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     categories: ensureArray(selectedCategoryFilterItem),
     variantItems: ensureArray(selectedVarientFilterItem),
     sub_categories: ensureArray(selectedSubCategorySlug),
-    child_category: selectedChildCategorySlug,
+    child_categories: ensureArray(selectedChildCategorySlug),
     min_price: appliedMinPrice,
     max_price: appliedMaxPrice,
     shorting_id: sortId,
@@ -133,7 +131,6 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
       const originalParams = [
         "category",
         "sub_category",
-        "child_category",
         "brand",
         "highlight",
         "search",
@@ -199,10 +196,15 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
         params.delete("sub_categories");
       }
 
-      if (filters.child_category) {
-        params.set("child_category", String(filters.child_category));
+      params.delete("child_category");
+      if (
+        filters.child_categories &&
+        Array.isArray(filters.child_categories) &&
+        filters.child_categories.length > 0
+      ) {
+        params.set("child_categories", filters.child_categories.join(","));
       } else {
-        params.delete("child_category");
+        params.delete("child_categories");
       }
 
       if (filters.min_price) {
@@ -300,6 +302,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
       }
 
       const subCategoriesParam = searchParams.get("sub_categories");
+      const childCategoriesParam = searchParams.get("child_categories");
       const childCategory = searchParams.get("child_category");
 
       let subCategories = [];
@@ -307,12 +310,21 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
         subCategories = subCategoriesParam.split(",").filter((s) => s.trim() !== "");
       }
 
+      let childCategories = [];
+      if (childCategoriesParam) {
+        childCategories = childCategoriesParam
+          .split(",")
+          .filter((s) => s.trim() !== "");
+      } else if (childCategory) {
+        childCategories = [childCategory];
+      }
+
       return {
         brands: brands.length > 0 ? brands : [],
         categories: categories.length > 0 ? categories : [],
         variantItems: variantItems.length > 0 ? variantItems : [],
         sub_categories: subCategories,
-        child_category: childCategory || "",
+        child_categories: childCategories,
         min_price: searchParams.get("min_price") || "",
         max_price: searchParams.get("max_price") || "",
         shorting_id: searchParams.get("shorting_id") || "",
@@ -325,7 +337,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
         categories: [],
         variantItems: [],
         sub_categories: [],
-        child_category: "",
+        child_categories: [],
         min_price: "",
         max_price: "",
         shorting_id: "",
@@ -512,17 +524,20 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
   };
 
   /**
-   * Handle child-category (3rd level) filter selection
+   * Handle child-category (3rd level) filter selection — multi-select
    */
   const childCategoryHandler = (e) => {
     if (!e || !e.target || !e.target.name) return;
     const { name } = e.target;
-    const nextSlug = selectedChildCategorySlug === name ? "" : name;
-    setSelectedChildCategorySlug(nextSlug);
+    const current = ensureArray(selectedChildCategorySlug);
+    const nextSlugs = current.includes(name)
+      ? current.filter((s) => s !== name)
+      : [...current, name];
+    setSelectedChildCategorySlug(nextSlugs);
 
     const currentFilters = getCurrentFilterPayload({
       sub_categories: ensureArray(selectedSubCategorySlug),
-      child_category: nextSlug,
+      child_categories: nextSlugs,
     });
 
     if (typeof debouncedUpdateURL === "function") {
@@ -609,7 +624,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     if (selectedBrandsFilterItem.length > 0)
       count += selectedBrandsFilterItem.length;
     count += ensureArray(selectedSubCategorySlug).length;
-    if (selectedChildCategorySlug) count += 1;
+    count += ensureArray(selectedChildCategorySlug).length;
     if (appliedMinPrice) count += 1;
     if (appliedMaxPrice) count += 1;
     if (sortId) count += 1;
@@ -632,7 +647,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     setSelectedCategoryFilterItem([]);
     setSelectedBrandsFilterItem([]);
     setSelectedSubCategorySlug([]);
-    setSelectedChildCategorySlug("");
+    setSelectedChildCategorySlug([]);
     setMinPriceInput("");
     setMaxPriceInput("");
     setAppliedMinPrice("");
@@ -679,7 +694,6 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     const originalParams = [
       "category",
       "sub_category",
-      "child_category",
       "brand",
       "highlight",
       "search",
@@ -694,6 +708,9 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
         params.set(param, value);
       }
     });
+    // Clear child multi-filters when resetting sidebar
+    params.delete("child_category");
+    params.delete("child_categories");
 
     const newURL = `${pathname}?${params.toString()}`;
     router.replace(newURL, { scroll: false });
@@ -780,7 +797,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     setSelectedVarientFilterItem(urlParams.variantItems);
     setSelectedBrandsFilterItem(urlParams.brands);
     setSelectedSubCategorySlug(urlParams.sub_categories || []);
-    setSelectedChildCategorySlug(urlParams.child_category || "");
+    setSelectedChildCategorySlug(urlParams.child_categories || []);
     setAppliedMinPrice(urlParams.min_price || "");
     setAppliedMaxPrice(urlParams.max_price || "");
     setMinPriceInput(urlParams.min_price || "");
@@ -803,9 +820,16 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     const searchTerm = String(listingSearch || "").trim();
     const searching = searchTerm.length >= 2;
     if (!searching) {
-      ["category", "sub_category", "child_category", "highlight", "segment"].forEach(
+      ["category", "sub_category", "highlight", "segment"].forEach(
         (key) => appendScalar(key, searchParams.get(key))
       );
+      const routeChild = searchParams.get("child_category");
+      if (
+        routeChild &&
+        ensureArray(selectedChildCategorySlug).length === 0
+      ) {
+        appendScalar("child_category", routeChild);
+      }
     }
     appendScalar("search", searching ? searchTerm : "");
 
@@ -829,7 +853,9 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     ensureArray(selectedSubCategorySlug).forEach((value) => {
       params.push(`sub_categories[]=${encodeURIComponent(value)}`);
     });
-    appendScalar("child_category", selectedChildCategorySlug);
+    ensureArray(selectedChildCategorySlug).forEach((value) => {
+      params.push(`child_categories[]=${encodeURIComponent(value)}`);
+    });
 
     return params.join("&");
   };
@@ -880,6 +906,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
       selectedVarientFilterItem.length > 0 ||
       selectedCategoryFilterItem.length > 0 ||
       selectedBrandsFilterItem.length > 0 ||
+      ensureArray(selectedChildCategorySlug).length > 0 ||
       !!appliedMinPrice ||
       !!appliedMaxPrice ||
       !!sortId ||
@@ -930,6 +957,7 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
     selectedCategoryFilterItem,
     selectedBrandsFilterItem,
     selectedSubCategorySlug,
+    selectedChildCategorySlug,
     appliedMinPrice,
     appliedMaxPrice,
     sortId,
@@ -976,27 +1004,17 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
           backgroundSize: "cover",
         }}
       >
-        {/* Seller Contact Information */}
+        {/* Seller Contact Information — telefon yok (pazaryeri) */}
         <div className="saller-text-details w-72">
           <ul>
-            <li className="text-black flex space-x-5 rtl:space-x-reverse items-center leading-9 text-base font-normal">
-              <span>
-                <ShopEmailIco />
-              </span>
-              <span>{sellerInfo.seller.email}</span>
-            </li>
-            <li className="text-black flex space-x-5 rtl:space-x-reverse items-center leading-9 text-base font-normal">
-              <span>
-                <ShopPhoneIco />
-              </span>
-              <span>{sellerInfo.seller.phone}</span>
-            </li>
-            <li className="text-black flex space-x-5 rtl:space-x-reverse items-center leading-9 text-base font-normal">
-              <span>
-                <ShopLocationIco />
-              </span>
-              <span>{sellerInfo.seller.address}</span>
-            </li>
+            {sellerInfo.seller.address ? (
+              <li className="text-black flex space-x-5 rtl:space-x-reverse items-center leading-9 text-base font-normal">
+                <span>
+                  <ShopLocationIco />
+                </span>
+                <span>{sellerInfo.seller.address}</span>
+              </li>
+            ) : null}
           </ul>
         </div>
 

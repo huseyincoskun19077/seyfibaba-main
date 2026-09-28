@@ -20,6 +20,7 @@ const OrderSummary = ({
   shippingCharge,
   locationShippingPrice,
   webSettings,
+  sellerShippingGroups = [],
 
   // Shipping handlers
   selectedRuleHandler,
@@ -180,7 +181,7 @@ const OrderSummary = ({
       </div>
 
       {/* Free Shipping Progress Bar */}
-      <FreeShippingBar totalPrice={totalPrice} />
+      <FreeShippingBar sellerGroups={sellerShippingGroups} />
 
       {/* Shipping Section */}
       <div className="shipping mb-6 mt-6">
@@ -188,35 +189,7 @@ const OrderSummary = ({
           Kargo (+)
         </span>
 
-        {Number(webSettings?.map_status) !== 1 ? (
-          <div className="flex flex-col space-y-2.5">
-            {shippingRulesByCityId && shippingRulesByCityId.length > 0 ? (
-              shippingRulesByCityId.map((rule, i) =>
-                renderShippingRule(rule, i)
-              )
-            ) : (
-              <div className="flex space-x-2 justify-center items-center text-qblack">
-                <p className="text-sm text-center">Teslimat adresi seçin</p>
-                <span
-                  className="cursor-pointer"
-                  title="Lütfen teslimat bilgilerinizi girin veya bir teslimat adresi oluşturun. Teslimat adresi olmadan sipariş veremezsiniz."
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </span>
-              </div>
-            )}
-          </div>
-        ) : (
+        {Number(webSettings?.map_status) === 1 ? (
           <div>
             {locationShippingPrice && (
               <div className="flex justify-between items-center">
@@ -229,6 +202,44 @@ const OrderSummary = ({
                 >
                   <CurrencyConvert price={Number(locationShippingPrice)} />
                 </span>
+              </div>
+            )}
+          </div>
+        ) : Array.isArray(sellerShippingGroups) && sellerShippingGroups.length > 0 ? (
+          <div className="flex flex-col space-y-2.5">
+            {sellerShippingGroups.map((g) => (
+              <div
+                key={g.vendor_id}
+                className="flex justify-between items-center gap-2 text-[14px]"
+              >
+                <span className="text-qblack font-600 truncate">
+                  {g.shop_name || "Satıcı"}
+                </span>
+                {g.is_free_shipping ? (
+                  <span className="text-emerald-600 font-700 shrink-0">Ücretsiz</span>
+                ) : (
+                  <span suppressHydrationWarning className="text-qgraytwo shrink-0">
+                    <CurrencyConvert price={Number(g.shipping_fee || 0)} />
+                  </span>
+                )}
+              </div>
+            ))}
+            <div className="flex justify-between items-center border-t border-[#EDEDED] pt-2 mt-1">
+              <span className="text-[14px] font-700 text-qblack">Toplam kargo</span>
+              <span suppressHydrationWarning className="text-[14px] font-700 text-qblack">
+                <CurrencyConvert price={Number(shippingCharge || 0)} />
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col space-y-2.5">
+            {shippingRulesByCityId && shippingRulesByCityId.length > 0 ? (
+              shippingRulesByCityId.map((rule, i) =>
+                renderShippingRule(rule, i)
+              )
+            ) : (
+              <div className="flex space-x-2 justify-center items-center text-qblack">
+                <p className="text-sm text-center">Kargo hesaplanıyor…</p>
               </div>
             )}
           </div>

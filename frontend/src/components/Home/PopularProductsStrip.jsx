@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import appConfig from "@/appConfig";
@@ -24,27 +24,33 @@ function ProductSlideCard({ product }) {
   return (
     <Link
       href={buildProductPath(product.slug)}
-      className="w-[160px] md:w-[200px] shrink-0 rounded-2xl bg-white border border-[#04334a]/10 overflow-hidden hover:shadow-md transition-shadow"
+      className="rounded-2xl bg-white border border-[#04334a]/10 overflow-hidden hover:shadow-md transition-shadow"
       data-product-id={product.id}
     >
-      <div className="aspect-square bg-neutral-50">
+      <div className="relative aspect-square bg-neutral-50">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={resolveProductImageUrl(product.thumb_image)}
           alt=""
           className="h-full w-full object-cover"
         />
+        {hasOffer ? (
+          <span className="absolute right-1.5 top-1.5 z-10 rounded-md bg-[#E11D48] px-1.5 py-0.5 text-[10px] font-800 uppercase tracking-wide text-white shadow-sm">
+            İndirimli
+          </span>
+        ) : null}
       </div>
       <div className="p-3">
         <p className="text-[13px] font-600 text-[#04334a] line-clamp-2 min-h-[36px]">
           {product.short_name || product.name}
         </p>
-        <div className="mt-2">
+        <div className="mt-2 min-h-[40px]">
           <PriceDisplay
             price={product.price}
             offerPrice={hasOffer ? product.offer_price : null}
             size="sm"
             layout="stack"
+            showSavings={false}
           />
         </div>
       </div>
@@ -58,13 +64,10 @@ function isHomePath(pathname) {
 }
 
 /**
- * Anasayfa Size Özel / Popüler şerit.
- * Gezilen ürüne göre otomatik yenilenir (admin vitrin yoksa).
- * Misafir: guest_key + pazarlama izni ile geçmiş gönderilir.
+ * Anasayfa Size Özel / Popüler şerit — sabit grid (otomatik kayma yok).
  */
 export default function PopularProductsStrip({ products: fallbackProducts = [] }) {
   const pathname = usePathname() || "";
-  const [paused, setPaused] = useState(false);
   const [title, setTitle] = useState("Popüler ürünler");
   const [list, setList] = useState([]);
   const [lastFetchAt, setLastFetchAt] = useState(null);
@@ -128,7 +131,6 @@ export default function PopularProductsStrip({ products: fallbackProducts = [] }
     [fallbackProducts]
   );
 
-  // Ana sayfa yolu / ürün sayfasından dönüş
   useEffect(() => {
     const cancelledRef = { current: false };
     const prev = prevPathRef.current;
@@ -181,16 +183,6 @@ export default function PopularProductsStrip({ products: fallbackProducts = [] }
     };
   }, [loadPersonalized, pathname]);
 
-  const loop = useMemo(() => {
-    if (!list.length) return [];
-    return [0, 1].flatMap((copy) =>
-      list.map((product, index) => ({
-        product,
-        key: `${copy}-${product.id}-${index}`,
-      }))
-    );
-  }, [list]);
-
   if (!list.length) return null;
 
   const idSignature = list.map((p) => p.id).join(",");
@@ -213,19 +205,13 @@ export default function PopularProductsStrip({ products: fallbackProducts = [] }
           </Link>
         </div>
 
-        <div
-          className="overflow-hidden rounded-2xl border border-[#04334a]/10 bg-white py-3 md:py-4"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-        >
-          <div
-            className={`sb-stories-marquee gap-3 md:gap-4 px-3 md:px-4 ${
-              paused ? "is-paused" : ""
-            }`}
-            style={{ animationDuration: "40s" }}
-          >
-            {loop.map(({ product, key }) => (
-              <ProductSlideCard key={key} product={product} />
+        <div className="rounded-2xl border border-[#04334a]/10 bg-white p-3 md:p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+            {list.map((product, index) => (
+              <ProductSlideCard
+                key={`${product.id}-${index}`}
+                product={product}
+              />
             ))}
           </div>
         </div>

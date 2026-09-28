@@ -53,6 +53,8 @@ const buildQueryFromObject = (query = {}) => {
   appendListParam(params, "brands", query?.brands);
   appendListParam(params, "categories", query?.categories);
   appendListParam(params, "variantItems", query?.variantItems);
+  appendListParam(params, "sub_categories", query?.sub_categories);
+  appendListParam(params, "child_categories", query?.child_categories);
 
   const queryString = params.toString();
   return queryString ? `?${queryString}` : "";

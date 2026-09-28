@@ -76,6 +76,13 @@ class SellerMoreTab extends StatelessWidget {
             Navigator.pushNamed(context, RouteNames.sellerShopProfileScreen),
       ),
       _MoreItem(
+        Icons.local_shipping_outlined,
+        'Kargo Ücretleri',
+        'Sepet tutarına göre kademeli kargo',
+        () => Navigator.pushNamed(
+            context, RouteNames.sellerShippingTiersScreen),
+      ),
+      _MoreItem(
         Icons.menu_book_outlined,
         'Şartlar ve Tanıtım',
         'Komisyon, kargo, sipariş, iade ve hakediş özeti',

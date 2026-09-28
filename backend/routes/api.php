@@ -202,7 +202,10 @@ Route::group([], function () {
     Route::get('/products/active-count', [HomeController::class, 'productCount'])->name('products.count');
     Route::get('/second-hand/sitemap', [HomeController::class, 'secondHandSitemap'])->name('second-hand.sitemap');
 
-    // Public satıcı vitrin API'leri kapalı — ürün odaklı sistem
+    // Public satıcı vitrin (mağaza sayfaları + mobil)
+    Route::get('/sellers', [HomeController::class, 'seller'])->name('sellers');
+    Route::get('/sellers/{shop_name}', [HomeController::class, 'sellerDetail'])->name('sellers-detail');
+
     Route::get('/product', [HomeController::class, 'product'])->name('product');
     Route::get('/variant-items-by-variant/{variant_name}', [HomeController::class, 'variantItemsByVariant'])->name('variant-items-by-variant');
     Route::get('/search-product', [HomeController::class, 'searchProduct'])->name('search-product');
@@ -255,6 +258,8 @@ Route::group([], function () {
     Route::get('/apply-coupon', [CartController::class, 'applyCoupon'])->name('apply-coupon');
     Route::get('/calculate-product-price', [CartController::class, 'calculateProductPrice'])->name('calculate-product-price');
     Route::post('/cart/refresh-prices', [CartController::class, 'refreshPrices'])->name('cart-refresh-prices');
+    Route::post('/cart/shipping-preview', [\App\Http\Controllers\API\VendorShippingController::class, 'preview'])
+        ->name('cart-shipping-preview');
 
     Route::get('login/google',[LoginController::class, 'redirectToGoogle'])->name('login-google');
     Route::get('/callback/google',[LoginController::class,'googleCallBack'])->name('callback-google');
@@ -476,6 +481,8 @@ Route::group([], function () {
         Route::post('update-seller-shop',[SellerProfileController::class,'updateSellerSop'])->name('update-seller-shop');
         Route::put('remove-seller-social-link/{id}',[SellerProfileController::class,'removeSellerSocialLink'])->name('remove-seller-social-link');
         Route::get('email-history',[SellerProfileController::class,'emailHistory'])->name('email-history');
+        Route::get('shipping-tiers', [\App\Http\Controllers\API\VendorShippingController::class, 'sellerTiers'])->name('shipping-tiers');
+        Route::put('shipping-tiers', [\App\Http\Controllers\API\VendorShippingController::class, 'saveSellerTiers'])->name('shipping-tiers.update');
 
         Route::post('product/quick-create', [ApiQuickProductController::class, 'store'])->name('product.quick-create');
         Route::get('product/barcode-lookup', [ApiBarcodeProductController::class, 'lookup'])->name('product.barcode-lookup');

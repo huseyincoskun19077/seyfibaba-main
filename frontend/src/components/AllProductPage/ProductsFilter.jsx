@@ -211,8 +211,15 @@ export default function ProductsFilter({
                               {children.length > 0 && isSubOpen && (
                                 <ul className="mt-1.5 ml-2 space-y-1.5 border-l border-[#04334a]/15 pl-3">
                                   {children.map((child) => {
+                                    const selectedChildren = Array.isArray(
+                                      selectedChildCategorySlug
+                                    )
+                                      ? selectedChildCategorySlug
+                                      : selectedChildCategorySlug
+                                        ? [selectedChildCategorySlug]
+                                        : [];
                                     const isChildSelected =
-                                      selectedChildCategorySlug === child.slug;
+                                      selectedChildren.includes(child.slug);
                                     return (
                                       <li key={child.id}>
                                         <div className="flex items-center gap-2">

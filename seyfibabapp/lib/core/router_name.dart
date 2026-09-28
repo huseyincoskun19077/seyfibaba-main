@@ -90,6 +90,7 @@ class RouteNames {
   static const String buyerReturnsScreen = '/buyerReturnsScreen';
   static const String createReturnScreen = '/createReturnScreen';
   static const String sellerShopProfileScreen = '/sellerShopProfileScreen';
+  static const String sellerShippingTiersScreen = '/sellerShippingTiersScreen';
   static const String sellerProductGalleryScreen =
       '/sellerProductGalleryScreen';
   static const String sellerProductVariantsScreen =
@@ -276,6 +277,12 @@ class RouteNames {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const SellerShopProfileScreen(),
+        );
+
+      case RouteNames.sellerShippingTiersScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SellerShippingTiersScreen(),
         );
 
       case RouteNames.sellerProductGalleryScreen:

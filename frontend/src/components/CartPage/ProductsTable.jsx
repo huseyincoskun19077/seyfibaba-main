@@ -1,10 +1,11 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo } from "react";
 import { getProductImageProps } from "@/utils/productImage";
 import { buildProductPath } from "@/utils/url";
 import { resolveCartLineUnitPrice } from "@/utils/variantPricing";
-import PriceDisplay from "@/components/Shared/PriceDisplay";
+import PriceDisplay, { MoneyText } from "@/components/Shared/PriceDisplay";
 
 const calculateItemPrice = (item) => {
   if (!item) return 0;
@@ -72,6 +73,40 @@ function VariantsLine({ variants }) {
   return <p className="text-[12px] text-[#04334a]/55 mt-0.5">{text}</p>;
 }
 
+function SellerGroupHeader({ shopName, shippingFee, isFree, amountUntilFree }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl border border-b-0 border-[#04334a]/10 bg-[#F4F6F7] px-3 py-2.5 md:px-4">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#6B5B95]/20 text-[#6B5B95]">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zm-10-2h4v2h-4V5z" />
+          </svg>
+        </span>
+        <span className="text-[14px] font-800 text-[#04334a] truncate">
+          {shopName || "Satıcı"}
+        </span>
+      </div>
+      <div className="text-[13px] font-700">
+        {isFree ? (
+          <span className="text-emerald-600">Ücretsiz Kargo!</span>
+        ) : (
+          <span className="text-[#04334a]/80">
+            Kargo ücreti:{" "}
+            <MoneyText value={shippingFee} size="sm" className="inline" />
+          </span>
+        )}
+      </div>
+      {!isFree && amountUntilFree != null && amountUntilFree > 0 ? (
+        <p className="w-full text-[12px] text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-md px-2 py-1.5">
+          Bu satıcıda ücretsiz kargo için{" "}
+          <MoneyText value={amountUntilFree} size="sm" className="inline font-800" />{" "}
+          daha ekleyin.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function CartItemCard({ item, deleteItem, incrementQty, decrementQty }) {
   const product = item?.product || {};
   const productId = product.id ?? item.product_id;
@@ -88,12 +123,9 @@ function CartItemCard({ item, deleteItem, incrementQty, decrementQty }) {
     product.offer_price != null && Number(product.offer_price) > 0
       ? Number(product.offer_price)
       : null;
-  // Güncel satır tutarı her zaman unit*qty; liste/indirim varsa PriceDisplay
-  const listLine =
-    listUnit > 0 ? listUnit * qty : lineTotal;
+  const listLine = listUnit > 0 ? listUnit * qty : lineTotal;
   const offerLine =
     offerUnit != null && listUnit > offerUnit ? offerUnit * qty : null;
-  // Sunucu unit_price (indirimli) ile liste farklıysa onu kullan
   const displayOffer =
     offerLine != null
       ? offerLine
@@ -103,13 +135,12 @@ function CartItemCard({ item, deleteItem, incrementQty, decrementQty }) {
   const displayList = displayOffer != null ? listLine : lineTotal;
 
   return (
-    <article className="w-full bg-white border border-[#04334a]/10 rounded-xl px-3 py-4 md:px-5 md:py-5">
+    <article className="w-full bg-white border border-[#04334a]/10 border-t-0 px-3 py-4 md:px-5 md:py-5 last:rounded-b-xl">
       <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-5">
-        {/* Image + details */}
         <div className="flex flex-1 gap-3 md:gap-4 min-w-0">
           <Link
             href={buildProductPath(product.slug)}
-            className="relative shrink-0 w-[72px] h-[72px] md:w-[88px] md:h-[88px] rounded-lg border border-[#04334a]/12 bg-neutral-50 overflow-hidden"
+            className="relative shrink-0 w-[72px] h-[72px] md:w-[88px] h-[72px] md:h-[88px] rounded-lg border border-[#04334a]/12 bg-neutral-50 overflow-hidden"
           >
             {product.thumb_image ? (
               <Image
@@ -153,15 +184,8 @@ function CartItemCard({ item, deleteItem, incrementQty, decrementQty }) {
                   ? `${maxInstallment} taksite kadar`
                   : "Tek çekim"}
                 {categoryName ? (
-                  <span className="text-[#04334a]/45">
-                    {" "}
-                    ({categoryName})
-                  </span>
+                  <span className="text-[#04334a]/45"> ({categoryName})</span>
                 ) : null}
-              </p>
-              <p className="text-[#04334a]/70">
-                <span className="font-800 text-qyellow">Ticari kart:</span>{" "}
-                <span className="text-[#04334a]/35">—</span>
               </p>
             </div>
 
@@ -169,7 +193,6 @@ function CartItemCard({ item, deleteItem, incrementQty, decrementQty }) {
           </div>
         </div>
 
-        {/* Qty + delete + price */}
         <div className="flex items-center justify-between md:justify-end gap-3 md:gap-5 shrink-0 md:pl-2">
           <div className="flex items-center gap-2.5">
             <QtyControl
@@ -192,6 +215,7 @@ function CartItemCard({ item, deleteItem, incrementQty, decrementQty }) {
             offerPrice={displayOffer}
             size="md"
             layout="stack"
+            showSavings={false}
             className="items-end text-right min-w-[100px]"
           />
         </div>
@@ -206,17 +230,64 @@ export default function ProductsTable({
   deleteItem,
   incrementQty,
   decrementQty,
+  sellerGroups = [],
 }) {
+  const groups = useMemo(() => {
+    if (Array.isArray(sellerGroups) && sellerGroups.length > 0) {
+      const byVendor = new Map();
+      (cartItems || []).forEach((item) => {
+        const vid = Number(item?.product?.vendor_id || 0);
+        if (!byVendor.has(vid)) byVendor.set(vid, []);
+        byVendor.get(vid).push(item);
+      });
+      return sellerGroups.map((g) => ({
+        ...g,
+        items: byVendor.get(Number(g.vendor_id)) || [],
+      })).filter((g) => g.items.length > 0);
+    }
+
+    // Fallback: group locally without fees
+    const map = new Map();
+    (cartItems || []).forEach((item) => {
+      const vid = Number(item?.product?.vendor_id || 0);
+      const name = item?.product?.shop_name || (vid ? `Satıcı #${vid}` : "Satıcı");
+      if (!map.has(vid)) {
+        map.set(vid, {
+          vendor_id: vid,
+          shop_name: name,
+          shipping_fee: null,
+          is_free_shipping: false,
+          amount_until_free: null,
+          items: [],
+        });
+      }
+      map.get(vid).items.push(item);
+    });
+    return Array.from(map.values());
+  }, [cartItems, sellerGroups]);
+
   return (
-    <div className={`w-full space-y-3 ${className || ""}`}>
-      {cartItems?.map((item, index) => (
-        <CartItemCard
-          key={`${item.product_id}-${index}`}
-          item={item}
-          deleteItem={deleteItem}
-          incrementQty={incrementQty}
-          decrementQty={decrementQty}
-        />
+    <div className={`w-full space-y-5 ${className || ""}`}>
+      {groups.map((group) => (
+        <div key={`vendor-${group.vendor_id}`} className="w-full">
+          <SellerGroupHeader
+            shopName={group.shop_name}
+            shippingFee={group.shipping_fee}
+            isFree={!!group.is_free_shipping}
+            amountUntilFree={group.amount_until_free}
+          />
+          <div className="rounded-b-xl overflow-hidden shadow-sm">
+            {group.items.map((item, index) => (
+              <CartItemCard
+                key={`${item.product_id}-${index}`}
+                item={item}
+                deleteItem={deleteItem}
+                incrementQty={incrementQty}
+                decrementQty={decrementQty}
+              />
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );

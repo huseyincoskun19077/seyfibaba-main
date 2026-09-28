@@ -53,6 +53,7 @@ export '/modules/seller_panel/screens/seller_bulk_import_screen.dart';
 export '/modules/seller_panel/screens/seller_earnings_screen.dart';
 export '/modules/seller_panel/screens/seller_returns_screen.dart';
 export '/modules/seller_panel/screens/seller_shop_profile_screen.dart';
+export '/modules/seller_panel/screens/seller_shipping_tiers_screen.dart';
 export '/modules/seller_panel/screens/seller_product_gallery_screen.dart';
 export '/modules/seller_panel/screens/seller_product_variants_screen.dart';
 export '/modules/seller_panel/screens/seller_admin_contact_screen.dart';

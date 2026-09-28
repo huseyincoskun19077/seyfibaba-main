@@ -452,16 +452,26 @@ class PaymentController extends Controller
 
             $shipping_fee = $distance * $setting->per_km_price_range;
             $shipping = '';
+            $seller_shipping_groups = [];
         } else {
-            $shipping = Shipping::find($request_shipping_method_id);
-            if (!$shipping) {
-                return response()->json(['message' => trans('user_validation.Shipping method not found')], 403);
-            }
+            // Pazaryeri: satıcı bazlı kademeli kargo (toplam = satıcı kargoları toplamı)
+            $vendorShipping = app(\App\Services\VendorShippingService::class)
+                ->calculateForCart($cartProducts);
+            $shipping_fee = (float) ($vendorShipping['total_shipping_fee'] ?? 0);
+            $seller_shipping_groups = $vendorShipping['groups'] ?? [];
+            $shipping = (object) [
+                'id' => 0,
+                'shipping_rule' => 'Satıcı kargo kademeleri',
+                'shipping_fee' => $shipping_fee,
+            ];
 
-            if ($shipping->shipping_fee == 0) {
-                $shipping_fee = 0;
-            } else {
-                $shipping_fee = $shipping->shipping_fee;
+            // Eski istemciler hâlâ shipping_method_id gönderirse yok sayılır (vendor tiers öncelikli)
+            if ($request_shipping_method_id && $shipping_fee <= 0 && empty($seller_shipping_groups)) {
+                $legacy = Shipping::find($request_shipping_method_id);
+                if ($legacy) {
+                    $shipping = $legacy;
+                    $shipping_fee = (float) $legacy->shipping_fee;
+                }
             }
         }
 
@@ -476,6 +486,7 @@ class PaymentController extends Controller
         $arr['shipping_fee'] = $shipping_fee;
         $arr['productWeight'] = $productWeight;
         $arr['shipping'] = $shipping;
+        $arr['seller_shipping_groups'] = $seller_shipping_groups ?? [];
 
         return $arr;
     }

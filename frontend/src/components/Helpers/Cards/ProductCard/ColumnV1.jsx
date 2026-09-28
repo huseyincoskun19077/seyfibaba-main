@@ -88,6 +88,11 @@ function ColumnV1({
               loading="lazy"
             />
           </div>
+          {hasRealDiscount && (
+            <span className="absolute right-1.5 top-1.5 z-20 rounded-md bg-[#E11D48] px-1.5 py-0.5 text-[10px] font-800 uppercase tracking-wide text-white shadow-sm md:right-2 md:top-2 md:text-[11px]">
+              İndirimli
+            </span>
+          )}
           {packQty > 1 && (
             <span className="absolute left-1.5 bottom-1.5 z-20 rounded-full border border-[#222] bg-qyellow px-2 py-0.5 text-[10px] font-700 leading-none text-[#222] md:left-2 md:bottom-2 md:text-[11px]">
               x{packQty} adet
@@ -182,13 +187,16 @@ function ColumnV1({
               {colorSwatches.length} renk seçeneği
             </p>
           )}
-          <PriceDisplay
-            price={price}
-            offerPrice={hasRealDiscount ? offerPrice : null}
-            size={compact ? "sm" : "md"}
-            layout="stack"
-            className="mb-0"
-          />
+          <div className={`mb-0 ${compact ? "min-h-[36px]" : "min-h-[44px]"}`}>
+            <PriceDisplay
+              price={price}
+              offerPrice={hasRealDiscount ? offerPrice : null}
+              size={compact ? "sm" : "md"}
+              layout="stack"
+              showSavings={false}
+              className="mb-0"
+            />
+          </div>
           <ProductSaleUnitInfo
             product={datas}
             price={price}

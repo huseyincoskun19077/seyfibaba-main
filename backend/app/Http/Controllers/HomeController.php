@@ -1399,7 +1399,7 @@ class HomeController extends Controller
 
 
 
-        $sellers = Vendor::orderBy('id','desc')->where('status',1)->select('id','banner_image','shop_name','slug','open_at','closed_at','address','email','logo','phone')->paginate(20);
+        $sellers = Vendor::orderBy('id','desc')->where('status',1)->select('id','banner_image','shop_name','slug','open_at','closed_at','address','logo')->paginate(20);
 
         $seoSetting = SeoSetting::find(5);
 
@@ -1423,7 +1423,7 @@ class HomeController extends Controller
 
         $slug = $shop_name;
 
-        $seller = Vendor::where(['status' => 1, 'slug' => $slug])->select('id','banner_image','shop_name','slug','open_at','closed_at','address','email','phone','seo_title','seo_description','logo')->first();
+        $seller = Vendor::where(['status' => 1, 'slug' => $slug])->select('id','banner_image','shop_name','slug','open_at','closed_at','address','seo_title','seo_description','logo')->first();
 
         if(!$seller){
 
@@ -1478,14 +1478,10 @@ class HomeController extends Controller
 
 
 
-        if($request->child_category) {
+        if($request->child_categories || $request->child_category) {
 
-            $child_category = ChildCategory::where('slug',$request->child_category)->first();
-
-            if($child_category){
-                $products = $products->where('child_category_id', $child_category->id);
-                $searchCategoryArr[] = $child_category->category_id;
-            }
+            [$products, $childCatIds] = ProductFilterHelper::applyChildCategoryFilter($products, $request);
+            $searchCategoryArr = array_values(array_unique(array_merge($searchCategoryArr, $childCatIds)));
 
         }
 
@@ -1677,14 +1673,10 @@ class HomeController extends Controller
 
 
 
-        if($request->child_category) {
+        if($request->child_categories || $request->child_category) {
 
-            $child_category = ChildCategory::where('slug',$request->child_category)->first();
-
-            if($child_category){
-                $products = $products->where('child_category_id', $child_category->id);
-                $searchCategoryArr[] = $child_category->category_id;
-            }
+            [$products, $childCatIds] = ProductFilterHelper::applyChildCategoryFilter($products, $request);
+            $searchCategoryArr = array_values(array_unique(array_merge($searchCategoryArr, $childCatIds)));
 
         }
 
@@ -1980,11 +1972,9 @@ class HomeController extends Controller
 
 
 
-        if($request->child_category) {
+        if($request->child_categories || $request->child_category) {
 
-            $child_category = ChildCategory::where('slug',$request->child_category)->first();
-
-            if($child_category) $products = $products->where('child_category_id', $child_category->id);
+            [$products] = ProductFilterHelper::applyChildCategoryFilter($products, $request);
 
         }
 

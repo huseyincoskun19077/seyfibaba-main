@@ -21,6 +21,7 @@ import {
 import useRefreshCartPrices from "@/hooks/useRefreshCartPrices";
 import { resolveCartLineUnitPrice } from "@/utils/variantPricing";
 import { MoneyText } from "../Shared/PriceDisplay";
+import apiRoutes from "@/appConfig/apiRoutes";
 
 function CartPage() {
   // Redux hooks
@@ -31,6 +32,8 @@ function CartPage() {
   const router = useRouter();
   const loginPopupBoard = useContext(LoginContext);
   const [cartItems, setCartItems] = useState([]);
+  const [sellerGroups, setSellerGroups] = useState([]);
+  const [shippingTotal, setShippingTotal] = useState(0);
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(() => {
     if (typeof window === "undefined") return null;
@@ -183,8 +186,46 @@ function CartPage() {
       setCartItems(itemsWithPrices);
     } else {
       setCartItems([]);
+      setSellerGroups([]);
+      setShippingTotal(0);
     }
   }, [cart]);
+
+  // Satıcı bazlı kargo önizleme
+  useEffect(() => {
+    if (!cartItems.length) return;
+    let cancelled = false;
+    const items = cartItems.map((item) => ({
+      product_id: item.product_id || item.product?.id,
+      qty: item.qty || 1,
+    })).filter((i) => i.product_id);
+
+    if (!items.length) return;
+
+    (async () => {
+      try {
+        const res = await fetch(apiRoutes.cartShippingPreview, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ items }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setSellerGroups(Array.isArray(data?.groups) ? data.groups : []);
+        setShippingTotal(Number(data?.total_shipping_fee || 0));
+      } catch {
+        /* sessiz */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cartItems]);
 
   // Breadcrumb configuration
   const breadcrumbItems = [
@@ -220,7 +261,7 @@ function CartPage() {
         <div className="container-x mx-auto">
           {/* Free Shipping Progress Bar */}
           <div className="mb-4">
-            <FreeShippingBar totalPrice={totalPrice} />
+            <FreeShippingBar sellerGroups={sellerGroups} />
           </div>
 
           {/* Products table */}
@@ -229,6 +270,7 @@ function CartPage() {
             decrementQty={handleDecreaseQuantity}
             deleteItem={handleDeleteItem}
             cartItems={cartItems}
+            sellerGroups={sellerGroups}
             className="mb-[30px]"
           />
 
@@ -296,8 +338,20 @@ function CartPage() {
             {/* Checkout button + toplam */}
             <div className="w-full sm:w-auto sm:min-w-[280px] flex flex-col gap-2">
               <div className="flex items-center justify-between px-1">
-                <span className="text-sm font-700 text-[#04334a]/70">Toplam</span>
-                <MoneyText value={totalPrice} size="lg" />
+                <span className="text-sm font-700 text-[#04334a]/70">Ürünler</span>
+                <MoneyText value={totalPrice} size="md" />
+              </div>
+              <div className="flex items-center justify-between px-1">
+                <span className="text-sm font-700 text-[#04334a]/70">Kargo</span>
+                {shippingTotal > 0 ? (
+                  <MoneyText value={shippingTotal} size="md" />
+                ) : (
+                  <span className="text-sm font-800 text-emerald-600">Ücretsiz</span>
+                )}
+              </div>
+              <div className="flex items-center justify-between px-1 border-t border-[#04334a]/10 pt-2">
+                <span className="text-sm font-800 text-[#04334a]">Toplam</span>
+                <MoneyText value={totalPrice + shippingTotal} size="lg" />
               </div>
               <button onClick={handleCheckout} className="w-full" type="button">
                 <div className="w-full h-[50px] black-btn flex justify-center items-center cursor-pointer rounded">

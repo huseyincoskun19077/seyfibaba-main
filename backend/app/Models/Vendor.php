@@ -75,6 +75,13 @@ class Vendor extends Model
         return $this->hasOne(CallCenterCommission::class);
     }
 
+    public function shippingTiers()
+    {
+        return $this->hasMany(VendorShippingTier::class, 'vendor_id')
+            ->orderBy('sort_order')
+            ->orderBy('min_amount');
+    }
+
     public function sentosSetting()
     {
         return $this->hasOne(VendorSentosSetting::class);

@@ -34,8 +34,9 @@ class SmsCampaignController extends Controller
         return view('admin.sms_campaigns.create', compact('setting', 'segments', 'messages', 'msgheader'));
     }
 
-    public function store(Request $request, SmsServiceInterface $sms, QuickSellerRegistrationService $quickSeller)
+    public function store(Request $request, SmsServiceInterface $sms, ?QuickSellerRegistrationService $quickSeller = null)
     {
+        $quickSeller = $quickSeller ?? app(QuickSellerRegistrationService::class);
         $includeOtp = $request->boolean('include_first_login_otp');
 
         $allowedSegments = array_keys($this->getSegments());
@@ -43,6 +44,8 @@ class SmsCampaignController extends Controller
             'title' => 'required|string|max:255',
             'message' => 'nullable|string|max:600',
             'segment' => 'required|string|in:'.implode(',', $allowedSegments),
+            'selected_user_ids' => 'nullable|array|min:1',
+            'selected_user_ids.*' => 'integer|exists:users,id',
         ]);
 
         $intro = trim((string) $request->message);
@@ -53,36 +56,65 @@ class SmsCampaignController extends Controller
                 ->with(['messege' => 'Mesaj metni zorunludur.', 'alert-type' => 'error']);
         }
 
-        if ($includeOtp && ! in_array($request->segment, [
+        $selectedIds = collect($request->input('selected_user_ids', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($request->segment === 'custom' && $selectedIds->isEmpty()) {
+            return redirect()->back()
+                ->withInput()
+                ->with(['messege' => 'Özel seçimde en az bir kullanıcı seçin.', 'alert-type' => 'error']);
+        }
+
+        if ($includeOtp && $selectedIds->isEmpty() && ! in_array($request->segment, [
             'sellers_awaiting_first_login',
             'never_logged_in',
             'sellers_never_logged_in',
+            'custom',
         ], true)) {
             return redirect()->back()
                 ->withInput()
                 ->with([
-                    'messege' => 'Tek kullanımlık şifre için “giriş yapmamış satıcılar” segmentini seçin.',
+                    'messege' => 'Tek kullanımlık şifre için uygun segment veya özel seçim kullanın.',
                     'alert-type' => 'error',
                 ]);
         }
 
-        $users = $this->getUsersForSegment($request->segment, $includeOtp);
+        if ($selectedIds->isNotEmpty()) {
+            $users = User::query()
+                ->whereIn('id', $selectedIds)
+                ->whereNotNull('phone')
+                ->where('phone', '!=', '')
+                ->select('id', 'name', 'phone', 'email', 'must_change_password')
+                ->get();
+
+            if ($includeOtp) {
+                $users = $users->filter(fn ($u) => (bool) $u->must_change_password)->values();
+            }
+        } else {
+            $users = $this->getUsersForSegment($request->segment, $includeOtp);
+        }
 
         if ($users->isEmpty()) {
             return redirect()->back()
                 ->withInput()
-                ->with(['messege' => 'Bu segmentte alıcı bulunamadı.', 'alert-type' => 'error']);
+                ->with(['messege' => 'Gönderilecek alıcı bulunamadı.', 'alert-type' => 'error']);
         }
 
         $admin = Auth::guard('admin')->user();
         $storedMessage = $includeOtp
             ? "[Tek kullanımlık şifre + tanıtım]\n".$intro
             : $intro;
+        $segmentLabel = $request->segment === 'custom' || $selectedIds->isNotEmpty()
+            ? 'custom:'.$users->count()
+            : $request->segment;
 
         $campaign = SmsCampaign::create([
             'title' => $request->title,
             'message' => $storedMessage,
-            'segment' => $request->segment,
+            'segment' => $segmentLabel,
             'total_recipients' => $users->count(),
             'sent_by' => $admin->id,
             'sent_by_type' => 'admin',
@@ -153,12 +185,56 @@ class SmsCampaignController extends Controller
             'segment' => 'required|string|in:'.implode(',', $allowedSegments),
         ]);
 
+        if ($request->segment === 'custom') {
+            return response()->json([
+                'count' => 0,
+                'segment_label' => $this->getSegments()['custom'],
+            ]);
+        }
+
         $users = $this->getUsersForSegment($request->segment, $includeOtp);
 
         return response()->json([
             'count' => $users->count(),
             'segment_label' => $this->getSegments()[$request->segment] ?? $request->segment,
         ]);
+    }
+
+    public function searchUsers(Request $request)
+    {
+        $q = trim((string) $request->input('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json(['users' => []]);
+        }
+
+        $digits = preg_replace('/\D+/', '', $q) ?? '';
+        $like = '%'.$q.'%';
+
+        $users = User::query()
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->where(function ($query) use ($like, $digits) {
+                $query->where('name', 'like', $like)
+                    ->orWhere('phone', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhere('shop_name', 'like', $like)
+                    ->orWhereHas('seller', function ($seller) use ($like) {
+                        $seller->where('shop_name', 'like', $like);
+                    });
+
+                if ($digits !== '' && strlen($digits) >= 3) {
+                    $query->orWhere('phone', 'like', '%'.$digits.'%');
+                }
+            })
+            ->with(['seller:id,user_id,shop_name'])
+            ->select('id', 'name', 'phone', 'shop_name', 'must_change_password')
+            ->orderBy('name')
+            ->limit(50)
+            ->get()
+            ->map(fn ($u) => $this->mapUserRow($u))
+            ->values();
+
+        return response()->json(['users' => $users]);
     }
 
     // --- Mesaj Şablonu Yönetimi ---
@@ -236,6 +312,7 @@ class SmsCampaignController extends Controller
     protected function getSegments(): array
     {
         return [
+            'custom' => 'Özel seçim (dükkan / ad / telefon ara)',
             'sellers_awaiting_first_login' => 'Satıcılar: henüz giriş yapmamış (tek kullanımlık şifre)',
             'sellers_never_logged_in' => 'Satıcılar: hiç giriş kaydı yok',
             'never_logged_in' => 'Tüm kullanıcılar: SMS gidip giriş yapmayanlar',
@@ -251,6 +328,10 @@ class SmsCampaignController extends Controller
         $query = User::whereNotNull('phone')->where('phone', '!=', '');
 
         switch ($segment) {
+            case 'custom':
+                // Arama ile doldurulur
+                $query->whereRaw('1 = 0');
+                break;
             case 'sellers_awaiting_first_login':
                 $query->whereHas('seller')
                     ->where('must_change_password', true);
@@ -293,12 +374,22 @@ class SmsCampaignController extends Controller
                 ->where('must_change_password', true);
         }
 
-        return $query->select('id', 'name', 'phone', 'email', 'must_change_password')->get();
+        return $query
+            ->with(['seller:id,user_id,shop_name'])
+            ->select('id', 'name', 'phone', 'email', 'shop_name', 'must_change_password')
+            ->orderBy('name')
+            ->get();
     }
 
-    protected function getPhonesForSegment(string $segment)
+    protected function mapUserRow(User $u): array
     {
-        return $this->getSegmentQuery($segment)->pluck('phone')->filter();
+        return [
+            'id' => $u->id,
+            'name' => $u->name,
+            'phone' => $u->phone,
+            'shop_name' => $u->seller->shop_name ?? $u->shop_name,
+            'must_change_password' => (bool) $u->must_change_password,
+        ];
     }
 
     protected function resolveMsgHeader(?Setting $setting): string
@@ -321,12 +412,16 @@ class SmsCampaignController extends Controller
             'segment' => 'required|string|in:'.implode(',', $allowedSegments),
         ]);
 
+        if ($request->segment === 'custom') {
+            return response()->json([
+                'count' => 0,
+                'segment_label' => $this->getSegments()['custom'],
+                'users' => [],
+            ]);
+        }
+
         $users = $this->getUsersForSegment($request->segment, $includeOtp)
-            ->map(fn ($u) => [
-                'id' => $u->id,
-                'name' => $u->name,
-                'phone' => $u->phone,
-            ])
+            ->map(fn ($u) => $this->mapUserRow($u))
             ->values();
 
         return response()->json([

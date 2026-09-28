@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:http/http.dart' as http;
 import 'package:shop_o/widgets/fetch_error_text.dart';
 import 'package:shop_o/widgets/loading_widget.dart';
 import '../../widgets/custom_text.dart';
@@ -10,6 +13,7 @@ import '../../widgets/page_refresh.dart';
 import '/modules/animated_splash_screen/controller/app_setting_cubit/app_setting_cubit.dart';
 import '/modules/cart/model/cart_calculation_model.dart';
 import '/widgets/capitalized_word.dart';
+import '../../core/remote_urls.dart';
 import '../../utils/constants.dart';
 import '../../utils/k_images.dart';
 import '../../utils/language_string.dart';
@@ -114,12 +118,16 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
 
   CartResponseModel? cartResponseModel;
   CartCalculation? cartCalculation;
+  Map<int, Map<String, dynamic>> _sellerShipping = {};
+  double _shippingTotal = 0;
+  int _shippingFetchToken = 0;
 
   @override
   void initState() {
     super.initState();
     cartResponseModel = context.read<CartCubit>().cartResponseModel;
     calculate();
+    _fetchSellerShipping();
   }
 
   calculate() {
@@ -133,18 +141,11 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
         coupon: "",
         total: 0.0,
       );
+      _sellerShipping = {};
+      _shippingTotal = 0;
     } else {
       cartResponseModel!.cartProducts.map((e) {
-        // if (e.product.offerPrice != 0) {
-        //   subTotal += double.parse(e.product.offerPrice) * double.parse(e.qty);
-        // } else {
-        //   subTotal += double.parse(e.product.price) * double.parse(e.qty);
-        // }
-
         subTotal += Utils.cartProductPrice(context, e) * e.qty.toDouble();
-        // e.variants.map((e) {
-        //   variantPrice += double.parse(e.varientItem.price);
-        // }).toList();
       }).toList();
       total = subTotal;
       context.read<CartCubit>().getCoupon();
@@ -162,6 +163,57 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
       );
 
       context.read<CartCubit>().saveCartCalculation(cartCalculation!);
+    }
+  }
+
+  Future<void> _fetchSellerShipping() async {
+    final products = cartResponseModel?.cartProducts ?? [];
+    if (products.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _sellerShipping = {};
+        _shippingTotal = 0;
+      });
+      return;
+    }
+
+    final token = ++_shippingFetchToken;
+    final items = products
+        .map((e) => {
+              'product_id': e.product.id,
+              'qty': e.qty,
+            })
+        .toList();
+
+    try {
+      final res = await http.post(
+        Uri.parse(RemoteUrls.cartShippingPreview),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'items': items}),
+      );
+      if (!mounted || token != _shippingFetchToken) return;
+      if (res.statusCode < 200 || res.statusCode >= 300) return;
+      final data = jsonDecode(res.body);
+      if (data is! Map) return;
+      final groups = data['groups'];
+      final map = <int, Map<String, dynamic>>{};
+      if (groups is List) {
+        for (final g in groups.whereType<Map>()) {
+          final m = Map<String, dynamic>.from(g);
+          final vid = int.tryParse('${m['vendor_id'] ?? 0}') ?? 0;
+          map[vid] = m;
+        }
+      }
+      setState(() {
+        _sellerShipping = map;
+        _shippingTotal =
+            double.tryParse('${data['total_shipping_fee'] ?? 0}') ?? 0;
+      });
+    } catch (_) {
+      /* sessiz — başlıklar fallback gösterir */
     }
   }
 
@@ -241,25 +293,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
         ),
         if (cartResponseModel != null &&
             cartResponseModel!.cartProducts.isNotEmpty) ...[
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                return AddToCartComponent(
-                  product: cartResponseModel!.cartProducts[index],
-                  onChange: (int id) {
-                    cartResponseModel!.cartProducts
-                        .removeWhere((element) => element.id == id);
-                    setState(() {
-                      calculate();
-                    });
-                  },
-                  appSetting: appSetting,
-                );
-              },
-              childCount: cartResponseModel!.cartProducts.length,
-              addAutomaticKeepAlives: true,
-            ),
-          ),
+          ..._buildSellerGroupedCart(appSetting),
           const SliverToBoxAdapter(child: CartInstallmentWarning()),
         ] else ...[
           SliverFillRemaining(
@@ -285,6 +319,134 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
     }
   }
 
+  List<Widget> _buildSellerGroupedCart(AppSettingCubit appSetting) {
+    final products = cartResponseModel!.cartProducts;
+    final Map<int, List<dynamic>> grouped = {};
+    for (final p in products) {
+      final vid = p.product.vendorId;
+      grouped.putIfAbsent(vid, () => []).add(p);
+    }
+
+    final widgets = <Widget>[];
+
+    if (_shippingTotal > 0 ||
+        _sellerShipping.values.any((g) => g['is_free_shipping'] == true)) {
+      widgets.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: _CartShippingHint(groups: _sellerShipping.values.toList()),
+          ),
+        ),
+      );
+    }
+
+    grouped.forEach((vendorId, items) {
+      final group = _sellerShipping[vendorId];
+      final shopName = (group?['shop_name'] as String?)?.trim().isNotEmpty == true
+          ? '${group!['shop_name']}'
+          : (vendorId > 0 ? 'Satıcı #$vendorId' : 'Satıcı');
+      final isFree = group?['is_free_shipping'] == true ||
+          (double.tryParse('${group?['shipping_fee'] ?? ''}') ?? -1) == 0;
+      final fee = double.tryParse('${group?['shipping_fee'] ?? 0}') ?? 0;
+      final untilFree =
+          double.tryParse('${group?['amount_until_free'] ?? ''}');
+
+      String feeLabel;
+      if (group == null) {
+        feeLabel = 'Kargo hesaplanıyor…';
+      } else if (isFree) {
+        feeLabel = 'Ücretsiz Kargo!';
+      } else {
+        feeLabel = 'Kargo: ${Utils.formatPrice(fee, context)}';
+      }
+
+      widgets.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF4F6F7),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0x1A04334A)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.storefront_outlined,
+                          size: 18, color: Color(0xFF04334A)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          shopName,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF04334A),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        feeLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isFree
+                              ? const Color(0xFF1B7A3D)
+                              : const Color(0x9904334A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (!isFree &&
+                      untilFree != null &&
+                      untilFree > 0) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Ücretsiz kargo için ${Utils.formatPrice(untilFree, context)} kaldı',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF1B7A3D),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      widgets.add(
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final product = items[index];
+              return AddToCartComponent(
+                product: product,
+                onChange: (int id) {
+                  cartResponseModel!.cartProducts
+                      .removeWhere((element) => element.id == id);
+                  setState(() {
+                    calculate();
+                  });
+                  _fetchSellerShipping();
+                },
+                appSetting: appSetting,
+              );
+            },
+            childCount: items.length,
+            addAutomaticKeepAlives: true,
+          ),
+        ),
+      );
+    });
+    return widgets;
+  }
+
   Future<void> _confirmClearCart(BuildContext context) async {
     await showDialog(
       context: context,
@@ -304,9 +466,76 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
               setState(() {
                 calculate();
               });
+              _fetchSellerShipping();
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class _CartShippingHint extends StatelessWidget {
+  const _CartShippingHint({required this.groups});
+
+  final List<Map<String, dynamic>> groups;
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = groups.where((g) {
+      final free = g['is_free_shipping'] == true;
+      final until = double.tryParse('${g['amount_until_free'] ?? ''}');
+      return !free && until != null && until > 0;
+    }).toList();
+
+    if (pending.isEmpty) {
+      final allFree = groups.isNotEmpty &&
+          groups.every((g) =>
+              g['is_free_shipping'] == true ||
+              (double.tryParse('${g['shipping_fee'] ?? -1}') ?? -1) == 0);
+      if (!allFree) return const SizedBox.shrink();
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F8EE),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFB7E4C7)),
+        ),
+        child: const Text(
+          'Sepetinizdeki satıcılar için kargo ücretsiz veya dahil!',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1B7A3D),
+          ),
+        ),
+      );
+    }
+
+    pending.sort((a, b) {
+      final aa = double.tryParse('${a['amount_until_free']}') ?? 0;
+      final bb = double.tryParse('${b['amount_until_free']}') ?? 0;
+      return aa.compareTo(bb);
+    });
+    final nearest = pending.first;
+    final shop = '${nearest['shop_name'] ?? 'Satıcı'}';
+    final until =
+        double.tryParse('${nearest['amount_until_free']}') ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F8EE),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFB7E4C7)),
+      ),
+      child: Text(
+        '$shop satıcısında ücretsiz kargo için ${Utils.formatPrice(until, context)} kaldı',
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF1B7A3D),
+        ),
       ),
     );
   }
