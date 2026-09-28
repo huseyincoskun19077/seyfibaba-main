@@ -1024,40 +1024,39 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
             {sellerInfo.seller.shop_name}
           </h2>
           <div className="flex justify-center">
-            {Array.from(
-              Array(parseInt(sellerInfo.seller.averageRating)),
-              (_, index) => (
-                <span
-                  key={`seller-star-filled-${index}`}
-                >
-                  <Star />
-                </span>
-              )
-            )}
-            {parseInt(sellerInfo.seller.averageRating) < 5 && (
-              <>
-                {Array.from(
-                  Array(5 - parseInt(sellerInfo.seller.averageRating)),
-                  (_, index) => (
-                    <span
-                      key={`seller-star-empty-${index}`}
-                      className="text-gray-500"
-                    >
-                      <svg
-                        width="18"
-                        height="17"
-                        viewBox="0 0 18 17"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="fill-current"
-                      >
-                        <path d="M9 0L11.0206 6.21885H17.5595L12.2694 10.0623L14.2901 16.2812L9 12.4377L3.70993 16.2812L5.73056 10.0623L0.440492 6.21885H6.97937L9 0Z" />
-                      </svg>
+            {(() => {
+              const rating = Math.min(
+                5,
+                Math.max(0, parseInt(sellerInfo.seller.averageRating, 10) || 0)
+              );
+              return (
+                <>
+                  {Array.from({ length: rating }, (_, index) => (
+                    <span key={`seller-star-filled-${index}`}>
+                      <Star />
                     </span>
-                  )
-                )}
-              </>
-            )}
+                  ))}
+                  {rating < 5 &&
+                    Array.from({ length: 5 - rating }, (_, index) => (
+                      <span
+                        key={`seller-star-empty-${index}`}
+                        className="text-gray-500"
+                      >
+                        <svg
+                          width="18"
+                          height="17"
+                          viewBox="0 0 18 17"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="fill-current"
+                        >
+                          <path d="M9 0L11.0206 6.21885H17.5595L12.2694 10.0623L14.2901 16.2812L9 12.4377L3.70993 16.2812L5.73056 10.0623L0.440492 6.21885H6.97937L9 0Z" />
+                        </svg>
+                      </span>
+                    ))}
+                </>
+              );
+            })()}
           </div>
         </div>
 

@@ -289,13 +289,17 @@ upstream frontend {
 #### kuafortedarik.com / www.kuafortedarik.com
 ```
 /api/*        → @php_fpm (Laravel backend)
-/admin/*      → @php_fpm (Laravel backend)
-/seller/*     → @php_fpm (Laravel backend)
-/call-center/* → @php_fpm (Laravel backend)
+/admin/*      → @php_fpm (Laravel backend)  [veya admin subdomain'e 301]
+/call-center/* → @php_fpm (Laravel backend) [veya admin subdomain'e 301]
 /uploads/*    → /opt/seyfibaba-main/backend/public/uploads/
 /storage/*    → /opt/seyfibaba-main/backend/public/storage/
+/seller/*     → http://frontend (Next.js)  # public mağaza vitrini
+/sellers      → http://frontend (Next.js)  # satıcı listesi
 /*            → http://frontend (Next.js)
 ```
+
+> **ÖNEMLİ:** Ana domainde `/seller/` veya `/seller` bloğunu `@php_fpm` / admin'e göndermeyin.
+> Bu, `/seller/{magaza-slug}` mağaza sayfalarını 404 yapar. Satıcı paneli `admin.kuafortedarik.com/seller/*` üzerindedir.
 
 #### admin.kuafortedarik.com
 ```
