@@ -73,7 +73,19 @@ function VariantsLine({ variants }) {
   return <p className="text-[12px] text-[#04334a]/55 mt-0.5">{text}</p>;
 }
 
-function SellerGroupHeader({ shopName, shippingFee, isFree, amountUntilFree }) {
+function SellerGroupHeader({
+  shopName,
+  shopSlug,
+  shippingFee,
+  isFree,
+  amountUntilFree,
+}) {
+  const nameEl = (
+    <span className="text-[14px] font-800 text-[#04334a] truncate">
+      {shopName || "Satıcı"}
+    </span>
+  );
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl border border-b-0 border-[#04334a]/10 bg-[#F4F6F7] px-3 py-2.5 md:px-4">
       <div className="flex items-center gap-2 min-w-0">
@@ -82,9 +94,16 @@ function SellerGroupHeader({ shopName, shippingFee, isFree, amountUntilFree }) {
             <path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zm-10-2h4v2h-4V5z" />
           </svg>
         </span>
-        <span className="text-[14px] font-800 text-[#04334a] truncate">
-          {shopName || "Satıcı"}
-        </span>
+        {shopSlug ? (
+          <Link
+            href={`/seller/${shopSlug}`}
+            className="min-w-0 hover:underline underline-offset-2"
+          >
+            {nameEl}
+          </Link>
+        ) : (
+          nameEl
+        )}
       </div>
       <div className="text-[13px] font-700">
         {isFree ? (
@@ -255,6 +274,7 @@ export default function ProductsTable({
         map.set(vid, {
           vendor_id: vid,
           shop_name: name,
+          slug: item?.product?.shop_slug || item?.product?.seller_slug || null,
           shipping_fee: null,
           is_free_shipping: false,
           amount_until_free: null,
@@ -272,6 +292,7 @@ export default function ProductsTable({
         <div key={`vendor-${group.vendor_id}`} className="w-full">
           <SellerGroupHeader
             shopName={group.shop_name}
+            shopSlug={group.slug}
             shippingFee={group.shipping_fee}
             isFree={!!group.is_free_shipping}
             amountUntilFree={group.amount_until_free}

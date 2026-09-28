@@ -14,6 +14,7 @@ import '/modules/animated_splash_screen/controller/app_setting_cubit/app_setting
 import '/modules/cart/model/cart_calculation_model.dart';
 import '/widgets/capitalized_word.dart';
 import '../../core/remote_urls.dart';
+import '../../core/router_name.dart';
 import '../../utils/constants.dart';
 import '../../utils/k_images.dart';
 import '../../utils/language_string.dart';
@@ -21,6 +22,7 @@ import '../../utils/utils.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/please_signin_widget.dart';
 import '../../widgets/rounded_app_bar.dart';
+import '../category/controller/cubit/category_cubit.dart';
 import 'component/add_to_cart_component.dart';
 import 'component/cart_installment_warning.dart';
 import 'component/panel_widget.dart';
@@ -346,6 +348,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
       final shopName = (group?['shop_name'] as String?)?.trim().isNotEmpty == true
           ? '${group!['shop_name']}'
           : (vendorId > 0 ? 'Satıcı #$vendorId' : 'Satıcı');
+      final shopSlug = '${group?['slug'] ?? ''}'.trim();
       final isFree = group?['is_free_shipping'] == true ||
           (double.tryParse('${group?['shipping_fee'] ?? ''}') ?? -1) == 0;
       final fee = double.tryParse('${group?['shipping_fee'] ?? 0}') ?? 0;
@@ -361,60 +364,88 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
         feeLabel = 'Kargo: ${Utils.formatPrice(fee, context)}';
       }
 
+      void openSellerShop() {
+        if (shopSlug.isEmpty) return;
+        context.read<CategoryCubit>().sellerTitleSlug(shopName, shopSlug);
+        Navigator.pushNamed(context, RouteNames.sellerScreen);
+      }
+
       widgets.add(
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF4F6F7),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: shopSlug.isNotEmpty ? openSellerShop : null,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0x1A04334A)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F6F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0x1A04334A)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.storefront_outlined,
-                          size: 18, color: Color(0xFF04334A)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          shopName,
+                      Row(
+                        children: [
+                          const Icon(Icons.storefront_outlined,
+                              size: 18, color: Color(0xFF04334A)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              shopName,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF04334A),
+                                decoration: shopSlug.isNotEmpty
+                                    ? TextDecoration.underline
+                                    : TextDecoration.none,
+                                decorationColor:
+                                    const Color(0xFF04334A).withValues(alpha: 0.35),
+                              ),
+                            ),
+                          ),
+                          if (shopSlug.isNotEmpty)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 6),
+                              child: Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                                color: Color(0x9904334A),
+                              ),
+                            ),
+                          Text(
+                            feeLabel,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isFree
+                                  ? const Color(0xFF1B7A3D)
+                                  : const Color(0x9904334A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (!isFree &&
+                          untilFree != null &&
+                          untilFree > 0) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          'Ücretsiz kargo için ${Utils.formatPrice(untilFree, context)} kaldı',
                           style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF04334A),
+                            fontSize: 11,
+                            color: Color(0xFF1B7A3D),
                           ),
                         ),
-                      ),
-                      Text(
-                        feeLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: isFree
-                              ? const Color(0xFF1B7A3D)
-                              : const Color(0x9904334A),
-                        ),
-                      ),
+                      ],
                     ],
                   ),
-                  if (!isFree &&
-                      untilFree != null &&
-                      untilFree > 0) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      'Ücretsiz kargo için ${Utils.formatPrice(untilFree, context)} kaldı',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF1B7A3D),
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
             ),
           ),

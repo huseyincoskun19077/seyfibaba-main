@@ -71,7 +71,7 @@ class VendorShippingService
         $vendorIds = array_keys($groupsMap);
         $vendors = Vendor::query()
             ->whereIn('id', array_filter($vendorIds))
-            ->get(['id', 'shop_name'])
+            ->get(['id', 'shop_name', 'slug'])
             ->keyBy('id');
 
         $tiersByVendor = VendorShippingTier::query()
@@ -98,6 +98,7 @@ class VendorShippingService
             $groups[] = [
                 'vendor_id' => (int) $vendorId,
                 'shop_name' => $shopName,
+                'slug' => $vendor?->slug ?: null,
                 'subtotal' => $subtotal,
                 'shipping_fee' => round($fee, 2),
                 'is_free_shipping' => $fee <= 0.00001,
