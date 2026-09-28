@@ -4,7 +4,7 @@ import { useState } from "react";
 import LegalDocumentModal from "@/components/Legal/LegalDocumentModal";
 
 /**
- * @param {{ items: Array<{slug?: string, slugs?: string[], links?: Array<{slug: string, label: string}>, label: string, prefix?: string, linkLabel?: string, href?: string, key?: string, required?: boolean}>, values: Record<string, boolean>, onChange: (key: string, checked: boolean) => void, required?: boolean, className?: string, title?: string, compact?: boolean }} props
+ * @param {{ items: Array<{slug?: string, slugs?: string[], links?: Array<{slug: string, label: string}>, label: string, prefix?: string, linkLabel?: string, href?: string, key?: string, required?: boolean}>, values: Record<string, boolean>, onChange: (key: string, checked: boolean) => void, required?: boolean, className?: string, title?: string, compact?: boolean, error?: string }} props
  */
 export default function LegalConsentCheckboxes({
   items,
@@ -14,6 +14,7 @@ export default function LegalConsentCheckboxes({
   className = "",
   title = "Yasal Onaylar",
   compact = false,
+  error = "",
 }) {
   const [modal, setModal] = useState({ open: false, slug: "", title: "" });
 
@@ -23,7 +24,13 @@ export default function LegalConsentCheckboxes({
   };
 
   return (
-    <div className={className} role="group" aria-label="Yasal onay kutuları">
+    <div
+      className={className}
+      role="group"
+      aria-label="Yasal onay kutuları"
+      aria-invalid={error ? "true" : undefined}
+      aria-describedby={error ? "legal-consent-error" : undefined}
+    >
       {title ? (
         <p className="text-sm font-semibold text-[#1D1D1D] mb-2.5">{title}</p>
       ) : null}
@@ -145,6 +152,12 @@ export default function LegalConsentCheckboxes({
           );
         })}
       </div>
+
+      {error ? (
+        <p id="legal-consent-error" className="mt-2 text-sm font-600 text-[#E11D48]" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <LegalDocumentModal
         open={modal.open}

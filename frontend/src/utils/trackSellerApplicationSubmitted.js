@@ -11,6 +11,10 @@
  */
 
 import { getGa4MeasurementId } from "@/config/googleTags";
+import {
+  hasAnalyticsConsent,
+  hasMarketingConsent,
+} from "@/components/Helpers/Consent";
 
 const STORAGE_KEY = "kt_seller_application_submitted_ids";
 const MAX_STORED_IDS = 40;
@@ -59,11 +63,11 @@ export function hasTrackedSellerApplication(applicationId) {
 }
 
 function hasGtmContainer() {
-  return (
-    typeof window !== "undefined" &&
-    typeof window.google_tag_manager === "object" &&
-    window.google_tag_manager !== null
-  );
+  if (typeof window === "undefined" || !window.google_tag_manager) return false;
+  const gtm = window.google_tag_manager;
+  if (typeof gtm !== "object") return false;
+  // gtag.js de google_tag_manager oluşturur. Yalnızca gerçek GTM- konteyneri bu yolu kullanır.
+  return Object.keys(gtm).some((key) => key.startsWith("GTM-"));
 }
 
 /**
@@ -99,6 +103,10 @@ export function trackSellerApplicationSubmitted({ applicationId } = {}) {
     return { fired: false, channel: null, reason: "deduped" };
   }
 
+  if (!hasAnalyticsConsent()) {
+    return { fired: false, channel: null, reason: "analytics_denied" };
+  }
+
   // Önce işaretle — Strict Mode / çift çağrıda ikinci fire olmasın
   markSeen(id);
 
@@ -118,7 +126,13 @@ export function trackSellerApplicationSubmitted({ applicationId } = {}) {
     }
 
     if (typeof window.gtag === "function" && ga4Id) {
-      // Yalnız doğru G- hedefine — AW- config'e düşmesin
+      // Kullanıcının kayıtlı analitik iznini, etiket sonradan yüklendiyse burada uygula.
+      window.gtag("consent", "update", {
+        analytics_storage: "granted",
+        ad_storage: hasMarketingConsent() ? "granted" : "denied",
+        ad_user_data: hasMarketingConsent() ? "granted" : "denied",
+        ad_personalization: hasMarketingConsent() ? "granted" : "denied",
+      });
       window.gtag("event", "seller_application_submitted", {
         ...params,
         send_to: ga4Id,

@@ -1,6 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import settings from "@/utils/settings";
 import { setupAction } from "@/redux/features/websiteSetup/websiteSetupSlice";
@@ -33,11 +33,11 @@ function syncGoogleConsent({ marketing, analytics }) {
   });
 }
 
-/** SPA page_view — yalnız GA4 (G-); AW yeniden config edilmez (çift PV yok) */
+/** SPA page_view — yalnız GA4 (G-). Kütüphane yoksa false döner. */
 function sendGa4SpaPageView(path) {
-  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
+  if (typeof window === "undefined" || typeof window.gtag !== "function") return false;
   const ga4Id = getGa4MeasurementId();
-  if (!ga4Id) return;
+  if (!ga4Id) return false;
   const pagePath = path || window.location.pathname + window.location.search;
   window.gtag("event", "page_view", {
     send_to: ga4Id,
@@ -45,6 +45,7 @@ function sendGa4SpaPageView(path) {
     page_location: window.location.href,
     page_title: typeof document !== "undefined" ? document.title : undefined,
   });
+  return true;
 }
 
 export default function DefaultLayoutClient({ children }) {
@@ -92,11 +93,16 @@ export default function DefaultLayoutClient({ children }) {
     return () => window.removeEventListener("seyfibaba:cookie-prefs", onPrefs);
   }, [refreshConsentFlags]);
 
-  // Onay sonrası + SPA sayfa değişiminde GA4 page_view (yalnız G-, AW'ye değil)
+  const lastGa4PageView = useRef("");
+
+  // Onay sonrası + SPA sayfa değişiminde tek GA4 page_view (yalnız G-)
   useEffect(() => {
     if (!allowAnalytics) return;
-    if (gtagId && isGtmId(gtagId)) return; // GTM kendi pageview'ini yönetir
-    sendGa4SpaPageView(pathname);
+    if (gtagId && isGtmId(gtagId)) return;
+    const pageKey = pathname || "/";
+    if (lastGa4PageView.current === pageKey) return;
+    if (!sendGa4SpaPageView(pathname)) return;
+    lastGa4PageView.current = pageKey;
   }, [allowAnalytics, gtagId, pathname]);
 
   const initializeMessageWidget = useCallback(

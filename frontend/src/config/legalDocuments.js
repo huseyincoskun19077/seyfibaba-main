@@ -100,17 +100,37 @@ export const SIGNUP_OPTIONAL_CONSENTS = [
   },
 ];
 
+/** POST /api/public/seller-register — LegalConsentService::SELLER_REGISTER_REQUIRED_SLUGS ile aynı sıra */
 export const SELLER_REGISTER_REQUIRED_CONSENTS = [
   {
-    key: "seller-register-kvkk-protocol",
-    slugs: [LEGAL_SLUGS.PRIVACY_AGREEMENT],
-    links: [
-      {
-        slug: LEGAL_SLUGS.PRIVACY_AGREEMENT,
-        label: "Kişisel Verilerin Korunmasına Yönelik Protokol",
-      },
-    ],
+    key: LEGAL_SLUGS.PRIVACY_AGREEMENT,
+    slug: LEGAL_SLUGS.PRIVACY_AGREEMENT,
+    linkLabel: "Kişisel Verilerin Korunmasına Yönelik Protokol",
     label: "'ü okudum ve onaylıyorum.",
+  },
+  {
+    key: LEGAL_SLUGS.KVKK_AYDINLATMA,
+    slug: LEGAL_SLUGS.KVKK_AYDINLATMA,
+    linkLabel: "Kişisel Verilerin İşlenmesi Aydınlatma Metni",
+    label: "'ni okudum ve onaylıyorum.",
+  },
+  {
+    key: LEGAL_SLUGS.TERMS,
+    slug: LEGAL_SLUGS.TERMS,
+    linkLabel: "Üyelik Sözleşmesi",
+    label: "'ni okudum ve onaylıyorum.",
+  },
+  {
+    key: LEGAL_SLUGS.PRIVACY_POLICY,
+    slug: LEGAL_SLUGS.PRIVACY_POLICY,
+    linkLabel: "Gizlilik Politikası",
+    label: "'nı okudum ve onaylıyorum.",
+  },
+  {
+    key: LEGAL_SLUGS.SELLER_TERMS,
+    slug: LEGAL_SLUGS.SELLER_TERMS,
+    linkLabel: "Satıcı Şartları ve Koşulları",
+    label: "'nı okudum ve onaylıyorum.",
   },
 ];
 

@@ -11,15 +11,16 @@ import {
 } from "@/redux/features/sellerRegister/apiSlice";
 import { useLazyGetCityListApiQuery } from "@/redux/features/locations/apiSlice";
 import { dedupeTurkishLocations } from "@/utils/dedupeTurkishLocations";
-import LegalConsentCheckboxes, {
-  allRequiredChecked,
-} from "@/components/Legal/LegalConsentCheckboxes";
+import LegalConsentCheckboxes from "@/components/Legal/LegalConsentCheckboxes";
 import {
   SELLER_REGISTER_OPTIONAL_CONSENTS,
   SELLER_REGISTER_REQUIRED_CONSENTS,
 } from "@/config/legalDocuments";
 import { recordLegalConsents } from "@/api/recordLegalConsents";
-import { hasMarketingConsent } from "@/components/Helpers/Consent";
+import {
+  hasAnalyticsConsent,
+  hasMarketingConsent,
+} from "@/components/Helpers/Consent";
 import {
   resolveSellerApplicationId,
   trackSellerApplicationSubmitted,
@@ -149,17 +150,14 @@ export default function SellerQuickRegister() {
   const [form, setForm] = useState(initialForm);
   const [success, setSuccess] = useState(null);
   const [consentValues, setConsentValues] = useState({});
+  const [consentError, setConsentError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   const { data: statesData, isLoading: statesLoading } =
     useGetPublicSellerRegisterStatesQuery();
   const [register, { isLoading }] = usePublicSellerRegisterMutation();
   const [fetchCities, { data: citiesData, isFetching: citiesLoading }] =
     useLazyGetCityListApiQuery();
-
-  const requiredConsentsAccepted = allRequiredChecked(
-    SELLER_REGISTER_REQUIRED_CONSENTS,
-    consentValues
-  );
 
   const states = useMemo(
     () => dedupeTurkishLocations(statesData?.states || []),
@@ -208,15 +206,12 @@ export default function SellerQuickRegister() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (!requiredConsentsAccepted) {
-      toast.error("Satıcı kaydı için zorunlu yasal metinleri kabul etmelisiniz.");
-      return;
-    }
+    setConsentError("");
+    setPhoneError("");
 
     const phoneDigits = form.phone.replace(/\D/g, "");
     if (phoneDigits.slice(-10).length < 10) {
-      toast.error("Geçerli bir telefon numarası girin.");
+      setPhoneError("Geçerli bir telefon numarası girin.");
       return;
     }
 
@@ -270,7 +265,7 @@ export default function SellerQuickRegister() {
 
       // RTK unwrap = Laravel JSON gövdesi → application_id yolu: response.data.application_id
       const applicationId = resolveSellerApplicationId(response);
-      if (applicationId != null) {
+      if (applicationId != null && hasAnalyticsConsent()) {
         trackSellerApplicationSubmitted({ applicationId });
       }
 
@@ -290,12 +285,16 @@ export default function SellerQuickRegister() {
         // Pixel yoksa sessiz geç
       }
     } catch (error) {
-      const message =
-        error?.data?.errors?.legal_consents?.[0] ||
-        error?.data?.message ||
-        error?.data?.errors?.phone?.[0] ||
-        "Başvuru gönderilemedi. Lütfen bilgileri ve yasal onayları kontrol edin.";
-      toast.error(message);
+      const legalMessage = error?.data?.errors?.legal_consents?.[0] || "";
+      const phoneMessage = error?.data?.errors?.phone?.[0] || "";
+      if (legalMessage) setConsentError(legalMessage);
+      if (phoneMessage) setPhoneError(phoneMessage);
+      if (!legalMessage && !phoneMessage) {
+        toast.error(
+          error?.data?.message ||
+            "Başvuru gönderilemedi. Lütfen bilgileri ve yasal onayları kontrol edin."
+        );
+      }
     }
   };
 
@@ -376,10 +375,20 @@ export default function SellerQuickRegister() {
                 onChange={handleInputChange}
                 placeholder="Ad Soyad"
               />
-              <PhoneInput
-                value={form.phone}
-                onChange={(phone) => updateField("phone", phone)}
-              />
+              <div>
+                <PhoneInput
+                  value={form.phone}
+                  onChange={(phone) => {
+                    setPhoneError("");
+                    updateField("phone", phone);
+                  }}
+                />
+                {phoneError ? (
+                  <p className="mt-1 text-sm font-600 text-[#E11D48]" role="alert">
+                    {phoneError}
+                  </p>
+                ) : null}
+              </div>
               <Field
                 label="E-posta"
                 name="email"
@@ -570,13 +579,15 @@ export default function SellerQuickRegister() {
             <LegalConsentCheckboxes
               items={allConsentItems}
               values={consentValues}
-              onChange={(key, value) =>
-                setConsentValues((prev) => ({ ...prev, [key]: value }))
-              }
+              onChange={(key, value) => {
+                setConsentError("");
+                setConsentValues((prev) => ({ ...prev, [key]: value }));
+              }}
               required
-              title=""
+              title="Yasal onaylar"
               compact
               className="pt-2"
+              error={consentError}
             />
 
             <div className="pt-2 pb-2 text-center">

@@ -10,7 +10,6 @@ import DefaultLayout from "@/components/Partials/DefaultLayout";
 import { Providers } from "@/redux/providers";
 import Toaster from "@/components/Helpers/Toaster";
 import localFont from "next/font/local";
-import Script from "next/script";
 import getSetupData from "@/api/setup";
 import {
   getGa4MeasurementId,
@@ -131,16 +130,13 @@ export default async function RootLayout({ children }) {
       : null;
 
   const useDirectGtag = !useGtm && Boolean(adsId || ga4Id || adminGa4Id);
-  // Tek gtag.js — hangi id ile yüklenirse yüklensin kütüphane aynıdır
-  const scriptBootId = ga4Id || adsId || adminGa4Id;
+  // Kütüphane yalnız çalışan AW adresiyle bir kez yüklenir.
+  // Config sırası: G-2ZL87131XC (page_view kapalı), sonra AW-18452604369.
+  const scriptBootId = adsId || ga4Id || adminGa4Id;
 
   const configSnippet = (() => {
     if (!useDirectGtag || !scriptBootId) return "";
-    const lines = [
-      "window.dataLayer = window.dataLayer || [];",
-      "function gtag(){dataLayer.push(arguments);}",
-      "gtag('js', new Date());",
-    ];
+    const lines = [];
     if (ga4Id) {
       lines.push(`window.__KT_GA4_MEASUREMENT_ID = '${ga4Id}';`);
       lines.push(`gtag('config', '${ga4Id}', { send_page_view: false });`);
@@ -159,14 +155,15 @@ export default async function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href="https://admin.kuafortedarik.com/" />
         <link rel="dns-prefetch" href="https://admin.kuafortedarik.com/" />
-      </head>
-      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning={true}>
         {useDirectGtag ? (
           <>
-            <Script id="gtag-consent-default" strategy="beforeInteractive">
-              {`
+            <script
+              id="gtag-bootstrap"
+              dangerouslySetInnerHTML={{
+                __html: `
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
                 gtag('consent', 'default', {
                   ad_storage: 'denied',
                   ad_user_data: 'denied',
@@ -174,17 +171,18 @@ export default async function RootLayout({ children }) {
                   analytics_storage: 'denied',
                   wait_for_update: 500
                 });
-              `}
-            </Script>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${scriptBootId}`}
-              strategy="afterInteractive"
+                ${configSnippet}
+              `,
+              }}
             />
-            <Script id="gtag-config" strategy="afterInteractive">
-              {configSnippet}
-            </Script>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${scriptBootId}`}
+            />
           </>
         ) : null}
+      </head>
+      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning={true}>
         <NextSnakeLoader />
         <Toaster />
         <Providers>
