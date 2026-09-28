@@ -25,6 +25,7 @@ import {
   resolveSellerApplicationId,
   trackSellerApplicationSubmitted,
 } from "@/utils/trackSellerApplicationSubmitted";
+import { trackSellerAdsConversion } from "@/utils/trackSellerAdsConversion";
 import LoaderStyleOne from "../Helpers/Loaders/LoaderStyleOne";
 
 const COMPANY_TYPES = [
@@ -265,8 +266,18 @@ export default function SellerQuickRegister() {
 
       // RTK unwrap = Laravel JSON gövdesi → application_id yolu: response.data.application_id
       const applicationId = resolveSellerApplicationId(response);
-      if (applicationId != null && hasAnalyticsConsent()) {
-        trackSellerApplicationSubmitted({ applicationId });
+      if (applicationId != null) {
+        try {
+          if (hasAnalyticsConsent()) {
+            trackSellerApplicationSubmitted({ applicationId });
+          }
+        } catch {
+          // GA4 başarısız olsa da Ads dönüşümü kendi koşuluna bağlı kalsın
+        }
+        trackSellerAdsConversion({
+          applicationId,
+          marketingGranted: hasMarketingConsent(),
+        });
       }
 
       try {

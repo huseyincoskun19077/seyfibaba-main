@@ -12,6 +12,7 @@ import {
   hasMarketingConsent,
 } from "@/components/Helpers/Consent";
 import { getGa4MeasurementId, isGtmId } from "@/config/googleTags";
+import { sendGa4Collect } from "@/utils/sendGa4Collect";
 
 import MaintenanceWrapper from "@/components/Partials/MaintenanceWrapper";
 import Consent from "../Helpers/Consent";
@@ -104,6 +105,25 @@ export default function DefaultLayoutClient({ children }) {
     if (!sendGa4SpaPageView(pathname)) return;
     lastGa4PageView.current = pageKey;
   }, [allowAnalytics, gtagId, pathname]);
+
+  // Yalnız ?kt_probe=1 iken tanı olayı. Başvuru olayını tetiklemez.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!allowAnalytics) return;
+    const probe = new URLSearchParams(window.location.search).get("kt_probe");
+    if (probe !== "1") return;
+    try {
+      if (window.sessionStorage.getItem("kt_tag_transport_sent") === "1") return;
+    } catch {
+      return;
+    }
+    if (!sendGa4Collect("kt_tag_transport")) return;
+    try {
+      window.sessionStorage.setItem("kt_tag_transport_sent", "1");
+    } catch {
+      // ignore
+    }
+  }, [allowAnalytics, pathname]);
 
   const initializeMessageWidget = useCallback(
     (pusherInfo) => {
