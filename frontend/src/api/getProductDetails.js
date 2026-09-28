@@ -9,12 +9,12 @@ function isNextNotFound(err) {
 }
 
 /**
- * Ürün detayı — geçici API/timeout hatalarında 404 gösterme; birkaç kez dene.
+ * Ürün detayı — geçici API/timeout/429 hatalarında 404 gösterme; birkaç kez dene.
  */
 export default async function getProductDetails(slug) {
   let lastError;
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const res = await serverApiGet(`product/${encodeURIComponent(slug)}`, {
         timeoutMs: 12000,
@@ -34,8 +34,12 @@ export default async function getProductDetails(slug) {
         throw err;
       }
       lastError = err;
-      if (attempt < 2) {
-        await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
+      if (attempt < 3) {
+        const msg = String(err?.message || "");
+        const is429 = msg.includes("429");
+        await new Promise((r) =>
+          setTimeout(r, is429 ? 600 * (attempt + 1) : 250 * (attempt + 1))
+        );
       }
     }
   }

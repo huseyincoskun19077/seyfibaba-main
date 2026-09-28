@@ -39,8 +39,25 @@ class RouteServiceProvider extends ServiceProvider
     {
         RateLimiter::for('api', function (Request $request) {
             // JWT guard default: token yokken user() 500 üretebiliyor.
-            // Public API limitini IP üzerinden tut.
-            return Limit::perMinute(60)->by((string) $request->ip());
+            $ip = (string) $request->ip();
+            $ua = strtolower((string) $request->userAgent());
+
+            // Filigranlı görseller — ürün listelerinde çok istek
+            if ($request->is('api/media/wm') || $request->is('media/wm')) {
+                return Limit::perMinute(1200)->by('wm:'.$ip);
+            }
+
+            // Next.js SSR (çok sekme açınca aynı sunucu IP’si) — sıkı 60/dk 429 → sahte 500 üretir
+            $isLoopback = in_array($ip, ['127.0.0.1', '::1'], true);
+            $isNodeSsr =
+                str_contains($ua, 'node') ||
+                str_contains($ua, 'next.js') ||
+                str_contains($ua, 'seyfibaba-next-ssr');
+            if ($isLoopback || $isNodeSsr) {
+                return Limit::perMinute(600)->by('ssr:'.$ip);
+            }
+
+            return Limit::perMinute(120)->by($ip);
         });
 
         RateLimiter::for('auth-login', function (Request $request) {

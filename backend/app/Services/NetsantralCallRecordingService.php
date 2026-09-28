@@ -263,7 +263,8 @@ class NetsantralCallRecordingService
     }
 
     /**
-     * Tek çağrı için uniqueid ile klasik CDR’dan ses URL dene ve indir.
+     * Tek çağrı için ses URL dene ve indir.
+     * Netsipp hesaplarında klasik netsantral/report kapalıdır (331) — webhook veya elle yükleme gerekir.
      */
     public function tryFetchAudioForRecording(CallRecording $recording): CallRecording
     {
@@ -271,41 +272,62 @@ class NetsantralCallRecordingService
             return $recording;
         }
 
+        if ($recording->remote_recording_url) {
+            return $this->downloadAudio($recording);
+        }
+
         $creds = $this->credentials();
-        if (empty($creds['usercode']) || empty($creds['password'])) {
+        $hasNetsipp = ! empty($creds['netsipp_api_key']);
+        $hasClassic = ! empty($creds['usercode']) && ! empty($creds['password']);
+
+        // Netsipp hesabı: klasik CDR ses URL vermez (331). Yanlış butona basılmasın.
+        if ($hasNetsipp && ! $hasClassic) {
+            throw new \RuntimeException(
+                'Bu hesap Netsipp. «Ses çek» çalışmaz (331). '
+                .'Yeni aramalar için Webhook CDR kurun; bu satır için Netgsm’den mp3 indirip «Yükle» kullanın.'
+            );
+        }
+
+        if (! $hasClassic) {
             throw new \RuntimeException('Ses çekmek için Netgsm usercode/şifre gerekli (Netsipp key yetmez).');
         }
 
-        if (! $recording->remote_recording_url) {
-            $rows = $this->fetchReportByUniqueId(
-                $creds['usercode'],
-                $creds['password'],
-                $recording->uniqueid,
-                $creds['pbxnum'] ?? null
-            );
+        $rows = $this->fetchReportByUniqueId(
+            $creds['usercode'],
+            $creds['password'],
+            $recording->uniqueid,
+            $creds['pbxnum'] ?? null
+        );
 
-            if ($this->isHardError($rows)) {
-                throw new \RuntimeException($this->explainError(
-                    $rows['code'] ?? null,
-                    (string) ($rows['error'] ?? $rows['message'] ?? 'uniqueid CDR başarısız')
-                ));
+        if ($this->isHardError($rows)) {
+            $code = (string) ($rows['code'] ?? '');
+            if ($code === '331' || $hasNetsipp) {
+                throw new \RuntimeException(
+                    'Bu hesap Netsipp; klasik netsantral/report kapalı (331). '
+                    .'Ses için üstteki Webhook CDR URL’sini Netsipp’e kaydedin (Ürün Mağazası → cdr). '
+                    .'Eski çağrı için satıra mp3 yükleyin.'
+                );
             }
-
-            $list = $this->normalizeReportList($rows);
-            $item = $list[0] ?? null;
-            $url = $item ? trim((string) ($item['recording'] ?? $item['seskaydi'] ?? '')) : '';
-            if ($url === '') {
-                throw new \RuntimeException('Bu uniqueid için Netgsm ses URL döndürmedi (kayıt yok veya yetki yok).');
-            }
-
-            $recording->update([
-                'remote_recording_url' => $url,
-                'sync_status' => 'pending',
-                'sync_error' => null,
-                'raw_payload' => array_merge((array) $recording->raw_payload, ['_classic' => $item]),
-            ]);
-            $recording->refresh();
+            throw new \RuntimeException($this->explainError(
+                $rows['code'] ?? null,
+                (string) ($rows['error'] ?? $rows['message'] ?? 'uniqueid CDR başarısız')
+            ));
         }
+
+        $list = $this->normalizeReportList($rows);
+        $item = $list[0] ?? null;
+        $url = $item ? trim((string) ($item['recording'] ?? $item['seskaydi'] ?? '')) : '';
+        if ($url === '') {
+            throw new \RuntimeException('Bu uniqueid için Netgsm ses URL döndürmedi (kayıt yok veya yetki yok).');
+        }
+
+        $recording->update([
+            'remote_recording_url' => $url,
+            'sync_status' => 'pending',
+            'sync_error' => null,
+            'raw_payload' => array_merge((array) $recording->raw_payload, ['_classic' => $item]),
+        ]);
+        $recording->refresh();
 
         return $this->downloadAudio($recording);
     }

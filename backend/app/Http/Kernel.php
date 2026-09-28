@@ -46,7 +46,8 @@ class Kernel extends HttpKernel
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \App\Http\Middleware\JwtTokenFromQuery::class,
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':60,1', // 60 istek/dakika
+            // Named limiter: SSR (Next.js/node) için daha yüksek kota — RouteServiceProvider
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\TrackUserPresence::class,
         ],

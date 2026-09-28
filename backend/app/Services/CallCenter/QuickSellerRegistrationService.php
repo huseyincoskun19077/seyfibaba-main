@@ -614,6 +614,26 @@ class QuickSellerRegistrationService
         return $this->createFirstLoginOtp($identifier);
     }
 
+    /**
+     * Admin SMS kampanyası: aktif tek kullanımlık satıcı girişi OTP'si oluştur/döndür.
+     *
+     * @return array{otp: string, login_username: string, phone: string}|null
+     */
+    public function ensureFirstLoginOtpPayload(User $user): ?array
+    {
+        $phone = trim((string) $user->phone);
+
+        if ($phone === '') {
+            return null;
+        }
+
+        return [
+            'otp' => $this->getActiveFirstLoginOtpCode($phone),
+            'login_username' => $this->loginUsernameFromPhone($phone),
+            'phone' => $phone,
+        ];
+    }
+
     protected function findFirstLoginOtpForIdentifier(string $identifier): ?OtpVerification
     {
         $keys = str_starts_with($identifier, 'e:')

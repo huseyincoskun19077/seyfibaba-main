@@ -22,14 +22,40 @@ function joinApiBase(pathWithQuery) {
   return `${apiBaseUrl()}${cleaned}`;
 }
 
+function isUploadRelativePath(path) {
+  const p = String(path || "").replace(/^\/+/, "");
+  return p.startsWith("uploads/");
+}
+
+/**
+ * Yerel uploads görselleri filigranlı proxy üzerinden (indirince de "Kuaför Tedarik" kalır).
+ */
+function watermarkUrlForUploadPath(pathWithQuery) {
+  const raw = String(pathWithQuery || "").trim();
+  if (!raw) return "";
+  const noHash = raw.split("#")[0];
+  const [pathPart] = noHash.split("?");
+  const path = pathPart.replace(/^\/+/, "");
+  if (!isUploadRelativePath(path)) {
+    return joinApiBase(raw.startsWith("/") ? raw : `/${raw}`);
+  }
+  return joinApiBase(`media/wm?path=${encodeURIComponent(path)}`);
+}
+
 /**
  * Ürün görseli — yerel yol (uploads/...) veya harici CDN (Trendyol dsmcdn vb.).
  * Idempotent: zaten çözülmüş absolute URL tekrar verilse de bozulmaz.
- * Own-domain /uploads asla frontend origin’ine relative bırakılmaz (kartlarda 404).
+ * Own-domain /uploads filigranlı media/wm üzerinden sunulur.
  */
 export function resolveProductImageUrl(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
+
+  // Zaten watermark proxy
+  if (raw.includes("/media/wm?") || raw.includes("/api/media/wm?")) {
+    if (ABSOLUTE_URL_REGEX.test(raw)) return raw;
+    return joinApiBase(raw.replace(/^\/?api\//, ""));
+  }
 
   if (ABSOLUTE_URL_REGEX.test(raw)) {
     try {
@@ -37,12 +63,12 @@ export function resolveProductImageUrl(value) {
       const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
       const path = parsed.pathname || "";
 
-      // admin/seyfibaba absolute uploads → her zaman API BASE_URL
       if (
         path.startsWith("/uploads/") &&
-        (OWN_UPLOAD_HOSTS.has(host) || OWN_UPLOAD_HOSTS.has(parsed.hostname.toLowerCase()))
+        (OWN_UPLOAD_HOSTS.has(host) ||
+          OWN_UPLOAD_HOSTS.has(parsed.hostname.toLowerCase()))
       ) {
-        return joinApiBase(`${path}${parsed.search || ""}`);
+        return watermarkUrlForUploadPath(path);
       }
     } catch {
       /* keep absolute */
@@ -54,9 +80,8 @@ export function resolveProductImageUrl(value) {
     return `https:${raw}`;
   }
 
-  // Önceki hatalı resolve sonucu: "/uploads/..." (frontend relative)
-  if (raw.startsWith("/uploads/")) {
-    return joinApiBase(raw);
+  if (raw.startsWith("/uploads/") || isUploadRelativePath(raw)) {
+    return watermarkUrlForUploadPath(raw);
   }
 
   return joinApiBase(raw);

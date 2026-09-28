@@ -535,7 +535,26 @@ class RemoteUrls {
       return '';
     }
 
+    // Zaten filigran proxy
+    if (raw.contains('/media/wm?') || raw.contains('/api/media/wm?')) {
+      if (raw.startsWith('http://') || raw.startsWith('https://')) {
+        return raw;
+      }
+      final cleaned = raw.startsWith('/') ? raw.substring(1) : raw;
+      final withoutApi =
+          cleaned.startsWith('api/') ? cleaned.substring(4) : cleaned;
+      return '$baseUrl$withoutApi';
+    }
+
     if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      try {
+        final uri = Uri.parse(raw);
+        final path = uri.path;
+        if (path.startsWith('/uploads/')) {
+          final rel = path.startsWith('/') ? path.substring(1) : path;
+          return '${baseUrl}media/wm?path=${Uri.encodeComponent(rel)}';
+        }
+      } catch (_) {}
       return raw;
     }
 
@@ -544,6 +563,9 @@ class RemoteUrls {
     }
 
     final normalized = raw.startsWith('/') ? raw.substring(1) : raw;
+    if (normalized.startsWith('uploads/')) {
+      return '${baseUrl}media/wm?path=${Uri.encodeComponent(normalized)}';
+    }
     return rootUrl + normalized;
   }
 

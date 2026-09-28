@@ -157,6 +157,10 @@ Route::group([], function () {
     Route::get('/subcategory-by-category/{id}', [HomeController::class, 'subCategoriesByCategory'])->name('subcategory-by-category');
     Route::get('/childcategory-by-subcategory/{id}', [HomeController::class, 'childCategoriesBySubCategory'])->name('childcategory-by-subcategory');
     Route::get('/category-list', [HomeController::class, 'categoryList'])->name('category-list');
+    Route::get('/media/wm', [\App\Http\Controllers\ProductImageWatermarkController::class, 'show'])
+        ->middleware('throttle:300,1')
+        ->name('media.watermark');
+
     Route::get('/brand-list', [HomeController::class, 'brandList'])->name('brand-list');
     Route::get('/category/{id}', [HomeController::class, 'category'])->name('category');
     Route::get('/sub-category/{id}', [HomeController::class, 'subCategory'])->name('sub-category');
