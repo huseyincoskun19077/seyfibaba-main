@@ -920,15 +920,23 @@
                                                             </div>
 
                                                             <div class="form-group">
-                                                                <label for="">Google Analytics / Ads / GTM Ölçüm Kimliği</label>
-                                                                <input type="text" class="form-control" name="analytic_id" value="{{ $googleAnalytic->analytic_id }}" placeholder="Örn: AW-XXXXXXXXXX, G-XXXXXXXXXX veya GTM-XXXXXXX">
+                                                                <label for="">Google Ads / GTM Kimliği</label>
+                                                                <input type="text" class="form-control" name="analytic_id" value="{{ $googleAnalytic->analytic_id }}" placeholder="Örn: AW-18452604369 veya GTM-XXXXXXX">
                                                                 <small class="text-muted">
                                                                     Google Ads için <strong>AW-XXXXXXXXXX</strong>,
-                                                                    Google Analytics 4 için <strong>G-XXXXXXXXXX</strong>,
-                                                                    Google Tag Manager için <strong>GTM-XXXXXXX</strong> formatında ölçüm kimliğini girin.
-                                                                    Bu kimliği <a href="https://ads.google.com" target="_blank">Google Ads</a>,
-                                                                    <a href="https://analytics.google.com" target="_blank">Google Analytics</a> veya
-                                                                    <a href="https://tagmanager.google.com" target="_blank">Google Tag Manager</a> panelinden alabilirsiniz.
+                                                                    Google Tag Manager için <strong>GTM-XXXXXXX</strong>.
+                                                                    Bu alan birincil etiket kimliğidir (mevcut Ads kurulumu burada kalır).
+                                                                </small>
+                                                            </div>
+
+                                                            <div class="form-group">
+                                                                <label for="">GA4 Ölçüm Kimliği (G-)</label>
+                                                                <input type="text" class="form-control" name="ga4_measurement_id" value="{{ $googleAnalytic->ga4_measurement_id ?? '' }}" placeholder="Örn: G-2ZL87131XC">
+                                                                <small class="text-muted">
+                                                                    Kuaför Tedarik web sitesinin GA4 akışı (<strong>seyfibabapp</strong> mülkü).
+                                                                    Format: <strong>G-XXXXXXXX</strong>.
+                                                                    Satıcı başvuru olayı (<code>seller_application_submitted</code>) bu kimliğe gider.
+                                                                    <a href="https://analytics.google.com" target="_blank" rel="noopener">Google Analytics</a> → Yönetici → Veri akışları.
                                                                 </small>
                                                             </div>
 

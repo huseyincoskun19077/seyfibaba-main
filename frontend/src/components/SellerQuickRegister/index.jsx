@@ -20,6 +20,10 @@ import {
 } from "@/config/legalDocuments";
 import { recordLegalConsents } from "@/api/recordLegalConsents";
 import { hasMarketingConsent } from "@/components/Helpers/Consent";
+import {
+  resolveSellerApplicationId,
+  trackSellerApplicationSubmitted,
+} from "@/utils/trackSellerApplicationSubmitted";
 import LoaderStyleOne from "../Helpers/Loaders/LoaderStyleOne";
 
 const COMPANY_TYPES = [
@@ -260,8 +264,16 @@ export default function SellerQuickRegister() {
       } catch {
         // backend also records
       }
-      setSuccess(response.data || response);
+      const successData = response?.data || response;
+      setSuccess(successData);
       toast.success(response.message || "Başvurunuz alındı.");
+
+      // RTK unwrap = Laravel JSON gövdesi → application_id yolu: response.data.application_id
+      const applicationId = resolveSellerApplicationId(response);
+      if (applicationId != null) {
+        trackSellerApplicationSubmitted({ applicationId });
+      }
+
       try {
         if (hasMarketingConsent()) {
           const ReactPixel = (await import("react-facebook-pixel")).default;

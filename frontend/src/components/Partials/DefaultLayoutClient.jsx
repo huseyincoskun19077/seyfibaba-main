@@ -11,6 +11,7 @@ import {
   hasAnalyticsConsent,
   hasMarketingConsent,
 } from "@/components/Helpers/Consent";
+import { getGa4MeasurementId, isGtmId } from "@/config/googleTags";
 
 import MaintenanceWrapper from "@/components/Partials/MaintenanceWrapper";
 import Consent from "../Helpers/Consent";
@@ -32,11 +33,14 @@ function syncGoogleConsent({ marketing, analytics }) {
   });
 }
 
-function sendGaPageView(measurementId, path) {
+/** SPA page_view — yalnız GA4 (G-); AW yeniden config edilmez (çift PV yok) */
+function sendGa4SpaPageView(path) {
   if (typeof window === "undefined" || typeof window.gtag !== "function") return;
-  if (!measurementId || !String(measurementId).match(/^(G|AW|UA)-/i)) return;
+  const ga4Id = getGa4MeasurementId();
+  if (!ga4Id) return;
   const pagePath = path || window.location.pathname + window.location.search;
-  window.gtag("config", measurementId, {
+  window.gtag("event", "page_view", {
+    send_to: ga4Id,
     page_path: pagePath,
     page_location: window.location.href,
     page_title: typeof document !== "undefined" ? document.title : undefined,
@@ -88,10 +92,11 @@ export default function DefaultLayoutClient({ children }) {
     return () => window.removeEventListener("seyfibaba:cookie-prefs", onPrefs);
   }, [refreshConsentFlags]);
 
-  // Onay sonrası + SPA sayfa değişiminde GA page_view
+  // Onay sonrası + SPA sayfa değişiminde GA4 page_view (yalnız G-, AW'ye değil)
   useEffect(() => {
-    if (!allowAnalytics || !gtagId) return;
-    sendGaPageView(gtagId, pathname);
+    if (!allowAnalytics) return;
+    if (gtagId && isGtmId(gtagId)) return; // GTM kendi pageview'ini yönetir
+    sendGa4SpaPageView(pathname);
   }, [allowAnalytics, gtagId, pathname]);
 
   const initializeMessageWidget = useCallback(
@@ -117,6 +122,12 @@ export default function DefaultLayoutClient({ children }) {
       persistWebsiteSetupStorage(data);
 
       setGtagId(googleAnalytic?.analytic_id || null);
+      if (typeof window !== "undefined") {
+        const ga4 = getGa4MeasurementId(googleAnalytic?.ga4_measurement_id);
+        if (ga4) {
+          window.__KT_GA4_MEASUREMENT_ID = ga4;
+        }
+      }
       setFbPixel(facebookPixel);
       initializeMessageWidget(pusher_info);
     },

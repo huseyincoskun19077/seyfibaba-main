@@ -12,6 +12,12 @@ import Toaster from "@/components/Helpers/Toaster";
 import localFont from "next/font/local";
 import Script from "next/script";
 import getSetupData from "@/api/setup";
+import {
+  getGa4MeasurementId,
+  isGa4Id,
+  isGoogleAdsId,
+  isGtmId,
+} from "@/config/googleTags";
 
 const inter = localFont({
   src: [
@@ -110,8 +116,43 @@ export const viewport = {
 
 export default async function RootLayout({ children }) {
   const setup = await getSetupData();
-  const gtagId = String(setup?.googleAnalytic?.analytic_id || "").trim();
-  const useGtag = /^(G|AW|UA)-[A-Z0-9-]+$/i.test(gtagId);
+  const adminTagId = String(setup?.googleAnalytic?.analytic_id || "").trim();
+  const ga4Id = getGa4MeasurementId(
+    setup?.googleAnalytic?.ga4_measurement_id
+  );
+
+  // GTM admin'de seçiliyse layout gtag yüklemez (DefaultLayoutClient GTM snippet kullanır)
+  const useGtm = isGtmId(adminTagId);
+  const adsId = isGoogleAdsId(adminTagId) ? adminTagId : null;
+  const adminGa4Id =
+    isGa4Id(adminTagId) &&
+    adminTagId.toUpperCase() !== String(ga4Id || "").toUpperCase()
+      ? adminTagId
+      : null;
+
+  const useDirectGtag = !useGtm && Boolean(adsId || ga4Id || adminGa4Id);
+  // Tek gtag.js — hangi id ile yüklenirse yüklensin kütüphane aynıdır
+  const scriptBootId = ga4Id || adsId || adminGa4Id;
+
+  const configSnippet = (() => {
+    if (!useDirectGtag || !scriptBootId) return "";
+    const lines = [
+      "window.dataLayer = window.dataLayer || [];",
+      "function gtag(){dataLayer.push(arguments);}",
+      "gtag('js', new Date());",
+    ];
+    if (ga4Id) {
+      lines.push(`window.__KT_GA4_MEASUREMENT_ID = '${ga4Id}';`);
+      lines.push(`gtag('config', '${ga4Id}', { send_page_view: false });`);
+    }
+    if (adsId) {
+      lines.push(`gtag('config', '${adsId}');`);
+    }
+    if (adminGa4Id) {
+      lines.push(`gtag('config', '${adminGa4Id}', { send_page_view: false });`);
+    }
+    return lines.join("\n");
+  })();
 
   return (
     <html lang="tr" translate="no" className="notranslate">
@@ -120,7 +161,7 @@ export default async function RootLayout({ children }) {
         <link rel="dns-prefetch" href="https://admin.kuafortedarik.com/" />
       </head>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning={true}>
-        {useGtag ? (
+        {useDirectGtag ? (
           <>
             <Script id="gtag-consent-default" strategy="beforeInteractive">
               {`
@@ -136,16 +177,11 @@ export default async function RootLayout({ children }) {
               `}
             </Script>
             <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gtagId}`}
+              src={`https://www.googletagmanager.com/gtag/js?id=${scriptBootId}`}
               strategy="afterInteractive"
             />
             <Script id="gtag-config" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gtagId}');
-              `}
+              {configSnippet}
             </Script>
           </>
         ) : null}

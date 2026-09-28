@@ -42,9 +42,10 @@ export const FOOTER_LEGAL_LINKS = [
 
 export const FOOTER_CORPORATE_LINKS = [
   { href: "/about", label: "Hakkımızda" },
-  { href: "/salon-crm", label: "Salon CRM" },
   { href: "/contact", label: "İletişim" },
   { href: "/yardim", label: "Sıkça Sorulan Sorular (SSS)" },
+  { href: "/blogs", label: "Bizden Haberler" },
+  { href: "/satici", label: "Satıcı Ol" },
 ];
 
 export const PROFILE_LEGAL_LINKS = FOOTER_LEGAL_LINKS.filter(

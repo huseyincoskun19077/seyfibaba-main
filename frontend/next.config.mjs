@@ -149,6 +149,18 @@ const nextConfig = {
         destination: "/yardim",
         permanent: true,
       },
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "seyfibaba.com" }],
+        destination: "https://kuafortedarik.com/:path*",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.seyfibaba.com" }],
+        destination: "https://kuafortedarik.com/:path*",
+        permanent: true,
+      },
       // /profile/address gibi doğrudan bağlantıları hash tabına yönlendir
       {
         source: "/profile/:tab(dashboard|profile|order|address|wishlist|reviews|password|second-hand)",

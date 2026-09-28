@@ -9,11 +9,26 @@ import {
 } from "@/utils/secondHandSite";
 
 export function proxy(request) {
-  const host =
+  const hostHeader =
     request.headers.get("x-forwarded-host") ||
     request.headers.get("host") ||
     "";
+  const host = String(hostHeader).split(",")[0].trim().toLowerCase().split(":")[0];
   const { pathname, search } = request.nextUrl;
+
+  // Eski seyfibaba.com trafiğini kuafortedarik.com'a taşı (nginx yoksa bile)
+  if (host === "seyfibaba.com" || host === "www.seyfibaba.com") {
+    return NextResponse.redirect(
+      `https://kuafortedarik.com${pathname}${search}`,
+      301
+    );
+  }
+  if (host === "admin.seyfibaba.com") {
+    return NextResponse.redirect(
+      `https://admin.kuafortedarik.com${pathname}${search}`,
+      301
+    );
+  }
 
   if (isSecondHandSubdomainEnabled()) {
     if (isMarketplaceHost(host) && isSecondHandPublicPath(pathname)) {

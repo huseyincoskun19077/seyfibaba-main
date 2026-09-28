@@ -384,17 +384,21 @@ class SettingController extends Controller
     public function updateGoogleAnalytic(Request $request){
         $rules = [
             'allow' => 'required',
-            'analytic_id' => $request->allow == 1 ?  'required' : ''
+            'analytic_id' => $request->allow == 1 ?  'required' : '',
+            'ga4_measurement_id' => 'nullable|string|max:32|regex:/^G-[A-Z0-9]+$/i',
         ];
         $customMessages = [
             'allow.required' => trans('admin_validation.Allow is required'),
             'analytic_id.required' => trans('admin_validation.Analytic id is required'),
+            'ga4_measurement_id.regex' => 'GA4 ölçüm kimliği G-XXXXXXXX formatında olmalıdır.',
         ];
         $this->validate($request, $rules,$customMessages);
 
         $googleAnalytic = GoogleAnalytic::first();
         $googleAnalytic->status = $request->allow;
         $googleAnalytic->analytic_id = $request->analytic_id;
+        $ga4 = trim((string) $request->input('ga4_measurement_id', ''));
+        $googleAnalytic->ga4_measurement_id = $ga4 !== '' ? strtoupper($ga4) : null;
         $googleAnalytic->save();
 
         $notification = trans('admin_validation.Update Successfully');

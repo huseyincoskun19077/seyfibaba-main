@@ -10,30 +10,55 @@ import { legalPath } from "@/config/legalDocuments";
 import { marketplaceUrl } from "@/utils/secondHandSite";
 
 const brandLinks = [
-  { href: "/about", label: "Biz Kimiz" },
-  { href: "/contact", label: "Kariyer" },
-  { href: "/contact", label: "İletişim" },
-  { href: legalPath("privacy-policy"), label: "Kuaför Tedarik'te Güvenlik" },
-  { href: legalPath("prohibited-products"), label: "Geri Çağrılan Ürünler" },
+  { href: legalPath("privacy-policy"), label: "Gizlilik Politikası ve KVKK" },
+  { href: legalPath("privacy-policy"), label: "Çerez Politikası" },
+  {
+    href: legalPath("kvkk-aydinlatma"),
+    label: "Kişisel Verilerin İşlenmesi Aydınlatma Metni",
+  },
+  {
+    href: "/yardim?kategori=siparis",
+    label: "Taksit Seçenekleri / Banka Komisyon Oranları",
+  },
+  { href: "/about", label: "Hakkımızda" },
+  { href: "/satici", label: "Satıcı Başvuruları Sıkça Sorulan Sorular (SSS)" },
+  {
+    href: "/yardim?kategori=hakkinda",
+    label: "E-Ticaret Stopaj Vergisi",
+  },
+  { href: "/satici", label: "Entegrasyonlar" },
+  { href: "/yardim", label: "Sıkça Sorulan Sorular" },
+  {
+    href: "/yardim?kategori=hakkinda",
+    label: "Kuaför Tedarik ETBİS Kayıtlı mıdır?",
+  },
+  {
+    href: "/yardim?kategori=hakkinda",
+    label: "Kuaför Tedarik Güvenilir mi?",
+  },
+  { href: "/blogs", label: "Bizden Haberler" },
 ];
 
 const campaignLinks = [
-  { href: "/flash-sale", label: "Kampanyalar" },
-  { href: "/yardim", label: "Alışveriş Kredisi" },
-  { href: "/blogs", label: "Hediye Fikirleri" },
+  { href: "/yardim", label: "Müşteri Hizmetleri" },
+  { href: "/signup", label: "Üye Ol" },
+  { href: "/contact", label: "İletişim" },
+  { href: legalPath("delivery-return"), label: "İade İşlemleri" },
+  { href: "/satici", label: "Satıcı Eğitimleri" },
 ];
 
 const sellerLinks = [
   { href: "/satici", label: "Kuaför Tedarik'te Satış Yap" },
-  { href: "/satici/nasil-satici-olunur", label: "Temel Kavramlar" },
-  { href: "/satici", label: "Kuaför Tedarik Akademi" },
+  { href: "/satici-kayit", label: "Satıcı Başvurusu" },
+  { href: "/satici/nasil-satici-olunur", label: "Nasıl Satıcı Olunur" },
+  { href: "/satici", label: "Entegrasyonlar" },
 ];
 
 const helpLinksFallback = [
   { href: "/yardim", label: "Sıkça Sorulan Sorular" },
-  { href: "/yardim?kategori=destek", label: "Canlı Yardım" },
-  { href: legalPath("delivery-return"), label: "Nasıl İade Edebilirim" },
-  { href: "/tracking-order", label: "İşlem Rehberi" },
+  { href: "/contact", label: "İletişim" },
+  { href: legalPath("delivery-return"), label: "Teslimat ve İade" },
+  { href: "/tracking-order", label: "Sipariş Takibi" },
 ];
 
 const socialSvgIcons = {
@@ -469,7 +494,7 @@ export default function Footer({ settings, isSecondHandSite = false }) {
             </div>
 
             <div>
-              <ColTitle>Kampanyalar</ColTitle>
+              <ColTitle>Müşteri Hizmetleri</ColTitle>
               <SimpleLinks items={campaignLinks} />
             </div>
 

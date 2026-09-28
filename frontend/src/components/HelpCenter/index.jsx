@@ -142,6 +142,24 @@ const FALLBACK_FAQS = {
       answer:
         "Ödemeler Iyzico altyapısı ile 3D Secure üzerinden alınır. Kart bilgileriniz Kuaför Tedarik sunucularında saklanmaz.",
     },
+    {
+      id: "f9b",
+      question: "Kuaför Tedarik ETBİS kayıtlı mıdır?",
+      answer:
+        "Kuaför Tedarik, elektronik ticaret bilgi sistemi (ETBİS) yükümlülüklerine uygun şekilde faaliyet gösterir. Güncel kayıt / sertifika bilgileri footer’daki ETBİS alanından veya destek hattından teyit edilebilir.",
+    },
+    {
+      id: "f9c",
+      question: "Kuaför Tedarik güvenilir mi?",
+      answer:
+        "Ödemeler Iyzico lisanslı pazaryeri altyapısıyla işlenir; kart bilgisi Kuaför Tedarik’te tutulmaz. Satıcı doğrulama (KYC), şeffaf komisyon ve mesafeli satış / iade süreçleri yasal çerçevede yürütülür. Destek: 0850 303 5073 / info@kuafortedarik.com.",
+    },
+    {
+      id: "f9d",
+      question: "E-ticaret stopaj vergisi nedir?",
+      answer:
+        "Pazaryeri satıcılarını ilgilendiren stopaj / tevkifat kuralları dönemsel mevzuata göre değişir. Satıcı olarak yükümlülüğünüz mali müşaviriniz ve güncel vergi mevzuatıyla belirlenir. Genel bilgi için satıcı panelinden destek talebi açabilir veya 0850 303 5073’ü arayabilirsiniz.",
+    },
   ],
   rehber: [
     {

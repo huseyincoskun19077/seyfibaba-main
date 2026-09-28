@@ -93,6 +93,8 @@ class PublicSellerRegistrationController extends Controller
         return response()->json([
             'message' => $this->buildSuccessMessage($result, $hasRealEmail),
             'data' => [
+                // Tracking dedupe için; PII değil
+                'application_id' => $result->vendor->id,
                 'shop_name' => $result->vendor->shop_name,
                 'phone' => $result->user->phone,
                 'email' => $hasRealEmail ? $result->user->email : null,

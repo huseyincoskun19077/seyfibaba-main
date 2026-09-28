@@ -37,6 +37,7 @@ export function sanitizeWebsiteSetup(data) {
       : null;
 
   const analyticId = String(data.googleAnalytic?.analytic_id || "").trim();
+  const ga4Id = String(data.googleAnalytic?.ga4_measurement_id || "").trim();
   const googleAnalytic =
     data.googleAnalytic &&
     typeof data.googleAnalytic === "object" &&
@@ -45,6 +46,9 @@ export function sanitizeWebsiteSetup(data) {
       ? {
           status: 1,
           analytic_id: analyticId,
+          ga4_measurement_id: /^G-[A-Z0-9]+$/i.test(ga4Id)
+            ? ga4Id.toUpperCase()
+            : null,
         }
       : null;
 

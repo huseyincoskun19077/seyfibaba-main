@@ -477,9 +477,15 @@ class HomeController extends Controller
                     return null;
                 }
 
+                $ga4Id = trim((string) ($ga->ga4_measurement_id ?? ''));
+                if ($ga4Id !== '' && ! preg_match('/^G-[A-Z0-9]+$/i', $ga4Id)) {
+                    $ga4Id = '';
+                }
+
                 return [
                     'status' => 1,
                     'analytic_id' => $analyticId,
+                    'ga4_measurement_id' => $ga4Id !== '' ? strtoupper($ga4Id) : null,
                 ];
             })(),
             'facebookPixel' => (function () {
