@@ -25,7 +25,7 @@ class ProductCard extends StatelessWidget {
     BuildContext context, {
     double horizontalPadding = 12,
     double spacing = 8,
-    double contentHeight = 96,
+    double contentHeight = 118,
   }) {
     final width = MediaQuery.sizeOf(context).width;
     final usable =
@@ -108,21 +108,25 @@ class ProductCard extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
+      padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        mainAxisSize: MainAxisSize.max,
         children: [
-          CustomText(
-            text: productModel.name,
-            maxLine: 2,
-            overflow: TextOverflow.ellipsis,
-            fontWeight: FontWeight.w600,
-            height: 1.15,
-            fontSize: 11,
+          Expanded(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: CustomText(
+                text: productModel.name,
+                maxLine: 2,
+                overflow: TextOverflow.ellipsis,
+                fontWeight: FontWeight.w600,
+                height: 1.15,
+                fontSize: 11,
+                isTranslate: false,
+              ),
+            ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 2),
           if (isFlashSale)
             PriceCardWidget(
               price: mainPrice.toString(),

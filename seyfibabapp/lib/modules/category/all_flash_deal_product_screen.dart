@@ -34,7 +34,6 @@ class AllFlashDealProductScreen extends StatelessWidget {
             context,
             horizontalPadding: 12,
             spacing: 8,
-            contentHeight: 96,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           itemCount: products.length,

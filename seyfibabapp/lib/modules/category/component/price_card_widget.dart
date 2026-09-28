@@ -46,31 +46,66 @@ class PriceCardWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (hasOffer && savings > 0)
-              Text(
-                savingsLabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: savingsColor,
-                  fontSize: compact ? 10 : 12,
-                  fontWeight: FontWeight.w700,
-                  height: 1.15,
+            if (hasOffer && compact)
+              Row(
+                children: [
+                  if (savings > 0) ...[
+                    Text(
+                      savingsLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: savingsColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Flexible(
+                    child: Text(
+                      listLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: listColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        decoration: TextDecoration.lineThrough,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else ...[
+              if (hasOffer && savings > 0)
+                Text(
+                  savingsLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: savingsColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    height: 1.15,
+                  ),
                 ),
-              ),
-            if (hasOffer)
-              Text(
-                listLabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: listColor,
-                  fontSize: compact ? 10 : 12,
-                  fontWeight: FontWeight.w500,
-                  decoration: TextDecoration.lineThrough,
-                  height: 1.15,
+              if (hasOffer)
+                Text(
+                  listLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: listColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    decoration: TextDecoration.lineThrough,
+                    height: 1.15,
+                  ),
                 ),
-              ),
+            ],
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,

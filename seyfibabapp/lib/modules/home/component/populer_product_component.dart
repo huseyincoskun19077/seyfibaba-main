@@ -49,7 +49,6 @@ class HorizontalProductComponent extends StatelessWidget {
                 context,
                 horizontalPadding: 16 + gridPad,
                 spacing: spacing,
-                contentHeight: 96,
               ),
               itemBuilder: (context, index) =>
                   ProductCard(productModel: productList[index]),

@@ -43,7 +43,6 @@ class NewArrivalComponent extends StatelessWidget {
                 context,
                 horizontalPadding: 26,
                 spacing: 8,
-                contentHeight: 96,
               ),
               itemBuilder: (context, index) =>
                   ProductCard(productModel: productList[index]),

@@ -96,7 +96,8 @@ class CustomTextState extends State<CustomText> {
             fontWeight: widget.fontWeight,
             fontSize: widget.fontSize.sp,
             color: widget.color,
-            height: widget.height.h,
+            // Line-height multiplier — do not scale with ScreenUtil `.h`
+            height: widget.height,
             decoration: widget.decoration,
             decorationColor: widget.decorationColor,
             letterSpacing: widget.letterSpacing,

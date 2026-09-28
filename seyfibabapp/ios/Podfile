@@ -31,6 +31,12 @@ target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
+  # Flutter `pod install` (repo-update yok) CDN index'i eski kalabiliyor;
+  # lock'taki biraz daha yeni patch sürümleri "compatible versions" hatası verir.
+  pod 'GoogleDataTransport', '10.1.0'
+  pod 'AppCheckCore', '11.3.1'
+  pod 'GoogleUtilities', '8.1.2'
+
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 

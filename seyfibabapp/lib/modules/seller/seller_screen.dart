@@ -198,7 +198,6 @@ class SellerProduct extends StatelessWidget {
                   context,
                   horizontalPadding: 20,
                   spacing: 8,
-                  contentHeight: 96,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (BuildContext context, int index) {

@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/remote_urls.dart';
 import '../../../core/router_name.dart';
+import '../../../widgets/custom_image.dart';
 import '../../setting/model/announcement_modal_model.dart';
 import '../widgets/home_theme.dart';
 import 'home_promo_store.dart';
@@ -20,6 +22,18 @@ class HomePromoPopup {
     if (!show || modal == null || !context.mounted) return;
 
     HomePromoStore.markSessionShown();
+
+    // Dialog açılmadan görseli cache'le — Image.network boş beyaz alan bırakıyordu.
+    final imagePath = modal.image.trim();
+    if (imagePath.isNotEmpty && context.mounted) {
+      final url = RemoteUrls.imageUrl(imagePath);
+      try {
+        await precacheImage(CachedNetworkImageProvider(url), context)
+            .timeout(const Duration(seconds: 6));
+      } catch (_) {}
+    }
+
+    if (!context.mounted) return;
 
     await showGeneralDialog<void>(
       context: context,
@@ -74,7 +88,6 @@ class _HomePromoDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = RemoteUrls.imageUrl(modal.image);
     final cta = (modal.ctaText ?? '').trim().isNotEmpty
         ? modal.ctaText!.trim()
         : (modal.effectiveLink.isNotEmpty ? 'İncele' : '');
@@ -104,14 +117,9 @@ class _HomePromoDialog extends StatelessWidget {
                         : () => _openLink(context),
                     child: AspectRatio(
                       aspectRatio: 4 / 5,
-                      child: Image.network(
-                        imageUrl,
+                      child: CustomImage(
+                        path: modal.image,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: HomeTheme.bg,
-                          alignment: Alignment.center,
-                          child: const Icon(Icons.image_not_supported_outlined),
-                        ),
                       ),
                     ),
                   ),

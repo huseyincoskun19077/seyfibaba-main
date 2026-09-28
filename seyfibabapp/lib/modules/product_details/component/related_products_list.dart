@@ -38,7 +38,6 @@ class RelatedProductsList extends StatelessWidget {
               context,
               horizontalPadding: 12,
               spacing: 8,
-              contentHeight: 96,
             ),
             itemCount: items.length,
             itemBuilder: (context, index) => ProductCard(

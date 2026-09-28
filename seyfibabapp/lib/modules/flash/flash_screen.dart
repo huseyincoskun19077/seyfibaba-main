@@ -106,7 +106,6 @@ class FlashScreen extends StatelessWidget {
                         context,
                         horizontalPadding: 12,
                         spacing: 8,
-                        contentHeight: 96,
                       ),
                       itemCount: state.flashModel.products.length,
                       itemBuilder: (context, index) {

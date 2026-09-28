@@ -3,7 +3,7 @@ description: A new Flutter project.
 
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
-version: 6.0.6+22
+version: 6.0.8+25
 
 environment:
   sdk: ">=3.10.0 <4.0.0"
@@ -119,5 +119,5 @@ flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   remove_alpha_ios: true
-  image_path: "assets/launcher_icon.png"
+  image_path: "assets/images/logoicon.jpeg"
   min_sdk_android: 21

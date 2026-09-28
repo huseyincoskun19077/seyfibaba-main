@@ -274,7 +274,7 @@ class _HomeSanaOzelStripState extends State<HomeSanaOzelStrip>
           ),
           const SizedBox(height: 10),
           SizedBox(
-            height: 210,
+            height: 236,
             child: NotificationListener<ScrollNotification>(
               onNotification: (n) {
                 if (n is ScrollStartNotification) {

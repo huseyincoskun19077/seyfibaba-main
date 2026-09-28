@@ -49,7 +49,6 @@ class SellerInfo extends StatelessWidget {
                       context,
                       horizontalPadding: 20,
                       spacing: 8,
-                      contentHeight: 96,
                     );
                     final rows = (count / 3).ceil();
                     final height = rows * (delegate.mainAxisExtent ?? 0) +

@@ -573,7 +573,6 @@ class ProductListingGrid extends StatelessWidget {
         context,
         horizontalPadding: gridPadding.left,
         spacing: spacing,
-        contentHeight: 96,
       ),
       itemCount: products.length,
       itemBuilder: (context, index) {
