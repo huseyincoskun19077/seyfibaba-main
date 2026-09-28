@@ -39,22 +39,28 @@ function watermarkUrlForUploadPath(pathWithQuery) {
   if (!isUploadRelativePath(path)) {
     return joinApiBase(raw.startsWith("/") ? raw : `/${raw}`);
   }
-  return joinApiBase(`media/wm?path=${encodeURIComponent(path)}`);
+  return joinApiBase(`api/media/wm?path=${encodeURIComponent(path)}`);
 }
 
 /**
  * Ürün görseli — yerel yol (uploads/...) veya harici CDN (Trendyol dsmcdn vb.).
  * Idempotent: zaten çözülmüş absolute URL tekrar verilse de bozulmaz.
- * Own-domain /uploads filigranlı media/wm üzerinden sunulur.
+ * Own-domain /uploads filigranlı /api/media/wm üzerinden sunulur.
  */
 export function resolveProductImageUrl(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
 
-  // Zaten watermark proxy
+  // Zaten watermark proxy (eski yanlış /media/wm → /api/media/wm)
   if (raw.includes("/media/wm?") || raw.includes("/api/media/wm?")) {
-    if (ABSOLUTE_URL_REGEX.test(raw)) return raw;
-    return joinApiBase(raw.replace(/^\/?api\//, ""));
+    if (ABSOLUTE_URL_REGEX.test(raw)) {
+      return raw.replace(
+        /^(https?:\/\/[^/]+)\/media\/wm\?/i,
+        "$1/api/media/wm?"
+      );
+    }
+    const cleaned = raw.replace(/^\/+/, "").replace(/^api\//, "");
+    return joinApiBase(`api/${cleaned}`);
   }
 
   if (ABSOLUTE_URL_REGEX.test(raw)) {
