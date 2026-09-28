@@ -79,6 +79,7 @@ function SellerGroupHeader({
   shippingFee,
   isFree,
   amountUntilFree,
+  shippingPending = false,
 }) {
   const nameEl = (
     <span className="text-[14px] font-800 text-[#04334a] truncate">
@@ -87,7 +88,7 @@ function SellerGroupHeader({
   );
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl border border-b-0 border-[#04334a]/10 bg-[#F4F6F7] px-3 py-2.5 md:px-4">
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl border border-b-0 border-[#04334a]/10 bg-[#F4F6F7] px-3 py-2.5 md:px-4 min-h-[48px]">
       <div className="flex items-center gap-2 min-w-0">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#6B5B95]/20 text-[#6B5B95]">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -105,9 +106,13 @@ function SellerGroupHeader({
           nameEl
         )}
       </div>
-      <div className="text-[13px] font-700">
-        {isFree ? (
+      <div className="text-[13px] font-700 min-w-[120px] text-right">
+        {shippingPending ? (
+          <span className="text-[#04334a]/40 font-600">Kargo…</span>
+        ) : isFree ? (
           <span className="text-emerald-600">Ücretsiz Kargo!</span>
+        ) : shippingFee == null ? (
+          <span className="text-[#04334a]/40 font-600">Kargo…</span>
         ) : (
           <span className="text-[#04334a]/80">
             Kargo ücreti:{" "}
@@ -115,7 +120,10 @@ function SellerGroupHeader({
           </span>
         )}
       </div>
-      {!isFree && amountUntilFree != null && amountUntilFree > 0 ? (
+      {!shippingPending &&
+      !isFree &&
+      amountUntilFree != null &&
+      amountUntilFree > 0 ? (
         <p className="w-full text-[12px] text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-md px-2 py-1.5">
           Bu satıcıda ücretsiz kargo için{" "}
           <MoneyText value={amountUntilFree} size="sm" className="inline font-800" />{" "}
@@ -252,32 +260,39 @@ export default function ProductsTable({
   sellerGroups = [],
 }) {
   const groups = useMemo(() => {
-    if (Array.isArray(sellerGroups) && sellerGroups.length > 0) {
-      const byVendor = new Map();
-      (cartItems || []).forEach((item) => {
-        const vid = Number(item?.product?.vendor_id || 0);
-        if (!byVendor.has(vid)) byVendor.set(vid, []);
-        byVendor.get(vid).push(item);
-      });
-      return sellerGroups.map((g) => ({
-        ...g,
-        items: byVendor.get(Number(g.vendor_id)) || [],
-      })).filter((g) => g.items.length > 0);
-    }
+    const feeByVendor = new Map();
+    (sellerGroups || []).forEach((g) => {
+      feeByVendor.set(Number(g.vendor_id), g);
+    });
+    const shippingReady = Array.isArray(sellerGroups) && sellerGroups.length > 0;
 
-    // Fallback: group locally without fees
+    // Always group from cart items first — stable order, instant shop names
     const map = new Map();
     (cartItems || []).forEach((item) => {
       const vid = Number(item?.product?.vendor_id || 0);
-      const name = item?.product?.shop_name || (vid ? `Satıcı #${vid}` : "Satıcı");
+      const fromApi = feeByVendor.get(vid);
+      const name =
+        item?.product?.shop_name ||
+        fromApi?.shop_name ||
+        (vid ? `Satıcı #${vid}` : "Satıcı");
+      const slug =
+        item?.product?.shop_slug ||
+        item?.product?.seller_slug ||
+        fromApi?.slug ||
+        null;
       if (!map.has(vid)) {
         map.set(vid, {
           vendor_id: vid,
           shop_name: name,
-          slug: item?.product?.shop_slug || item?.product?.seller_slug || null,
-          shipping_fee: null,
-          is_free_shipping: false,
-          amount_until_free: null,
+          slug,
+          shipping_fee: shippingReady ? fromApi?.shipping_fee ?? null : null,
+          is_free_shipping: shippingReady
+            ? !!fromApi?.is_free_shipping
+            : false,
+          amount_until_free: shippingReady
+            ? fromApi?.amount_until_free ?? null
+            : null,
+          shipping_pending: !shippingReady,
           items: [],
         });
       }
@@ -296,6 +311,7 @@ export default function ProductsTable({
             shippingFee={group.shipping_fee}
             isFree={!!group.is_free_shipping}
             amountUntilFree={group.amount_until_free}
+            shippingPending={!!group.shipping_pending}
           />
           <div className="rounded-b-xl overflow-hidden shadow-sm">
             {group.items.map((item, index) => (

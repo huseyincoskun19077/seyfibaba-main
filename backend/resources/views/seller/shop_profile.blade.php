@@ -23,15 +23,16 @@
                 @method('PUT')
                     <div class="row">
                         <div class="form-group col-12">
-                            <label>{{__('admin.Current Logo')}}</label>
+                            <label>Mevcut profil fotoğrafı (logo)</label>
                             <div>
-                                <img src="{{ asset($seller->logo) }}" width="100px" alt="">
+                                <img src="{{ asset($seller->logo) }}" width="100px" alt="" style="border-radius:50%;object-fit:contain;background:#fff;border:1px solid #ddd;">
                             </div>
                         </div>
 
                         <div class="form-group col-12">
-                            <label>{{__('admin.New Logo')}}</label>
-                            <input type="file" class="form-control-file" name="logo">
+                            <label>Yeni profil fotoğrafı yükle</label>
+                            <input type="file" class="form-control-file" name="logo" accept="image/*">
+                            <small class="text-muted">Mağaza sayfasında solda görünür.</small>
                         </div>
 
                         <div class="form-group col-12">

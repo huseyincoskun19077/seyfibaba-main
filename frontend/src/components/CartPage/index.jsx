@@ -259,10 +259,14 @@ function CartPage() {
       {/* Cart content */}
       <div className="w-full mt-[23px]">
         <div className="container-x mx-auto">
-          {/* Free Shipping Progress Bar */}
-          <div className="mb-4">
-            <FreeShippingBar sellerGroups={sellerGroups} />
-          </div>
+          {/* Free Shipping Progress Bar — veri gelince göster (layout kayması olmasın) */}
+          {sellerGroups.length > 0 ? (
+            <div className="mb-4 min-h-[52px]">
+              <FreeShippingBar sellerGroups={sellerGroups} />
+            </div>
+          ) : (
+            <div className="mb-4 min-h-[52px]" aria-hidden />
+          )}
 
           {/* Products table */}
           <ProductsTable

@@ -28,7 +28,7 @@ class CartController extends Controller
 
     public function cart(){
         $user = Auth::guard('api')->user();
-        $cartProducts = ShoppingCart::with('product','variants.variantItem')
+        $cartProducts = ShoppingCart::with(['product.seller:id,shop_name,slug','variants.variantItem'])
             ->where('user_id', $user->id)
             ->select('id','product_id','qty')
             ->get();
@@ -48,6 +48,11 @@ class CartController extends Controller
                 $row->product->setAttribute('category_name', '');
                 $row->product->setAttribute('installment_source', '');
             }
+            $seller = $row->product->seller;
+            $row->product->setAttribute('shop_name', $seller?->shop_name ?: null);
+            $row->product->setAttribute('shop_slug', $seller?->slug ?: null);
+            // Avoid nesting full seller object in cart payload
+            $row->product->unsetRelation('seller');
         });
 
         return response()->json(['cartProducts' => $cartProducts],200);

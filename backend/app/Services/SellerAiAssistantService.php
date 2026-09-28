@@ -103,7 +103,7 @@ class SellerAiAssistantService
 
         $extracted = $this->extractAction($raw);
         // Net toplu komutlarda model yanlış/tekil ACTION üretse bile forced intent kazanır
-        $action = ($forcedAction && in_array($forcedAction['type'] ?? '', ['bulk_delete_products', 'bulk_set_status', 'bulk_set_category'], true))
+        $action = ($forcedAction && in_array($forcedAction['type'] ?? '', ['bulk_delete_products', 'bulk_set_status', 'bulk_set_category', 'bulk_adjust_price'], true))
             ? $forcedAction
             : ($extracted ?? $forcedAction);
         $reply = $this->stripActionBlock($raw);
@@ -114,7 +114,7 @@ class SellerAiAssistantService
             $result = $this->executeAction($seller, $action);
             $actionTaken = $result['summary'];
             if ($result['summary']) {
-                if (in_array($action['type'] ?? '', ['bulk_set_category', 'bulk_delete_products', 'bulk_set_status'], true)) {
+                if (in_array($action['type'] ?? '', ['bulk_set_category', 'bulk_delete_products', 'bulk_set_status', 'bulk_adjust_price'], true)) {
                     $reply = '✅ '.$result['summary'];
                 } else {
                     $reply = trim($reply."\n\n✅ ".$result['summary']);
@@ -124,7 +124,7 @@ class SellerAiAssistantService
                 $reply = trim($reply."\n\n⚠️ ".$result['error']);
             }
         } elseif ($this->looksLikeUnsupportedPanelRedirect($reply)) {
-            $reply = trim($reply."\n\nNot: Desteklenen mağaza işlemlerini (ürün pasife/yayına alma, fiyat, stok, kategori taşıma) burada doğrudan yapabilirim. Komutu net yazmanız yeterli.");
+            $reply = trim($reply."\n\nNot: Desteklenen mağaza işlemlerini (ürün pasife/yayına alma, toplu fiyat/indirim, stok, kategori taşıma, renk varyantı) burada doğrudan yapabilirim. Komutu net yazmanız yeterli.");
         } elseif ($this->looksLikeFakeCategorySuccess($reply) && ! $action) {
             $reply = 'Kategori taşıma henüz uygulanmadı. Örnek: «VENÜS LİNE FIRÇA ürünlerini Kuaför Malzemeleri - Fırçalar kategorisine al»';
         }
@@ -228,14 +228,30 @@ Platform kategori ağacı (doğru kategoriye yerleştirmek için):
 
 Yapabileceklerin (HEPSİNİ sen uygularsın — "panelden yapın" DEME):
 1. Bilgi: stok, sipariş, ürün sayısı
-2. Tek ürün güncelle: fiyat, indirim, stok, ad, açıklama, yayına/pasife, kategori, SEO
+2. Tek ürün güncelle: fiyat, indirim (offer_price), stok, ad, açıklama, yayına/pasife, kategori, SEO
 3. Toplu durum: tüm veya kategori/alt/child bazlı yayına al / pasife al
-4. Ürün sil (soft): tek SN / SKU / barkod / ad VEYA SN aralığı (ör. 1 ile 400 arası)
-5. Kategori yerleştir: tek ürün VEYA isim/seri ile toplu (ör. "VENÜS LİNE FIRÇA … Fırçalar'a al")
-6. SEO üret/güncelle: tek ürün veya kategori/tüm mağaza
+4. Toplu fiyat/indirim: tüm mağaza, kategori veya isim/seri — zam, düşürme, özel indirim, indirim kaldırma
+5. Ürün sil (soft): tek SN / SKU / barkod / ad VEYA SN aralığı
+6. Kategori yerleştir: tek veya isim/seri ile toplu
+7. SEO üret/güncelle
+8. Renk varyantı ekle (tek ürün): örn. "Siyah, Beyaz, Kırmızı"
 
 Tek ürün ACTION:
 <!--ACTION{"type":"update_product","sn":0,"product_id":0,"product_name":"","sku":"","fields":{"price":0,"offer_price":0,"qty":0,"status":0,"category_name":"","sub_category_name":"","child_category_name":"","seo_title":"","seo_description":"","generate_seo":true}}-->
+
+Toplu fiyat / indirim:
+<!--ACTION{"type":"bulk_adjust_price","mode":"percent_up","value":10,"scope":"all"}-->
+<!--ACTION{"type":"bulk_adjust_price","mode":"percent_down","value":5,"scope":"category","category_name":"Makas"}-->
+<!--ACTION{"type":"bulk_adjust_price","mode":"offer_percent","value":15,"scope":"name","name_contains":"VENÜS LİNE"}-->
+<!--ACTION{"type":"bulk_adjust_price","mode":"fixed_up","value":50,"scope":"all"}-->
+<!--ACTION{"type":"bulk_adjust_price","mode":"fixed_down","value":20,"scope":"category","category_name":"Fırçalar"}-->
+<!--ACTION{"type":"bulk_adjust_price","mode":"clear_offer","scope":"all"}-->
+mode: percent_up|percent_down|offer_percent|fixed_up|fixed_down|clear_offer
+scope: all|category|name — kategori için category_name/sub_category_name; isim için name_contains
+"tüm ürünlere %10 zam" / "Makas kategorisine %15 indirim bırak" / "indirimleri kaldır" → bulk_adjust_price (tek tek update YAZMA)
+
+Renk varyantı (tek ürün):
+<!--ACTION{"type":"add_color_variants","product_name":"Berber Koltuğu","colors":[{"name":"Siyah","qty":5},{"name":"Beyaz","qty":3}]}-->
 
 Kategori ata (tek):
 <!--ACTION{"type":"set_category","sn":0,"product_name":"","category_name":"Makas","sub_category_name":"","child_category_name":""}-->
@@ -264,11 +280,12 @@ Kategori verilirse yalnız o kategori/alt/child etkilenir.
 ZORUNLU:
 - Kategori adını ağaçtan eşleştir ("Üst - Alt" yolunu ayır)
 - "X kategorisini yayına/pasife al" → bulk_set_status + category_name
+- Zam/indirim/toplu fiyat → bulk_adjust_price
 - SEO isteğinde generate_seo ACTION
 - SN = sıra no (SKU değil)
 - SN aralığı silmede tek ACTION: bulk_delete_products
 - Seri/marka kategori taşımada tek ACTION: bulk_set_category
-- ACTION yazmadan "taşıdım/yaptım" DEME
+- ACTION yazmadan "yaptım/zam yaptım" DEME
 - Admin kilidini açma
 PROMPT;
     }
@@ -312,6 +329,16 @@ PROMPT;
         $bulkCategory = $this->detectBulkSetCategoryIntent($text, $wantsDelete, $wantsPassive, $wantsPublish);
         if ($bulkCategory) {
             return $bulkCategory;
+        }
+
+        $bulkPrice = $this->detectBulkPriceIntent($text, $wantsDelete, $wantsPassive, $wantsPublish);
+        if ($bulkPrice) {
+            return $bulkPrice;
+        }
+
+        $colorVariants = $this->detectAddColorVariantsIntent($text, $message, $wantsDelete);
+        if ($colorVariants) {
+            return $colorVariants;
         }
 
         if ($wantsDelete) {
@@ -479,6 +506,198 @@ PROMPT;
     }
 
     /**
+     * Toplu zam / indirim / fiyat düşürme.
+     */
+    private function detectBulkPriceIntent(
+        string $text,
+        bool $wantsDelete,
+        bool $wantsPassive,
+        bool $wantsPublish
+    ): ?array {
+        if ($wantsDelete || $wantsPassive || $wantsPublish) {
+            return null;
+        }
+
+        $clearOffer = (bool) preg_match('/indirim(?:i|leri|leri)?\s*(?:kaldir|sil|iptal)|offer\s*(?:kaldir|sil)/u', $text);
+        $priceTalk = $clearOffer
+            || (bool) preg_match('/\bzam\b|indirim|fiyat|ucuzlat|dusur|art[iı]r|yukselt|ucret|kampanya|%\s*\d|\byuzde\s*\d/u', $text);
+        if (! $priceTalk) {
+            return null;
+        }
+
+        // Kategori taşıma cümlelerini fiyat sanma
+        if (preg_match('/kategori(?:sine|ye)\s*(?:al|tasi)|kismina\s*kategori/u', $text)
+            && ! preg_match('/zam|indirim|fiyat|ucuzlat|%\s*\d/u', $text)) {
+            return null;
+        }
+
+        $percent = null;
+        if (preg_match('/(?:%|yuzde)\s*(\d{1,3}(?:[.,]\d+)?)/u', $text, $m)
+            || preg_match('/(\d{1,3}(?:[.,]\d+)?)\s*%/u', $text, $m)) {
+            $percent = (float) str_replace(',', '.', $m[1]);
+        }
+
+        $fixedTl = null;
+        if (preg_match('/\b(\d{1,7}(?:[.,]\d+)?)\s*(?:tl|₺)\b/u', $text, $m)) {
+            $fixedTl = (float) str_replace(',', '.', $m[1]);
+        }
+
+        $isUp = (bool) preg_match('/\bzam\b|art[iı]r|yukselt|yukari/u', $text);
+        $isDown = (bool) preg_match('/dusur|ucuzlat|azalt|fiyat(?:lari|i)?\s*(?:dus|cek)/u', $text);
+        $isOffer = (bool) preg_match('/indirim\s*(?:birak|yap|ver|uygula|koy)|ozel\s*indirim|kampanya\s*(?:yap|baslat)|offer/u', $text)
+            || ((bool) preg_match('/\bindirim\b/u', $text) && ! $isUp && ! $isDown && ! $clearOffer);
+
+        $mode = null;
+        $value = 0.0;
+        if ($clearOffer) {
+            $mode = 'clear_offer';
+        } elseif ($isOffer && $percent !== null && $percent > 0) {
+            $mode = 'offer_percent';
+            $value = $percent;
+        } elseif ($isUp && $percent !== null && $percent > 0) {
+            $mode = 'percent_up';
+            $value = $percent;
+        } elseif ($isDown && $percent !== null && $percent > 0) {
+            $mode = 'percent_down';
+            $value = $percent;
+        } elseif ($isUp && $fixedTl !== null && $fixedTl > 0) {
+            $mode = 'fixed_up';
+            $value = $fixedTl;
+        } elseif ($isDown && $fixedTl !== null && $fixedTl > 0) {
+            $mode = 'fixed_down';
+            $value = $fixedTl;
+        } elseif ($percent !== null && $percent > 0 && (bool) preg_match('/\bzam\b/u', $text)) {
+            $mode = 'percent_up';
+            $value = $percent;
+        }
+
+        if ($mode === null) {
+            return null;
+        }
+
+        if (in_array($mode, ['percent_up', 'percent_down', 'offer_percent'], true) && ($value <= 0 || $value > 90)) {
+            return null;
+        }
+        if (in_array($mode, ['fixed_up', 'fixed_down'], true) && ($value <= 0 || $value > 100000)) {
+            return null;
+        }
+
+        $action = [
+            'type' => 'bulk_adjust_price',
+            'mode' => $mode,
+            'value' => $value,
+            'scope' => 'all',
+        ];
+
+        if (preg_match('/([\w\s\-çğıöşü]{2,50}?)\s*(?:kategor(?:i|isi|isinde|isindeki|isine))/u', $text, $m)
+            || preg_match('/(?:kategor(?:i|isi|isinde))\s+([\w\s\-çğıöşü]{2,50})/u', $text, $m)) {
+            $cat = trim(preg_replace('/\b(tum|tumu|bu|su|olan|urunleri|urunlerin|urunler|icin)\b/u', '', $m[1]) ?? $m[1]);
+            if ($cat !== '') {
+                $action['scope'] = 'category';
+                if (preg_match('/\s*[-–—\/|>]\s*/u', $cat)) {
+                    $parts = array_values(array_filter(array_map('trim', preg_split('/\s*[-–—\/|>]\s*/u', $cat))));
+                    $action['category_name'] = $parts[0] ?? $cat;
+                    if (isset($parts[1])) {
+                        $action['sub_category_name'] = $parts[1];
+                    }
+                } else {
+                    $action['category_name'] = $cat;
+                }
+            }
+        } elseif (preg_match('/(.+?)\s+(?:urunlerine|urunlerini|serisine|serisini|serilerine)\b/u', $text, $m)
+            || preg_match('/\b(?:icin|adli)\s+(.+?)\s+(?:urun|seri)/u', $text, $m)) {
+            $name = trim($m[1]);
+            $name = trim(preg_replace('/\b(tum|tumu|bu|su|olan|kategori.*?|yuzde.*|%\d+)\b/u', '', $name) ?? $name);
+            if (mb_strlen($name) >= 2 && ! preg_match('/^(tum|hepsi|butun)$/u', $name)) {
+                $action['scope'] = 'name';
+                $action['name_contains'] = $name;
+            }
+        }
+
+        if ($action['scope'] === 'all' && ! (bool) preg_match('/\b(tum|tumu|hepsi|hepsini|butun|magaza)\b/u', $text)
+            && empty($action['category_name']) && empty($action['name_contains'])) {
+            // Tekil ürün cümlesi olabilir; yine de "ürünlere" yoksa ve kategori yoksa all kabul etme
+            if (! (bool) preg_match('/urunler|seri|kategor/u', $text)) {
+                return null;
+            }
+        }
+
+        return $action;
+    }
+
+    /**
+     * "X ürününe siyah, beyaz renk ekle"
+     */
+    private function detectAddColorVariantsIntent(string $text, string $message, bool $wantsDelete): ?array
+    {
+        if ($wantsDelete) {
+            return null;
+        }
+        if (! preg_match('/varyant|renk/u', $text)) {
+            return null;
+        }
+        if (! preg_match('/ekle|ekleyebilir|olustur|tanimla/u', $text)) {
+            return null;
+        }
+
+        $productName = null;
+        if (preg_match('/(.+?)\s+(?:urunune|urunune|adli\s+urune)\s+/u', $text, $m)
+            || preg_match('/(.+?)\s+(?:icin)\s+(?:renk|varyant)/u', $text, $m)
+            || preg_match('/(.+?)(?:na|ne|ya|ye)\s+(?:siyah|beyaz|kirmizi|mavi|yesil|renk)/u', $text, $m)) {
+            $productName = trim($m[1]);
+            $productName = trim(preg_replace('/\b(lutfen|bana)\b/u', '', $productName) ?? $productName);
+        } elseif (preg_match('/(?:sn|sira)\s*[:=#]?\s*(\d{1,6})/u', $text, $m)) {
+            return [
+                'type' => 'add_color_variants',
+                'sn' => (int) $m[1],
+                'colors' => $this->parseColorNamesFromText($text, $message),
+            ];
+        }
+
+        $colors = $this->parseColorNamesFromText($text, $message);
+        if ($colors === [] || $productName === null || mb_strlen($productName) < 2) {
+            return null;
+        }
+
+        return [
+            'type' => 'add_color_variants',
+            'product_name' => $productName,
+            'colors' => $colors,
+        ];
+    }
+
+    /**
+     * @return list<array{name:string,qty:int}>
+     */
+    private function parseColorNamesFromText(string $text, string $message): array
+    {
+        $colors = [];
+        $chunk = '';
+        if (preg_match('/(?:renk(?:ler)?|varyant(?:lar)?)\s*[:=]?\s*(.+)$/u', $message, $m)
+            || preg_match('/(?:renk(?:ler)?|varyant(?:lar)?)\s*[:=]?\s*(.+)$/u', $text, $m)) {
+            $chunk = $m[1];
+        } elseif (preg_match('/\b(siyah|beyaz|kirmizi|mavi|yesil|gri|pembe|mor|turuncu|kahverengi|altin|gumush)(?:\s*,\s*|\s+ve\s+|\s+)(.+?)(?:\s+renk|\s+varyant|\s+ekle|$)/u', $text, $m)) {
+            $chunk = $m[1].', '.$m[2];
+        }
+
+        if ($chunk === '') {
+            return [];
+        }
+
+        $chunk = preg_replace('/\b(ekle|ekleyin|olustur|tanimla|lutfen|varyant(?:i|lar)?|renk(?:i|ler)?)\b/iu', '', $chunk) ?? $chunk;
+        $parts = preg_split('/[,;\/|]+|\s+ve\s+/u', $chunk);
+        foreach ($parts as $part) {
+            $name = trim($part);
+            $name = trim(preg_replace('/\b(ve|ile|rengi)\b/iu', '', $name) ?? $name);
+            if (mb_strlen($name) >= 2 && mb_strlen($name) <= 40 && ! preg_match('/^\d+$/u', $name)) {
+                $colors[] = ['name' => mb_substr($name, 0, 80), 'qty' => 0];
+            }
+        }
+
+        return $colors;
+    }
+
+    /**
      * @return array{summary:?string,error:?string}
      */
     private function executeAction(Vendor $seller, array $action): array
@@ -503,6 +722,14 @@ PROMPT;
 
         if ($type === 'bulk_set_category') {
             return $this->executeBulkSetCategory($seller, $action);
+        }
+
+        if ($type === 'bulk_adjust_price') {
+            return $this->executeBulkAdjustPrice($seller, $action);
+        }
+
+        if ($type === 'add_color_variants') {
+            return $this->executeAddColorVariants($seller, $action);
         }
 
         if ($type === 'generate_seo') {
@@ -970,6 +1197,193 @@ PROMPT;
     }
 
     /**
+     * Toplu fiyat zam/indirim/düşürme.
+     *
+     * @return array{summary:?string,error:?string}
+     */
+    private function executeBulkAdjustPrice(Vendor $seller, array $action): array
+    {
+        $mode = strtolower(trim((string) ($action['mode'] ?? '')));
+        $value = (float) ($action['value'] ?? 0);
+        $scope = strtolower(trim((string) ($action['scope'] ?? 'all')));
+
+        if (! in_array($mode, ['percent_up', 'percent_down', 'offer_percent', 'fixed_up', 'fixed_down', 'clear_offer'], true)) {
+            return ['summary' => null, 'error' => 'Geçersiz fiyat işlemi.'];
+        }
+
+        $query = Product::query()->where('vendor_id', $seller->id)->orderByDesc('id');
+        $label = 'mağaza';
+
+        if ($scope === 'category' || trim((string) ($action['category_name'] ?? '')) !== '') {
+            $resolved = app(SellerAiCatalogHelper::class)->resolveFromAction($action);
+            if (! $resolved) {
+                return ['summary' => null, 'error' => 'Kategori bulunamadı.'];
+            }
+            app(SellerAiCatalogHelper::class)->applyToQuery($query, $resolved);
+            $label = $resolved['label'];
+        } elseif ($scope === 'name' || trim((string) ($action['name_contains'] ?? '')) !== '') {
+            $needle = trim((string) ($action['name_contains'] ?? $action['product_name'] ?? ''));
+            if ($needle === '') {
+                return ['summary' => null, 'error' => 'Ürün/seri adı gerekli.'];
+            }
+            $needleAscii = Str::lower(Str::ascii($needle));
+            $ids = Product::query()
+                ->where('vendor_id', $seller->id)
+                ->orderByDesc('id')
+                ->limit(4000)
+                ->get(['id', 'name'])
+                ->filter(function (Product $p) use ($needle, $needleAscii) {
+                    $name = (string) $p->name;
+                    if (stripos($name, $needle) !== false) {
+                        return true;
+                    }
+
+                    return str_contains(Str::lower(Str::ascii($name)), $needleAscii);
+                })
+                ->pluck('id')
+                ->take(800)
+                ->all();
+            if ($ids === []) {
+                return ['summary' => null, 'error' => '"'.$needle.'" içeren ürün bulunamadı.'];
+            }
+            $query->whereIn('id', $ids);
+            $label = '"'.$needle.'" içeren ürünler';
+        }
+
+        $products = $query->limit(2000)->get();
+        if ($products->isEmpty()) {
+            return ['summary' => null, 'error' => 'Güncellenecek ürün bulunamadı.'];
+        }
+
+        $updated = 0;
+        foreach ($products as $product) {
+            $price = (float) $product->price;
+            $offer = (float) $product->offer_price;
+
+            if ($mode === 'percent_up') {
+                $price = round($price * (1 + $value / 100), 2);
+                if ($offer > 0) {
+                    $offer = round($offer * (1 + $value / 100), 2);
+                }
+            } elseif ($mode === 'percent_down') {
+                $price = round($price * (1 - $value / 100), 2);
+                if ($offer > 0) {
+                    $offer = round($offer * (1 - $value / 100), 2);
+                }
+            } elseif ($mode === 'offer_percent') {
+                $offer = round($price * (1 - $value / 100), 2);
+            } elseif ($mode === 'fixed_up') {
+                $price = round($price + $value, 2);
+                if ($offer > 0) {
+                    $offer = round($offer + $value, 2);
+                }
+            } elseif ($mode === 'fixed_down') {
+                $price = max(0, round($price - $value, 2));
+                if ($offer > 0) {
+                    $offer = max(0, round($offer - $value, 2));
+                }
+            } elseif ($mode === 'clear_offer') {
+                $offer = 0.0;
+            }
+
+            $price = max(0, $price);
+            $offer = max(0, $offer);
+            if ($offer > 0 && $offer >= $price && $price > 0) {
+                $offer = max(0, round($price * 0.99, 2));
+            }
+
+            $product->price = $price;
+            $product->offer_price = $offer;
+            $product->save();
+            $updated++;
+        }
+
+        $modeLabel = match ($mode) {
+            'percent_up' => "%{$value} zam",
+            'percent_down' => "%{$value} fiyat düşürme",
+            'offer_percent' => "%{$value} özel indirim (offer)",
+            'fixed_up' => "+{$value} ₺ zam",
+            'fixed_down' => "-{$value} ₺ düşürme",
+            'clear_offer' => 'indirim kaldırma',
+            default => $mode,
+        };
+
+        return [
+            'summary' => "{$label}: {$updated} ürüne {$modeLabel} uygulandı.",
+            'error' => null,
+        ];
+    }
+
+    /**
+     * Tek ürüne Renk varyantı ekle/birleştir.
+     *
+     * @return array{summary:?string,error:?string}
+     */
+    private function executeAddColorVariants(Vendor $seller, array $action): array
+    {
+        $product = $this->findSellerProduct($seller, $action);
+        if (! $product) {
+            return ['summary' => null, 'error' => 'Varyant eklenecek ürün bulunamadı.'];
+        }
+
+        $colorsIn = $action['colors'] ?? [];
+        if (! is_array($colorsIn) || $colorsIn === []) {
+            return ['summary' => null, 'error' => 'Renk listesi boş. Örnek: Siyah, Beyaz, Kırmızı'];
+        }
+
+        $service = app(SimpleProductColorService::class);
+        $existing = $service->existingRows($product);
+        $byName = [];
+        foreach ($existing as $row) {
+            $key = Str::lower(Str::ascii((string) ($row['name'] ?? '')));
+            if ($key !== '') {
+                $byName[$key] = $row;
+            }
+        }
+
+        $added = [];
+        foreach ($colorsIn as $row) {
+            if (is_string($row)) {
+                $row = ['name' => $row, 'qty' => 0];
+            }
+            if (! is_array($row)) {
+                continue;
+            }
+            $name = trim((string) ($row['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            $key = Str::lower(Str::ascii($name));
+            if (isset($byName[$key])) {
+                continue;
+            }
+            $byName[$key] = [
+                'name' => mb_substr($name, 0, 80),
+                'price' => isset($row['price']) && is_numeric($row['price']) ? (float) $row['price'] : 0,
+                'qty' => max(0, (int) ($row['qty'] ?? 0)),
+            ];
+            $added[] = $name;
+        }
+
+        if ($added === []) {
+            return [
+                'summary' => '"'.$product->name.'" için yeni renk yok (hepsi zaten tanımlı).',
+                'error' => null,
+            ];
+        }
+
+        $result = $service->sync($product, array_values($byName), false);
+        if (! ($result['ok'] ?? false)) {
+            return ['summary' => null, 'error' => $result['message'] ?? 'Varyant kaydedilemedi.'];
+        }
+
+        return [
+            'summary' => '"'.$product->name.'" ürününe renk eklendi: '.implode(', ', $added).'.',
+            'error' => null,
+        ];
+    }
+
+    /**
      * @return array{summary:?string,error:?string}
      */
     private function executeGenerateSeo(Vendor $seller, array $action): array
@@ -1083,7 +1497,7 @@ PROMPT;
             return is_array($decoded) ? $decoded : null;
         }
 
-        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status|bulk_set_category|bulk_delete_products|delete_product|set_category|generate_seo)"[\s\S]*\}/', $raw, $m)) {
+        if (preg_match('/\{[\s\S]*"type"\s*:\s*"(?:update_product|bulk_set_status|bulk_set_category|bulk_adjust_price|bulk_delete_products|delete_product|set_category|generate_seo|add_color_variants)"[\s\S]*\}/', $raw, $m)) {
             $decoded = json_decode($m[0], true);
 
             return is_array($decoded) ? $decoded : null;

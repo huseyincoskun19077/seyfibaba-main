@@ -130,15 +130,39 @@ const TOPIC_FAQS = {
   kargo: [
     {
       id: "c1",
-      question: "Kargo ücretini kim öder?",
+      question: "Müşteriye yansıyan kargo ücreti nasıl belirlenir?",
       answer:
-        "Kargo bedeli satıcıya aittir. Siparişleri kendi anlaşmalı kargo firmanızla gönderip takip numarasını satıcı paneline girersiniz.",
+        "Satıcı paneli → Kargo Ücretleri ekranından kademe tanımlarsınız. Sepette sizin ürünlerinizin alt toplamına göre kademe uygulanır; her satıcının kargosu ayrıdır.",
     },
     {
       id: "c2",
-      question: "Kendi kargomla gönderebilir miyim?",
+      question: "Kargoyu kim gönderir? Zorunlu firma var mı?",
       answer:
-        "Evet. Anlaşmalı kargo firmanızla gönderip takip numarasını panele girmeniz yeterlidir.",
+        "Paketleme ve kargolama size aittir. Platform depolamaz ve zorunlu kargo firması dayatmaz. Kendi anlaşmanızla (Yurtiçi, MNG, Aras vb.) gönderip takip numarasını Manuel Kargo’ya girersiniz.",
+    },
+    {
+      id: "c2b",
+      question: "Müşteri kargo ücretini öder mi?",
+      answer:
+        "Panelde tanımladığınız kademe ücreti sepete yansır ve müşteri öder. Ücretsiz kademede 0 ₺ görür. Fiili kurye faturanız kendi anlaşmanıza göredir.",
+    },
+    {
+      id: "c3",
+      question: "Ücretsiz kargo nasıl ayarlanır?",
+      answer:
+        "İlgili kademenin ücretini 0 ₺ yapın. Müşteri o satıcı için ücretsiz kargo görür; fiili kurye bedeli kendi anlaşmanıza göre sizde kalır.",
+    },
+    {
+      id: "c4",
+      question: "Sipariş gelince kargo adımları neler?",
+      answer:
+        "Stok kontrolü → hazırla/onayla → paketle → kargoya ver → takip no ve firmayı panele yaz → teslimat sonrası hakediş süreci.",
+    },
+    {
+      id: "c5",
+      question: "Takip numarası girmezsem ne olur?",
+      answer:
+        "Müşteri gönderiyi takip edemez; şikâyet ve gecikme riski artar. Hakediş akışında da sorun yaşanabilir. Numarayı sipariş detayından mutlaka girin.",
     },
   ],
   iade: [
@@ -147,6 +171,12 @@ const TOPIC_FAQS = {
       question: "İade talebi gelirse ne yapmalıyım?",
       answer:
         "Talepler İade Talepleri bölümüne düşer. Kabul veya ret verirsiniz; onaylanan iadelerde tutar müşteriye iade edilir ve hakedişinizden düşülür.",
+    },
+    {
+      id: "i2",
+      question: "İade kargosunu kim öder?",
+      answer:
+        "Onay ekranındaki seçime ve platform kurallarına göre alıcı veya satıcı tarafında işlenir. Onaylamadan önce seçenekleri kontrol edin.",
     },
   ],
   entegrasyon: [

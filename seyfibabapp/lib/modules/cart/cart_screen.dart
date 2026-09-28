@@ -330,9 +330,13 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
     }
 
     final widgets = <Widget>[];
+    final shippingReady = _sellerShipping.isNotEmpty;
 
-    if (_shippingTotal > 0 ||
-        _sellerShipping.values.any((g) => g['is_free_shipping'] == true)) {
+    // Ücretsiz kargo ipucu: sadece veri geldikten sonra (kaymayı azaltır)
+    if (shippingReady &&
+        (_shippingTotal > 0 ||
+            _sellerShipping.values
+                .any((g) => g['is_free_shipping'] == true))) {
       widgets.add(
         SliverToBoxAdapter(
           child: Padding(
@@ -345,19 +349,28 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
 
     grouped.forEach((vendorId, items) {
       final group = _sellerShipping[vendorId];
-      final shopName = (group?['shop_name'] as String?)?.trim().isNotEmpty == true
-          ? '${group!['shop_name']}'
-          : (vendorId > 0 ? 'Satıcı #$vendorId' : 'Satıcı');
-      final shopSlug = '${group?['slug'] ?? ''}'.trim();
-      final isFree = group?['is_free_shipping'] == true ||
-          (double.tryParse('${group?['shipping_fee'] ?? ''}') ?? -1) == 0;
+      final fromProduct =
+          items.isNotEmpty ? items.first.product.shopName : '';
+      final fromProductSlug =
+          items.isNotEmpty ? items.first.product.shopSlug : '';
+      final shopName = fromProduct.trim().isNotEmpty
+          ? fromProduct.trim()
+          : ((group?['shop_name'] as String?)?.trim().isNotEmpty == true
+              ? '${group!['shop_name']}'.trim()
+              : (vendorId > 0 ? 'Satıcı #$vendorId' : 'Satıcı'));
+      final shopSlug = fromProductSlug.trim().isNotEmpty
+          ? fromProductSlug.trim()
+          : '${group?['slug'] ?? ''}'.trim();
+      final isFree = shippingReady &&
+          (group?['is_free_shipping'] == true ||
+              (double.tryParse('${group?['shipping_fee'] ?? ''}') ?? -1) == 0);
       final fee = double.tryParse('${group?['shipping_fee'] ?? 0}') ?? 0;
       final untilFree =
           double.tryParse('${group?['amount_until_free'] ?? ''}');
 
       String feeLabel;
-      if (group == null) {
-        feeLabel = 'Kargo hesaplanıyor…';
+      if (!shippingReady) {
+        feeLabel = 'Kargo…';
       } else if (isFree) {
         feeLabel = 'Ücretsiz Kargo!';
       } else {
@@ -380,6 +393,7 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                 onTap: shopSlug.isNotEmpty ? openSellerShop : null,
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
+                  constraints: const BoxConstraints(minHeight: 48),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
@@ -405,8 +419,8 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                                 decoration: shopSlug.isNotEmpty
                                     ? TextDecoration.underline
                                     : TextDecoration.none,
-                                decorationColor:
-                                    const Color(0xFF04334A).withValues(alpha: 0.35),
+                                decorationColor: const Color(0xFF04334A)
+                                    .withValues(alpha: 0.35),
                               ),
                             ),
                           ),
@@ -419,19 +433,26 @@ class _LoadedWidgetState extends State<_LoadedWidget> {
                                 color: Color(0x9904334A),
                               ),
                             ),
-                          Text(
-                            feeLabel,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isFree
-                                  ? const Color(0xFF1B7A3D)
-                                  : const Color(0x9904334A),
+                          SizedBox(
+                            width: 110,
+                            child: Text(
+                              feeLabel,
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: !shippingReady
+                                    ? const Color(0x6604334A)
+                                    : isFree
+                                        ? const Color(0xFF1B7A3D)
+                                        : const Color(0x9904334A),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      if (!isFree &&
+                      if (shippingReady &&
+                          !isFree &&
                           untilFree != null &&
                           untilFree > 0) ...[
                         const SizedBox(height: 6),

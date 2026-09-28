@@ -717,6 +717,7 @@ export default function ProductView({
           id: id,
           vendor_id: vendor_id,
           shop_name: seller?.shop_name || safeProduct?.shop_name || null,
+          shop_slug: seller?.slug || safeProduct?.shop_slug || null,
           name: safeProduct?.name,
           price: safeProduct?.price,
           offer_price: safeProduct?.offer_price,

@@ -45,6 +45,8 @@ class ProductModel extends Equatable {
   final int maxInstallment;
   final String categoryName;
   final String barcode;
+  final String shopName;
+  final String shopSlug;
   final List<GalleryModel> gallery;
   final CategoriesModel? category;
   final List<ActiveVariantModel> productVariants;
@@ -81,6 +83,8 @@ class ProductModel extends Equatable {
     this.maxInstallment = 1,
     this.categoryName = '',
     this.barcode = '',
+    this.shopName = '',
+    this.shopSlug = '',
   });
 
   ProductModel copyWith({
@@ -115,6 +119,8 @@ class ProductModel extends Equatable {
     int? maxInstallment,
     String? categoryName,
     String? barcode,
+    String? shopName,
+    String? shopSlug,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -148,6 +154,8 @@ class ProductModel extends Equatable {
       maxInstallment: maxInstallment ?? this.maxInstallment,
       categoryName: categoryName ?? this.categoryName,
       barcode: barcode ?? this.barcode,
+      shopName: shopName ?? this.shopName,
+      shopSlug: shopSlug ?? this.shopSlug,
     );
   }
 
@@ -187,6 +195,8 @@ class ProductModel extends Equatable {
     result.addAll({'max_installment': maxInstallment});
     result.addAll({'category_name': categoryName});
     result.addAll({'barcode': barcode});
+    result.addAll({'shop_name': shopName});
+    result.addAll({'shop_slug': shopSlug});
 
     return result;
   }
@@ -235,6 +245,8 @@ class ProductModel extends Equatable {
           int.tryParse('${map['max_installment'] ?? 1}')?.clamp(1, 99) ?? 1,
       categoryName: '${map['category_name'] ?? ''}',
       barcode: '${map['barcode'] ?? ''}',
+      shopName: _readShopName(map),
+      shopSlug: _readShopSlug(map),
       gallery: map['gallery'] != null
           ? List<GalleryModel>.from(
               map['gallery']?.map((x) => GalleryModel.fromMap(x)))
@@ -250,6 +262,26 @@ class ProductModel extends Equatable {
             )
           : [],
     );
+  }
+
+  static String _readShopName(Map<String, dynamic> map) {
+    final direct = '${map['shop_name'] ?? ''}'.trim();
+    if (direct.isNotEmpty) return direct;
+    final seller = map['seller'];
+    if (seller is Map) {
+      return '${seller['shop_name'] ?? ''}'.trim();
+    }
+    return '';
+  }
+
+  static String _readShopSlug(Map<String, dynamic> map) {
+    final direct = '${map['shop_slug'] ?? ''}'.trim();
+    if (direct.isNotEmpty) return direct;
+    final seller = map['seller'];
+    if (seller is Map) {
+      return '${seller['slug'] ?? ''}'.trim();
+    }
+    return '';
   }
 
   String toJson() => json.encode(toMap());
@@ -294,6 +326,8 @@ class ProductModel extends Equatable {
       maxInstallment,
       categoryName,
       barcode,
+      shopName,
+      shopSlug,
     ];
   }
 }

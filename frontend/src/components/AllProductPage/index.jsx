@@ -11,7 +11,6 @@ import ServeLangItem from "../Helpers/ServeLangItem";
 import ProductCard from "../Helpers/Cards/ProductCard";
 import appConfig from "@/appConfig";
 import { resolveProductImageUrl } from "@/utils/productImage";
-import ShopLocationIco from "../Helpers/icons/ShopLocationIco";
 import ShopArrowIco from "../Helpers/icons/ShopArrowIco";
 import ViewColIco from "../Helpers/icons/ViewColIco";
 import ViewRowIco from "../Helpers/icons/ViewRowIco";
@@ -995,87 +994,50 @@ function AllProductPageContent({ response, sellerInfo, listingTitle = "Tüm Ür�
   const renderSellerInfo = () => {
     if (!sellerInfo) return null;
 
+    const rating = Math.min(
+      5,
+      Math.max(0, parseInt(sellerInfo.seller.averageRating, 10) || 0)
+    );
+    const logoSrc = sellerInfo.seller.logo
+      ? `${appConfig.BASE_URL}${sellerInfo.seller.logo}`
+      : "/assets/images/Group.png";
+
     return (
       <div
         data-aos="fade-right"
-        className="saller-info w-full mb-[40px] sm:h-[328px] sm:flex justify-between items-center px-11 overflow-hidden relative py-10 sm:py-0"
-        style={{
-          background: `url(/assets/images/saller-cover.png) no-repeat`,
-          backgroundSize: "cover",
-        }}
+        className="saller-info w-full mb-[40px] flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-8 px-5 sm:px-11 py-8 sm:py-10 overflow-hidden relative rounded-xl border border-[#04334a]/10 bg-[#F4F6F7]"
       >
-        {/* Seller Contact Information — telefon yok (pazaryeri) */}
-        <div className="saller-text-details w-72">
-          <ul>
-            {sellerInfo.seller.address ? (
-              <li className="text-black flex space-x-5 rtl:space-x-reverse items-center leading-9 text-base font-normal">
-                <span>
-                  <ShopLocationIco />
-                </span>
-                <span>{sellerInfo.seller.address}</span>
-              </li>
-            ) : null}
-          </ul>
+        <div className="w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] shrink-0 rounded-full bg-white border border-[#04334a]/10 overflow-hidden flex items-center justify-center shadow-sm">
+          <Image
+            width={160}
+            height={160}
+            className="w-full h-full object-contain p-3"
+            src={logoSrc}
+            alt={sellerInfo.seller.shop_name || "Satıcı logosu"}
+          />
         </div>
 
-        {/* Seller Name and Rating - Desktop */}
-        <div className="saller-name lg:block hidden">
-          <h2 className="text-[60px] font-bold notranslate">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[28px] sm:text-[40px] font-800 text-[#04334a] leading-tight notranslate">
             {sellerInfo.seller.shop_name}
-          </h2>
-          <div className="flex justify-center">
-            {(() => {
-              const rating = Math.min(
-                5,
-                Math.max(0, parseInt(sellerInfo.seller.averageRating, 10) || 0)
-              );
-              return (
-                <>
-                  {Array.from({ length: rating }, (_, index) => (
-                    <span key={`seller-star-filled-${index}`}>
-                      <Star />
-                    </span>
-                  ))}
-                  {rating < 5 &&
-                    Array.from({ length: 5 - rating }, (_, index) => (
-                      <span
-                        key={`seller-star-empty-${index}`}
-                        className="text-gray-500"
-                      >
-                        <svg
-                          width="18"
-                          height="17"
-                          viewBox="0 0 18 17"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="fill-current"
-                        >
-                          <path d="M9 0L11.0206 6.21885H17.5595L12.2694 10.0623L14.2901 16.2812L9 12.4377L3.70993 16.2812L5.73056 10.0623L0.440492 6.21885H6.97937L9 0Z" />
-                        </svg>
-                      </span>
-                    ))}
-                </>
-              );
-            })()}
-          </div>
-        </div>
-
-        {/* Seller Logo and Name - Mobile */}
-        <div className="saller-logo mt-5 sm:mt-5">
-          <div className="flex sm:justify-center justify-start">
-            <div className="w-[170px] h-[170px] p-[30px] flex justify-center items-center rounded-full bg-white relative mb-1 overflow-hidden">
-              <Image
-                width={170}
-                height={170}
-                className="w-full h-full object-contain"
-                src={`${appConfig.BASE_URL + sellerInfo.seller.logo}`}
-                alt={sellerInfo.seller.shop_name || "Satici logosu"}
-              />
-            </div>
-          </div>
-          <div className="flex sm:justify-center justify-start">
-            <span className="text-[30px] font-medium text-center notranslate">
-              {sellerInfo.seller.shop_name}
+          </h1>
+          <div className="mt-2 flex items-center gap-1">
+            {Array.from({ length: rating }, (_, index) => (
+              <span key={`seller-star-filled-${index}`}>
+                <Star />
+              </span>
+            ))}
+            {rating < 5 &&
+              Array.from({ length: 5 - rating }, (_, index) => (
+                <span
+                  key={`seller-star-empty-${index}`}
+                  className="text-gray-400"
+                >
+                  <Star defaultValue={false} />
+                </span>
+              ))}
+            <span className="ml-2 text-sm font-600 text-[#04334a]/55">
+              ({rating})
             </span>
           </div>
         </div>

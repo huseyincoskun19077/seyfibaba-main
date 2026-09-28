@@ -148,7 +148,13 @@ export default function SellerInfoPage({ page }) {
       </section>
 
       <article className="container-x mx-auto px-4 md:px-6 py-10 md:py-14 max-w-3xl">
-        {isRoadmap ? <RoadmapBody page={page} /> : <SectionsBody page={page} />}
+        {isRoadmap ? <RoadmapBody page={page} /> : null}
+        {isRoadmap && page.sections?.length ? (
+          <div className="mt-10">
+            <SectionsBody page={page} />
+          </div>
+        ) : null}
+        {!isRoadmap ? <SectionsBody page={page} /> : null}
 
         {related.length > 0 ? (
           <aside className="mt-12 pt-8 border-t border-[#ebe3d4]">

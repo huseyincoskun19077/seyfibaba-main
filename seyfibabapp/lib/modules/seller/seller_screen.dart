@@ -9,7 +9,6 @@ import 'package:sliver_tools/sliver_tools.dart';
 import '/widgets/capitalized_word.dart';
 import '/widgets/rounded_app_bar.dart';
 import '../../core/remote_urls.dart';
-import '../../utils/constants.dart';
 import '../../utils/language_string.dart';
 import '../../widgets/custom_image.dart';
 import '../category/component/product_card.dart';
@@ -86,90 +85,72 @@ class SingleSellerInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-            height: 130.0,
-            width: double.infinity,
-            margin: const EdgeInsets.symmetric(horizontal: 0.0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10.0),
-              child: CustomImage(
-                  path:
-                      RemoteUrls.imageUrl(singleSellerModel?.bannerImage ?? ''),
-                  fit: BoxFit.cover),
-            )),
-        Positioned.fill(
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 0.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final shopName = singleSellerModel?.shopName ?? '';
+    final rating = singleSellerModel?.averageRating ?? 0;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F6F7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0x1A04334A)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            height: 72,
+            width: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: const Color(0x1A04334A)),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: CustomImage(
+              path: RemoteUrls.imageUrl(singleSellerModel?.logo ?? ''),
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      buildSellerInfo(
-                          Icons.email, singleSellerModel?.email ?? ''),
-                      buildSellerInfo(
-                          Icons.phone, singleSellerModel?.phone ?? ''),
-                      buildSellerInfo(
-                          Icons.location_on, singleSellerModel?.address ?? ''),
-                    ],
+                Text(
+                  shopName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    color: const Color(0xFF04334A),
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const SizedBox(height: 6),
+                Row(
                   children: [
-                    Container(
-                      height: 60.0,
-                      width: 60.0,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: Colors.white),
-                      child: Center(
-                        child: CustomImage(
-                          path: RemoteUrls.imageUrl(
-                              singleSellerModel?.logo ?? ''),
-                          height: 30.0,
-                        ),
+                    ...List.generate(
+                      5,
+                      (i) => Icon(
+                        i < rating.round() ? Icons.star : Icons.star_border,
+                        size: 16,
+                        color: const Color(0xFFFFA800),
                       ),
                     ),
-                    const SizedBox(height: 2.0),
+                    const SizedBox(width: 6),
                     Text(
-                      singleSellerModel?.shopName ?? '',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12.0,
-                        color: blackColor,
+                      '(${rating.toStringAsFixed(0)})',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0x9904334A),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget buildSellerInfo(IconData icon, String info) {
-    return Expanded(
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 6.0, right: 10.0),
-            child: Icon(
-              icon,
-              size: 20.0,
-            ),
-          ),
-          Flexible(child: Text(info)),
         ],
       ),
     );

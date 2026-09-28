@@ -63,7 +63,7 @@ export const sellerInfoPages = {
         bullets: [
           "Platform komisyonu sabit %10",
           "Aylık abonelik veya gizli listeleme ücreti yok",
-          "Kargo bedeli satıcıya aittir",
+          "Kargo kademelerinizi panelden tanımlayın; gönderimi siz yaparsınız",
         ],
       },
     ],
@@ -98,11 +98,11 @@ export const sellerInfoPages = {
       {
         n: "2",
         title: "Kargoya verin",
-        text: "Kargo bedeli ve sorumluluğu tamamen satıcıya aittir. Kuaför Tedarik ürünü depolamaz. Anlaşmalı firmanızla gönderip takip numarasını panele girin.",
+        text: "Kuaför Tedarik ürünü depolamaz. Paketleme ve kargolama size aittir. Kendi kargo anlaşmanızla gönderip takip numarasını panele girin. Müşteriye yansıyan kargo ücreti, paneldeki Kargo Ücretleri kademelerinizden hesaplanır.",
         bullets: [
-          "Manuel Kargo bölümünden takip numarası girin",
-          "Geliver veya kendi kargo anlaşmanızı kullanabilirsiniz",
-          "Takip numarasını siparişe mutlaka işleyin",
+          "Kargo Ücretleri ekranından kademelerinizi tanımlayın",
+          "Siparişi paketleyip anlaşmalı firmanızla gönderin",
+          "Manuel Kargo ile takip numarasını siparişe işleyin",
         ],
       },
       {
@@ -187,12 +187,12 @@ export const sellerInfoPages = {
     related: [
       "hangi-urunler-satilir",
       "nasil-satici-olunur",
-      "neden-seyfibaba",
+      "neden-kuafor-tedarik",
     ],
   },
 
-  "neden-seyfibaba": {
-    slug: "neden-seyfibaba",
+  "neden-kuafor-tedarik": {
+    slug: "neden-kuafor-tedarik",
     title: "Neden Kuaför Tedarik'te Satıcı Olmalıyım?",
     description:
       "Sektöre özel vitrin, %10 şeffaf komisyon, Iyzico güvencesi, ürün yükleme desteği ve Türkiye geneli görünürlük.",
@@ -271,26 +271,69 @@ export const sellerInfoPages = {
     slug: "kargo-ve-teslimat",
     title: "Kuaför Tedarik'te Kargo ve Teslimat",
     description:
-      "Kuaför Tedarik'te kargo ücreti satıcıya aittir. Takip numarası, Manuel Kargo ve gönderim sorumluluğu hakkında bilgi.",
+      "Kademeli kargo ücretleri, paketleme, takip numarası ve satıcı kargo süreci. Kuaför Tedarik depolama yapmaz.",
     h1: "Kargo ve teslimat",
-    lead: "Kuaför Tedarik ürünü depolamaz. Paketleme, kargolama ve kargo ücreti satıcıya aittir.",
+    lead: "Kuaför Tedarik ürünü depolamaz ve zorunlu bir kargo firması dayatmaz. Müşteriye yansıyan kargo, sizin kademelerinizden hesaplanır; paketleme ve kurye anlaşması size aittir.",
+    layout: "roadmap",
+    roadmapTitle: "Kargo yol haritası",
+    roadmapSummary:
+      "Kademe tanımla → sipariş hazırla → paketi kargola → takip no gir → teslimat / hakediş",
+    steps: [
+      {
+        n: "1",
+        title: "Kargo ücret kademelerinizi tanımlayın",
+        text: "Satıcı paneli → Kargo Ücretleri. Sepette sizin ürünlerinizin alt toplamına göre kademe uygulanır (ör. düşük tutarda ücretli, yüksek tutarda ücretsiz).",
+        bullets: [
+          "Alt / üst tutar ve kargo ücreti girin",
+          "Üst tutarı boş bırakırsanız kademe sınırsızdır",
+          "0 ₺ ücret = o aralıkta müşteri için ücretsiz kargo",
+        ],
+      },
+      {
+        n: "2",
+        title: "Siparişi hazırlayın",
+        text: "Sipariş gelince stok ve ürünü kontrol edin, panellerden onaylayıp paketlemeye alın. Kuaför Tedarik stok tutmaz; ürün sizin deponuzdadır.",
+        bullets: [
+          "Eksik / hasarlı ürün göndermeyin",
+          "Fatura ve irsaliye kurallarınıza uyun",
+        ],
+      },
+      {
+        n: "3",
+        title: "Kendi kargonuzla gönderin",
+        text: "Anlaşmalı kargo firmanızla (Yurtiçi, MNG, Aras, Sürat vb.) gönderin. Platform zorunlu bir kargo firması veya entegrasyon dayatmaz.",
+        bullets: [
+          "Kurye bedeli kendi anlaşmanıza göredir",
+          "Müşteriden tahsil edilen kademe ücreti ile fiili kurye maliyeti farklı olabilir; farkı siz yönetirsiniz",
+        ],
+      },
+      {
+        n: "4",
+        title: "Takip numarasını panele girin",
+        text: "Sipariş detayında Manuel Kargo ile firma ve takip numarasını kaydedin. Numara olmadan müşteri takip edemez.",
+        bullets: [
+          "Kargoya verildi durumunu işaretleyin",
+          "Yanlış numara müşteri şikâyetine yol açar",
+        ],
+      },
+      {
+        n: "5",
+        title: "Teslimat ve sonrası",
+        text: "Ürün teslim edilince alıcı onayı / süreç tamamlanır; hakediş hesabına yansır. Kayıp veya gecikmede kargo firmasıyla sizin iletişiminiz esastır.",
+        bullets: [
+          "İade talepleri ayrı süreçtedir (İade Talepleri ekranı)",
+          "Destek: 0850 303 5073 / info@kuafortedarik.com",
+        ],
+      },
+    ],
     sections: [
       {
-        heading: "Kargo ücretini kim öder?",
-        paragraphs: [
-          "Kargo bedeli her durumda satıcıya aittir. Siparişlerinizi kendi anlaşmalı kargo firmanızla gönderir; satıcı panelindeki Manuel Kargo bölümünden takip numarasını girersiniz.",
-        ],
-      },
-      {
-        heading: "Kendi kargomla gönderebilir miyim?",
-        paragraphs: [
-          "Evet. Anlaşmalı kargo firmasıyla gönderip takip numarasını panele girmeniz yeterli; maliyet yine size aittir. Geliver entegrasyonu veya kendi kargo anlaşmanızı kullanabilirsiniz.",
-        ],
-      },
-      {
-        heading: "Ölçü ve ağırlık neden önemli?",
-        paragraphs: [
-          "Ürün eklerken ölçü ve ağırlık bilgisini doğru girin. Bu bilgiler kargo maliyeti ve müşteri deneyimi için önemlidir. Stok ve fiyatı da güncel tutun.",
+        heading: "Sık sorulan noktalar",
+        bullets: [
+          "Çok satıcılı sepette her satıcının kargosu kendi kademesine göre ayrıdır",
+          "Ücretsiz kargo kademesi, müşteriye 0 ₺ gösterir; kurye maliyetini siz karşılarsınız",
+          "Ölçü ve ağırlığı ürüne doğru girin; kurye maliyeti ve müşteri beklentisi buna bağlıdır",
+          "Telefon numaranız mağaza vitrininde yayınlanmaz",
         ],
       },
     ],
@@ -424,6 +467,9 @@ export const sellerInfoPageList = Object.values(sellerInfoPages).map((p) => ({
 }));
 
 export function getSellerInfoPage(slug) {
+  if (slug === "neden-seyfibaba") {
+    return sellerInfoPages["neden-kuafor-tedarik"] || null;
+  }
   return sellerInfoPages[slug] || null;
 }
 

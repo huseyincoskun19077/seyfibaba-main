@@ -159,14 +159,17 @@ class _SellerShopProfileScreenState extends State<SellerShopProfileScreen> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     _imageCard(
-                      title: 'Logo',
+                      title: 'Profil fotoğrafı',
+                      subtitle: 'Mağaza logosu — vitrinde solda görünür',
                       networkPath: _logoUrl,
                       localPath: _logoPath,
                       onPick: () => _pick(true),
+                      circular: true,
                     ),
                     const SizedBox(height: 12),
                     _imageCard(
                       title: 'Banner',
+                      subtitle: 'İsteğe bağlı kapak görseli',
                       networkPath: _bannerUrl,
                       localPath: _bannerPath,
                       onPick: () => _pick(false),
@@ -221,9 +224,11 @@ class _SellerShopProfileScreenState extends State<SellerShopProfileScreen> {
 
   Widget _imageCard({
     required String title,
+    String? subtitle,
     required String? networkPath,
     required String? localPath,
     required VoidCallback onPick,
+    bool circular = false,
   }) {
     Widget preview;
     if (localPath != null) {
@@ -242,12 +247,47 @@ class _SellerShopProfileScreenState extends State<SellerShopProfileScreen> {
         child: Center(child: Icon(Icons.image_outlined)),
       );
     }
+
+    final image = circular
+        ? Center(
+            child: Container(
+              width: 120,
+              height: 120,
+              margin: const EdgeInsets.only(top: 12),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: HomeTheme.border),
+                color: Colors.white,
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: preview is Image
+                  ? (localPath != null
+                      ? Image.file(File(localPath), fit: BoxFit.cover)
+                      : Image.network(
+                          RemoteUrls.imageUrl(networkPath!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.storefront_outlined),
+                        ))
+                  : const Icon(Icons.storefront_outlined, size: 40),
+            ),
+          )
+        : SizedBox(width: double.infinity, child: preview);
+
     return Container(
       decoration: HomeTheme.cardDecoration(),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          SizedBox(width: double.infinity, child: preview),
+          image,
+          if (subtitle != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: Text(
+                subtitle,
+                style: const TextStyle(fontSize: 12, color: HomeTheme.textMuted),
+              ),
+            ),
           TextButton.icon(
             onPressed: onPick,
             icon: const Icon(Icons.photo_library),

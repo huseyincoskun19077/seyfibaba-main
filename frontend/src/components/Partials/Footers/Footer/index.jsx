@@ -64,11 +64,154 @@ const socialSvgIcons = {
 };
 
 const fallbackSocialLinks = [
-  { icon: "fab fa-instagram", link: "https://instagram.com/seyfibaba", label: "Instagram" },
-  { icon: "fab fa-youtube", link: "https://youtube.com/@seyfibaba", label: "YouTube" },
-  { icon: "fab fa-facebook-f", link: "https://facebook.com/seyfibaba", label: "Facebook" },
-  { icon: "fab fa-x-twitter", link: "https://x.com/seyfibaba", label: "X" },
+  { icon: "fab fa-instagram", link: "https://instagram.com/kuafortedarik", label: "Instagram" },
+  { icon: "fab fa-youtube", link: "https://youtube.com/@kuafortedarik", label: "YouTube" },
+  { icon: "fab fa-facebook-f", link: "https://facebook.com/kuafortedarik", label: "Facebook" },
+  { icon: "fab fa-x-twitter", link: "https://x.com/kuafortedarik", label: "X" },
 ];
+
+const SUPPORT_PHONE_DISPLAY = "0850 303 5073";
+const SUPPORT_PHONE_TEL = "tel:+908503035073";
+
+function IconTruck({ className = "w-5 h-5" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className={className} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5h11.5V15H3V7.5zM14.5 10h3.2l2.3 2.5V15H14.5V10z" />
+      <circle cx="7" cy="17.5" r="1.5" />
+      <circle cx="17" cy="17.5" r="1.5" />
+    </svg>
+  );
+}
+
+function IconReturn({ className = "w-5 h-5" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className={className} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 8H5V4M5 8l4.5-3.5A7 7 0 1 1 5 14.5" />
+    </svg>
+  );
+}
+
+function IconSecure({ className = "w-5 h-5" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className={className} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 12l1.8 1.8L15 10" />
+    </svg>
+  );
+}
+
+function IconSupport({ className = "w-5 h-5" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className={className} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3a7 7 0 0 0-7 7v2.5a2 2 0 0 0 2 2h1V10a4 4 0 1 1 8 0v4.5h1a2 2 0 0 0 2-2V10a7 7 0 0 0-7-7z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 18.5c.5 1 1.2 1.5 2 1.5s1.5-.5 2-1.5" />
+    </svg>
+  );
+}
+
+function TrustStrip({ phoneDisplay, phoneTel }) {
+  const items = [
+    {
+      icon: <IconTruck />,
+      title: "Kargo",
+      text: "Satıcı kademeli teslimat",
+      href: "/yardim?kategori=kargo",
+    },
+    {
+      icon: <IconReturn />,
+      title: "Kolay iade",
+      text: "Yasal süre içinde iade",
+      href: legalPath("delivery-return"),
+    },
+    {
+      icon: <IconSecure />,
+      title: "Güvenli ödeme",
+      text: "iyzico 3D Secure",
+      href: "/yardim?kategori=siparis",
+    },
+    {
+      icon: <IconSupport />,
+      title: "Destek hattı",
+      text: phoneDisplay,
+      href: phoneTel,
+      external: true,
+    },
+  ];
+
+  return (
+    <div className="bg-white border-t border-[#04334a]/10">
+      <div className="container-x mx-auto">
+        <ul className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 divide-x-0 lg:divide-x divide-[#04334a]/10">
+          {items.map((item) => {
+            const className =
+              "flex items-center gap-3 px-4 py-4 md:px-5 md:py-5 min-h-[72px] hover:bg-[#f7f9fb] transition-colors";
+            const body = (
+              <>
+                <span className="shrink-0 text-[#04334a]">{item.icon}</span>
+                <span className="min-w-0 leading-tight">
+                  <span className="block text-sm font-800 text-[#04334a]">{item.title}</span>
+                  <span className="block text-[12px] text-[#04334a]/60 truncate">{item.text}</span>
+                </span>
+              </>
+            );
+            return (
+              <li key={item.title} className="min-w-0">
+                {item.external ? (
+                  <a href={item.href} className={className}>
+                    {body}
+                  </a>
+                ) : (
+                  <Link href={item.href} className={className}>
+                    {body}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function SocialFollowRow({ links, tone = "light", showLabel = true }) {
+  if (!links?.length) return null;
+  const isDark = tone === "dark";
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {showLabel ? (
+        <span
+          className={`text-sm font-800 tracking-wide ${
+            isDark ? "text-white/90" : "text-[#04334a]"
+          }`}
+        >
+          Bizi takip edin
+        </span>
+      ) : null}
+      <div className="flex flex-wrap items-center gap-2.5">
+        {links.map((item, i) => (
+          <a
+            key={`${item.link}-${i}`}
+            href={item.link}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={item.label || "Sosyal medya"}
+            title={item.label || "Sosyal medya"}
+            className={
+              isDark
+                ? "h-10 w-10 inline-flex items-center justify-center rounded-full bg-white text-[#04334a] hover:bg-qyellow transition"
+                : "h-10 w-10 inline-flex items-center justify-center rounded-full border border-[#04334a]/15 bg-white text-[#04334a] hover:border-[#04334a]/35 hover:bg-[#04334a] hover:text-white transition"
+            }
+          >
+            {socialSvgIcons[item.icon] || (
+              <FontAwesomeCom className="w-4 h-4" icon={item.icon} />
+            )}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const FALLBACK_PLAY_STORE =
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_PLAY_STORE_URL) ||
@@ -241,6 +384,20 @@ export default function Footer({ settings, isSecondHandSite = false }) {
   const resolvedSocialLinks =
     socialLinks?.length > 0 ? socialLinks : fallbackSocialLinks;
 
+  const supportPhoneDisplay =
+    String(settings?.topbar_phone || SUPPORT_PHONE_DISPLAY).trim() ||
+    SUPPORT_PHONE_DISPLAY;
+  const supportPhoneDigits = supportPhoneDisplay.replace(/\D/g, "");
+  const supportPhoneTel = supportPhoneDigits
+    ? `tel:+${
+        supportPhoneDigits.startsWith("90")
+          ? supportPhoneDigits
+          : supportPhoneDigits.startsWith("0")
+            ? `90${supportPhoneDigits.slice(1)}`
+            : `90${supportPhoneDigits}`
+      }`
+    : SUPPORT_PHONE_TEL;
+
   const etbisUrl = String(footerContent?.etbis_url || "").trim();
   const etbisImage = footerContent?.etbis_image
     ? `${appConfig.BASE_URL}${footerContent.etbis_image}`
@@ -277,6 +434,11 @@ export default function Footer({ settings, isSecondHandSite = false }) {
 
   return (
     <footer className="footer-section-wrapper print:hidden">
+      <TrustStrip
+        phoneDisplay={supportPhoneDisplay}
+        phoneTel={supportPhoneTel}
+      />
+
       {/* Üst: Popüler marka / sayfalar — admin */}
       <div className="bg-[#eef2f5] border-t border-[#04334a]/10">
         <div className="container-x mx-auto py-8 md:py-10">
@@ -384,6 +546,15 @@ export default function Footer({ settings, isSecondHandSite = false }) {
                   </div>
                 )}
               </div>
+
+              <div>
+                <ColTitle>Sosyal medya</ColTitle>
+                <SocialFollowRow
+                  links={resolvedSocialLinks}
+                  tone="light"
+                  showLabel={false}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -392,22 +563,7 @@ export default function Footer({ settings, isSecondHandSite = false }) {
       {/* Alt bar: sosyal + App Store / Google Play */}
       <div className="bg-[#04334a]">
         <div className="container-x mx-auto py-5 md:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-          <div className="flex flex-wrap items-center gap-3">
-            {resolvedSocialLinks.map((item, i) => (
-              <a
-                key={i}
-                href={item.link}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={item.label || "Sosyal medya"}
-                className="h-10 w-10 inline-flex items-center justify-center rounded-full bg-white text-[#04334a] hover:bg-qyellow transition"
-              >
-                {socialSvgIcons[item.icon] || (
-                  <FontAwesomeCom className="w-4 h-4" icon={item.icon} />
-                )}
-              </a>
-            ))}
-          </div>
+          <SocialFollowRow links={resolvedSocialLinks} tone="dark" />
 
           <div className="flex flex-wrap items-center gap-3">
             <StoreBadge
