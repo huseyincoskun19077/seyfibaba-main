@@ -106,12 +106,13 @@
 
                                 <div id="otpHint" class="alert alert-warning d-none">
                                     Örnek SMS içeriği (şifre kişiye özel üretilir):
-                                    <pre class="mb-0 mt-2" style="white-space:pre-wrap;font-size:12px;">Hosgeldiniz!
-Tum islemleriniz icin gecerli Kullanici Adiniz: 5XXXXXXXXX Sifreniz:123456
-{{ \App\Support\SellerLoginUrl::publicDisplay() }}
-Sifrenizi kimseyle paylasmayiniz.
+                                    <pre class="mb-0 mt-2" style="white-space:pre-wrap;font-size:12px;">[sizin tanıtım metniniz]
 
-[sizin tanıtım metniniz]</pre>
+Kuaför Tedarik satici paneli.
+Kullanici adiniz: 5XXXXXXXXX
+Giris: {{ \App\Support\SellerLoginUrl::publicDisplay() }}
+Sifrenizi kimseyle paylasmayiniz.
+Tek kullanimlik sifreniz: 123456</pre>
                                 </div>
 
                                 @if($messages->count() > 0)

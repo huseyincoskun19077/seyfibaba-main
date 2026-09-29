@@ -40,6 +40,20 @@ class CallRecording extends Model
             && is_file(public_path($this->local_path));
     }
 
+    /**
+     * @return array{method?:string,our_label?:string,other_label?:string,single_label?:string,turns?:list<array{role:string,text:string}>}|null
+     */
+    public function dialogue(): ?array
+    {
+        if ($this->transcript_status !== 'done' || ! $this->transcript_text) {
+            return null;
+        }
+
+        $data = json_decode($this->transcript_text, true);
+
+        return is_array($data) && isset($data['turns']) ? $data : null;
+    }
+
     public function publicAudioUrl(): ?string
     {
         if (! $this->hasLocalAudio()) {

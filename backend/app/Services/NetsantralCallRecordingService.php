@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
  * Netsipp Public API (çağrı listesi) + klasik Netgsm Netsantral CDR (ses URL).
  * Netsipp: GET https://api.netsipp.com/v1/reports/call-details
  * Netgsm ses: POST https://api.netgsm.com.tr/netsantral/report
- * AI Transkript kullanılmaz; ses dosyası lokal saklanır.
+ * Yeni çağrının sesi indirilince metin ayrıca üretilir.
  */
 class NetsantralCallRecordingService
 {
@@ -116,8 +116,9 @@ class NetsantralCallRecordingService
 
             if ($downloadAudio && $recording->remote_recording_url && ! $recording->hasLocalAudio()) {
                 try {
-                    $this->downloadAudio($recording);
+                    $saved = $this->downloadAudio($recording);
                     $downloaded++;
+                    app(CallRecordingTranscriptService::class)->queue($saved);
                 } catch (\Throwable $e) {
                     $failed++;
                     $recording->update([
@@ -138,8 +139,9 @@ class NetsantralCallRecordingService
             ) {
                 $uniqueLookupBudget--;
                 try {
-                    $this->tryFetchAudioForRecording($recording);
+                    $saved = $this->tryFetchAudioForRecording($recording);
                     $downloaded++;
+                    app(CallRecordingTranscriptService::class)->queue($saved);
                 } catch (\Throwable $e) {
                     // 331 vb. beklenen; kayıt listede kalsın
                     Log::info('Uniqueid audio lookup skipped', [
@@ -190,6 +192,8 @@ class NetsantralCallRecordingService
             'file_size' => @filesize(public_path($relative)) ?: null,
             'sync_status' => 'downloaded',
             'sync_error' => null,
+            'transcript_status' => null,
+            'transcript_text' => null,
         ]);
 
         return $recording->fresh();
@@ -255,7 +259,10 @@ class NetsantralCallRecordingService
                 'file_size' => @filesize(public_path($relative)) ?: null,
                 'sync_status' => 'downloaded',
                 'sync_error' => null,
+                'transcript_status' => null,
+                'transcript_text' => null,
             ]);
+            app(CallRecordingTranscriptService::class)->queue($recording->fresh());
             $matched++;
         }
 
@@ -370,6 +377,8 @@ class NetsantralCallRecordingService
             'file_size' => filesize($full) ?: strlen($body),
             'sync_status' => 'downloaded',
             'sync_error' => null,
+            'transcript_status' => null,
+            'transcript_text' => null,
         ]);
 
         return $recording->fresh();

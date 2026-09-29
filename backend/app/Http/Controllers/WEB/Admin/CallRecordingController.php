@@ -5,6 +5,7 @@ namespace App\Http\Controllers\WEB\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CallRecording;
 use App\Models\Setting;
+use App\Services\CallRecordingTranscriptService;
 use App\Services\NetsantralCallRecordingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -198,7 +199,8 @@ class CallRecordingController extends Controller
         $recording = CallRecording::findOrFail($id);
 
         try {
-            $service->tryFetchAudioForRecording($recording);
+            $saved = $service->tryFetchAudioForRecording($recording);
+            app(CallRecordingTranscriptService::class)->queue($saved);
         } catch (\Throwable $e) {
             return redirect()->back()->with([
                 'messege' => 'Ses çekilemedi: ' . $e->getMessage(),
@@ -223,7 +225,8 @@ class CallRecordingController extends Controller
         $recording = CallRecording::findOrFail($id);
 
         try {
-            $service->attachUploadedFile($recording, $request->file('audio'));
+            $saved = $service->attachUploadedFile($recording, $request->file('audio'));
+            app(CallRecordingTranscriptService::class)->queue($saved);
         } catch (\Throwable $e) {
             return redirect()->back()->with([
                 'messege' => 'Ses yüklenemedi: ' . $e->getMessage(),
@@ -232,7 +235,32 @@ class CallRecordingController extends Controller
         }
 
         return redirect()->back()->with([
-            'messege' => 'Ses dosyası yüklendi; artık dinleyebilirsiniz.',
+            'messege' => 'Ses dosyası yüklendi. Metin hazırlanıyor.',
+            'alert-type' => 'success',
+        ]);
+    }
+
+    public function transcribe(int $id, CallRecordingTranscriptService $transcripts)
+    {
+        @set_time_limit(180);
+        $recording = CallRecording::findOrFail($id);
+        $recording = $transcripts->transcribe($recording, true);
+
+        return redirect()->back()->with([
+            'messege' => $recording->transcript_status === 'done'
+                ? 'Metin hazır.'
+                : ($recording->transcript_text ?: 'Metin çıkarılamadı.'),
+            'alert-type' => $recording->transcript_status === 'done' ? 'success' : 'error',
+        ]);
+    }
+
+    public function swapSpeakers(int $id, CallRecordingTranscriptService $transcripts)
+    {
+        $recording = CallRecording::findOrFail($id);
+        $transcripts->swapRoles($recording);
+
+        return redirect()->back()->with([
+            'messege' => 'Konuşmacı rolleri yer değiştirdi.',
             'alert-type' => 'success',
         ]);
     }
@@ -259,6 +287,7 @@ class CallRecordingController extends Controller
             if (! $recording->hasLocalAudio()) {
                 $service->downloadAudio($recording);
                 $recording->refresh();
+                app(CallRecordingTranscriptService::class)->queue($recording);
             }
         } catch (\Throwable $e) {
             return redirect()->back()->with([

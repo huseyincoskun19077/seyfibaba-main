@@ -15,8 +15,10 @@
 
     <div class="section-body">
       <div class="alert alert-info">
-        <strong>Netsipp:</strong> Ses kayıtları klasik API ile gelmez. Netgsm’in dediği gibi
-        <strong>Netsipp Webhook → CDR</strong> senaryosu kullanılır; çağrı bitince <code>seskaydi</code> linki buraya düşer ve dosya indirilir.
+        <strong>Netsipp:</strong> Yeni çağrı bitince webhook <code>seskaydi</code> linkini gönderir, dosya iner ve metne çevrilir.
+        Metin iki taraf olarak yazılır: <strong>Bizim konuşmacı</strong> ve <strong>Karşı taraf konuşmacısı</strong>.
+        İlk konuşan ses bizim hat kabul edilir; yanlışsa satırdaki «Rolleri çevir» kullanılır.
+        Karşı taraf arama başında kaydın alındığını bilmelidir.
       </div>
 
       <div class="card">
@@ -214,6 +216,39 @@
                       <small class="d-block text-muted mt-1" title="{{ $row->uniqueid }}">{{ \Illuminate\Support\Str::limit($row->uniqueid, 18) }}</small>
                     </td>
                   </tr>
+                  @if($row->hasLocalAudio() || $row->transcript_status)
+                  <tr>
+                    <td colspan="7" class="bg-light">
+                      @php $dialogue = $row->dialogue(); @endphp
+                      @if($dialogue)
+                        @foreach($dialogue['turns'] as $turn)
+                          @php
+                            $label = match ($turn['role'] ?? '') {
+                              'ours' => $dialogue['our_label'] ?? 'Bizim konuşmacı',
+                              'other' => $dialogue['other_label'] ?? 'Karşı taraf konuşmacısı',
+                              default => $dialogue['single_label'] ?? 'Konuşma',
+                            };
+                          @endphp
+                          <p class="mb-1"><strong>{{ $label }}:</strong> {{ $turn['text'] ?? '' }}</p>
+                        @endforeach
+                        <form method="POST" action="{{ route('admin.call-recordings.swap-speakers', $row->id) }}" class="d-inline">
+                          @csrf
+                          <button type="submit" class="btn btn-sm btn-outline-secondary">Rolleri çevir</button>
+                        </form>
+                      @elseif($row->transcript_status === 'pending')
+                        <span class="text-muted">Metin hazırlanıyor.</span>
+                      @elseif($row->transcript_status === 'failed')
+                        <span class="text-danger">{{ $row->transcript_text }}</span>
+                      @endif
+                      @if($row->hasLocalAudio() && $row->transcript_status !== 'pending')
+                        <form method="POST" action="{{ route('admin.call-recordings.transcribe', $row->id) }}" class="d-inline ml-1">
+                          @csrf
+                          <button type="submit" class="btn btn-sm btn-outline-primary">{{ $dialogue ? 'Yeniden metne çevir' : 'Metne çevir' }}</button>
+                        </form>
+                      @endif
+                    </td>
+                  </tr>
+                  @endif
                 @empty
                   <tr><td colspan="7" class="text-center text-muted">Kayıt yok. Tarih seçip senkronlayın.</td></tr>
                 @endforelse

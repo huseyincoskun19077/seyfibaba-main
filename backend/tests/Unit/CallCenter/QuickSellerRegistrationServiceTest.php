@@ -184,9 +184,10 @@ class QuickSellerRegistrationServiceTest extends TestCase
         $this->assertSame(1, OtpVerification::where('phone', '+905321234567')->where('purpose', 'seller_first_login')->count());
         $this->assertNotEmpty($this->sentSmsMessages);
         $this->assertSame('transactional', $this->sentSmsMessages[0]['channel']);
-        $this->assertStringContainsString('Hosgeldiniz!', $this->sentSmsMessages[0]['message']);
-        $this->assertStringContainsString('Kullanici Adiniz: 5321234567', $this->sentSmsMessages[0]['message']);
-        $this->assertStringContainsString('Sifreniz:'.$result->otpCode, $this->sentSmsMessages[0]['message']);
+        $this->assertStringNotContainsString('Hosgeldiniz!', $this->sentSmsMessages[0]['message']);
+        $this->assertStringContainsString('Kullanici adiniz: 5321234567', $this->sentSmsMessages[0]['message']);
+        $this->assertStringContainsString('Tek kullanimlik sifreniz: '.$result->otpCode, $this->sentSmsMessages[0]['message']);
+        $this->assertStringEndsWith('Tek kullanimlik sifreniz: '.$result->otpCode, trim($this->sentSmsMessages[0]['message']));
         $this->assertStringContainsString('satici-giris', $this->sentSmsMessages[0]['message']);
         $this->assertStringNotContainsString('Gecerlilik suresi', $this->sentSmsMessages[0]['message']);
 
@@ -353,7 +354,7 @@ class QuickSellerRegistrationServiceTest extends TestCase
         $this->assertNull($otps->first()->verified_at);
         $this->assertNotEmpty($this->sentSmsMessages);
         $this->assertSame('transactional', $this->sentSmsMessages[0]['channel']);
-        $this->assertStringContainsString('Sifreniz:'.$oldOtp->otp_code, $this->sentSmsMessages[0]['message']);
+        $this->assertStringContainsString('Tek kullanimlik sifreniz: '.$oldOtp->otp_code, $this->sentSmsMessages[0]['message']);
         $this->assertTrue((bool) $result->vendor->fresh()->welcome_sms_sent);
     }
 

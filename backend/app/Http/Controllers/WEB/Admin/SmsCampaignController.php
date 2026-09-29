@@ -146,7 +146,7 @@ class SmsCampaignController extends Controller
                         $payload['otp']
                     );
                     $body = $intro !== ''
-                        ? $otpBlock."\n\n".$intro
+                        ? $intro."\n\n".$otpBlock
                         : $otpBlock;
                 }
 

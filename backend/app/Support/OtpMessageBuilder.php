@@ -23,14 +23,11 @@ class OtpMessageBuilder
     public static function buildCallCenterWelcome(string $loginPhoneDigits, string $password): string
     {
         return implode("\n", [
-            'Hosgeldiniz!',
-            sprintf(
-                'Tum islemleriniz icin gecerli Kullanici Adiniz: %s Sifreniz:%s',
-                $loginPhoneDigits,
-                $password
-            ),
-            SellerLoginUrl::publicDisplay(),
+            'Kuaför Tedarik satici paneli.',
+            'Kullanici adiniz: '.$loginPhoneDigits,
+            'Giris: '.SellerLoginUrl::publicDisplay(),
             'Sifrenizi kimseyle paylasmayiniz.',
+            'Tek kullanimlik sifreniz: '.$password,
         ]);
     }
 }

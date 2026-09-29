@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\Webhooks;
 use App\Http\Controllers\Controller;
 use App\Models\CallRecording;
 use App\Models\Setting;
+use App\Services\CallRecordingTranscriptService;
 use App\Services\NetsantralCallRecordingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -36,13 +37,19 @@ class NetsippWebhookController extends Controller
             return response()->json(['status' => false, 'message' => 'Processing error'], 500);
         }
 
-        if ($recording && $recording->remote_recording_url && ! $recording->hasLocalAudio()) {
+        $needsAudio = $recording && $recording->remote_recording_url && ! $recording->hasLocalAudio();
+        $needsText = $recording && $recording->hasLocalAudio() && $recording->transcript_status !== 'done';
+        if ($needsAudio || $needsText) {
             $id = $recording->id;
             dispatch(function () use ($id) {
                 try {
                     $row = CallRecording::find($id);
                     if ($row && ! $row->hasLocalAudio() && $row->remote_recording_url) {
                         app(NetsantralCallRecordingService::class)->downloadAudio($row);
+                        $row->refresh();
+                    }
+                    if ($row && $row->hasLocalAudio() && $row->transcript_status !== 'done') {
+                        app(CallRecordingTranscriptService::class)->transcribe($row);
                     }
                 } catch (\Throwable $e) {
                     Log::warning('Netsipp webhook audio download failed', [
