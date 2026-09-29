@@ -152,9 +152,7 @@
         <div class="qp-step" data-step="3">
           <div class="qp-card">
             <h4>Fiyat</h4>
-            <div class="alert alert-warning mb-3" style="font-size:.95rem;">
-              <strong>Kargo sizin üzerinizde:</strong> Müşteri kargo ücreti ödemez. Kargo bedelini siz ödersiniz; fiyatınızı buna göre yazın.
-            </div>
+           
             <p class="qp-hint">Paket kaç adet? Birim fiyat yazınca toplam, toplam yazınca birim otomatik görünür.</p>
             <div class="form-group">
               <label>Paketteki ürün adedi</label>

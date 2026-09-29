@@ -1,9 +1,3 @@
-<div class="alert alert-warning border mb-3" style="font-size:.95rem;">
-  <strong><i class="fas fa-truck mr-1"></i> Kargo sizin üzerinizde:</strong>
-  Müşteri kargo ücreti ödemez. Kargo bedelini siz ödersiniz; satış fiyatınızı buna göre belirleyin.
-  Birden fazla adet satıyorsanız aşağıya paket adedini yazın; sistem birim fiyatı otomatik hesaplar.
-</div>
-
 <div class="form-group col-12 col-md-4">
   <label>
     Satıştaki ürün adedi

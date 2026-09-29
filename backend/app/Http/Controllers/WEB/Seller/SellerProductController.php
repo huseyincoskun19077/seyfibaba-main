@@ -844,7 +844,7 @@ class SellerProductController extends Controller
     {
         return response($bulkImportService->templateCsv(), 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="seyfibaba-urun-sablonu.csv"',
+            'Content-Disposition' => 'attachment; filename="urun-sablonu.csv"',
         ]);
     }
 

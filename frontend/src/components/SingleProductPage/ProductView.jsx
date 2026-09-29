@@ -1071,7 +1071,7 @@ export default function ProductView({
               ) : (
                 <span className="font-600 text-[#04334a]/55">{seller.shop_name}</span>
               )}{" "}
-              satıcısı tarafından gönderilir. Kuaför Tedarik aracı platformdur.
+              satıcısı tarafından gönderilir.
             </p>
           ) : null}
 

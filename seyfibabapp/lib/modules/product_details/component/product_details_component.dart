@@ -22,8 +22,11 @@ import 'product_report_sheet.dart';
 import '../utils/product_share_helper.dart';
 
 class ProductDetailsComponent extends StatefulWidget {
-  const ProductDetailsComponent(
-      {required this.product, required this.detailsModel, super.key});
+  const ProductDetailsComponent({
+    required this.product,
+    required this.detailsModel,
+    super.key,
+  });
 
   final ProductDetailsProductModel product;
   final ProductDetailsModel detailsModel;
@@ -40,8 +43,9 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
     double flashPrice = 0.0;
     double offerPrice = 0.0;
     double mainPrice = 0.0;
-    final isFlashSale = appSetting.settingModel!.flashSaleProducts
-        .contains(FlashSaleProductsModel(productId: widget.product.id));
+    final isFlashSale = appSetting.settingModel!.flashSaleProducts.contains(
+      FlashSaleProductsModel(productId: widget.product.id),
+    );
     int flashSaleActive = appSetting.settingModel!.flashSale.status;
 
     // print('product_offer_price ${widget.product.offerPrice}');
@@ -110,13 +114,14 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
               onTap: () {
                 final profile = widget.detailsModel.sellerProfile!;
                 if (profile.slug.isEmpty) return;
-                context
-                    .read<CategoryCubit>()
-                    .sellerTitleSlug(profile.shopName, profile.slug);
+                context.read<CategoryCubit>().sellerTitleSlug(
+                  profile.shopName,
+                  profile.slug,
+                );
                 Navigator.pushNamed(context, RouteNames.sellerScreen);
               },
               child: Text(
-                'Bu ürün ${widget.detailsModel.sellerProfile!.shopName} satıcısı tarafından gönderilir. Kuaför Tedarik aracı platformdur.',
+                'Bu ürün ${widget.detailsModel.sellerProfile!.shopName} satıcısı tarafından gönderilir. ',
                 style: TextStyle(
                   fontSize: 11,
                   height: 1.35,
@@ -127,9 +132,10 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
           ],
           const SizedBox(height: 4),
           CustomText(
-              text: widget.product.name,
-              fontSize: 20,
-              fontWeight: FontWeight.w600),
+            text: widget.product.name,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
           if (widget.product.brand != null &&
               widget.product.brand!.name.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -188,28 +194,27 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
               ),
               Utils.horizontalSpace(6.0),
               CustomText(
-                  text: availability,
-                  color: availabilityColor,
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.w600),
+                text: availability,
+                color: availabilityColor,
+                fontSize: 16.0,
+                fontWeight: FontWeight.w600,
+              ),
             ],
           ),
           const SizedBox(height: 10.0),
           _buildColorVariants(context),
           CustomText(
-              text: widget.product.shortDescription,
-              textAlign: TextAlign.justify,
-              color: iconGreyColor,
+            text: widget.product.shortDescription,
+            textAlign: TextAlign.justify,
+            color: iconGreyColor,
             isTranslate: true,
           ),
           const SizedBox(height: 16),
           ProductFurnitureInquiry(product: widget.product),
           const SizedBox(height: 14),
           InkWell(
-            onTap: () => showProductReportSheet(
-              context,
-              productId: widget.product.id,
-            ),
+            onTap: () =>
+                showProductReportSheet(context, productId: widget.product.id),
             child: const Row(
               children: [
                 Icon(Icons.flag_outlined, size: 18, color: redColor),
@@ -238,9 +243,11 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
   }
 
   Widget _buildColorVariants(BuildContext context) {
-    final hasColor = widget.product.activeVariantModel.any((v) =>
-        RegExp(r'renk|color', caseSensitive: false).hasMatch(v.name) &&
-        v.activeVariantsItems.isNotEmpty);
+    final hasColor = widget.product.activeVariantModel.any(
+      (v) =>
+          RegExp(r'renk|color', caseSensitive: false).hasMatch(v.name) &&
+          v.activeVariantsItems.isNotEmpty,
+    );
     if (!hasColor) return const SizedBox.shrink();
 
     final cubit = context.read<ProductDetailsCubit>();
@@ -249,10 +256,19 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var pIndex = 0; pIndex < widget.product.activeVariantModel.length; pIndex++) ...[
-          if (RegExp(r'renk|color', caseSensitive: false)
-                  .hasMatch(widget.product.activeVariantModel[pIndex].name) &&
-              widget.product.activeVariantModel[pIndex].activeVariantsItems
+        for (
+          var pIndex = 0;
+          pIndex < widget.product.activeVariantModel.length;
+          pIndex++
+        ) ...[
+          if (RegExp(
+                r'renk|color',
+                caseSensitive: false,
+              ).hasMatch(widget.product.activeVariantModel[pIndex].name) &&
+              widget
+                  .product
+                  .activeVariantModel[pIndex]
+                  .activeVariantsItems
                   .isNotEmpty) ...[
             CustomText(
               text: widget.product.activeVariantModel[pIndex].name,
@@ -264,68 +280,74 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
               spacing: 10,
               runSpacing: 10,
               children: widget
-                  .product.activeVariantModel[pIndex].activeVariantsItems
+                  .product
+                  .activeVariantModel[pIndex]
+                  .activeVariantsItems
                   .map((item) {
-                final selected = state.variantItem.length > pIndex &&
-                    state.variantItem[pIndex].id == item.id;
-                return GestureDetector(
-                  onTap: () {
-                    cubit.addIndex(pIndex.toString());
-                    cubit.updateVPItems(item);
-                    setState(() {});
-                  },
-                  child: Container(
-                    width: 92,
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: selected
-                            ? Utils.dynamicPrimaryColor(context)
-                            : borderColor,
-                        width: selected ? 2 : 1,
+                    final selected =
+                        state.variantItem.length > pIndex &&
+                        state.variantItem[pIndex].id == item.id;
+                    return GestureDetector(
+                      onTap: () {
+                        cubit.addIndex(pIndex.toString());
+                        cubit.updateVPItems(item);
+                        setState(() {});
+                      },
+                      child: Container(
+                        width: 92,
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: selected
+                                ? Utils.dynamicPrimaryColor(context)
+                                : borderColor,
+                            width: selected ? 2 : 1,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: SizedBox(
+                                height: 60,
+                                width: double.infinity,
+                                child: item.image.isNotEmpty
+                                    ? CustomImage(
+                                        path: RemoteUrls.imageUrl(item.image),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Container(
+                                        color: borderColor.withOpacity(0.3),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              item.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              Utils.formatPrice(item.price, context),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: iconGreyColor,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: SizedBox(
-                            height: 60,
-                            width: double.infinity,
-                            child: item.image.isNotEmpty
-                                ? CustomImage(
-                                    path: RemoteUrls.imageUrl(item.image),
-                                    fit: BoxFit.cover,
-                                  )
-                                : Container(color: borderColor.withOpacity(0.3)),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          item.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          Utils.formatPrice(item.price, context),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: iconGreyColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  })
+                  .toList(),
             ),
             const SizedBox(height: 14),
           ],
@@ -346,22 +368,23 @@ class _ProductDetailsComponentState extends State<ProductDetailsComponent> {
           itemCount: 5,
           itemSize: 15,
           itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
-          itemBuilder: (context, _) =>  Icon(
-            Icons.star,
-            color: Utils.dynamicPrimaryColor(context),
-          ),
+          itemBuilder: (context, _) =>
+              Icon(Icons.star, color: Utils.dynamicPrimaryColor(context)),
           onRatingUpdate: (rating) {},
         ),
         Container(
-            width: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 6),
-            height: 24,
-            color: borderColor),
+          width: 1,
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          height: 24,
+          color: borderColor,
+        ),
         CustomText(
-            text: Utils.getRating(widget.detailsModel.productReviews)
-                .toStringAsFixed(1),
-            fontSize: 13,
-            fontWeight: FontWeight.w300)
+          text: Utils.getRating(
+            widget.detailsModel.productReviews,
+          ).toStringAsFixed(1),
+          fontSize: 13,
+          fontWeight: FontWeight.w300,
+        ),
       ],
     );
   }

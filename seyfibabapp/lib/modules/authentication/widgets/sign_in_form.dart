@@ -192,8 +192,7 @@ class _SignInFormState extends State<SignInForm> {
               },
             ),
             const SizedBox(height: 20),
-            if (defaultTargetPlatform == TargetPlatform.android ||
-                defaultTargetPlatform == TargetPlatform.iOS) ...[
+            if (defaultTargetPlatform == TargetPlatform.android) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -263,35 +262,6 @@ class _SignInFormState extends State<SignInForm> {
                         ),
                       ),
                     ),
-                    if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-                      const SizedBox(height: 12),
-                      GestureDetector(
-                        onTap: () {
-                          Utils.closeKeyBoard(context);
-                          loginBloc.add(const AppleSignInEvent());
-                        },
-                        child: Container(
-                          padding: Utils.symmetric(v: 14.0),
-                          decoration: BoxDecoration(
-                            borderRadius: Utils.borderRadius(r: 10.0),
-                            color: blackColor,
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.apple, color: Colors.white, size: 22),
-                              SizedBox(width: 12),
-                              CustomText(
-                                text: 'Apple ile devam et',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14.0,
-                                color: Colors.white,
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 );
               },

@@ -433,7 +433,7 @@ class SellerApiService {
     }
     final ext = sample ? 'xlsx' : 'csv';
     final file = File(
-      '${Directory.systemTemp.path}/seyfibaba-urun-${sample ? 'ornek' : 'sablon'}.$ext',
+      '${Directory.systemTemp.path}/urun-${sample ? 'ornek' : 'sablon'}.$ext',
     );
     await file.writeAsBytes(response.bodyBytes);
     return file;

@@ -539,7 +539,6 @@ class _SellerQuickProductScreenState extends State<SellerQuickProductScreen> {
           title: 'Fiyat',
           hint: 'Birim fiyat yazınca toplam, toplam yazınca birim görünür.',
           children: [
-            const SellerShippingNotice(),
             TextField(
               controller: _packQtyCtrl,
               keyboardType: TextInputType.number,

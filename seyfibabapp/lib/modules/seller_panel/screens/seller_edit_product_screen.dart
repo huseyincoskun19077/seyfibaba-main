@@ -459,7 +459,6 @@ class _SellerEditProductScreenState extends State<SellerEditProductScreen> {
                     _field(_slugCtrl, 'Slug'),
                     _field(_shortDescCtrl, 'Kısa açıklama *', maxLines: 3),
                     _field(_longDescCtrl, 'Uzun açıklama *', maxLines: 6),
-                    const SellerShippingNotice(),
                     _field(
                       _packQtyCtrl,
                       'Paketteki ürün adedi',
