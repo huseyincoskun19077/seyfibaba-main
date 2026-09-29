@@ -16,6 +16,54 @@
 
           <div class="section-body">
               <a href="{{ route('admin.send-email-to-all-seller') }}" class="btn btn-primary">{{__('admin.Send email to all seller')}}</a>
+            <div class="card mt-3">
+              <div class="card-body">
+                <form method="GET" class="form-row align-items-end">
+                  <div class="col-md-3 mb-2">
+                    <label class="mb-1">Ara</label>
+                    <input type="text" name="q" value="{{ request('q') }}" class="form-control" placeholder="Ad, mağaza, e-posta, telefon">
+                  </div>
+                  <div class="col-md-2 mb-2">
+                    <label class="mb-1">Kaynak</label>
+                    <select name="source" class="form-control">
+                      <option value="">Tümü</option>
+                      <option value="call_center" @selected(request('source')==='call_center')>Çağrı Merkezi</option>
+                      <option value="public_web" @selected(request('source')==='public_web')>Web Kaydı</option>
+                      <option value="self" @selected(request('source')==='self')>Kendi Kaydı</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 mb-2">
+                    <label class="mb-1">KYC</label>
+                    <select name="kyc" class="form-control">
+                      <option value="">Tümü</option>
+                      <option value="pending" @selected(request('kyc')==='pending')>Bekliyor</option>
+                      <option value="approved" @selected(request('kyc')==='approved')>Onaylı</option>
+                      <option value="not_submitted" @selected(request('kyc')==='not_submitted')>Yüklenmedi</option>
+                      <option value="rejected" @selected(request('kyc')==='rejected')>Red</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 mb-2">
+                    <label class="mb-1">Ürün</label>
+                    <select name="products" class="form-control">
+                      <option value="">Tümü</option>
+                      <option value="none" @selected(request('products')==='none')>Ürünü yok</option>
+                      <option value="has" @selected(request('products')==='has')>Ürünü var</option>
+                    </select>
+                  </div>
+                  <div class="col-md-1 mb-2">
+                    <label class="mb-1">Başlangıç</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control">
+                  </div>
+                  <div class="col-md-1 mb-2">
+                    <label class="mb-1">Bitiş</label>
+                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control">
+                  </div>
+                  <div class="col-md-1 mb-2">
+                    <button class="btn btn-primary btn-block" type="submit">Filtrele</button>
+                  </div>
+                </form>
+              </div>
+            </div>
             <div class="row mt-4">
                 <div class="col">
                   <div class="card">
@@ -26,6 +74,8 @@
                                 <tr>
                                     <th >{{__('admin.SN')}}</th>
                                     <th >{{__('admin.Seller Name')}}</th>
+                                    <th >Mağaza</th>
+                                    <th >Ürün</th>
                                     <th >{{__('admin.Email')}}</th>
                                     <th >Kayıt Kaynağı</th>
                                     <th >Çağrı Merkezi</th>
@@ -43,6 +93,8 @@
                                     <tr>
                                         <td>{{ ++$index }}</td>
                                         <td>{{ $seller->user->name }}</td>
+                                        <td>{{ $seller->shop_name ?: '—' }}</td>
+                                        <td>{{ (int) ($seller->products_count ?? 0) }}</td>
                                         <td>{{ $seller->user->email }}</td>
                                         <td>
                                             @if(($seller->registration_source ?? '') === 'call_center')

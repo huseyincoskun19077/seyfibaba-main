@@ -22,13 +22,26 @@ class UserAnalyticsController extends Controller
         $endDate = $dateRange['end'];
         
         // Get all users
-        $users = User::with('seller')->orderBy('id', 'desc')->get();
-        
-        // Get user activities with date filter
-        $activities = UserActivity::whereBetween('created_at', [$startDate, $endDate])->get();
-        
-        // Get orders
-        $orders = Order::whereBetween('created_at', [$startDate, $endDate])->get();
+        $users = User::with('seller')->whereDoesntHave('seller')->orderBy('id', 'desc')->get();
+        $buyerIds = $users->pluck('id')->all();
+
+        $activities = UserActivity::whereBetween('created_at', [$startDate, $endDate])
+            ->where(function ($query) use ($buyerIds) {
+                $query->whereNull('user_id');
+                if ($buyerIds !== []) {
+                    $query->orWhereIn('user_id', $buyerIds);
+                }
+            })
+            ->get();
+
+        $orders = Order::whereBetween('created_at', [$startDate, $endDate])
+            ->where(function ($query) use ($buyerIds) {
+                $query->whereNull('user_id');
+                if ($buyerIds !== []) {
+                    $query->orWhereIn('user_id', $buyerIds);
+                }
+            })
+            ->get();
         
         // Calculate statistics
         $userStats = $this->getUserStats($users, $activities, $orders, $startDate, $endDate);

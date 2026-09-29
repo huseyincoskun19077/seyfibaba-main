@@ -1,16 +1,16 @@
 @extends('admin.master_layout')
 @section('title')
-<title>Kullanıcı Analizi</title>
+<title>Müşteri İstatistikleri</title>
 @endsection
 
 @section('admin-content')
 <div class=main-content>
     <section class=section>
         <div class="section-header">
-            <h1>Kullanıcı Analizi</h1>
+            <h1>Müşteri İstatistikleri</h1>
             <div class="section-header-breadcrumb">
                 <div class="breadcrumb-item active"><a href="{{ route('admin.dashboard') }}">Dashboard</a></div>
-                <div class="breadcrumb-item">Kullanıcı Analizi</div>
+                <div class="breadcrumb-item">Müşteri İstatistikleri</div>
             </div>
         </div>
 

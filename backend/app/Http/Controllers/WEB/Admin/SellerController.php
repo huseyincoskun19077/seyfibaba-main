@@ -37,24 +37,62 @@ class SellerController extends Controller
         $this->middleware('auth:admin');
     }
 
-    public function index(){
-        $sellers = Vendor::with(['user', 'registeredByAdmin'])
-            ->withCount('products')
-            ->orderBy('id', 'desc')
-            ->where('status', 1)
-            ->get();
-        $defaultProfile = BannerImage::whereId('15')->first();
-        $setting = Setting::first();
-
-        return view('admin.seller', compact('sellers', 'defaultProfile', 'setting'));
+    public function index(Request $request){
+        return $this->sellerListView($request, 1);
     }
 
-    public function pendingSellerList(){
-        $sellers = Vendor::with(['user', 'socialLinks', 'registeredByAdmin'])
+    public function pendingSellerList(Request $request){
+        return $this->sellerListView($request, 0);
+    }
+
+    private function sellerListView(Request $request, int $status)
+    {
+        $query = Vendor::with(['user', 'registeredByAdmin'])
             ->withCount('products')
-            ->orderBy('id', 'desc')
-            ->where('status', 0)
-            ->get();
+            ->where('status', $status);
+
+        $q = trim((string) $request->input('q'));
+        if ($q !== '') {
+            $query->where(function ($w) use ($q) {
+                $w->where('shop_name', 'like', '%'.$q.'%')
+                    ->orWhereHas('user', function ($u) use ($q) {
+                        $u->where('name', 'like', '%'.$q.'%')
+                            ->orWhere('email', 'like', '%'.$q.'%')
+                            ->orWhere('phone', 'like', '%'.$q.'%');
+                    });
+            });
+        }
+
+        $source = (string) $request->input('source');
+        if ($source === 'call_center' || $source === 'public_web') {
+            $query->where('registration_source', $source);
+        } elseif ($source === 'self') {
+            $query->where(function ($w) {
+                $w->whereNull('registration_source')
+                    ->orWhere('registration_source', '')
+                    ->orWhereNotIn('registration_source', ['call_center', 'public_web']);
+            });
+        }
+
+        $kyc = (string) $request->input('kyc');
+        if (in_array($kyc, ['pending', 'approved', 'not_submitted', 'rejected'], true)) {
+            $query->where('kyc_status', $kyc);
+        }
+
+        if ($request->input('products') === 'none') {
+            $query->whereDoesntHave('products');
+        } elseif ($request->input('products') === 'has') {
+            $query->whereHas('products');
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
+        $sellers = $query->orderBy('id', 'desc')->get();
         $defaultProfile = BannerImage::whereId('15')->first();
         $setting = Setting::first();
 

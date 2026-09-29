@@ -25,7 +25,7 @@ class CustomerController extends Controller
     }
 
     public function index(){
-        $customers = User::with('city','seller','state', 'country')->orderBy('id','desc')->where('status',1)->get();
+        $customers = User::with('city','seller','state', 'country')->orderBy('id','desc')->where('status',1)->whereDoesntHave('seller')->get();
         $defaultProfile = BannerImage::whereId('15')->first();
         $orders = Order::all();
 
@@ -33,7 +33,7 @@ class CustomerController extends Controller
     }
 
     public function pendingCustomerList(){
-        $customers = User::with('city','seller','state', 'country')->orderBy('id','desc')->where('status',0)->get();
+        $customers = User::with('city','seller','state', 'country')->orderBy('id','desc')->where('status',0)->whereDoesntHave('seller')->get();
         $defaultProfile = BannerImage::whereId('15')->first();
         $orders = Order::all();
 
@@ -104,7 +104,7 @@ class CustomerController extends Controller
         ];
         $this->validate($request, $rules,$customMessages);
 
-        $users = User::where('status',1)->get();
+        $users = User::where('status',1)->whereDoesntHave('seller')->get();
         MailHelper::setMailConfig();
         foreach($users as $user){
             Mail::to($user->email)->send(new SendSingleSellerMail($request->subject,$request->message));

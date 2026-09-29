@@ -1,6 +1,8 @@
 @php
     $setting = App\Models\Setting::first();
     $pendingKycCount = App\Models\Vendor::where('status', 1)->where('kyc_status', 'pending')->count();
+    $todaySellerCount = App\Models\Vendor::whereDate('created_at', now()->toDateString())->count();
+    $todayCustomerCount = App\Models\User::whereDate('created_at', now()->toDateString())->whereDoesntHave('seller')->count();
 @endphp
 
 <div class="main-sidebar">
@@ -57,51 +59,41 @@
             </ul>
 
           </li>
-          <li class="nav-item dropdown {{ Route::is('admin.kyc.*') || Route::is('admin.seller-product-overview.*') ? 'active' : '' }}">
+          <li class="nav-item dropdown {{ Route::is('admin.seller-list') || Route::is('admin.seller-show') || Route::is('admin.pending-seller-list') || Route::is('admin.seller-shop-detail') || Route::is('admin.seller-reviews') || Route::is('admin.show-seller-review-details') || Route::is('admin.send-email-to-seller') || Route::is('admin.email-history') || Route::is('admin.product-by-seller') || Route::is('admin.send-email-to-all-seller') || Route::is('admin.call-center-registrations.*') || Route::is('admin.kyc.*') || Route::is('admin.seller-product-overview.*') || Route::is('admin.seller-product') || Route::is('admin.seller-pending-product') || Route::is('admin.seller-withdraw') || Route::is('admin.pending-seller-withdraw') || Route::is('admin.show-seller-withdraw') || Route::is('admin.seller-performance.*') || Route::is('admin.report.sellers') || Route::is('admin.seller-conditions') ? 'active' : '' }}">
             <a href="#" class="nav-link has-dropdown">
-              <div class="icon">
-                <i class="fas fa-user-check"></i>
-              </div>
-              <span>Satıcı Onayları @if($pendingKycCount > 0)<span class="badge badge-warning ml-1">{{ $pendingKycCount }}</span>@endif</span>
+              <div class="icon"><i class="fas fa-user-tie"></i></div>
+              <span>Satıcılar @if($todaySellerCount > 0)<span class="badge badge-danger ml-1">+{{ $todaySellerCount }}</span>@endif</span>
             </a>
             <ul class="dropdown-menu">
+              <li class="{{ Route::is('admin.seller-list') || Route::is('admin.seller-show') || Route::is('admin.seller-shop-detail') || Route::is('admin.seller-reviews') || Route::is('admin.show-seller-review-details') || Route::is('admin.send-email-to-seller') || Route::is('admin.email-history') || Route::is('admin.product-by-seller') || Route::is('admin.send-email-to-all-seller') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-list') }}">{{__('admin.Seller List')}}</a></li>
+              <li class="{{ Route::is('admin.pending-seller-list') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.pending-seller-list') }}">{{__('admin.Pending Sellers')}}</a></li>
+              <li class="{{ Route::is('admin.call-center-registrations.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.call-center-registrations.index') }}">Çağrı Merkezi Kayıtları</a></li>
               <li class="{{ Route::is('admin.kyc.index') && request('status') === 'pending' ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('admin.kyc.index', ['status' => 'pending']) }}">
-                  Onay Bekleyenler @if($pendingKycCount > 0)<span class="badge badge-warning">{{ $pendingKycCount }}</span>@endif
-                </a>
+                <a class="nav-link" href="{{ route('admin.kyc.index', ['status' => 'pending']) }}">Onay Bekleyenler @if($pendingKycCount > 0)<span class="badge badge-warning">{{ $pendingKycCount }}</span>@endif</a>
               </li>
-              <li class="{{ Route::is('admin.kyc.*') && request('status') !== 'pending' ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('admin.kyc.index') }}">Tüm KYC Kayıtları</a>
-              </li>
-              <li class="{{ Route::is('admin.seller-product-overview.*') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('admin.seller-product-overview.index') }}">Satıcı Ürün Özeti</a>
-              </li>
+              <li class="{{ Route::is('admin.kyc.*') && request('status') !== 'pending' ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.kyc.index') }}">Tüm KYC Kayıtları</a></li>
+              <li class="{{ Route::is('admin.seller-product-overview.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-product-overview.index') }}">Satıcı Ürün Özeti</a></li>
+              <li class="{{ Route::is('admin.seller-product') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-product') }}">{{__('admin.Seller Products')}}</a></li>
+              <li class="{{ Route::is('admin.seller-pending-product') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-pending-product') }}">{{__('admin.Seller Pending Products')}}</a></li>
+              <li class="{{ Route::is('admin.seller-withdraw') || Route::is('admin.show-seller-withdraw') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-withdraw') }}">{{__('admin.Seller Withdraw')}}</a></li>
+              <li class="{{ Route::is('admin.pending-seller-withdraw') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.pending-seller-withdraw') }}">{{__('admin.Pending Seller Withdraw')}}</a></li>
+              <li class="{{ Route::is('admin.seller-performance.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-performance.index') }}">Satıcı Performans</a></li>
+              <li class="{{ Route::is('admin.report.sellers') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.report.sellers') }}">Satıcı Raporu</a></li>
+              <li class="{{ Route::is('admin.seller-conditions') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-conditions') }}">{{__('admin.Seller Conditions')}}</a></li>
             </ul>
           </li>
 
-          <li class="nav-item dropdown {{  Route::is('admin.customer-list') || Route::is('admin.customer-show') || Route::is('admin.pending-customer-list') || Route::is('admin.seller-list') || Route::is('admin.seller-show') || Route::is('admin.pending-seller-list') || Route::is('admin.seller-shop-detail') || Route::is('admin.seller-reviews') || Route::is('admin.show-seller-review-details') || Route::is('admin.send-email-to-seller') || Route::is('admin.email-history') || Route::is('admin.product-by-seller') || Route::is('admin.send-email-to-all-seller') || Route::is('admin.send-email-to-all-customer') || Route::is('admin.user-analytics.*') || Route::is('admin.call-center-registrations.*') ? 'active' : '' }}">
-
-                <a href="#" class="nav-link has-dropdown">
-                <div class="icon">
-                <i class="fas fa-user"></i>
-                </div>
-                <span>{{__('admin.Users')}}</span></a>
-
-                <ul class="dropdown-menu">
-
-                    <li class="{{ Route::is('admin.customer-list') || Route::is('admin.customer-show') || Route::is('admin.send-email-to-all-customer') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.customer-list') }}">{{__('admin.Customer List')}}</a></li>
-
-                    <li class="{{ Route::is('admin.pending-customer-list') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.pending-customer-list') }}">{{__('admin.Pending Customers')}}</a></li>
-
-                    <li class="{{ Route::is('admin.seller-list') || Route::is('admin.seller-show') || Route::is('admin.seller-shop-detail') || Route::is('admin.seller-reviews') || Route::is('admin.show-seller-review-details') || Route::is('admin.send-email-to-seller') || Route::is('admin.email-history') || Route::is('admin.product-by-seller') || Route::is('admin.send-email-to-all-seller') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-list') }}">{{__('admin.Seller List')}}</a></li>
-
-                    <li class="{{ Route::is('admin.pending-seller-list') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.pending-seller-list') }}">{{__('admin.Pending Sellers')}}</a></li>
-                    <li class="{{ Route::is('admin.call-center-registrations.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.call-center-registrations.index') }}">Çağrı Merkezi Kayıtları</a></li>
-                    <li class="{{ Route::is('admin.user-analytics.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.user-analytics.index') }}">Kullanıcı Analizi</a></li>
-
-                </ul>
-
-            </li>
+          <li class="nav-item dropdown {{ Route::is('admin.customer-list') || Route::is('admin.customer-show') || Route::is('admin.pending-customer-list') || Route::is('admin.send-email-to-all-customer') || Route::is('admin.user-analytics.*') ? 'active' : '' }}">
+            <a href="#" class="nav-link has-dropdown">
+              <div class="icon"><i class="fas fa-user"></i></div>
+              <span>Müşteriler @if($todayCustomerCount > 0)<span class="badge badge-danger ml-1">+{{ $todayCustomerCount }}</span>@endif</span>
+            </a>
+            <ul class="dropdown-menu">
+              <li class="{{ Route::is('admin.customer-list') || Route::is('admin.customer-show') || Route::is('admin.send-email-to-all-customer') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.customer-list') }}">{{__('admin.Customer List')}}</a></li>
+              <li class="{{ Route::is('admin.pending-customer-list') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.pending-customer-list') }}">{{__('admin.Pending Customers')}}</a></li>
+              <li class="{{ Route::is('admin.user-analytics.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.user-analytics.index') }}">Müşteri İstatistikleri</a></li>
+            </ul>
+          </li>
 
           <li class="nav-item dropdown {{ Route::is('admin.second-hand.*') ? 'active' : '' }}">
             <a href="#" class="nav-link has-dropdown">
@@ -169,7 +161,7 @@
 
 
 
-          <li class="nav-item dropdown {{ Route::is('admin.product.index') || Route::is('admin.product-brand.*') || Route::is('admin.product-variant') || Route::is('admin.create-product-variant') || Route::is('admin.edit-product-variant') || Route::is('admin.product-gallery') || Route::is('admin.product-variant-item') || Route::is('admin.create-product-variant-item') || Route::is('admin.edit-product-variant-item') || Route::is('admin.product-review') || Route::is('admin.show-product-review') || Route::is('admin.seller-product') || Route::is('admin.seller-pending-product') || Route::is('admin.wholesale') || Route::is('admin.create-wholesale') || Route::is('admin.edit-wholesale') || Route::is('admin.product-highlight') ||  Route::is('admin.product-report') || Route::is('admin.show-product-report') || Route::is('admin.specification-key.*') || Route::is('admin.stockout-product') || Route::is('admin.product-import-page') || Route::is('admin.stock-alerts.*') ? 'active' : '' }}">
+          <li class="nav-item dropdown {{ Route::is('admin.product.index') || Route::is('admin.product-brand.*') || Route::is('admin.product-variant') || Route::is('admin.create-product-variant') || Route::is('admin.edit-product-variant') || Route::is('admin.product-gallery') || Route::is('admin.product-variant-item') || Route::is('admin.create-product-variant-item') || Route::is('admin.edit-product-variant-item') || Route::is('admin.product-review') || Route::is('admin.show-product-review') || Route::is('admin.wholesale') || Route::is('admin.create-wholesale') || Route::is('admin.edit-wholesale') || Route::is('admin.product-highlight') ||  Route::is('admin.product-report') || Route::is('admin.show-product-report') || Route::is('admin.specification-key.*') || Route::is('admin.stockout-product') || Route::is('admin.product-import-page') || Route::is('admin.stock-alerts.*') ? 'active' : '' }}">
             <a href="#" class="nav-link has-dropdown">
             <div class="icon">
             <i class="fas fa-th-large"></i>
@@ -189,10 +181,6 @@
 
             <li class="{{ Route::is('admin.stockout-product') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.stockout-product') }}">{{__('admin.Stock out')}}</a></li>
             <li class="{{ Route::is('admin.stock-alerts.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.stock-alerts.index') }}">Stok Uyarıları</a></li>
-
-            <li class="{{ Route::is('admin.seller-product') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-product') }}">{{__('admin.Seller Products')}}</a></li>
-
-            <li class="{{ Route::is('admin.seller-pending-product') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-pending-product') }}">{{__('admin.Seller Pending Products')}}</a></li>
 
             <li class="{{ Route::is('admin.specification-key.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.specification-key.index') }}">{{__('admin.Specification Key')}}</a></li>
 
@@ -286,7 +274,7 @@
 
                      </li>
 
-          <li class="nav-item dropdown {{ Route::is('admin.withdraw-method.*') || Route::is('admin.seller-withdraw') || Route::is('admin.pending-seller-withdraw') || Route::is('admin.show-seller-withdraw')  ? 'active' : '' }}">
+          <li class="nav-item dropdown {{ Route::is('admin.withdraw-method.*') ? 'active' : '' }}">
 
             <a href="#" class="nav-link has-dropdown">
             <div class="icon">
@@ -296,15 +284,11 @@
 
             <ul class="dropdown-menu">
                 <li class="{{ Route::is('admin.withdraw-method.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.withdraw-method.index') }}">{{__('admin.Withdraw Method')}}</a></li>
-
-                <li class="{{ Route::is('admin.seller-withdraw') || Route::is('admin.show-seller-withdraw') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-withdraw') }}">{{__('admin.Seller Withdraw')}}</a></li>
-
-                <li class="{{ Route::is('admin.pending-seller-withdraw') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.pending-seller-withdraw') }}">{{__('admin.Pending Seller Withdraw')}}</a></li>
             </ul>
 
           </li>
 
-          <li class="nav-item dropdown {{ Route::is('admin.service.*') || Route::is('admin.maintainance-mode') || Route::is('admin.announcement') || Route::is('admin.topbar-contact') ||  Route::is('admin.slider.*') || Route::is('admin.mobile-slider.*') || Route::is('admin.story.*') || Route::is('admin.home-blocks.*') || Route::is('admin.personalization-showcase.*') || Route::is('admin.customer-segments.*') || Route::is('admin.home-page') || Route::is('admin.banner-image.index') || Route::is('admin.homepage-one-visibility') || Route::is('admin.cart-bottom-banner') || Route::is('admin.shop-page') || Route::is('admin.seo-setup') || Route::is('admin.menu-visibility') || Route::is('admin.product-detail-page') || Route::is('admin.default-avatar') || Route::is('admin.seller-conditions') || Route::is('admin.subscription-banner') || Route::is('admin.testimonial.*') || Route::is('admin.homepage-section-title') ? 'active' : '' }}">
+          <li class="nav-item dropdown {{ Route::is('admin.service.*') || Route::is('admin.maintainance-mode') || Route::is('admin.announcement') || Route::is('admin.topbar-contact') ||  Route::is('admin.slider.*') || Route::is('admin.mobile-slider.*') || Route::is('admin.story.*') || Route::is('admin.home-blocks.*') || Route::is('admin.personalization-showcase.*') || Route::is('admin.customer-segments.*') || Route::is('admin.home-page') || Route::is('admin.banner-image.index') || Route::is('admin.homepage-one-visibility') || Route::is('admin.cart-bottom-banner') || Route::is('admin.shop-page') || Route::is('admin.seo-setup') || Route::is('admin.menu-visibility') || Route::is('admin.product-detail-page') || Route::is('admin.default-avatar') || Route::is('admin.subscription-banner') || Route::is('admin.testimonial.*') || Route::is('admin.homepage-section-title') ? 'active' : '' }}">
            <p class="s-divide">{{__('admin.Website Settings')}}</p>
             <a href="#" class="nav-link has-dropdown">
             <div class="icon">
@@ -328,8 +312,6 @@
                 <li class="{{ Route::is('admin.service.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.service.index') }}">{{__('admin.Service')}}</a></li>
 
                 <li class="{{ Route::is('admin.homepage-section-title') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.homepage-section-title') }}">{{__('admin.Homepage Section Title')}}</a></li>
-
-                <li class="{{ Route::is('admin.seller-conditions') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-conditions') }}">{{__('admin.Seller Conditions')}}</a></li>
 
                 <li class="{{ Route::is('admin.testimonial.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.testimonial.index') }}">{{__('admin.Testimonial')}}</a></li>
 
@@ -387,16 +369,14 @@
             </ul>
           </li>
 
-          <li class="nav-item dropdown {{ Route::is('admin.report.*') || Route::is('admin.sales-analytics.*') || Route::is('admin.seller-performance.*') ? 'active' : '' }}">
+          <li class="nav-item dropdown {{ (Route::is('admin.report.*') && ! Route::is('admin.report.sellers')) || Route::is('admin.sales-analytics.*') ? 'active' : '' }}">
             <a href="#" class="nav-link has-dropdown">
               <div class="icon"><i class="fas fa-chart-bar"></i></div>
               <span>Raporlar</span>
             </a>
             <ul class="dropdown-menu">
                 <li class="{{ Route::is('admin.sales-analytics.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.sales-analytics.index') }}">Satış Analizi</a></li>
-                <li class="{{ Route::is('admin.seller-performance.*') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.seller-performance.index') }}">Satıcı Performans</a></li>
                 <li class="{{ Route::is('admin.report.orders') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.report.orders') }}">Sipariş Raporu</a></li>
-                <li class="{{ Route::is('admin.report.sellers') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.report.sellers') }}">Satıcı Raporu</a></li>
                 <li class="{{ Route::is('admin.report.products') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.report.products') }}">Ürün Raporu</a></li>
                 <li class="{{ Route::is('admin.report.transactions') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.report.transactions') }}">İşlem Raporu</a></li>
                 <li class="{{ Route::is('admin.report.returns') ? 'active' : '' }}"><a class="nav-link" href="{{ route('admin.report.returns') }}">İade Raporu</a></li>
