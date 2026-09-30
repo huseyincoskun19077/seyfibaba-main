@@ -100,37 +100,41 @@ export const SIGNUP_OPTIONAL_CONSENTS = [
   },
 ];
 
-/** POST /api/public/seller-register — LegalConsentService::SELLER_REGISTER_REQUIRED_SLUGS ile aynı sıra */
+/** POST /api/public/seller-register — LegalConsentService::SELLER_REGISTER_REQUIRED_SLUGS ile aynı kapsam */
 export const SELLER_REGISTER_REQUIRED_CONSENTS = [
   {
     key: LEGAL_SLUGS.PRIVACY_AGREEMENT,
     slug: LEGAL_SLUGS.PRIVACY_AGREEMENT,
+    slugs: [LEGAL_SLUGS.PRIVACY_AGREEMENT],
     linkLabel: "Kişisel Verilerin Korunmasına Yönelik Protokol",
     label: "'ü okudum ve onaylıyorum.",
   },
   {
-    key: LEGAL_SLUGS.KVKK_AYDINLATMA,
-    slug: LEGAL_SLUGS.KVKK_AYDINLATMA,
-    linkLabel: "Kişisel Verilerin İşlenmesi Aydınlatma Metni",
-    label: "'ni okudum ve onaylıyorum.",
+    key: "seller_commercial_notice",
+    slugs: [LEGAL_SLUGS.KVKK_AYDINLATMA, LEGAL_SLUGS.KVKK_ACIK_RIZA],
+    segments: [
+      {
+        slug: LEGAL_SLUGS.KVKK_AYDINLATMA,
+        label: "Kişisel Verilerin Korunması Hakkında Aydınlatma Yazısı",
+      },
+      {
+        text: "nı Bana özel indirim kuponları, kampanyalar dahil olmak üzere tüm ticari elektronik iletilerin ",
+      },
+      { slug: LEGAL_SLUGS.KVKK_AYDINLATMA, label: "Aydınlatma Metni" },
+      {
+        text: " kapsamında gönderilmesini ve kişisel verilerimin işlenmesini kabul ediyorum.",
+      },
+    ],
   },
   {
-    key: LEGAL_SLUGS.TERMS,
-    slug: LEGAL_SLUGS.TERMS,
-    linkLabel: "Üyelik Sözleşmesi",
-    label: "'ni okudum ve onaylıyorum.",
-  },
-  {
-    key: LEGAL_SLUGS.PRIVACY_POLICY,
-    slug: LEGAL_SLUGS.PRIVACY_POLICY,
-    linkLabel: "Gizlilik Politikası",
-    label: "'nı okudum ve onaylıyorum.",
-  },
-  {
-    key: LEGAL_SLUGS.SELLER_TERMS,
-    slug: LEGAL_SLUGS.SELLER_TERMS,
-    linkLabel: "Satıcı Şartları ve Koşulları",
-    label: "'nı okudum ve onaylıyorum.",
+    key: "seller_membership_bundle",
+    slugs: [LEGAL_SLUGS.TERMS, LEGAL_SLUGS.PRIVACY_POLICY],
+    links: [
+      { slug: LEGAL_SLUGS.TERMS, label: "Üyelik / Alıcı Sözleşmesi" },
+      { slug: LEGAL_SLUGS.KVKK_AYDINLATMA, label: "Kişisel Verilerin Korunması" },
+      { slug: LEGAL_SLUGS.PRIVACY_POLICY, label: "Ticari Kimlik Beyanı" },
+    ],
+    label: "nı okudum ve kabul ediyorum.",
   },
 ];
 

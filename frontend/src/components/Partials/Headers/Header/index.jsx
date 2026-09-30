@@ -73,6 +73,7 @@ export default function Header({
       <Middlebar
         settings={settings}
         isSecondHandSite={isSecondHandSite}
+        unreadNotificationCount={unreadNotificationCount}
         className="quomodo-shop-middle-bar lg:block hidden"
       />
 
@@ -81,7 +82,7 @@ export default function Header({
         className="quomodo-shop-drawer lg:hidden block w-full bg-white border-b border-[#04334a]/10 sticky top-0 z-40 shadow-sm"
         style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
       >
-        <div className="flex h-[56px] w-full items-center justify-between px-3 gap-2">
+        <div className="flex h-[56px] w-full items-center gap-2 px-3">
           <button
             type="button"
             onClick={drawerAction}
@@ -100,27 +101,58 @@ export default function Header({
             </svg>
           </button>
 
-          <div className="min-w-0 flex-1 h-full flex items-center justify-center">
-            <Link href="/" className="flex min-w-0 items-center gap-2">
-              {settings?.logo && (
-                <Image
-                  width={140}
-                  height={40}
-                  className={`${isSecondHandSite ? "w-[110px] h-[32px]" : "w-[140px] h-[40px]"} object-contain`}
-                  {...getProductImageProps(settings.logo)}
-                  alt="Kuaför Tedarik Logo"
-                  priority
-                />
-              )}
-              {isSecondHandSite ? (
-                <span className="shrink-0 rounded-md bg-qyellow px-2 py-0.5 text-[10px] font-800 text-qblack">
-                  İkinci El
-                </span>
-              ) : null}
-            </Link>
-          </div>
+          <Link href="/" className="flex shrink-0 items-center" aria-label="Ana sayfa">
+            {settings?.logo && (
+              <Image
+                width={96}
+                height={32}
+                className="h-8 w-[64px] object-contain min-[420px]:w-[92px]"
+                {...getProductImageProps(settings.logo)}
+                alt="Kuaför Tedarik Logo"
+                priority
+              />
+            )}
+          </Link>
 
-          <div className="flex shrink-0 items-center gap-1">
+          {isSecondHandSite ? (
+            <form action="/ikinci-el" method="get" className="min-w-0 flex-1">
+              <div className="flex h-10 w-full overflow-hidden rounded-xl border-2 border-qblack/10 bg-white">
+                <input
+                  type="search"
+                  name="q"
+                  placeholder="İlan ara…"
+                  className="min-w-0 flex-1 bg-transparent px-3 text-sm text-qblack outline-none"
+                />
+                <button type="submit" className="px-3 text-xs font-800 text-qblack bg-qyellow">
+                  Ara
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form
+              action="/search"
+              method="get"
+              className="min-w-0 flex-1"
+              onSubmit={(e) => {
+                const q = e.currentTarget.search?.value?.trim();
+                if (!q) e.preventDefault();
+              }}
+            >
+              <div className="flex h-10 w-full overflow-hidden rounded-xl border-2 border-qblack/10 bg-white focus-within:border-qyellow transition-colors">
+                <input
+                  type="search"
+                  name="search"
+                  placeholder="Ürün ara…"
+                  className="min-w-0 flex-1 bg-transparent px-3 text-sm text-qblack outline-none"
+                />
+                <button type="submit" className="px-3 text-xs font-800 text-qblack bg-qyellow sm:px-4">
+                  Ara
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="flex shrink-0 items-center gap-0.5">
             {isSecondHandSite ? (
               <Link
                 href={marketplaceProfileUrl("second-hand-add")}
@@ -132,7 +164,7 @@ export default function Header({
 
             <Link
               href={isLoggedIn ? profileHref : loginHref}
-              className="relative h-10 w-10 inline-flex items-center justify-center rounded-xl text-qblack hover:bg-qblack/[0.05] transition"
+              className="relative hidden h-10 w-10 items-center justify-center rounded-xl text-qblack hover:bg-qblack/[0.05] transition sm:inline-flex"
               aria-label={isLoggedIn ? "Hesabım (giriş yapıldı)" : "Hesabım"}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -174,45 +206,6 @@ export default function Header({
             )}
           </div>
         </div>
-        {isSecondHandSite ? (
-          <form action="/ikinci-el" method="get" className="px-3 pb-2.5">
-            <div className="flex h-10 w-full overflow-hidden rounded-xl border-2 border-qblack/10 bg-white">
-              <input
-                type="search"
-                name="q"
-                placeholder="İlan, marka veya şehir ara…"
-                className="min-w-0 flex-1 bg-transparent px-3 text-sm text-qblack outline-none"
-              />
-              <button type="submit" className="px-3 text-xs font-800 text-qblack bg-qyellow">
-                Ara
-              </button>
-            </div>
-          </form>
-        ) : (
-          <form
-            action="/search"
-            method="get"
-            className="px-3 pb-2.5"
-            onSubmit={(e) => {
-              const q = e.currentTarget.search?.value?.trim();
-              if (!q) {
-                e.preventDefault();
-              }
-            }}
-          >
-            <div className="flex h-10 w-full overflow-hidden rounded-xl border-2 border-qblack/10 bg-white focus-within:border-qyellow transition-colors">
-              <input
-                type="search"
-                name="search"
-                placeholder="Ürün, marka veya kategori ara…"
-                className="min-w-0 flex-1 bg-transparent px-3 text-sm text-qblack outline-none"
-              />
-              <button type="submit" className="px-4 text-xs font-800 text-qblack bg-qyellow">
-                Ara
-              </button>
-            </div>
-          </form>
-        )}
       </div>
 
       <Navbar

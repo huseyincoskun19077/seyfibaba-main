@@ -95,7 +95,25 @@ export default function LegalConsentCheckboxes({
                       *
                     </span>
                   ) : null}
-                  {bundledLinks.length > 0 ? (
+                  {Array.isArray(item.segments) && item.segments.length > 0 ? (
+                    item.segments.map((segment, segmentIndex) =>
+                      segment.slug ? (
+                        <button
+                          key={`${key}-seg-${segmentIndex}`}
+                          type="button"
+                          className="font-semibold text-[#04334a] underline underline-offset-2 hover:text-qyellow"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openDoc(segment.slug, segment.label);
+                          }}
+                        >
+                          {segment.label}
+                        </button>
+                      ) : (
+                        <span key={`${key}-seg-${segmentIndex}`}>{segment.text}</span>
+                      )
+                    )
+                  ) : bundledLinks.length > 0 ? (
                     <>
                       {item.prefix || null}
                       {bundledLinks.map((link, linkIndex) => (

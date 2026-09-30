@@ -12,9 +12,9 @@ class LegalConsentService
     public const SELLER_REGISTER_REQUIRED_SLUGS = [
         'privacy-agreement',
         'kvkk-aydinlatma',
+        'kvkk-acik-riza',
         'terms',
         'privacy-policy',
-        'seller-terms',
     ];
 
     /**

@@ -16,7 +16,7 @@ import { marketplaceProfileUrl, marketplaceUrl } from "@/utils/secondHandSite";
 import useAuthSession from "@/hooks/useAuthSession";
 import { setWishlistData } from "@/redux/features/wishlist/wishlistSlice";
 import { AUTH_STORAGE_SYNC_EVENT } from "@/redux/api/apiSlice";
-import { useLazyLogoutApiQuery, useBuyerNotificationsApiQuery } from "@/redux/features/auth/apiSlice";
+import { useLazyLogoutApiQuery } from "@/redux/features/auth/apiSlice";
 import { toast } from "react-toastify";
 
 const iconBtnClass =
@@ -28,7 +28,12 @@ const actionBtnClass =
 const badgeClass =
   "min-w-[18px] h-[18px] px-1 rounded-full absolute -top-0.5 -right-0.5 flex justify-center items-center text-[9px] font-700 bg-qyellow text-[#04334a]";
 
-export default function Middlebar({ className, settings, isSecondHandSite = false }) {
+export default function Middlebar({
+  className,
+  settings,
+  isSecondHandSite = false,
+  unreadNotificationCount = 0,
+}) {
   const router = useRouter();
   const dispatch = useDispatch();
 
@@ -40,17 +45,6 @@ export default function Middlebar({ className, settings, isSecondHandSite = fals
   const [cartItems, setCartItems] = useState([]);
   const [mobileSearch, setMobileSearch] = useState(false);
   const authUser = useAuthSession();
-  const { data: buyerNotifications } = useBuyerNotificationsApiQuery(
-    {
-      token: authUser?.access_token,
-      perPage: 1,
-    },
-    {
-      skip: !authUser?.access_token,
-      pollingInterval: 60000,
-    }
-  );
-  const unreadNotificationCount = buyerNotifications?.unread_count || 0;
 
   const wishlists = wishlistData?.wishlists;
   const compareProductsCount = compareProducts?.products?.length || 0;
@@ -123,7 +117,7 @@ export default function Middlebar({ className, settings, isSecondHandSite = fals
               ) : null}
             </div>
 
-            <div className="flex-1 max-w-[640px] h-[48px] hidden lg:block">
+            <div className="flex-1 min-w-0 h-[48px] hidden lg:block">
               {isSecondHandSite ? (
                 <form action="/ikinci-el" method="get" className="w-full h-full">
                   <div className="w-full h-full flex items-center border-2 border-qblack/10 bg-white overflow-hidden rounded-xl focus-within:border-qyellow transition-colors">
@@ -158,7 +152,7 @@ export default function Middlebar({ className, settings, isSecondHandSite = fals
               </svg>
             </button>
 
-            <div className="flex items-center gap-1 sm:gap-2 ml-auto relative">
+            <div className="flex items-center gap-1 sm:gap-2 relative">
               {isSecondHandSite ? (
                 <Link
                   href={marketplaceProfileUrl("second-hand-add")}
