@@ -1088,6 +1088,12 @@ Route::group(['middleware' => ['auth:api'], 'prefix' => 'user/ai-chat'], functio
         ->middleware('throttle:10,1');
     Route::get('/history', [\App\Http\Controllers\API\AiChatController::class, 'history']);
 });
+Route::middleware('auth:api')->group(function () {
+    Route::get('iyzico-installments', [\App\Http\Controllers\API\CategoryInstallmentEditorController::class, 'index']);
+    Route::put('iyzico-installments', [\App\Http\Controllers\API\CategoryInstallmentEditorController::class, 'update'])
+        ->middleware('throttle:30,1');
+});
+
 Route::post('webhooks/geliver', [GeliverWebhookController::class, 'handle'])
     ->middleware('geliver.enabled');
 Route::post('webhooks/netsipp', [NetsippWebhookController::class, 'handle'])

@@ -292,6 +292,7 @@ const apiRoutes = {
   childcategoryBySubcategory: combinedUrl("childcategory-by-subcategory/"),
   secondHandSitemap: combinedUrl("second-hand/sitemap"),
 
+  iyzicoInstallments: combinedUrl("iyzico-installments"),
   publicSellerRegister: combinedUrl("public/seller-register"),
   publicSellerRegisterStates: combinedUrl("public/seller-register/states"),
 };
