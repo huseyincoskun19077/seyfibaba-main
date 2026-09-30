@@ -97,14 +97,14 @@ export default function LegalDocumentPage({ document }) {
   }
 
   return (
-    <div className="legal-document-page w-full bg-white dark:bg-[#111827] pb-[40px] min-h-screen print:bg-white">
+    <div className="legal-document-page w-full bg-[#f4f7f8] pb-16 min-h-screen print:bg-white">
       <div
         className="fixed top-0 left-0 h-1 bg-qyellow z-[100] print:hidden"
         style={{ width: `${progress}%` }}
         aria-hidden="true"
       />
 
-      <div className="w-full mb-[30px] print:mb-4">
+      <div className="w-full mb-6 print:mb-4">
         <PageTitle
           breadcrumb={[
             { name: ServeLangItem()?.home || "Ana Sayfa", path: "/" },
@@ -115,12 +115,12 @@ export default function LegalDocumentPage({ document }) {
       </div>
 
       <div className="container-x mx-auto px-4">
-        <div className="max-w-[900px] mx-auto">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-6 print:hidden">
-            <div className="text-sm text-qgray dark:text-gray-400">
+        <div className="mx-auto max-w-[860px]">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
+            <div className="text-sm text-[#5c6b76]">
               {updatedLabel && <span>Son güncelleme: {updatedLabel}</span>}
               {document.version && (
-                <span className="ml-3 inline-flex rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs">
+                <span className="ml-3 inline-flex rounded-full bg-white px-2 py-0.5 text-xs text-[#04334a] ring-1 ring-[#d7e0e6]">
                   v{document.version}
                 </span>
               )}
@@ -129,14 +129,14 @@ export default function LegalDocumentPage({ document }) {
               <button
                 type="button"
                 onClick={handlePrint}
-                className="h-9 px-3 rounded-md border border-gray-200 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="h-9 rounded-md border border-[#d7e0e6] bg-white px-3 text-sm text-[#04334a] hover:bg-[#f7fbfc]"
               >
                 Yazdır
               </button>
               <button
                 type="button"
                 onClick={handlePdf}
-                className="h-9 px-3 rounded-md border border-gray-200 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="h-9 rounded-md border border-[#d7e0e6] bg-white px-3 text-sm text-[#04334a] hover:bg-[#f7fbfc]"
                 title="PDF olarak kaydetmek için yazdır menüsünden PDF seçin"
               >
                 PDF İndir
@@ -147,16 +147,13 @@ export default function LegalDocumentPage({ document }) {
           {headings.length > 0 && (
             <nav
               aria-label="İçindekiler"
-              className="mb-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-5 print:hidden"
+              className="mb-4 rounded-2xl border border-[#e3eaee] bg-white p-5 print:hidden"
             >
-              <h2 className="text-sm font-semibold text-qblack dark:text-white mb-3">İçindekiler</h2>
+              <h2 className="mb-3 text-sm font-semibold text-[#04334a]">İçindekiler</h2>
               <ol className="space-y-2 text-sm">
                 {headings.map((item) => (
                   <li key={item.id} className={item.level === "h3" ? "ml-4" : ""}>
-                    <a
-                      href={`#${item.id}`}
-                      className="text-qgray dark:text-gray-300 hover:text-qblack dark:hover:text-white underline-offset-2 hover:underline"
-                    >
+                    <a href={`#${item.id}`} className="text-[#3d6f86] hover:text-[#04334a] hover:underline">
                       {item.text}
                     </a>
                   </li>
@@ -167,23 +164,77 @@ export default function LegalDocumentPage({ document }) {
 
           <article
             ref={contentRef}
-            className="legal-document-content prose prose-neutral dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-lg prose-p:text-[15px] prose-p:leading-7 prose-li:text-[15px] text-qblack dark:text-gray-100"
+            className="legal-document-content rounded-2xl border border-[#e3eaee] bg-white px-5 py-8 text-[#1c2430] sm:px-10 sm:py-10"
             dangerouslySetInnerHTML={{ __html: document.content || "<p>İçerik henüz eklenmedi.</p>" }}
           />
 
-          <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700 text-sm text-qgray dark:text-gray-400 print:hidden">
-            <p>
-              Sorularınız için{" "}
-              <Link href="/contact" className="underline hover:text-qblack dark:hover:text-white">
-                iletişim
-              </Link>{" "}
-              sayfamızı ziyaret edebilirsiniz.
-            </p>
-          </div>
+          <p className="mt-6 text-sm text-[#5c6b76] print:hidden">
+            Sorularınız için{" "}
+            <Link href="/contact" className="text-[#04334a] underline">
+              iletişim
+            </Link>{" "}
+            sayfamızı ziyaret edebilirsiniz.
+          </p>
         </div>
       </div>
 
       <style jsx global>{`
+        .legal-document-content {
+          overflow-x: auto;
+          font-size: 15px;
+          line-height: 1.75;
+          background: #fff !important;
+          color: #1c2430 !important;
+        }
+        .legal-document-content h2,
+        .legal-document-content h3 {
+          color: #04334a;
+          font-weight: 700;
+          line-height: 1.35;
+          scroll-margin-top: 6rem;
+        }
+        .legal-document-content h2 {
+          margin: 2rem 0 0.75rem;
+          font-size: 1.25rem;
+        }
+        .legal-document-content h2:first-child {
+          margin-top: 0;
+        }
+        .legal-document-content h3 {
+          margin: 1.5rem 0 0.5rem;
+          font-size: 1.05rem;
+        }
+        .legal-document-content p,
+        .legal-document-content li {
+          margin-bottom: 0.85rem;
+        }
+        .legal-document-content ul,
+        .legal-document-content ol {
+          margin: 0 0 1rem 1.25rem;
+        }
+        .legal-document-content a {
+          color: #0b6e8a;
+          text-decoration: underline;
+        }
+        .legal-document-content table {
+          width: 100%;
+          margin: 1rem 0 1.5rem;
+          border-collapse: collapse;
+          font-size: 14px;
+        }
+        .legal-document-content th,
+        .legal-document-content td {
+          border: 1px solid #e3eaee;
+          padding: 0.65rem 0.75rem;
+          text-align: left;
+          vertical-align: top;
+          background: #fff;
+          color: #1c2430;
+        }
+        .legal-document-content th {
+          background: #f4f7f8;
+          color: #04334a;
+        }
         @media print {
           .legal-document-page nav,
           .legal-document-page button,
@@ -192,6 +243,7 @@ export default function LegalDocumentPage({ document }) {
             display: none !important;
           }
           .legal-document-content {
+            border: 0 !important;
             max-width: 100% !important;
           }
         }
