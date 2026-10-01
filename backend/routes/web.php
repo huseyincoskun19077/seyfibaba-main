@@ -889,6 +889,7 @@ Route::group(['middleware' => ['XSS']], function () {
 
         Route::get('seller-list', [SellerController::class, 'index'])->name('seller-list');
         Route::get('seller-callbacks', [SellerController::class, 'callbacks'])->name('seller-callbacks');
+        Route::get('seller-shipping-overview', [SellerController::class, 'shippingOverview'])->name('seller-shipping-overview');
         Route::get('call-center-registrations', [CallCenterRegistrationController::class, 'index'])->name('call-center-registrations.index');
         Route::post('call-center-registrations/{id}/resend-sms', [CallCenterRegistrationController::class, 'resendSms'])
             ->middleware('throttle:10,1')

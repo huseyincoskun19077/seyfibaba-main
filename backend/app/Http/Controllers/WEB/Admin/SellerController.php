@@ -107,6 +107,31 @@ class SellerController extends Controller
         return view('admin.seller_callbacks', compact('callbacks'));
     }
 
+    public function shippingOverview(Request $request)
+    {
+        $kargo = (string) $request->input('kargo', '');
+        $query = Vendor::query()
+            ->with('shippingTiers')
+            ->withCount('products')
+            ->where('status', 1)
+            ->orderBy('shop_name');
+
+        if ($kargo === 'var') {
+            $query->whereHas('shippingTiers');
+        } elseif ($kargo === 'yok') {
+            $query->whereDoesntHave('shippingTiers');
+        }
+
+        $sellers = $query->get();
+        $dates = Product::query()
+            ->selectRaw('vendor_id, MIN(created_at) as first_product_at, MAX(updated_at) as last_product_at')
+            ->groupBy('vendor_id')
+            ->get()
+            ->keyBy('vendor_id');
+
+        return view('admin.seller_shipping_overview', compact('sellers', 'dates', 'kargo'));
+    }
+
     public function show($id){
         $seller = Vendor::with('user', 'socialLinks', 'products', 'registeredByAdmin')->find($id);
         if($seller){
