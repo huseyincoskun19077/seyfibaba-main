@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";
+import { getCookiePrefs } from "@/components/Helpers/Consent";
 import appConfig from "@/appConfig";
 import settings from "@/utils/settings";
 import { getProductImageProps } from "@/utils/productImage";
@@ -72,7 +74,17 @@ function absoluteMedia(path) {
 /**
  * Mobil web ilk girişte: Kuaför Tedarik uygulamasını indir (footer mağaza görselleri).
  */
+function isSellerEntryPath(pathname) {
+  return (
+    pathname === "/satici" ||
+    pathname === "/satici-kayit" ||
+    pathname === "/satici-giris" ||
+    pathname === "/signup"
+  );
+}
+
 export default function MobileAppPrompt({ setupData = null }) {
+  const pathname = usePathname() || "";
   const { websiteSetup } = useSelector((state) => state.websiteSetup);
   const settingData = settings();
   const logo = settingData?.logo || null;
@@ -114,19 +126,27 @@ export default function MobileAppPrompt({ setupData = null }) {
     }, [setupData, websiteSetup]);
 
   useEffect(() => {
-    const p = detectPlatform();
-    setPlatform(p);
-    if (!p.isMobile) {
-      setVisible(false);
-      return;
-    }
-    if (isDismissedRecently()) {
-      setVisible(false);
-      return;
-    }
-    const t = window.setTimeout(() => setVisible(true), 400);
-    return () => window.clearTimeout(t);
-  }, []);
+    const update = () => {
+      const next = detectPlatform();
+      setPlatform(next);
+      if (
+        !next.isMobile ||
+        isDismissedRecently() ||
+        isSellerEntryPath(pathname) ||
+        !getCookiePrefs()
+      ) {
+        setVisible(false);
+        return;
+      }
+      setVisible(true);
+    };
+    const timer = window.setTimeout(update, 400);
+    window.addEventListener("seyfibaba:cookie-prefs", update);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("seyfibaba:cookie-prefs", update);
+    };
+  }, [pathname]);
 
   const dismiss = () => {
     try {

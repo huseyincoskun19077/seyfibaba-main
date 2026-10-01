@@ -66,15 +66,27 @@ function isHomePath(pathname) {
 /**
  * Anasayfa Size Özel / Popüler şerit — sabit grid (otomatik kayma yok).
  */
+function takeStripProducts(products) {
+  return Array.isArray(products) ? products.slice(0, 12) : [];
+}
+
 export default function PopularProductsStrip({ products: fallbackProducts = [] }) {
   const pathname = usePathname() || "";
   const [title, setTitle] = useState("Popüler ürünler");
-  const [list, setList] = useState([]);
+  const [list, setList] = useState(() => takeStripProducts(fallbackProducts));
   const [lastFetchAt, setLastFetchAt] = useState(null);
   const prevPathRef = useRef(pathname);
 
   const loadPersonalized = useCallback(
     async (cancelledRef, reason = "mount") => {
+      const token = auth()?.access_token;
+      if (!token && !hasMarketingConsent()) {
+        if (!cancelledRef.current) {
+          setList(takeStripProducts(fallbackProducts));
+          setTitle("Popüler ürünler");
+        }
+        return;
+      }
       try {
         const token = auth()?.access_token;
         const qs = new URLSearchParams({
@@ -122,9 +134,7 @@ export default function PopularProductsStrip({ products: fallbackProducts = [] }
         /* fallback */
       }
       if (cancelledRef.current) return;
-      const fb = Array.isArray(fallbackProducts)
-        ? fallbackProducts.slice(0, 12)
-        : [];
+      const fb = takeStripProducts(fallbackProducts);
       setList(fb);
       setTitle("Popüler ürünler");
     },
@@ -135,53 +145,31 @@ export default function PopularProductsStrip({ products: fallbackProducts = [] }
     const cancelledRef = { current: false };
     const prev = prevPathRef.current;
     prevPathRef.current = pathname;
-
-    const cameFromProduct =
-      typeof prev === "string" &&
-      (prev.includes("/urun/") || prev.includes("/product/"));
     const onHome = isHomePath(pathname);
     const dirty =
       typeof window !== "undefined" &&
       !!sessionStorage.getItem(PERSONALIZED_DIRTY_KEY);
-
-    if (onHome) {
-      const reason = cameFromProduct
-        ? "return_from_product"
-        : dirty
-          ? "dirty_flag"
-          : "home_path";
+    if (!onHome) {
+      return () => {
+        cancelledRef.current = true;
+      };
+    }
+    if (!auth()?.access_token && !hasMarketingConsent()) {
+      setList(takeStripProducts(fallbackProducts));
+      return () => {
+        cancelledRef.current = true;
+      };
+    }
+    const reason = dirty ? "dirty_flag" : "home_path";
+    if (String(prev || "").includes("/urun/") || String(prev || "").includes("/product/")) {
+      loadPersonalized(cancelledRef, "return_from_product");
+    } else {
       loadPersonalized(cancelledRef, reason);
     }
-
     return () => {
       cancelledRef.current = true;
     };
-  }, [loadPersonalized, pathname]);
-
-  useEffect(() => {
-    const cancelledRef = { current: false };
-    const refreshIfHome = (reason) => {
-      if (!isHomePath(pathname)) return;
-      if (
-        reason === "visibility" &&
-        document.visibilityState !== "visible"
-      ) {
-        return;
-      }
-      loadPersonalized(cancelledRef, reason);
-    };
-    const onVisible = () => refreshIfHome("visibility");
-    const onPageShow = () => refreshIfHome("pageshow");
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("pageshow", onPageShow);
-    window.addEventListener("focus", onPageShow);
-    return () => {
-      cancelledRef.current = true;
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("pageshow", onPageShow);
-      window.removeEventListener("focus", onPageShow);
-    };
-  }, [loadPersonalized, pathname]);
+  }, [fallbackProducts, loadPersonalized, pathname]);
 
   if (!list.length) return null;
 

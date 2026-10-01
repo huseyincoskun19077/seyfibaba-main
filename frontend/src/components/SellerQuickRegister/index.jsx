@@ -11,6 +11,7 @@ import {
 } from "@/redux/features/sellerRegister/apiSlice";
 import { useLazyGetCityListApiQuery } from "@/redux/features/locations/apiSlice";
 import { dedupeTurkishLocations } from "@/utils/dedupeTurkishLocations";
+import SellerCallbackForm from "@/components/SellerCallbackForm";
 import LegalConsentCheckboxes from "@/components/Legal/LegalConsentCheckboxes";
 import {
   SELLER_REGISTER_OPTIONAL_CONSENTS,
@@ -18,6 +19,7 @@ import {
 } from "@/config/legalDocuments";
 import { recordLegalConsents } from "@/api/recordLegalConsents";
 import {
+  getCookiePrefs,
   hasAnalyticsConsent,
   hasMarketingConsent,
 } from "@/components/Helpers/Consent";
@@ -152,6 +154,14 @@ export default function SellerQuickRegister() {
   const [success, setSuccess] = useState(null);
   const [consentValues, setConsentValues] = useState({});
   const [consentError, setConsentError] = useState("");
+  const [cookieBannerOpen, setCookieBannerOpen] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setCookieBannerOpen(!getCookiePrefs());
+    sync();
+    window.addEventListener("seyfibaba:cookie-prefs", sync);
+    return () => window.removeEventListener("seyfibaba:cookie-prefs", sync);
+  }, []);
   const [phoneError, setPhoneError] = useState("");
 
   const { data: statesData, isLoading: statesLoading } =
@@ -345,13 +355,19 @@ export default function SellerQuickRegister() {
   }
 
   return (
-    <div className="w-full bg-[#F3F4F6] py-8 sm:py-12">
+    <div className={`w-full bg-[#F3F4F6] py-8 sm:py-12 ${cookieBannerOpen ? "pb-72 sm:pb-12" : ""}`}>
       <div className="container-x mx-auto max-w-5xl">
         <div className="rounded-2xl border border-[#04334a]/8 bg-white px-4 py-6 shadow-sm sm:px-8 sm:py-10 lg:px-12">
           <div className="mb-8 text-center">
             <h1 className="text-[22px] font-800 leading-tight text-[#04334a] sm:text-[28px]">
-              Satıcı olmak için başvurun
+              Türkiye’deki kuaför ve güzellik salonlarına ürün satın
             </h1>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#04334a]/70">
+              Firma adınız ve telefonunuz yeterli. Sizi arayalım. Ayrıntılı başvuru aşağıdaki formda duruyor.
+            </p>
+            <div className="mx-auto mt-5 max-w-3xl text-left">
+              <SellerCallbackForm />
+            </div>
             <div className="mx-auto mt-2 h-1 w-20 rounded-full bg-[#FCBF49]" />
             <Link
               href="/yardim"

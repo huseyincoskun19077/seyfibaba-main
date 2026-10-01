@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Accodion from "@/components/Helpers/Accodion";
+import SellerCallbackForm from "@/components/SellerCallbackForm";
 import { sellerFaqSections } from "@/data/sellerFaq";
 import { sellerInfoPageList } from "@/data/sellerInfoPages";
 
@@ -327,12 +328,15 @@ export default function SellerLanding() {
             Kuaför Tedarik Satıcı Merkezi
           </p>
           <h1 className="mb-3 text-2xl font-800 text-[#04334a] md:text-4xl">
-            Satıcı olmak için neye ihtiyacın var?
+            Türkiye’deki kuaför ve güzellik salonlarına ürün satın
           </h1>
           <p className="mx-auto mb-6 max-w-2xl text-sm text-[#04334a]/65 md:text-base">
-            Kuaför, berber ve güzellik sektörüne özel pazaryerinde satışa başlayın.
-            Komisyon, hakediş, ürün yükleme ve başvuru adımlarını buradan bulun.
+            Firma adınızı ve telefonunuzu bırakın, sizi arayalım.
+            Ayrıntılı satıcı kaydı da duruyor.
           </p>
+          <div className="mx-auto mb-6 max-w-3xl text-left">
+            <SellerCallbackForm />
+          </div>
           <div className="relative mx-auto max-w-xl">
             <label htmlFor="satici-ara" className="sr-only">
               Satıcı merkezinde ara
@@ -357,7 +361,7 @@ export default function SellerLanding() {
               href="/satici-kayit"
               className="inline-flex h-12 min-w-[180px] items-center justify-center rounded-lg bg-[#04334a] px-6 text-sm font-800 text-white hover:bg-[#032736]"
             >
-              Satıcı Başvurusu
+              Ayrıntılı başvuru
             </Link>
             <Link
               href="/satici-giris"
@@ -500,7 +504,7 @@ export default function SellerLanding() {
                 href="/satici-kayit"
                 className="inline-flex h-12 items-center justify-center rounded-lg bg-qyellow px-6 text-sm font-800 text-[#04334a] hover:brightness-95"
               >
-                Satıcı Başvurusu
+                Ayrıntılı başvuru
               </Link>
               <a
                 href={WHATSAPP_URL}

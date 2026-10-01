@@ -13,6 +13,7 @@ use App\Models\VendorSocialLink;
 use App\Models\ProductReview;
 use App\Models\Product;
 use App\Helpers\MailHelper;
+use App\Models\SellerCallback;
 use App\Models\SellerMailLog;
 use App\Mail\SendSingleSellerMail;
 use App\Mail\ApprovedSellerAccount;
@@ -97,6 +98,13 @@ class SellerController extends Controller
         $setting = Setting::first();
 
         return view('admin.seller', compact('sellers', 'defaultProfile', 'setting'));
+    }
+
+    public function callbacks()
+    {
+        $callbacks = SellerCallback::query()->orderByDesc('id')->paginate(40);
+
+        return view('admin.seller_callbacks', compact('callbacks'));
     }
 
     public function show($id){

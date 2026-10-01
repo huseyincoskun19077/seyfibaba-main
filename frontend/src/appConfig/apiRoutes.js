@@ -294,6 +294,7 @@ const apiRoutes = {
 
   iyzicoInstallments: combinedUrl("iyzico-installments"),
   publicSellerRegister: combinedUrl("public/seller-register"),
+  publicSellerCallback: combinedUrl("public/seller-callback"),
   publicSellerRegisterStates: combinedUrl("public/seller-register/states"),
 };
 

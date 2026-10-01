@@ -238,6 +238,9 @@ Route::group([], function () {
             ->name('public.seller-register');
         Route::get('seller-register/states', [PublicSellerRegistrationController::class, 'turkiyeStates'])
             ->name('public.seller-register.states');
+        Route::post('seller-callback', [PublicSellerRegistrationController::class, 'callback'])
+            ->middleware('throttle:public-form')
+            ->name('public.seller-callback');
     });
 
     Route::get('subscriber-verification/{token}', [HomeController::class, 'subscriberVerifcation'])->name('subscriber-verification');

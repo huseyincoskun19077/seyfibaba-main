@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\CountryState;
+use App\Models\SellerCallback;
 use App\Services\CallCenter\QuickSellerRegistrationService;
 use App\Services\LegalConsentService;
 use Illuminate\Http\JsonResponse;
@@ -120,6 +121,34 @@ class PublicSellerRegistrationController extends Controller
             ->get(['id', 'name']);
 
         return response()->json(['states' => $states]);
+    }
+
+    public function callback(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'shop_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+        ], [
+            'shop_name.required' => 'Firma adı gerekli.',
+            'phone.required' => 'Telefon numarası gerekli.',
+        ]);
+
+        $digits = preg_replace('/\D+/', '', $validated['phone']) ?? '';
+        if (strlen($digits) < 10) {
+            return response()->json([
+                'message' => 'Geçerli bir telefon numarası girin.',
+                'errors' => ['phone' => ['Geçerli bir telefon numarası girin.']],
+            ], 422);
+        }
+
+        SellerCallback::query()->create([
+            'shop_name' => trim($validated['shop_name']),
+            'phone' => $validated['phone'],
+        ]);
+
+        return response()->json([
+            'message' => 'Bilgileriniz alındı. Sizi arayacağız.',
+        ], 201);
     }
 
     protected function buildSuccessMessage(object $result, bool $hasRealEmail): string

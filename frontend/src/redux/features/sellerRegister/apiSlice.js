@@ -16,10 +16,18 @@ export const sellerRegisterApi = apiSlice.injectEndpoints({
         method: "GET",
       }),
     }),
+    publicSellerCallback: builder.mutation({
+      query: (body) => ({
+        url: apiRoutes.publicSellerCallback,
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
 export const {
   usePublicSellerRegisterMutation,
   useGetPublicSellerRegisterStatesQuery,
+  usePublicSellerCallbackMutation,
 } = sellerRegisterApi;
