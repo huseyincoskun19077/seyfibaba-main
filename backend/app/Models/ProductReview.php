@@ -14,7 +14,7 @@ class ProductReview extends Model
     }
 
     public function product(){
-        return $this->belongsTo(Product::class)->select('id','name', 'short_name', 'slug', 'thumb_image','qty','sold_qty', 'price', 'offer_price');
+        return $this->belongsTo(Product::class)->withTrashed()->select('id','vendor_id','name', 'short_name', 'slug', 'thumb_image','qty','sold_qty', 'price', 'offer_price');
     }
 
 

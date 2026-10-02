@@ -74,6 +74,8 @@
                                     <th width="8%">{{__('admin.Price')}}</th>
                                     <th width="12%">Kategori</th>
                                     <th width="12%">Alt Kategori</th>
+                                    <th width="10%">Eklenme</th>
+                                    <th width="10%">Son güncelleme</th>
                                     <th width="10%">{{__('admin.Status')}}</th>
                                     <th width="15%">{{__('admin.Action')}}</th>
                                 </tr>
@@ -112,6 +114,8 @@
                                                 <span class="badge badge-danger">Atanmamış</span>
                                             @endif
                                         </td>
+                                        <td>{{ optional($product->created_at)->format('d.m.Y H:i') ?: '—' }}</td>
+                                        <td>{{ optional($product->updated_at)->format('d.m.Y H:i') ?: '—' }}</td>
                                         <td>
                                             @if($product->trashed())
                                                 <span class="badge badge-secondary">Satıcı sildi</span>

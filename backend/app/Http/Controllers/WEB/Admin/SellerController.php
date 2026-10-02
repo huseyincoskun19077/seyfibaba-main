@@ -381,13 +381,25 @@ class SellerController extends Controller
 
 
     public function sellerReview($id){
-
         $seller = Vendor::where('id', $id)->first();
+        if (! $seller) {
+            $notification = ['messege' => 'Satıcı bulunamadı.', 'alert-type' => 'error'];
+
+            return redirect()->route('admin.seller-list')->with($notification);
+        }
+
         $user = $seller->user;
-        $reviews = ProductReview::with('user','product')->orderBy('id','desc')->where('product_vendor_id',$seller->id)->get();
+        $reviews = ProductReview::with('user', 'product')
+            ->where(function ($query) use ($seller) {
+                $query->where('product_vendor_id', $seller->id)
+                    ->orWhereHas('product', function ($product) use ($seller) {
+                        $product->where('vendor_id', $seller->id);
+                    });
+            })
+            ->orderBy('id', 'desc')
+            ->get();
 
-
-        return view('admin.seller_product_review', compact('reviews','user','seller'));
+        return view('admin.seller_product_review', compact('reviews', 'user', 'seller'));
     }
 
     public function sendEmailToSeller($id){
@@ -400,7 +412,21 @@ class SellerController extends Controller
 
     public function showSellerReviewDetails($id){
         $review = ProductReview::with('user','product')->find($id);
+        if (! $review) {
+            $notification = ['messege' => 'Yorum bulunamadı.', 'alert-type' => 'error'];
+
+            return redirect()->route('admin.seller-list')->with($notification);
+        }
+
         $seller = Vendor::where('id', $review->product_vendor_id)->first();
+        if (! $seller && $review->product) {
+            $seller = Vendor::where('id', $review->product->vendor_id)->first();
+        }
+        if (! $seller) {
+            $notification = ['messege' => 'Satıcı bulunamadı.', 'alert-type' => 'error'];
+
+            return redirect()->route('admin.seller-list')->with($notification);
+        }
 
 
         return view('admin.show_seller_product_review', compact('review','seller'));

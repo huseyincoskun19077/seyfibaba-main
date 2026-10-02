@@ -16,7 +16,7 @@
           </div>
 
           <div class="section-body">
-            <a href="{{ route('admin.seller-show', $seller->id) }}" class="btn btn-primary"><i class="fas fa-user"></i> {{ $seller->user->name }}</a>
+            <a href="{{ route('admin.seller-show', $seller->id) }}" class="btn btn-primary"><i class="fas fa-user"></i> {{ $seller->user->name ?? $seller->shop_name }}</a>
             <div class="row mt-4">
                 <div class="col">
                   <div class="card">
@@ -25,15 +25,21 @@
                         <table class="table table-striped table-bordered">
                            <tr>
                                <td>{{__('admin.User Name')}}</td>
-                               <td>{{ $review->user->name }}</td>
+                               <td>{{ $review->user->name ?? '—' }}</td>
                            </tr>
                            <tr>
                                <td>{{__('admin.User Email')}}</td>
-                               <td>{{ $review->user->email }}</td>
+                               <td>{{ $review->user->email ?? '—' }}</td>
                            </tr>
                            <tr>
                                <td>{{__('admin.Product')}}</td>
-                               <td><a href="{{ route('admin.product.edit',$review->product->id) }}">{{ $review->product->name }}</a></td>
+                               <td>
+                                   @if($review->product)
+                                       <a href="{{ route('admin.product.edit',$review->product->id) }}">{{ $review->product->short_name ?: $review->product->name }}</a>
+                                   @else
+                                       Ürün silinmiş
+                                   @endif
+                               </td>
                            </tr>
                            <tr>
                                <td>{{__('admin.Rating')}}</td>
