@@ -45,7 +45,7 @@
                                         CSV şablonu veya Softtr Excel (xlsx) yüklenebilir.
                                         Kategori yolu <code>Ana &gt; Alt &gt; Child</code> ise child bulunursa oraya,
                                         yoksa sub, yoksa ana kategoriye yazılır.
-                                        Görseller için tam URL gerekir (sadece dosya adı indirmez).
+                                        Görseller URL'den sunucuya indirilir; inemezse harici link saklanır.
                                     </small>
                                 </div>
 

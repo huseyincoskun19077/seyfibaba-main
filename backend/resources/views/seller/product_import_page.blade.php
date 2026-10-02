@@ -99,7 +99,7 @@
               <li>Örnek şablonu indirebilir veya kendi Excel listenizi doğrudan yükleyebilirsiniz</li>
               <li><strong>Kategori</strong> boş bırakılabilir — ürün adına göre AI doğru kategoriye yerleştirir</li>
               <li><strong>Marka</strong> sistemde yoksa otomatik oluşturulur ve «Markalarım» bölümünde görünür</li>
-              <li><strong>Resim Url / image_url:</strong> Trendyol CDN (dsmcdn.com) gibi linkler <strong>indirilmeden</strong> doğrudan kullanılır — hızlı yükleme, ürün yayına alınır</li>
+              <li><strong>Resim Url / image_url:</strong> Zenix, Trendyol vb. linkler önce <strong>sunucuya indirilir</strong>. İndirme olmazsa harici URL saklanır; ürün yine yayına alınır</li>
               <li>Görsel linki yok veya indirilemez → ürün <strong>taslak</strong> kalır (pasif)</li>
               <li>Desteklenen formatlar: <strong>.xlsx, .xls, .csv</strong></li>
             </ul>

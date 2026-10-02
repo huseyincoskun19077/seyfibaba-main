@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Vendor;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\UsesInMemorySqlite;
@@ -88,10 +89,13 @@ class SellerBulkImportApiTest extends TestCase
             $table->decimal('price', 10, 2)->default(0);
             $table->decimal('offer_price', 10, 2)->nullable();
             $table->integer('qty')->default(0);
+            $table->integer('initial_qty')->default(0);
             $table->text('short_description')->nullable();
             $table->longText('long_description')->nullable();
             $table->string('sku')->nullable();
+            $table->string('barcode')->nullable();
             $table->string('weight')->nullable();
+            $table->text('delivery_info')->nullable();
             $table->text('tags')->nullable();
             $table->integer('status')->default(1);
             $table->integer('is_undefine')->default(1);
@@ -100,6 +104,7 @@ class SellerBulkImportApiTest extends TestCase
             $table->text('seo_description')->nullable();
             $table->integer('approve_by_admin')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('settings', function (Blueprint $table) {
@@ -268,6 +273,10 @@ class SellerBulkImportApiTest extends TestCase
 
         $cdnUrl = 'https://cdn.dsmcdn.com/ty1037/product/media/images/prod/SPM/PIM/20231102/00/937482ee-b476-310b-b294-ac65be29359d/1_org_zoom.jpg';
 
+        Http::fake([
+            $cdnUrl => Http::response('fail', 404),
+        ]);
+
         $csv = implode("\n", [
             'Ürün Adı,Birim Fiyat,Stok,Marka,Resim Url',
             '"Profesyonel Berber Makasi",250.00,5,"Exodor","' . $cdnUrl . '"',
@@ -287,5 +296,46 @@ class SellerBulkImportApiTest extends TestCase
             'thumb_image' => $cdnUrl,
             'status' => 1,
         ]);
+    }
+
+    public function test_seller_bulk_import_downloads_image_url_to_local_storage(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Seller User',
+            'email' => 'seller4@example.com',
+        ]);
+
+        $vendor = Vendor::query()->create([
+            'user_id' => $user->id,
+            'status' => 1,
+            'shop_name' => 'Seller Shop 4',
+            'kyc_status' => 'approved',
+        ]);
+
+        Category::query()->create(['name' => 'Kuaför Ekipmanları']);
+
+        $srcUrl = 'https://zenixcosmetic.com/image/cache/catalog/products/sample-800x800.jpg';
+        Http::fake([
+            '*' => Http::response('fake-jpeg-bytes', 200, ['Content-Type' => 'image/jpeg']),
+        ]);
+
+        $csv = implode("\n", [
+            'Ürün Adı,Birim Fiyat,Stok,Marka,Barkod,Kategori,Resim Url',
+            '"Zenix Wax Test",350.00,5,"Zenix","8680075542500","Kuaför Ekipmanları","' . $srcUrl . '"',
+        ]) . "\n";
+
+        $response = $this->actingAs($user, 'api')->post('/api/seller/products/bulk-import', [
+            'import_file' => UploadedFile::fake()->createWithContent('zenix-products.csv', $csv),
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('import.status', 'completed')
+            ->assertJsonPath('import.success_count', 1);
+
+        $product = \App\Models\Product::query()->where('vendor_id', $vendor->id)->first();
+        $this->assertNotNull($product);
+        $this->assertStringStartsWith('uploads/custom-images/', (string) $product->thumb_image);
+        $this->assertFileExists(public_path($product->thumb_image));
+        $this->assertSame(1, (int) $product->status);
     }
 }

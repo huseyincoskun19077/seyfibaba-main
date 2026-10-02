@@ -9,9 +9,12 @@ use App\Jobs\ProcessBulkImportJob;
 use App\Support\ProductImageUrl;
 use App\Support\ProductSlug;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
+use Throwable;
 
 class BulkProductImportService
 {
@@ -221,20 +224,16 @@ class BulkProductImportService
             $thumbImage = null;
             $imageUrl = trim((string) ($normalizedRow['image_url'] ?? ''));
 
-            if (ProductImageUrl::hasImage($product->thumb_image ?? null)) {
+            if (ProductImageUrl::hasImage($product->thumb_image ?? null)
+                && ! ProductImageUrl::isExternal($product->thumb_image ?? null)) {
                 $thumbImage = $product->thumb_image;
             } elseif ($imageUrl !== '') {
-                $externalUrl = ProductImageUrl::normalizeForStorage($imageUrl);
-                if ($externalUrl) {
-                    $thumbImage = $externalUrl;
-                } else {
-                    $thumbImage = $this->imageStorage->storeFromUrl($imageUrl, $shortName ?: 'product', 15);
-                    if (! $thumbImage) {
-                        $errorLog[] = [
-                            'row' => $rowNumber,
-                            'message' => 'Görsel indirilemedi — ürün taslak olarak kaydedildi. URL: ' . $imageUrl,
-                        ];
-                    }
+                $thumbImage = $this->storeImportedImage($imageUrl, $shortName ?: 'product');
+                if (! $thumbImage) {
+                    $errorLog[] = [
+                        'row' => $rowNumber,
+                        'message' => 'Görsel indirilemedi — ürün taslak olarak kaydedildi. URL: ' . $imageUrl,
+                    ];
                 }
             }
 
@@ -255,6 +254,9 @@ class BulkProductImportService
             $product->short_description = $normalizedRow['short_description'] ?: $productName;
             $product->long_description = $normalizedRow['long_description'] ?: '<p>' . e($productName) . '</p>';
             $product->sku = $normalizedRow['sku'] ?: '';
+            if (Schema::hasColumn($product->getTable(), 'barcode')) {
+                $product->barcode = $this->barcodeFromSku((string) $product->sku, (string) ($product->barcode ?? ''));
+            }
             $product->weight = ($normalizedRow['weight'] !== '' && $normalizedRow['weight'] !== null)
                 ? $normalizedRow['weight']
                 : 0;
@@ -279,6 +281,7 @@ class BulkProductImportService
             }
 
             $product->save();
+            $this->upsertBarcodeCatalog($product);
             $successCount++;
 
             if ($canPublish) {
@@ -456,6 +459,51 @@ class BulkProductImportService
         }
 
         return $data;
+    }
+
+    private function storeImportedImage(string $imageUrl, string $filenamePrefix): ?string
+    {
+        $url = ProductImageUrl::normalizeForStorage($imageUrl) ?: $imageUrl;
+        $extraHeaders = [];
+        $host = strtolower((string) (parse_url($url, PHP_URL_HOST) ?: ''));
+        if (str_contains($host, 'zenixcosmetic.com')) {
+            $extraHeaders['Referer'] = 'https://zenixcosmetic.com/';
+        }
+
+        $stored = $this->imageStorage->storeFromUrl($url, $filenamePrefix, 25, $extraHeaders);
+        if ($stored) {
+            return $stored;
+        }
+
+        return ProductImageUrl::normalizeForStorage($imageUrl);
+    }
+
+    private function barcodeFromSku(string $sku, string $existing = ''): string
+    {
+        $existing = preg_replace('/\s+/', '', $existing) ?? '';
+        if ($existing !== '') {
+            return $existing;
+        }
+
+        $sku = preg_replace('/\s+/', '', $sku) ?? '';
+        if (preg_match('/^[0-9]{8,14}$/', $sku)) {
+            return $sku;
+        }
+
+        return '';
+    }
+
+    private function upsertBarcodeCatalog(Product $product): void
+    {
+        try {
+            app(BarcodeCatalogService::class)->upsertFromProduct($product);
+        } catch (Throwable $e) {
+            Log::warning('Bulk import barcode catalog upsert failed', [
+                'product_id' => $product->id,
+                'sku' => $product->sku,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function validateRow(array $row, bool $isSellerImport): ?string
