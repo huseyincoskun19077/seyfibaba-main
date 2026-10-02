@@ -171,18 +171,7 @@ class IyzicoController extends Controller
             }
 
             $basketItems = $this->normalizeBasketItemsForIyzico($basketItems, $iyzicoConfig, (int) $order->id);
-
-            // Kargo ücretini basket items'a ekle — Iyzico, basket toplamı = price olmasını zorunlu kılar
-            if ((float)$shippingFee > 0) {
-                $basketItems[] = [
-                    'id' => 'SHIPPING-' . $order->id,
-                    'name' => 'Kargo Ücreti',
-                    'category_1' => 'Kargo',
-                    'category_2' => 'Kargo',
-                    'item_type' => 'VIRTUAL',
-                    'price' => number_format((float)$shippingFee, 2, '.', ''),
-                ];
-            }
+            $basketItems = $this->appendShippingBasketItems($basketItems, $order, $iyzicoConfig);
 
             $basketItems = $this->alignBasketToPaidAmount($basketItems, $amount);
 
@@ -437,18 +426,7 @@ class IyzicoController extends Controller
             }
 
             $basketItems = $this->normalizeBasketItemsForIyzico($basketItems, $iyzicoConfig, (int) $order->id);
-
-            // Kargo ücretini basket items'a ekle
-            if ((float)$shippingFee > 0) {
-                $basketItems[] = [
-                    'id' => 'SHIPPING-' . $order->id,
-                    'name' => 'Kargo Ücreti',
-                    'category_1' => 'Kargo',
-                    'category_2' => 'Kargo',
-                    'item_type' => 'VIRTUAL',
-                    'price' => number_format((float)$shippingFee, 2, '.', ''),
-                ];
-            }
+            $basketItems = $this->appendShippingBasketItems($basketItems, $order, $iyzicoConfig);
 
             $basketItems = $this->alignBasketToPaidAmount($basketItems, $amount);
             $basketTotal = collect($basketItems)->sum(fn ($item) => (float) ($item['price'] ?? 0));
@@ -903,6 +881,69 @@ class IyzicoController extends Controller
         }
 
         return $basketItems;
+    }
+
+    /**
+     * Kargo komisyonsuz, satıcının kendi alt üye satırıdır.
+     * Ürün satırlarından sonra eklenir; eksik satıcı anahtarı ürün paylaşımını silmesin.
+     */
+    private function appendShippingBasketItems(array $basketItems, Order $order, IyzicoPayment $config): array
+    {
+        $order->refresh();
+        $rows = $order->sellerShippingRows();
+        $subMerchantEnabled = collect($basketItems)->contains(
+            fn ($item) => ! empty($item['sub_merchant_key'])
+        );
+        $storeSubMerchantKeys = json_decode($config->store_sub_merchant_keys ?? '{}', true) ?: [];
+
+        if ($rows === []) {
+            $fee = round((float) ($order->shipping_cost ?? 0), 2);
+            if ($fee <= 0) {
+                return $basketItems;
+            }
+            $basketItems[] = $this->shippingBasketLine('SHIPPING-'.$order->id, $fee, null, null);
+
+            return $basketItems;
+        }
+
+        foreach ($rows as $row) {
+            $vendorId = (int) $row['vendor_id'];
+            $fee = round((float) $row['shipping_fee'], 2);
+            $subKey = null;
+            $subPrice = null;
+            if ($subMerchantEnabled) {
+                $subKey = $this->resolveSubMerchantKey($vendorId, $storeSubMerchantKeys, $config);
+                if ($subKey) {
+                    $subPrice = number_format($fee, 2, '.', '');
+                }
+            }
+            $basketItems[] = $this->shippingBasketLine(
+                $order->shippingBasketItemId($vendorId),
+                $fee,
+                $subKey,
+                $subPrice
+            );
+        }
+
+        return $basketItems;
+    }
+
+    private function shippingBasketLine(string $id, float $fee, ?string $subKey, ?string $subPrice): array
+    {
+        $item = [
+            'id' => $id,
+            'name' => 'Kargo Ücreti',
+            'category_1' => 'Kargo',
+            'category_2' => 'Kargo',
+            'item_type' => 'VIRTUAL',
+            'price' => number_format($fee, 2, '.', ''),
+        ];
+        if ($subKey && $subPrice !== null) {
+            $item['sub_merchant_key'] = $subKey;
+            $item['sub_merchant_price'] = $subPrice;
+        }
+
+        return $item;
     }
 
     /**

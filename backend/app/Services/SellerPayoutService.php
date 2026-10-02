@@ -303,7 +303,7 @@ class SellerPayoutService
             }
         }
 
-        return $results;
+        return array_merge($results, $this->approveShippingItems($order, $dryRun));
     }
 
     protected function refundedQtyForOrderProduct(OrderProduct $orderProduct): int
@@ -363,6 +363,128 @@ class SellerPayoutService
                 $orderProduct->save();
             }
         }
+
+        $this->syncShippingTransactionIds($order, $paymentData['items']);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    protected function syncShippingTransactionIds(Order $order, array $items): void
+    {
+        $rows = $order->sellerShippingRows();
+        if ($rows === []) {
+            return;
+        }
+
+        $byItemId = collect($items)->keyBy(fn ($item) => (string) ($item['item_id'] ?? ''));
+        $changed = false;
+        foreach ($rows as $index => $row) {
+            $itemId = $order->shippingBasketItemId((int) $row['vendor_id']);
+            $match = $byItemId->get($itemId);
+            if (! $match || empty($match['payment_transaction_id'])) {
+                continue;
+            }
+            if (($row['payment_transaction_id'] ?? '') === (string) $match['payment_transaction_id']) {
+                continue;
+            }
+            $rows[$index]['payment_transaction_id'] = (string) $match['payment_transaction_id'];
+            $changed = true;
+        }
+
+        if ($changed) {
+            $order->seller_shipping_breakdown = json_encode(array_values($rows));
+            $order->save();
+        }
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function approveShippingItems(Order $order, bool $dryRun): array
+    {
+        $order->refresh();
+        $rows = $order->sellerShippingRows();
+        if ($rows === []) {
+            return [];
+        }
+        $results = [];
+
+        foreach ($rows as $index => $row) {
+            $vendorId = (int) $row['vendor_id'];
+            $transactionId = (string) ($row['payment_transaction_id'] ?? '');
+            if (! empty($row['approved_at'])) {
+                $results[] = [
+                    'seller_id' => $vendorId,
+                    'status' => 'success',
+                    'message' => 'Kargo zaten onaylanmış',
+                    'skipped' => true,
+                ];
+                continue;
+            }
+            if ($transactionId === '') {
+                $results[] = [
+                    'seller_id' => $vendorId,
+                    'status' => 'error',
+                    'message' => 'Kargo paymentTransactionId bulunamadı',
+                ];
+                continue;
+            }
+
+            try {
+                if ($dryRun) {
+                    $rows[$index]['approved_at'] = now()->toDateTimeString();
+                    $results[] = [
+                        'seller_id' => $vendorId,
+                        'payment_transaction_id' => $transactionId,
+                        'status' => 'success',
+                        'message' => 'Dry-run: kargo onayı simüle edildi',
+                        'dry_run' => true,
+                    ];
+                    continue;
+                }
+
+                $approval = $this->iyzicoService->approvePaymentItem(
+                    $transactionId,
+                    'order-'.$order->id.'-ship-'.$vendorId
+                );
+
+                if ($approval->getStatus() === 'success' || $this->isAlreadyApprovedIyzicoError($approval->getErrorCode(), $approval->getErrorMessage())) {
+                    $rows[$index]['approved_at'] = now()->toDateTimeString();
+                    $results[] = [
+                        'seller_id' => $vendorId,
+                        'payment_transaction_id' => $transactionId,
+                        'status' => 'success',
+                        'message' => 'Kargo Iyzico onayı başarılı',
+                    ];
+                } else {
+                    $results[] = [
+                        'seller_id' => $vendorId,
+                        'payment_transaction_id' => $transactionId,
+                        'status' => 'error',
+                        'message' => (string) ($approval->getErrorMessage() ?: 'Kargo Iyzico onayı başarısız'),
+                        'error_code' => $approval->getErrorCode(),
+                    ];
+                }
+            } catch (\Throwable $e) {
+                Log::error('Iyzico shipping approve exception', [
+                    'order_id' => $order->id,
+                    'seller_id' => $vendorId,
+                    'error' => $e->getMessage(),
+                ]);
+                $results[] = [
+                    'seller_id' => $vendorId,
+                    'payment_transaction_id' => $transactionId,
+                    'status' => 'error',
+                    'message' => $e->getMessage(),
+                ];
+            }
+        }
+
+        $order->seller_shipping_breakdown = json_encode(array_values($rows));
+        $order->save();
+
+        return $results;
     }
 
     public const PAYOUT_BLOCK_FULL_RETURN = 'Ürünler iade edildi — hakediş yok';

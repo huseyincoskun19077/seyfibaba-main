@@ -55,6 +55,24 @@ class SellerPayoutServiceTest extends TestCase
         $this->assertSame('TXN-42', $order->fresh('orderProducts')->orderProducts->first()->iyzico_payment_transaction_id);
     }
 
+    public function test_dry_run_approves_seller_shipping_line(): void
+    {
+        $order = $this->makeCompletedIyzicoOrder(withProduct: true);
+        $order->payout_eligible_at = now()->subMinute();
+        $order->seller_shipping_breakdown = json_encode([[
+            'vendor_id' => 5,
+            'shipping_fee' => 100,
+            'payment_transaction_id' => 'TXN-SHIP',
+        ]]);
+        $order->save();
+
+        $result = app(SellerPayoutService::class)->processOrderPayout($order, false);
+
+        $this->assertTrue($result['success']);
+        $rows = $order->fresh()->sellerShippingRows();
+        $this->assertNotEmpty($rows[0]['approved_at'] ?? null);
+    }
+
     public function test_iyzico_payout_succeeds_in_dry_run_mode(): void
     {
         $order = $this->makeCompletedIyzicoOrder(withProduct: true);
@@ -228,6 +246,8 @@ class SellerPayoutServiceTest extends TestCase
             $table->timestamp('seller_paid_at')->nullable();
             $table->string('payout_status')->nullable();
             $table->text('iyzico_payment_data')->nullable();
+            $table->text('seller_shipping_breakdown')->nullable();
+            $table->decimal('shipping_cost', 12, 2)->default(0);
             $table->timestamps();
         });
 

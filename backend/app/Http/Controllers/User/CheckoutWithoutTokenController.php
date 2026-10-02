@@ -574,6 +574,8 @@ class CheckoutWithoutTokenController extends Controller
             $orderProduct->qty = $cartProduct['qty'];
             $orderProduct->save();
 
+            app(\App\Services\CommissionService::class)->recordCommission($orderProduct, $order);
+
             // Stok sipariş anında rezerve edilir (havale dahil). Draft hariç.
             if ($is_draft !== 'yes') {
                 $decrementBy = (int) ($orderProduct->qty ?? 1);
@@ -658,6 +660,8 @@ class CheckoutWithoutTokenController extends Controller
         foreach ($cartProducts as $cartProduct) {
             ShoppingCartVariant::where('shopping_cart_id', $cartProduct['product_id'])->delete();
         }
+        app(\App\Services\CommissionService::class)->rememberSellerShipping($order, $cartProducts, (float) $shipping_fee);
+
         $arr = [];
         $arr['order'] = $order;
         $arr['order_details'] = $order_details;

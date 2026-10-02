@@ -69,7 +69,10 @@ class Order extends Model
             static fn ($line) => (float) $line->unit_price * (int) $line->qty
         ), 2);
         $coupon = round((float) ($this->coupon_coast ?? 0), 2);
-        $shipping = round((float) ($this->shipping_cost ?? 0), 2);
+        $sellerShipping = $this->shippingFeeForSeller((int) $orderProduct->seller_id);
+        $shipping = $this->sellerShippingRows() !== []
+            ? $sellerShipping
+            : round((float) ($this->shipping_cost ?? 0), 2);
         $discountType = (string) ($this->discount_type ?? '');
         $discountAmount = round((float) ($this->discount_amount ?? 0), 2);
         $paymentMethod = strtolower(trim((string) ($this->payment_method ?? '')));
@@ -180,9 +183,60 @@ class Order extends Model
         ];
     }
 
+    /**
+     * @return list<array{vendor_id: int, shipping_fee: float, payment_transaction_id?: string, approved_at?: string|null}>
+     */
+    public function sellerShippingRows(): array
+    {
+        $raw = $this->seller_shipping_breakdown ?? null;
+        if (is_string($raw)) {
+            $raw = json_decode($raw, true);
+        }
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($raw as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $vendorId = (int) ($row['vendor_id'] ?? 0);
+            $fee = round((float) ($row['shipping_fee'] ?? 0), 2);
+            if ($vendorId <= 0 || $fee <= 0) {
+                continue;
+            }
+            $rows[] = $row + [
+                'vendor_id' => $vendorId,
+                'shipping_fee' => $fee,
+            ];
+        }
+
+        return $rows;
+    }
+
+    public function shippingFeeForSeller(int $sellerId): float
+    {
+        foreach ($this->sellerShippingRows() as $row) {
+            if ((int) $row['vendor_id'] === $sellerId) {
+                return round((float) $row['shipping_fee'], 2);
+            }
+        }
+
+        return 0.0;
+    }
+
+    public function shippingBasketItemId(int $sellerId): string
+    {
+        return 'SHIPPING-'.$this->id.'-'.$sellerId;
+    }
+
     private function isCompletingOrderReturn(OrderProduct $orderProduct, int $qty, ?int $excludeReturnId = null): bool
     {
         $this->loadMissing('orderProducts');
+
+        $sellerId = (int) $orderProduct->seller_id;
+        $scopeToSeller = $this->sellerShippingRows() !== [];
 
         $taken = ReturnRequest::query()
             ->where('order_id', $this->id)
@@ -200,6 +254,9 @@ class Order extends Model
 
         $remaining = 0;
         foreach ($this->orderProducts as $line) {
+            if ($scopeToSeller && (int) $line->seller_id !== $sellerId) {
+                continue;
+            }
             $left = (int) $line->qty - (int) ($taken[$line->id] ?? 0);
             if ((int) $line->id === (int) $orderProduct->id) {
                 $left -= $qty;

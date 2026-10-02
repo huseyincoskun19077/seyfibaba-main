@@ -662,6 +662,8 @@ class PaymentController extends Controller
         $orderAddress->save();
         // Sepet temizleme: frontend başarılı siparişten sonra Redux sepetini temizliyor.
         // Buradaki eski silme kodu (shopping_cart_id yerine product_id) hatalı eşleşmeye yol açıyordu.
+        $this->commissionService->rememberSellerShipping($order, $cartProducts, (float) $shipping_fee);
+
         $arr = [];
         $arr['order'] = $order;
         $arr['order_details'] = $order_details;

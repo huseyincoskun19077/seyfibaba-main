@@ -35,68 +35,142 @@ class ReturnIyzicoRefundService
             ];
         }
 
-        $paymentTransactionId = $this->resolvePaymentTransactionId($order, $return);
-
-        if (! $paymentTransactionId) {
-            $msg = 'Iyzico ödeme işlem ID\'si bulunamadı. Iyzico panelinden manuel iade gerekebilir.';
-            $return->refund_error = $msg;
-            $return->save();
-
-            Log::warning('Iyzico refund: paymentTransactionId not found', [
-                'order_id' => $order->id,
-                'return_request_id' => $return->id,
-                'has_payment_data' => ! empty($order->iyzico_payment_data),
-            ]);
-
-            return [
-                'success' => false,
-                'error' => $msg,
+        [$productAmount, $shippingAmount] = $this->splitRefundAmounts($order, $return, $refundAmount);
+        $parts = [];
+        if ($productAmount > 0.009) {
+            $parts[] = [
+                'kind' => 'product',
+                'amount' => $productAmount,
+                'transaction_id' => $this->resolvePaymentTransactionId($order, $return),
+            ];
+        }
+        if ($shippingAmount > 0.009) {
+            $parts[] = [
+                'kind' => 'shipping',
+                'amount' => $shippingAmount,
+                'transaction_id' => $this->resolveShippingTransactionId($order, (int) $return->seller_id),
             ];
         }
 
-        try {
-            $conversationId = 'refund_'.$return->id.'_'.time();
-            $result = $this->iyzicoService->refund($paymentTransactionId, $refundAmount, $conversationId);
+        foreach ($parts as $part) {
+            if (empty($part['transaction_id'])) {
+                $msg = $part['kind'] === 'shipping'
+                    ? 'Kargo iadesi için Iyzico işlem ID\'si bulunamadı.'
+                    : 'Iyzico ödeme işlem ID\'si bulunamadı. Iyzico panelinden manuel iade gerekebilir.';
+                $return->refund_error = $msg;
+                $return->save();
 
-            Log::info('Iyzico refund result', [
-                'return_request_id' => $return->id,
-                'order_id' => $order->id,
-                'amount' => $refundAmount,
-                'payment_transaction_id' => $paymentTransactionId,
-                'status' => $result->getStatus(),
-                'error_code' => $result->getErrorCode(),
-                'error_message' => $result->getErrorMessage(),
-            ]);
-
-            if ($result->getStatus() === 'success') {
                 return [
-                    'success' => true,
-                    'transaction_id' => $result->getPaymentId() ?: $paymentTransactionId,
+                    'success' => false,
+                    'error' => $msg,
                 ];
             }
-
-            $errorMsg = $result->getErrorMessage() ?: 'Iyzico iadesi başarısız.';
-            $return->refund_error = $errorMsg;
-            $return->save();
-
-            return [
-                'success' => false,
-                'error' => $errorMsg,
-            ];
-        } catch (\Throwable $e) {
-            Log::error('Iyzico refund exception', [
-                'return_request_id' => $return->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            $return->refund_error = $e->getMessage();
-            $return->save();
-
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-            ];
         }
+
+        $transactionIds = [];
+        foreach ($parts as $part) {
+            try {
+                $conversationId = 'refund_'.$return->id.'_'.$part['kind'].'_'.time();
+                $result = $this->iyzicoService->refund($part['transaction_id'], $part['amount'], $conversationId);
+
+                Log::info('Iyzico refund result', [
+                    'return_request_id' => $return->id,
+                    'order_id' => $order->id,
+                    'kind' => $part['kind'],
+                    'amount' => $part['amount'],
+                    'payment_transaction_id' => $part['transaction_id'],
+                    'status' => $result->getStatus(),
+                    'error_code' => $result->getErrorCode(),
+                    'error_message' => $result->getErrorMessage(),
+                ]);
+
+                if ($result->getStatus() !== 'success') {
+                    $errorMsg = $result->getErrorMessage() ?: 'Iyzico iadesi başarısız.';
+                    $return->refund_error = $errorMsg;
+                    $return->save();
+
+                    return [
+                        'success' => false,
+                        'error' => $errorMsg,
+                    ];
+                }
+
+                $transactionIds[] = $result->getPaymentId() ?: $part['transaction_id'];
+            } catch (\Throwable $e) {
+                Log::error('Iyzico refund exception', [
+                    'return_request_id' => $return->id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                $return->refund_error = $e->getMessage();
+                $return->save();
+
+                return [
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return [
+            'success' => true,
+            'transaction_id' => implode(',', $transactionIds),
+        ];
+    }
+
+    /**
+     * @return array{0: float, 1: float}
+     */
+    private function splitRefundAmounts(Order $order, ReturnRequest $return, float $refundAmount): array
+    {
+        $shippingAmount = 0.0;
+        $orderProduct = $return->orderProduct;
+        if ($orderProduct) {
+            $calc = $order->suggestedReturnRefund(
+                $orderProduct,
+                (int) $return->qty,
+                $return->id
+            );
+            $suggested = round((float) ($calc['refund_amount'] ?? 0), 2);
+            $shipping = round((float) ($calc['shipping'] ?? 0), 2);
+            if (! empty($calc['shipping_included']) && $shipping > 0 && $suggested > 0) {
+                $shippingAmount = round($shipping * min(1, $refundAmount / $suggested), 2);
+                $shippingAmount = min($shippingAmount, $refundAmount);
+            }
+        }
+
+        return [round($refundAmount - $shippingAmount, 2), round($shippingAmount, 2)];
+    }
+
+    private function resolveShippingTransactionId(Order $order, int $sellerId): ?string
+    {
+        foreach ($order->sellerShippingRows() as $row) {
+            if ((int) $row['vendor_id'] === $sellerId && ! empty($row['payment_transaction_id'])) {
+                return (string) $row['payment_transaction_id'];
+            }
+        }
+
+        $paymentData = $order->iyzico_payment_data
+            ? json_decode($order->iyzico_payment_data, true)
+            : null;
+        if (! is_array($paymentData) || empty($paymentData['items'])) {
+            return null;
+        }
+
+        $wanted = [
+            $order->shippingBasketItemId($sellerId),
+            'SHIPPING-'.$order->id,
+        ];
+        foreach ($paymentData['items'] as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            if (in_array((string) ($item['item_id'] ?? ''), $wanted, true) && ! empty($item['payment_transaction_id'])) {
+                return (string) $item['payment_transaction_id'];
+            }
+        }
+
+        return null;
     }
 
     /**

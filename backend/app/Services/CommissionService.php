@@ -60,6 +60,80 @@ class CommissionService
     }
 
     /**
+     * Kargo komisyona girmez. Satıcının netine, o satıcının kargo ücreti bir kez eklenir.
+     */
+    public function rememberSellerShipping(Order $order, $cartProducts, float $chargedFee): void
+    {
+        $calc = app(VendorShippingService::class)->calculateForCart($cartProducts);
+        $rows = [];
+        foreach ($calc['groups'] ?? [] as $group) {
+            $vendorId = (int) ($group['vendor_id'] ?? 0);
+            $fee = round((float) ($group['shipping_fee'] ?? 0), 2);
+            if ($vendorId <= 0 || $fee <= 0) {
+                continue;
+            }
+            $rows[] = [
+                'vendor_id' => $vendorId,
+                'shipping_fee' => $fee,
+            ];
+        }
+
+        $sum = round(array_sum(array_column($rows, 'shipping_fee')), 2);
+        $charged = round($chargedFee, 2);
+        if (abs($sum - $charged) > 0.05) {
+            $sellerIds = $order->orderProducts()
+                ->where('seller_id', '>', 0)
+                ->pluck('seller_id')
+                ->unique()
+                ->values();
+            if ($charged > 0 && $sellerIds->count() === 1) {
+                $rows = [[
+                    'vendor_id' => (int) $sellerIds[0],
+                    'shipping_fee' => $charged,
+                ]];
+            } elseif ($charged <= 0 || $sellerIds->count() !== 1) {
+                $rows = abs($sum - $charged) > 0.05 ? [] : $rows;
+            }
+        }
+
+        $order->seller_shipping_breakdown = $rows === [] ? null : json_encode($rows);
+        $order->save();
+
+        $this->attachShippingToSellerNets($order->fresh());
+    }
+
+    public function attachShippingToSellerNets(Order $order): void
+    {
+        foreach ($order->sellerShippingRows() as $row) {
+            $fee = round((float) $row['shipping_fee'], 2);
+            $sellerId = (int) $row['vendor_id'];
+            if ($fee <= 0 || $sellerId <= 0) {
+                continue;
+            }
+
+            $ledger = CommissionLedger::query()
+                ->where('order_id', $order->id)
+                ->where('seller_id', $sellerId)
+                ->where('seller_net_amount', '>', 0)
+                ->orderBy('id')
+                ->first();
+            if (! $ledger || str_contains((string) $ledger->notes, 'Kargo hakedisi')) {
+                continue;
+            }
+
+            $ledger->seller_net_amount = round((float) $ledger->seller_net_amount + $fee, 2);
+            $ledger->notes = trim((string) $ledger->notes.' Kargo hakedisi '.$fee);
+            $ledger->save();
+
+            $orderProduct = OrderProduct::query()->find($ledger->order_product_id);
+            if ($orderProduct) {
+                $orderProduct->seller_net_amount = round((float) $orderProduct->seller_net_amount + $fee, 2);
+                $orderProduct->save();
+            }
+        }
+    }
+
+    /**
      * Mark commissions as settled when an order is completed.
      */
     public function settleCommissions(Order $order): void
@@ -247,6 +321,7 @@ class CommissionService
         }
 
         $productRefund = round((float) $orderProduct->unit_price * (int) $returnRequest->qty, 2);
+        $calc = [];
         $order = $returnRequest->order ?: $orderProduct->order;
         if ($order) {
             $order->loadMissing('orderProducts');
@@ -259,12 +334,14 @@ class CommissionService
         }
 
         $commission = round($productRefund * ($rate / 100), 2);
-        $net = round($productRefund - $commission, 2);
+        $shipping = round((float) ($calc['shipping'] ?? 0), 2);
+        $net = round($productRefund - $commission + $shipping, 2);
 
         return [
             'gross' => $productRefund,
             'commission_rate' => $rate,
             'commission' => $commission,
+            'shipping' => $shipping,
             'seller_net' => $net,
         ];
     }
