@@ -27,4 +27,30 @@ class PhoneNormalizer
     {
         return preg_replace('/\D+/', '', self::toE164($phone)) ?? '';
     }
+
+    /**
+     * wa.me için ülke kodlu rakamlar (ör. 905xxxxxxxxx). Geçersizse boş.
+     */
+    public static function toWhatsAppId(?string $phone): string
+    {
+        if ($phone === null || trim($phone) === '') {
+            return '';
+        }
+
+        $digits = self::digitsOnly($phone);
+
+        if (strlen($digits) === 10 && str_starts_with($digits, '5')) {
+            $digits = '90'.$digits;
+        }
+
+        if (strlen($digits) === 11 && str_starts_with($digits, '05')) {
+            $digits = '9'.$digits;
+        }
+
+        if (strlen($digits) < 11) {
+            return '';
+        }
+
+        return $digits;
+    }
 }

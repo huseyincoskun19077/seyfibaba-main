@@ -8,6 +8,7 @@ use App\Models\Vendor;
 use App\Services\CallCenter\CallCenterCommissionService;
 use App\Services\CallCenter\QuickSellerOnboardingStatus;
 use App\Services\CallCenter\QuickSellerRegistrationService;
+use App\Support\PhoneNormalizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -53,13 +54,33 @@ class CallCenterRegistrationController extends Controller
             });
         }
 
+        if ($request->input('follow_up') === 'whatsapp') {
+            $query->where(function ($builder) {
+                $builder->whereDoesntHave('products')
+                    ->orWhereHas('user', function ($userQuery) {
+                        $userQuery->where('must_change_password', 1);
+                    });
+            });
+        }
+
         $registrations = $query->with('callCenterCommission')->paginate(25)->withQueryString();
 
         $this->syncAllCommissions();
         $registrations->load('callCenterCommission');
 
         $registrations->getCollection()->transform(function (Vendor $vendor) {
-            $vendor->setAttribute('onboarding', QuickSellerOnboardingStatus::for($vendor));
+            $onboarding = QuickSellerOnboardingStatus::for($vendor);
+            $vendor->setAttribute('onboarding', $onboarding);
+
+            $phone = (string) ($vendor->user?->phone ?: $vendor->phone ?: '');
+            $vendor->setAttribute('whatsapp_id', PhoneNormalizer::toWhatsAppId($phone));
+
+            $loggedIn = (bool) ($onboarding['logged_in'] ?? false);
+            $passwordChanged = (bool) ($onboarding['password_changed'] ?? false);
+            $vendor->setAttribute(
+                'needs_whatsapp_followup',
+                (int) $vendor->products_count === 0 || (! $loggedIn && ! $passwordChanged)
+            );
 
             return $vendor;
         });

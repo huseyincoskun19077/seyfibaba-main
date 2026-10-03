@@ -47,8 +47,8 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('admin.call-center-registrations.index') }}" class="form-row mb-4">
-                        <div class="form-group col-md-4">
+                    <form method="GET" action="{{ route('admin.call-center-registrations.index') }}" class="form-row mb-3">
+                        <div class="form-group col-md-3">
                             <label>Çağrı Merkezi Kullanıcısı</label>
                             <select name="agent_id" class="form-control">
                                 <option value="">Tümü</option>
@@ -59,14 +59,31 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>Ara</label>
                             <input type="text" name="search" class="form-control" value="{{ request('search') }}" placeholder="Firma, müşteri, e-posta, telefon">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Takip</label>
+                            <select name="follow_up" class="form-control">
+                                <option value="">Tümü</option>
+                                <option value="whatsapp" @selected(request('follow_up') === 'whatsapp')>
+                                    WhatsApp: giriş yok veya ürün yok
+                                </option>
+                            </select>
                         </div>
                         <div class="form-group col-md-2 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary btn-block">Filtrele</button>
                         </div>
                     </form>
+
+                    <div class="alert alert-light border mb-4">
+                        <label for="cc-wa-text" class="font-weight-bold mb-1">WhatsApp mesajı</label>
+                        <textarea id="cc-wa-text" class="form-control" rows="3" placeholder="Metni buraya yazın. Satırdaki WhatsApp butonuna basınca o kişinin sohbeti açılır. İsterseniz {ad} ve {firma} kullanın."></textarea>
+                        <small class="text-muted d-block mt-1">
+                            Toplu gönderim yok; her buton yalnızca o satırdaki isme gider. Metin tarayıcıda saklanır. Boş bırakırsanız sohbet boş açılır.
+                        </small>
+                    </div>
 
                     <div class="table-responsive">
                         <table class="table table-striped">
@@ -90,7 +107,11 @@
                             </thead>
                             <tbody>
                                 @forelse($registrations as $registration)
-                                    @php $onboarding = $registration->onboarding ?? []; @endphp
+                                    @php
+                                        $onboarding = $registration->onboarding ?? [];
+                                        $needsWa = (bool) ($registration->needs_whatsapp_followup ?? false);
+                                        $waId = (string) ($registration->whatsapp_id ?? '');
+                                    @endphp
                                     <tr>
                                         <td>{{ $registration->id }}</td>
                                         <td>
@@ -161,6 +182,18 @@
                                             </span>
                                         </td>
                                         <td class="text-nowrap">
+                                            @if($needsWa && $waId !== '')
+                                                <button type="button"
+                                                        class="btn btn-sm btn-success js-cc-whatsapp"
+                                                        data-phone="{{ $waId }}"
+                                                        data-name="{{ $registration->user?->name }}"
+                                                        data-shop="{{ $registration->shop_name }}"
+                                                        title="{{ $registration->user?->name ?: $registration->shop_name }} kişisine WhatsApp">
+                                                    <i class="fab fa-whatsapp"></i> WhatsApp
+                                                </button>
+                                            @elseif($needsWa)
+                                                <span class="text-muted small d-block mb-1">Telefon yok</span>
+                                            @endif
                                             <a href="{{ route('admin.seller-show', $registration->id) }}" class="btn btn-sm btn-primary">Detay</a>
                                             @if($onboarding['can_resend_sms'] ?? false)
                                                 <form method="POST"
@@ -199,4 +232,49 @@
         </div>
     </section>
 </div>
+@endsection
+
+@section('script')
+<script>
+(function () {
+    var box = document.getElementById('cc-wa-text');
+    var storageKey = 'cc-wa-text';
+
+    if (box) {
+        try {
+            var saved = localStorage.getItem(storageKey);
+            if (saved) {
+                box.value = saved;
+            }
+        } catch (e) {}
+
+        box.addEventListener('input', function () {
+            try {
+                localStorage.setItem(storageKey, box.value);
+            } catch (e) {}
+        });
+    }
+
+    document.querySelectorAll('.js-cc-whatsapp').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var phone = (btn.getAttribute('data-phone') || '').replace(/\D/g, '');
+            if (!phone) {
+                alert('Bu kayıtta geçerli telefon yok.');
+                return;
+            }
+
+            var name = btn.getAttribute('data-name') || '';
+            var shop = btn.getAttribute('data-shop') || '';
+            var tpl = box ? box.value : '';
+            var text = tpl.split('{ad}').join(name).split('{firma}').join(shop).trim();
+            var url = 'https://wa.me/' + phone;
+            if (text) {
+                url += '?text=' + encodeURIComponent(text);
+            }
+
+            window.open(url, '_blank');
+        });
+    });
+})();
+</script>
 @endsection
